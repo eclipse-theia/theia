@@ -61,6 +61,16 @@ describe('DocumentsExtImpl', () => {
             expect(fired).to.be.false;
         });
 
+        it('counts the synchronous work of a listener against its time', async () => {
+            documents.onWillSaveTextDocument(e => {
+                const busyUntil = Date.now() + 300;
+                while (Date.now() < busyUntil) { /* synchronous work past the deadline */ }
+                e.waitUntil(new Promise(resolve => setTimeout(() => resolve([new TextEdit(new Range(0, 0, 0, 0), 'late\n')]), 100)));
+            });
+            const edits = await documents.$acceptModelWillSave(uri, TextDocumentSaveReason.Manual, 500);
+            expect(edits).to.be.empty;
+        });
+
         it('waits for a listener that finishes within the timeout', async () => {
             documents.onWillSaveTextDocument(e => e.waitUntil(new Promise(resolve =>
                 setTimeout(() => resolve([new TextEdit(new Range(0, 0, 0, 0), 'late\n')]), 50))));

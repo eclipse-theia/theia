@@ -105,7 +105,7 @@ export class DocumentsExtImpl implements DocumentsExt {
                     await this.fireTextDocumentWillSaveEvent({
                         document, reason, fireEvent,
                         accept: operation => operations.push(operation),
-                        timeout: deadline - Date.now()
+                        deadline
                     });
                 }
             } catch (e) {
@@ -118,14 +118,14 @@ export class DocumentsExtImpl implements DocumentsExt {
 
     /* eslint-disable @typescript-eslint/no-explicit-any */
     protected async fireTextDocumentWillSaveEvent({
-        document, reason, fireEvent, accept, timeout
+        document, reason, fireEvent, accept, deadline
     }: {
         document: theia.TextDocument,
         reason: theia.TextDocumentSaveReason,
         fireEvent: (e: theia.TextDocumentWillSaveEvent) => any,
         accept: (operation: SingleEditOperation) => void,
-        /** The time in milliseconds to wait for the promises of the listener, after which its edits are dropped. */
-        timeout?: number
+        /** The time, as returned by `Date.now()`, until which to wait for the promises of the listener, after which its edits are dropped. */
+        deadline: number
     }): Promise<void> {
 
         const promises: PromiseLike<TextEdit[] | any>[] = [];
@@ -140,12 +140,12 @@ export class DocumentsExtImpl implements DocumentsExt {
         }));
         Object.freeze(promises);
 
-        // Like VS Code, do not wait for a listener whose promises never settle, as the save would wait for it as well
-        const allPromises = Promise.all(promises);
-        await (timeout === undefined ? allPromises : Promise.race([
-            allPromises,
-            timeoutReject<(TextEdit[] | any)[]>(Math.max(timeout, 0), 'Aborted onWillSaveTextDocument-listener after timeout')
-        ])).then(allEdits => allEdits.forEach(edits => {
+        // Like VS Code, do not wait for a listener whose promises never settle, as the save would wait for it as well.
+        // The time left is computed only after the listener ran, so that its synchronous work counts as well.
+        await Promise.race([
+            Promise.all(promises),
+            timeoutReject<(TextEdit[] | any)[]>(Math.max(deadline - Date.now(), 0), 'Aborted onWillSaveTextDocument-listener after timeout')
+        ]).then(allEdits => allEdits.forEach(edits => {
             if (Array.isArray(edits)) {
                 edits.forEach(edit => {
                     if (TextEdit.isTextEdit(edit)) {
