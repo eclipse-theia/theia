@@ -303,6 +303,9 @@ export class PreferenceServiceImpl implements PreferenceService {
     protected readonly preferenceProviders = new Map<PreferenceScope, PreferenceProvider>();
 
     protected async initializeProviders(): Promise<void> {
+        // Let Inversify cache this singleton before providers resolve it recursively.
+        // Providers still start together after this construction boundary.
+        await Promise.resolve();
         try {
             // The providers initialize independently of each other: create them all, then wait for all of them,
             // so that their requests to the backend overlap instead of adding up.
