@@ -21,7 +21,15 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 try { FrontendApplicationConfigProvider.set({}); } catch { /* already set by a sibling spec */ }
 
 import { expect } from 'chai';
+import { Emitter } from '@theia/core/lib/common/event';
+import { interfaces } from '@theia/core/shared/inversify';
+import URI from '@theia/core/lib/common/uri';
+import { FileStat } from '@theia/filesystem/lib/common/files';
 import { SearchInWorkspaceService } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
+import { WorkspaceService, WorkspaceTrustService } from '@theia/workspace/lib/browser';
+import { RPCProtocol } from '../../common/rpc-protocol';
+import { WorkspaceRootsChangeEvent } from '../../common/plugin-api-rpc-model';
+import { PluginServer } from '../../common/plugin-protocol';
 import { WorkspaceMainImpl } from './workspace-main';
 
 disableJSDOM();
@@ -64,6 +72,65 @@ describe('WorkspaceMainImpl', () => {
 
             expect(result).to.equal('search failed to start');
             expect(textSearchResults).to.deep.equal([[7, true]]);
+        });
+    });
+
+    describe('root names', () => {
+
+        const backend = 'file:///project/backend';
+
+        let workspaceChangedEmitter: Emitter<FileStat[]>;
+        let names: Map<string, string>;
+        let events: WorkspaceRootsChangeEvent[];
+        let storageUpdates: number;
+        let workspaceMain: WorkspaceMainImpl;
+
+        beforeEach(() => {
+            workspaceChangedEmitter = new Emitter<FileStat[]>();
+            names = new Map();
+            events = [];
+            storageUpdates = 0;
+            const roots = [FileStat.dir(backend)];
+            const services = new Map<interfaces.ServiceIdentifier, object>([
+                [WorkspaceService, {
+                    tryGetRoots: () => roots,
+                    onWorkspaceChanged: workspaceChangedEmitter.event,
+                    onWorkspaceLocationChanged: new Emitter().event,
+                    getConfiguredRootName: (uri: URI) => names.get(uri.toString())
+                }],
+                [WorkspaceTrustService, {
+                    getWorkspaceTrust: () => new Promise(() => { }),
+                    onDidChangeWorkspaceTrust: new Emitter().event
+                }],
+                [PluginServer, { getAllStorageValues: async () => ({}) }]
+            ]);
+            const container = { get: (id: interfaces.ServiceIdentifier) => services.get(id) ?? {} } as interfaces.Container;
+            const rpc = {
+                getProxy: () => ({
+                    $onWorkspaceFoldersChanged: (event: WorkspaceRootsChangeEvent) => events.push(event),
+                    $updatePluginsWorkspaceData: () => storageUpdates++
+                })
+            } as unknown as RPCProtocol;
+            workspaceMain = new WorkspaceMainImpl(rpc, container);
+        });
+
+        afterEach(() => workspaceMain.dispose());
+
+        it('notifies the plugin host when only the name of a root changes', async () => {
+            expect(events).to.deep.equal([{ roots: [backend], names: {} }]);
+
+            names.set(backend, 'API Server');
+            workspaceChangedEmitter.fire([FileStat.dir(backend)]);
+            expect(events).to.deep.equal([{ roots: [backend], names: {} }, { roots: [backend], names: { [backend]: 'API Server' } }]);
+
+            // The storage of plugins only depends on the roots, so it is sent once for the initial roots
+            await new Promise(resolve => setTimeout(resolve));
+            expect(storageUpdates).to.equal(1);
+        });
+
+        it('does not notify the plugin host when neither the roots nor their names change', () => {
+            workspaceChangedEmitter.fire([FileStat.dir(backend)]);
+            expect(events).to.have.length(1);
         });
     });
 });

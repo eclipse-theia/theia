@@ -173,11 +173,39 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
             expect(events.some(event => event.affects(new URI('file:///home/other')))).to.be.false;
             expect(labelProvider.getName(new URI('file:///home/alice/app'))).eq('alice/app');
         });
+
+        it('should not return the name given to a workspace root in the workspace file', () => {
+            // The name is only shown where the folder is referred to as a root, e.g. not when browsing its parent in a file dialog.
+            setRoots([FileStat.dir('file:///home/alice/app'), FileStat.dir('file:///home/bob/lib')]);
+            sinon.stub(workspaceService, 'getConfiguredRootName').callsFake(uri => uri.isEqual(new URI('file:///home/alice/app')) ? 'My App' : undefined);
+            expect(labelProvider.getName(new URI('file:///home/alice/app'))).eq('app');
+            expect(labelProvider.getName(FileStat.dir('file:///home/alice/app'))).eq('app');
+        });
+
+        it('should notify a change of the labels of a workspace root and its files when the root is given a name in the workspace file', () => {
+            setRoots([FileStat.dir('file:///home/alice/app'), FileStat.dir('file:///home/bob/lib')]);
+            workspaceService['onWorkspaceChangeEmitter'].fire(roots);
+            const events: DidChangeLabelEvent[] = [];
+            labelProvider.onDidChange(event => events.push(event));
+            sinon.stub(workspaceService, 'getConfiguredRootName').callsFake(uri => uri.isEqual(new URI('file:///home/alice/app')) ? 'My App' : undefined);
+            workspaceService['onWorkspaceChangeEmitter'].fire(roots);
+            expect(events.some(event => event.affects(new URI('file:///home/alice/app')))).to.be.true;
+            expect(events.some(event => event.affects(new URI('file:///home/alice/app/src/index.ts')))).to.be.true;
+            expect(events.some(event => event.affects(new URI('file:///home/bob/lib')))).to.be.false;
+        });
     });
 
     describe('getDetails()', () => {
         it('should prefix the path of a file with the unique name of its workspace root', () => {
             setRoots([FileStat.dir('file:///home/alice/app'), FileStat.dir('file:///home/bob/app')]);
+            expect(labelProvider.getDetails(new URI('file:///home/bob/app/src/index.ts'))).eq('bob/app • src');
+        });
+
+        it('should prefix the path of a file with the name given to its workspace root in the workspace file', () => {
+            setRoots([FileStat.dir('file:///home/alice/app'), FileStat.dir('file:///home/bob/app')]);
+            sinon.stub(workspaceService, 'getConfiguredRootName').callsFake(uri => uri.isEqual(new URI('file:///home/alice/app')) ? 'My App' : undefined);
+            expect(labelProvider.getDetails(new URI('file:///home/alice/app/src/index.ts'))).eq('My App • src');
+            // A root without a name keeps its unique name
             expect(labelProvider.getDetails(new URI('file:///home/bob/app/src/index.ts'))).eq('bob/app • src');
         });
     });

@@ -38,28 +38,34 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
         this.workspaceService.onWorkspaceChanged(() => this.updateRootNames());
     }
 
+    /**
+     * Returns the names shown for the workspace roots by root URI: the name given to a root in the workspace file,
+     * or else its unique name.
+     */
     protected getRootNamesByUri(): Map<string, string> {
-        return new Map(Array.from(this.workspaceService.getRootNames(), ([name, uri]) => [uri.toString(), name]));
+        return new Map(Array.from(this.workspaceService.getRootNames(),
+            ([name, uri]) => [uri.toString(), this.workspaceService.getConfiguredRootName(uri) ?? name]));
     }
 
     /**
      * Notifies a change of the labels of the roots whose names changed, such as a root named `app` that
-     * is named `alice/app` once a root `bob/app` is added.
+     * is named `alice/app` once a root `bob/app` is added, or a root that is given a name in the workspace file.
+     * The labels of the files in such a root change as well, as their details and breadcrumbs show the name of the root.
      */
     protected updateRootNames(): void {
         const rootNames = this.getRootNamesByUri();
-        const changed = new Set<string>();
+        const changed: URI[] = [];
         for (const [uri, name] of rootNames) {
             if (this.rootNames.get(uri) !== name) {
-                changed.add(uri);
+                changed.push(new URI(uri));
             }
         }
         this.rootNames = rootNames;
-        if (changed.size > 0) {
+        if (changed.length > 0) {
             this.onDidChangeEmitter.fire({
                 affects: element => {
                     const uri = this.canHandle(element) > 0 ? this.getUri(element as URI | URIIconReference | FileStat) : undefined;
-                    return !!uri && changed.has(uri.toString());
+                    return !!uri && changed.some(root => root.isEqualOrParent(uri));
                 }
             });
         }
@@ -112,11 +118,20 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
         // Parent in order to omit the name - that's what comes out of `getName`, and `getDetails` should supplement, not duplicate.
         const relativePath = uri && this.workspaceVariable.getWorkspaceRelativePath(uri.parent);
         if (relativePath !== undefined) {
-            const prefix = this.workspaceService.tryGetRoots().length > 1 ? this.getName(this.workspaceVariable.getWorkspaceRootUri(uri)!) : '';
+            const prefix = this.workspaceService.tryGetRoots().length > 1 ? this.getRootDisplayName(this.workspaceVariable.getWorkspaceRootUri(uri)!) : '';
             const separator = prefix && relativePath ? ' • ' : '';
             return prefix + separator + relativePath;
         }
         return this.getLongName(uri.parent);
+    }
+
+    /**
+     * Returns the name given to the workspace root in the workspace file, or else its name from `getName`.
+     * Only used where the root is referred to as a root: elsewhere, e.g. in a file dialog, the name from the workspace file
+     * is not shown, as in VS Code.
+     */
+    protected getRootDisplayName(rootUri: URI): string | undefined {
+        return this.workspaceService.getConfiguredRootName(rootUri) ?? this.getName(rootUri);
     }
 
     protected asURIIconReference(element: URI | URIIconReference | FileStat): URI | URIIconReference {
