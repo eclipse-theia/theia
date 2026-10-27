@@ -446,6 +446,25 @@ describe('Preference Service', () => {
             }, preferences.inspect('[json].editor.tabSize'));
         });
 
+        it('inspect #3: a null scope value counts as set', () => {
+            const { preferences } = prepareServices();
+
+            getProvider(PreferenceScope.User).setPreference('editor.tabSize', 2);
+            getProvider(PreferenceScope.Workspace).setPreference('editor.tabSize', null);
+
+            // get() already treats null as set; inspect().value must agree with it.
+            assert.strictEqual(preferences.get('editor.tabSize'), null);
+            assert.deepStrictEqual(preferences.inspect('editor.tabSize'), {
+                preferenceName: 'editor.tabSize',
+                defaultValue: 4,
+                globalValue: 2,
+                workspaceValue: null,
+                workspaceFolderValue: undefined,
+                sessionValue: undefined,
+                value: null,
+            });
+        });
+
         it('onPreferenceChanged #0', async () => {
             const { preferences, schema } = prepareServices();
 
