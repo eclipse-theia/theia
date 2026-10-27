@@ -246,7 +246,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
             label: nls.localize('theia/collaboration/end', 'End Collaboration Session'),
             detail: nls.localize('theia/collaboration/endDetail', 'Terminate the session, cease content sharing, and revoke access for others.'),
             iconClasses: codiconArray('circle-slash'),
-            execute: () => this.currentInstance?.dispose()
+            execute: () => this.currentInstance?.leave()
         });
         await this.quickInputService?.showQuickPick(items, {
             placeholder: nls.localize('theia/collaboration/whatToDo', 'What would you like to do with other collaborators?')
@@ -264,7 +264,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
             label: nls.localize('theia/collaboration/leave', 'Leave Collaboration Session'),
             detail: nls.localize('theia/collaboration/leaveDetail', 'Disconnect from the current collaboration session and close the workspace.'),
             iconClasses: codiconArray('circle-slash'),
-            execute: () => this.currentInstance?.dispose()
+            execute: () => this.currentInstance?.leave()
         });
         await this.quickInputService?.showQuickPick(items, {
             placeholder: nls.localize('theia/collaboration/whatToDo', 'What would you like to do with other collaborators?')
@@ -328,7 +328,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
                     if (roomClaim.loginToken) {
                         localStorage.setItem(COLLABORATION_AUTH_TOKEN, roomClaim.loginToken);
                     }
-                    this.currentInstance?.dispose();
+                    await this.currentInstance?.leave();
                     const connection = await authHandler.connect(roomClaim.roomToken);
                     this.currentInstance = this.collaborationInstanceFactory({
                         role: 'host',
@@ -374,7 +374,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
                     if (roomClaim.loginToken) {
                         localStorage.setItem(COLLABORATION_AUTH_TOKEN, roomClaim.loginToken);
                     }
-                    this.currentInstance?.dispose();
+                    await this.currentInstance?.leave();
                     const connection = await authHandler.connect(roomClaim.roomToken, roomClaim.host);
                     this.currentInstance = this.collaborationInstanceFactory({
                         role: 'guest',
