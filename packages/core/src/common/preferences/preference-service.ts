@@ -73,6 +73,19 @@ export interface PreferenceChanges {
     [preferenceName: string]: PreferenceChange
 }
 
+/**
+ * Options for {@link PreferenceService.get} and {@link PreferenceService.resolve}.
+ */
+export interface PreferenceResolveOptions {
+    /**
+     * Scopes to leave out of the resolution. The other scopes resolve and merge as usual, and so does the
+     * fallback from a language override to its base preference. For example, a caller that must not read
+     * settings controlled by an untrusted workspace can exclude {@link PreferenceScope.Workspace} and
+     * {@link PreferenceScope.Folder}.
+     */
+    readonly excludeScopes?: readonly PreferenceScope[];
+}
+
 export const PreferenceService = Symbol('PreferenceService');
 /**
  * Service to manage preferences including, among others, getting and setting preference values as well
@@ -115,11 +128,12 @@ export interface PreferenceService extends Disposable {
      * @param defaultValue the value to return when no value for the given preference is stored.
      * @param resourceUri the uri of the resource for which the preference is stored. This used to retrieve
      * a potentially different value for the same preference for different resources, for example `files.encoding`.
+     * @param options the scopes to leave out, see {@link PreferenceResolveOptions}.
      *
      * @returns the value stored for the given preference and resourceUri when it exists, otherwise the given
      * default value.
      */
-    get<T>(preferenceName: string, defaultValue: T, resourceUri?: string): T;
+    get<T>(preferenceName: string, defaultValue: T, resourceUri?: string, options?: PreferenceResolveOptions): T;
     /**
      * Retrieve the stored value for the given preference and resourceUri.
      *
@@ -127,11 +141,12 @@ export interface PreferenceService extends Disposable {
      * @param defaultValue the value to return when no value for the given preference is stored.
      * @param resourceUri the uri of the resource for which the preference is stored. This used to retrieve
      * a potentially different value for the same preference for different resources, for example `files.encoding`.
+     * @param options the scopes to leave out, see {@link PreferenceResolveOptions}.
      *
      * @returns the value stored for the given preference and resourceUri when it exists, otherwise the given
      * default value.
      */
-    get<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): T | undefined;
+    get<T>(preferenceName: string, defaultValue?: T, resourceUri?: string, options?: PreferenceResolveOptions): T | undefined;
     /**
      * Sets the given preference to the given value.
      *
@@ -212,12 +227,13 @@ export interface PreferenceService extends Disposable {
      * @param defaultValue the value to return when no value for the given preference is stored.
      * @param resourceUri the uri of the resource for which the preference is stored. This used to retrieve
      * a potentially different value for the same preference for different resources, for example `files.encoding`.
+     * @param options the scopes to leave out, see {@link PreferenceResolveOptions}.
      *
      * @returns an object containing the value stored for the given preference and resourceUri when it exists,
      * otherwise the given default value. If determinable the object will also contain the uri of the configuration
      * resource in which the preference was stored.
      */
-    resolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): PreferenceResolveResult<T>;
+    resolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string, options?: PreferenceResolveOptions): PreferenceResolveResult<T>;
     /**
      * Returns the uri of the configuration resource for the given scope and optional resource uri.
      *
@@ -438,17 +454,18 @@ export class PreferenceServiceImpl implements PreferenceService {
     get<T>(preferenceName: string): T | undefined;
     get<T>(preferenceName: string, defaultValue: T): T;
     get<T>(preferenceName: string, defaultValue: T, resourceUri: string): T;
-    get<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): T | undefined;
-    get<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): T | undefined {
-        return this.resolve<T>(preferenceName, defaultValue, resourceUri).value;
+    get<T>(preferenceName: string, defaultValue: T, resourceUri: string | undefined, options: PreferenceResolveOptions): T;
+    get<T>(preferenceName: string, defaultValue?: T, resourceUri?: string, options?: PreferenceResolveOptions): T | undefined;
+    get<T>(preferenceName: string, defaultValue?: T, resourceUri?: string, options?: PreferenceResolveOptions): T | undefined {
+        return this.resolve<T>(preferenceName, defaultValue, resourceUri, options).value;
     }
 
-    resolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): PreferenceResolveResult<T> {
-        const { value, configUri } = this.doResolve(preferenceName, defaultValue, resourceUri);
+    resolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string, options?: PreferenceResolveOptions): PreferenceResolveResult<T> {
+        const { value, configUri } = this.doResolve(preferenceName, defaultValue, resourceUri, options);
         if (value === undefined) {
             const overridden = this.overriddenPreferenceName(preferenceName);
             if (overridden) {
-                return this.doResolve(overridden.preferenceName, defaultValue, resourceUri);
+                return this.doResolve(overridden.preferenceName, defaultValue, resourceUri, options);
             }
         }
         return { value, configUri };
@@ -619,9 +636,12 @@ export class PreferenceServiceImpl implements PreferenceService {
     protected doGet<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): T | undefined {
         return this.doResolve(preferenceName, defaultValue, resourceUri).value;
     }
-    protected doResolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): PreferenceResolveResult<T> {
+    protected doResolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string, options?: PreferenceResolveOptions): PreferenceResolveResult<T> {
         const result: PreferenceResolveResult<T> = {};
         for (const scope of this.schemaService.validScopes) {
+            if (options?.excludeScopes?.includes(scope)) {
+                continue;
+            }
             const provider = this.getProvider(scope);
             if (provider?.canHandleScope(scope)) {
                 const { configUri, value } = provider.resolve<T>(preferenceName, resourceUri);
