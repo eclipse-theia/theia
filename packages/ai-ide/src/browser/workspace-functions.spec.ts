@@ -1328,7 +1328,7 @@ describe('FileContentFunction external paths', () => {
     });
 
     it('drops workspace-scoped allow-list values when workspace is untrusted', async () => {
-        // simulate trust-aware reader behavior: when untrusted, only user/default scope is returned
+        // simulate trust-aware reader behavior: when untrusted, workspace and folder scope values are left out
         trustedScopeOnly = true;
         const result = await callTool('/external/configs/myapp.json');
         const parsed = JSON.parse(result);
