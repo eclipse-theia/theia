@@ -28,7 +28,7 @@ import { CollaborationWorkspaceService } from './collaboration-workspace-service
 import { Range as MonacoRange } from '@theia/monaco-editor-core';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import { Deferred } from '@theia/core/lib/common/promise-util';
+import { Deferred, timeout } from '@theia/core/lib/common/promise-util';
 import { EditorDecoration, EditorWidget, Selection, TextEditorDocument, TrackedRangeStickiness } from '@theia/editor/lib/browser';
 import { DecorationStyle, OpenerService, SaveReason } from '@theia/core/lib/browser';
 import { CollaborationFileSystemProvider, CollaborationURI } from './collaboration-file-system-provider';
@@ -221,6 +221,9 @@ export class CollaborationInstance implements Disposable {
         });
         connection.room.onLeave((_, peer) => {
             this.peers.get(peer.id)?.dispose();
+            // Cursors are otherwise redrawn only when the awareness states change, so the peer's
+            // cursor would stay until its awareness state times out.
+            this.rerenderPresence();
         });
         connection.room.onClose(() => {
             this.dispose();
@@ -805,6 +808,53 @@ export class CollaborationInstance implements Disposable {
             this.toDispose.push(ref);
         } else {
             ref.dispose();
+        }
+    }
+
+    /**
+     * How long {@link leave} waits for the leave message to be sent before it disposes anyway.
+     */
+    protected readonly leaveTimeout: number = 2_000;
+
+    protected leaving?: Promise<void>;
+
+    /**
+     * Leaves the session and disposes this instance. When the host leaves, the session ends for everyone.
+     *
+     * Unlike {@link dispose}, this tells the server before closing the connection. The server keeps a peer
+     * whose connection closed for a reconnect grace period, so after a plain {@link dispose} the other
+     * participants keep seeing this one, and the guests of a host keep the session, until that period ends.
+     *
+     * Resolves once the leave message is written to the connection, the instance closes, or {@link leaveTimeout}
+     * passes, and the instance is disposed. It never rejects. Calling it again while leaving returns the same promise.
+     */
+    leave(): Promise<void> {
+        if (!this.leaving) {
+            this.leaving = this.doLeave();
+        }
+        return this.leaving;
+    }
+
+    protected async doLeave(): Promise<void> {
+        if (this.toDispose.disposed) {
+            return;
+        }
+        // Stop waiting if the connection closes or the room ends in the meantime.
+        const closed = new Promise<'closed'>(resolve => this.onDidClose(() => resolve('closed')));
+        try {
+            const result = await Promise.race([
+                this.options.connection.room.leave().then(() => 'sent' as const),
+                timeout(this.leaveTimeout).then(() => 'timeout' as const),
+                closed
+            ]);
+            if (result === 'timeout') {
+                this.logger.warn(`Leaving the collaboration session took longer than ${this.leaveTimeout} ms, closing the connection anyway`);
+            }
+        } catch (error) {
+            this.logger.warn('Could not tell the collaboration server that this peer left', error);
+        }
+        if (!this.toDispose.disposed) {
+            this.dispose();
         }
     }
 
