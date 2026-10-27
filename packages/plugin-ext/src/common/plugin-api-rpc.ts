@@ -1787,6 +1787,10 @@ export interface TaskPresentationOptionsDTO {
 export interface TaskExecutionDto {
     id: number;
     task: TaskDto;
+    /**
+     * The id passed to `TasksMain.$executeTask` by the plugin host, if the execution was started by that request.
+     */
+    executeRequestId?: number;
 }
 
 export interface ProcessTaskDto extends TaskDto, CommandProperties {
@@ -2560,7 +2564,7 @@ export interface TasksExt {
 export interface TasksMain {
     $registerTaskProvider(handle: number, type: string): void;
     $fetchTasks(taskVersion: string | undefined, taskType: string | undefined): Promise<TaskDto[]>;
-    $executeTask(taskDto: TaskDto): Promise<TaskExecutionDto | undefined>;
+    $executeTask(taskDto: TaskDto, executeRequestId: number): Promise<TaskExecutionDto | undefined>;
     $taskExecutions(): Promise<TaskExecutionDto[]>;
     $unregister(handle: number): void;
     $terminateTask(id: number): void;

@@ -30,6 +30,7 @@ import { Emitter, Event } from '@theia/core/lib/common/event';
 import { TerminalServiceExtImpl } from '../terminal-ext';
 import { UUID } from '@theia/core/shared/@lumino/coreutils';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
+import { WorkspaceExtImpl } from '../workspace';
 
 type ExecutionCallback = (resolvedDefinition: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>;
 export class TasksExtImpl implements TasksExt {
@@ -43,13 +44,16 @@ export class TasksExtImpl implements TasksExt {
     protected customExecutionIds: Map<ExecutionCallback, string> = new Map();
     protected customExecutionFunctions: Map<string, ExecutionCallback> = new Map();
     protected lastStartedTask: number | undefined;
+    protected executeRequestId = 0;
+    /** The tasks passed to `executeTask`, by request id, until the request completes. */
+    protected pendingExecuteRequests = new Map<number, theia.Task>();
 
     private readonly onDidExecuteTask: Emitter<theia.TaskStartEvent> = new Emitter<theia.TaskStartEvent>();
     private readonly onDidTerminateTask: Emitter<theia.TaskEndEvent> = new Emitter<theia.TaskEndEvent>();
     private readonly onDidExecuteTaskProcess: Emitter<theia.TaskProcessStartEvent> = new Emitter<theia.TaskProcessStartEvent>();
     private readonly onDidTerminateTaskProcess: Emitter<theia.TaskProcessEndEvent> = new Emitter<theia.TaskProcessEndEvent>();
 
-    constructor(rpc: RPCProtocol, readonly terminalExt: TerminalServiceExtImpl) {
+    constructor(rpc: RPCProtocol, readonly terminalExt: TerminalServiceExtImpl, protected readonly workspaceExt: WorkspaceExtImpl) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.TASKS_MAIN);
     }
 
@@ -64,7 +68,7 @@ export class TasksExtImpl implements TasksExt {
     async $onDidStartTask(execution: TaskExecutionDto, terminalId: number): Promise<void> {
         const customExecution = this.customExecutionFunctions.get(execution.task.executionId || '');
         if (customExecution) {
-            const taskDefinition = converter.toTask(execution.task).definition;
+            const taskDefinition = converter.toTaskDefinition(execution.task);
             const pty = await customExecution(taskDefinition);
             this.terminalExt.attachPtyToTerminal(terminalId, pty);
             if (pty.onDidClose) {
@@ -77,9 +81,11 @@ export class TasksExtImpl implements TasksExt {
         }
         this.lastStartedTask = execution.id;
 
-        this.onDidExecuteTask.fire({
-            execution: this.getTaskExecution(execution)
-        });
+        const executedTask = execution.executeRequestId === undefined ? undefined : this.pendingExecuteRequests.get(execution.executeRequestId);
+        const taskExecution = this.getTaskExecution(execution, executedTask);
+        if (taskExecution) {
+            this.onDidExecuteTask.fire({ execution: taskExecution });
+        }
     }
 
     get onDidEndTask(): Event<theia.TaskEndEvent> {
@@ -89,7 +95,8 @@ export class TasksExtImpl implements TasksExt {
     $onDidEndTask(id: number): void {
         const taskExecution = this.executions.get(id);
         if (!taskExecution) {
-            throw new Error(`Task execution with id ${id} is not found`);
+            // No start event was fired for this execution, e.g. because its scope is not in a workspace folder.
+            return;
         }
 
         this.executions.delete(id);
@@ -104,10 +111,10 @@ export class TasksExtImpl implements TasksExt {
     }
 
     $onDidStartTaskProcess(processId: number, executionDto: TaskExecutionDto): void {
-        this.onDidExecuteTaskProcess.fire({
-            processId,
-            execution: this.getTaskExecution(executionDto)
-        });
+        const execution = this.getTaskExecution(executionDto);
+        if (execution) {
+            this.onDidExecuteTaskProcess.fire({ processId, execution });
+        }
     }
 
     get onDidEndTaskProcess(): Event<theia.TaskProcessEndEvent> {
@@ -117,7 +124,7 @@ export class TasksExtImpl implements TasksExt {
     $onDidEndTaskProcess(exitCode: number, taskId: number): void {
         const taskExecution = this.executions.get(taskId);
         if (!taskExecution) {
-            throw new Error(`Task execution with id ${taskId} is not found`);
+            return;
         }
 
         this.onDidTerminateTaskProcess.fire({
@@ -127,7 +134,7 @@ export class TasksExtImpl implements TasksExt {
     }
 
     registerTaskProvider(type: string, provider: theia.TaskProvider): theia.Disposable {
-        const callId = this.addNewAdapter(new TaskProviderAdapter(provider));
+        const callId = this.addNewAdapter(new TaskProviderAdapter(provider, this.getWorkspaceFolder));
         this.proxy.$registerTaskProvider(callId, type);
         return this.createDisposable(callId);
     }
@@ -136,7 +143,14 @@ export class TasksExtImpl implements TasksExt {
         const taskVersion = filter ? filter.version : undefined;
         const taskType = filter ? filter.type : undefined;
         const taskDtos = await this.proxy.$fetchTasks(taskVersion, taskType);
-        return taskDtos.map(dto => converter.toTask(dto));
+        const result: theia.Task[] = [];
+        for (const dto of taskDtos) {
+            const task = converter.toTask(dto, this.getWorkspaceFolder);
+            if (task) {
+                result.push(task);
+            }
+        }
+        return result;
     }
 
     async executeTask(task: theia.Task): Promise<theia.TaskExecution> {
@@ -148,10 +162,15 @@ export class TasksExtImpl implements TasksExt {
             if (CustomExecution.is(task.execution!)) {
                 taskDto.executionId = this.addCustomExecution(task.execution!.callback);
             }
-            const executionDto = await this.proxy.$executeTask(taskDto);
-            if (executionDto) {
-                const taskExecution = this.getTaskExecution(executionDto);
-                return taskExecution;
+            const executeRequestId = this.executeRequestId++;
+            this.pendingExecuteRequests.set(executeRequestId, task);
+            try {
+                const executionDto = await this.proxy.$executeTask(taskDto, executeRequestId);
+                if (executionDto) {
+                    return this.getTaskExecution(executionDto, task)!;
+                }
+            } finally {
+                this.pendingExecuteRequests.delete(executeRequestId);
             }
             throw new Error('Run task config does not return after being started');
         }
@@ -219,15 +238,25 @@ export class TasksExtImpl implements TasksExt {
         taskExecutions.forEach(execution => this.getTaskExecution(execution));
     }
 
-    private getTaskExecution(execution: TaskExecutionDto): theia.TaskExecution {
+    protected getWorkspaceFolder = (uri: theia.Uri): theia.WorkspaceFolder | undefined => this.workspaceExt.getWorkspaceFolder(uri);
+
+    /**
+     * @param task the task of the execution, if the caller has it, so that it doesn't need to be converted from the DTO
+     * @returns the execution, or `undefined` if its task is scoped to a folder that is not in a workspace folder
+     */
+    private getTaskExecution(execution: TaskExecutionDto, task?: theia.Task): theia.TaskExecution | undefined {
         const executionId = execution.id;
         let result: theia.TaskExecution | undefined = this.executions.get(executionId);
         if (result) {
             return result;
         }
 
+        task = task ?? converter.toTask(execution.task, this.getWorkspaceFolder);
+        if (!task) {
+            return undefined;
+        }
         result = {
-            task: converter.toTask(execution.task),
+            task,
             terminate: () => {
                 this.proxy.$terminateTask(executionId);
             }
