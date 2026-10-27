@@ -430,6 +430,9 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.updateSplitterVisibility();
         this.update();
         this.fireDidChangeTrackableWidgets();
+        if (newPart.options.weight !== undefined) {
+            this.applyInitialPartSizes();
+        }
         toRemoveWidget.pushAll([
             Disposable.create(() => {
                 if (newPart.currentViewContainerId === this.id) {
@@ -472,6 +475,14 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
         newPart.disposed.connect(() => toRemoveWidget.dispose());
         return toRemoveWidget;
+    }
+
+    protected applyInitialPartSizes(): void {
+        waitForRevealed(this).then(() => {
+            if (!this.layoutRestored) {
+                this.containerLayout.setPartSizes(this.getParts().map(part => part.options.weight));
+            }
+        });
     }
 
     protected createPart(widget: Widget, partId: string, originalContainerId: string, originalContainerTitle?: ViewContainerTitleOptions,
@@ -521,6 +532,8 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     }
 
     protected lastVisibleState: ViewContainer.State | undefined;
+    /** Part weights only size a container whose layout was not restored from a previous session. */
+    protected layoutRestored = false;
 
     storeState(): ViewContainer.State {
         if (!this.isVisible && this.lastVisibleState) {
@@ -551,6 +564,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     }
 
     restoreState(state: ViewContainer.State): void {
+        this.layoutRestored = true;
         this.lastVisibleState = state;
         this.doRestoreState(state);
     }
@@ -917,6 +931,7 @@ export namespace ViewContainer {
 
         export interface WidgetOptions {
             readonly order?: number;
+            /** Relative size of the part, applied when the container is first shown without a restored layout. */
             readonly weight?: number;
             readonly initiallyCollapsed?: boolean;
             readonly canHide?: boolean;

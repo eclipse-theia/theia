@@ -23,9 +23,10 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
-import { Command, Disposable } from '@theia/core/lib/common';
-import { PluginViewRegistry, ViewContainerInfo, PLUGIN_VIEW_DATA_FACTORY_ID } from './plugin-view-registry';
-import { PluginViewType, ViewWelcome } from '../../../common';
+import { Command, Disposable, Emitter } from '@theia/core/lib/common';
+import { PluginViewRegistry, ViewContainerInfo, PLUGIN_VIEW_DATA_FACTORY_ID, PLUGIN_VIEW_FACTORY_ID } from './plugin-view-registry';
+import { PluginViewWidget, PluginViewWidgetIdentifier } from './plugin-view-widget';
+import { PluginViewType, View, ViewWelcome } from '../../../common';
 import { BaseWidget, Panel, Widget } from '@theia/core/lib/browser/widgets/widget';
 
 disableJSDOM();
@@ -433,6 +434,150 @@ describe('PluginViewRegistry - webview view resolution', () => {
         await settle();
 
         expect(resolveCount).to.equal(0);
+    });
+
+});
+
+describe('PluginViewRegistry - initial view state', () => {
+
+    interface PartOptions {
+        initiallyCollapsed?: boolean;
+        initiallyHidden?: boolean;
+        weight?: number;
+    }
+
+    class FakePart {
+        protected readonly onDidChangeVisibilityEmitter = new Emitter<void>();
+        readonly onDidChangeVisibility = this.onDidChangeVisibilityEmitter.event;
+        readonly onDidMove = () => Disposable.NULL;
+        readonly onCollapsed = () => Disposable.NULL;
+        readonly isVisible = true;
+        isHidden: boolean;
+        collapsed: boolean;
+
+        constructor(readonly widget: unknown, readonly options: PartOptions) {
+            this.isHidden = !!options.initiallyHidden;
+            this.collapsed = !!options.initiallyCollapsed;
+        }
+
+        setHidden(hidden: boolean): void {
+            if (hidden !== this.isHidden) {
+                this.isHidden = hidden;
+                this.onDidChangeVisibilityEmitter.fire();
+            }
+        }
+    }
+
+    const containerId = 'workbench.view.extension.sample';
+    let registry: PluginViewRegistry;
+    let parts: FakePart[];
+    let viewWidgets: Map<string, PluginViewWidget>;
+    let disableDom: () => void;
+
+    const container = {
+        setTitleOptions: () => { },
+        getParts: () => parts,
+        getTrackableWidgets: () => [],
+        getPartFor: (widget: unknown) => parts.find(part => part.widget === widget),
+        addWidget: (widget: unknown, options: PartOptions) => { parts.push(new FakePart(widget, options)); }
+    };
+
+    const internals = (): {
+        views: Map<string, [string, View]>;
+        containerViews: Map<string, string[]>;
+        prepareViewContainer(viewContainerId: string, containerWidget: unknown): Promise<void>;
+        updateViewVisibility(viewId: string): Promise<void>;
+    } => registry as unknown as {
+        views: Map<string, [string, View]>;
+        containerViews: Map<string, string[]>;
+        prepareViewContainer(viewContainerId: string, containerWidget: unknown): Promise<void>;
+        updateViewVisibility(viewId: string): Promise<void>;
+    };
+
+    function prepare(...views: View[]): Promise<PartOptions[]> {
+        return prepareIn(containerId, ...views);
+    }
+
+    async function prepareIn(viewContainerId: string, ...views: View[]): Promise<PartOptions[]> {
+        for (const view of views) {
+            internals().views.set(view.id, [viewContainerId, view]);
+        }
+        internals().containerViews.set(viewContainerId, views.map(view => view.id));
+        await internals().prepareViewContainer(viewContainerId, container);
+        return parts.map(part => part.options);
+    }
+
+    before(() => disableDom = enableJSDOM());
+    after(() => disableDom());
+
+    beforeEach(() => {
+        registry = new PluginViewRegistry();
+        parts = [];
+        viewWidgets = new Map();
+        (registry as unknown as { widgetManager: unknown }).widgetManager = {
+            tryGetWidget: () => undefined,
+            getDescription: () => undefined,
+            getOrCreateWidget: async (_factoryId: string, options: PluginViewWidgetIdentifier) => {
+                const widget = Object.assign(new PluginViewWidget(), { options });
+                viewWidgets.set(options.id, widget);
+                return widget;
+            },
+            getWidget: async (factoryId: string, options?: PluginViewWidgetIdentifier) =>
+                factoryId === PLUGIN_VIEW_FACTORY_ID ? viewWidgets.get(options!.id) : container
+        };
+    });
+
+    it('expands only the first view and hides none when no view declares a visibility', async () => {
+        const options = await prepare(
+            { id: 'first.view', name: 'First' },
+            { id: 'second.view', name: 'Second' }
+        );
+
+        expect(options.map(({ initiallyCollapsed, initiallyHidden }) => ({ initiallyCollapsed, initiallyHidden }))).to.deep.equal([
+            { initiallyCollapsed: false, initiallyHidden: false },
+            { initiallyCollapsed: true, initiallyHidden: false }
+        ]);
+    });
+
+    it('collapses a view that asks to start collapsed', async () => {
+        const [part] = await prepare({ id: 'sample.view', name: 'Sample', visibility: 'collapsed' });
+
+        expect(part.initiallyCollapsed).to.equal(true);
+    });
+
+    it('expands a view that asks to start visible, even after the first view', async () => {
+        const [, part] = await prepare(
+            { id: 'first.view', name: 'First' },
+            { id: 'sample.view', name: 'Sample', visibility: 'visible' }
+        );
+
+        expect(part.initiallyCollapsed).to.equal(false);
+    });
+
+    it('collapses a view in the explorer even when it asks to start visible, as VS Code does', async () => {
+        const [part] = await prepareIn('explorer', { id: 'sample.view', name: 'Sample', visibility: 'visible' });
+
+        expect(part.initiallyCollapsed).to.equal(true);
+    });
+
+    it('hides a view that asks to start hidden, even though its when clause holds', async () => {
+        const [part] = await prepare({ id: 'sample.view', name: 'Sample', visibility: 'hidden' });
+
+        expect(part.initiallyHidden).to.equal(true);
+    });
+
+    it('keeps a view that asks to start hidden hidden when its when clause is reevaluated', async () => {
+        await prepare({ id: 'sample.view', name: 'Sample', visibility: 'hidden' });
+
+        await internals().updateViewVisibility('sample.view');
+
+        expect(parts[0].isHidden).to.equal(true);
+    });
+
+    it('gives a view the initial size it declares as its weight in the container', async () => {
+        const [part] = await prepare({ id: 'sample.view', name: 'Sample', initialSize: 2 });
+
+        expect(part.weight).to.equal(2);
     });
 
 });
