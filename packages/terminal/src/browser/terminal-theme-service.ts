@@ -19,7 +19,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { ThemeChangeEvent } from '@theia/core/lib/common/theme';
-import { Event } from '@theia/core';
+import { Emitter, Event } from '@theia/core';
 import { terminalAnsiColorMap } from '../common/terminal-preferences';
 
 @injectable()
@@ -28,8 +28,39 @@ export class TerminalThemeService {
     @inject(ColorRegistry) protected readonly colorRegistry: ColorRegistry;
     @inject(ThemeService) protected readonly themeService: ThemeService;
 
+    protected readonly onDidChangeEmitter = new Emitter<ThemeChangeEvent>();
+    protected appliedTheme: string | undefined;
+
+    /**
+     * Fires when the color theme changes, and when a change in the `ColorRegistry` changes the terminal colors.
+     */
     get onDidChange(): Event<ThemeChangeEvent> {
-        return this.themeService.onDidColorThemeChange;
+        this.listenForChanges();
+        return this.onDidChangeEmitter.event;
+    }
+
+    /**
+     * Subscribes on first use rather than at construction, so that the theme listener runs after the one that applies
+     * a new theme to Monaco, whose color registry the terminal colors are read from.
+     */
+    protected listenForChanges(): void {
+        if (this.appliedTheme !== undefined) {
+            return;
+        }
+        this.appliedTheme = JSON.stringify(this.theme);
+        this.themeService.onDidColorThemeChange(event => {
+            this.appliedTheme = JSON.stringify(this.theme);
+            this.onDidChangeEmitter.fire(event);
+        });
+        // The registry fires on every register() call and assigning the xterm theme repaints the whole terminal,
+        // so only fire when the resolved terminal colors change.
+        this.colorRegistry.onDidChange(() => {
+            const theme = JSON.stringify(this.theme);
+            if (theme !== this.appliedTheme) {
+                this.appliedTheme = theme;
+                this.onDidChangeEmitter.fire({ newTheme: this.themeService.getCurrentTheme() });
+            }
+        });
     }
 
     get theme(): ITheme {

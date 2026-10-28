@@ -75,8 +75,10 @@ export class MCPInstalledEntry implements TreeElement, RegistryEntryContext {
                 title={this.matchedEntry?.name ?? this.local.name}
                 description={this.matchedEntry?.description}
                 // Show what the user has actually installed; fall back to the registry range
-                // for the unusual case where the local entry is missing a recorded version.
+                // for the unusual case where the local entry is missing a recorded version,
+                // and to the server's MCP registry version when neither has one.
                 version={localVersion ?? this.matchedEntry?.version}
+                latestVersion={this.matchedEntry?.latestVersion}
                 identifier={this.matchedEntry?.serverId ?? this.local.registryMetadata?.serverId}
                 verified={this.matchedEntry?.mcpRegistryVerified}
                 hoverService={this.hoverService}
@@ -117,6 +119,7 @@ export class MCPSearchResultEntry implements TreeElement, RegistryEntryContext {
                 title={this.entry.name}
                 description={this.entry.description}
                 version={this.entry.version}
+                latestVersion={this.entry.latestVersion}
                 identifier={this.entry.serverId}
                 verified={this.entry.mcpRegistryVerified}
                 hoverService={this.hoverService}
@@ -130,7 +133,10 @@ export class MCPSearchResultEntry implements TreeElement, RegistryEntryContext {
 interface MCPCardProps {
     title: string;
     description?: string;
+    /** The pinned approval (or installed) version. */
     version?: string;
+    /** The server's current version in the MCP registry, shown when there is no {@link version}. */
+    latestVersion?: string;
     /** Stable identifier shown in the publisher-row slot - typically the registry serverId. */
     identifier?: string;
     /** Drives the trust icon next to `identifier`: verified -> filled check, otherwise question mark. */
@@ -145,6 +151,10 @@ function buildHoverContent(props: MCPCardProps): MarkdownStringImpl {
     const lines = [`**${props.title}**`];
     if (props.version) {
         lines.push('', `_${props.version}_`);
+    } else if (props.latestVersion) {
+        // Labelled here so it does not read as the installed version; the card itself keeps
+        // the bare version, as a longer label would be clipped in the title row.
+        lines.push('', `_${nls.localize('theia/ai-registry/mcp/registryLatestVersion', 'MCP registry: {0}', props.latestVersion)}_`);
     }
     if (props.description) {
         lines.push('', props.description);
@@ -169,7 +179,7 @@ const MCPCard: React.FC<MCPCardProps> = props => {
     return (
         <ExtensionCard
             title={props.title}
-            version={props.version}
+            version={props.version || props.latestVersion}
             description={props.description}
             icon={<i className="codicon codicon-mcp" />}
             iconClassName="theia-mcp-extension-icon"

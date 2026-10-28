@@ -251,7 +251,7 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
 
         const oldValue = this.getDefaultValue(key, overrideIdentifier);
 
-        const overrideValueId = this.nextOverrideValueId;
+        const overrideValueId = this.nextOverrideValueId++;
         let override = overrides.get(overrideId);
         if (!override) {
             override = [];
@@ -300,9 +300,12 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
             const values = overrides.get(overrideId);
             if (values) {
                 const index = values.findIndex(v => v[0] === overrideValueId);
-                if (index) {
+                if (index >= 0) {
                     const oldValue = this.getDefaultValue(key, overrideIdentifier);
                     values.splice(index, 1);
+                    if (values.length === 0) {
+                        overrides.delete(overrideId);
+                    }
                     const newValue = this.getDefaultValue(key, overrideIdentifier);
                     if (!PreferenceUtils.deepEqual(oldValue, newValue)) {
 
@@ -323,9 +326,10 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
                             newValue
                         });
                     }
-                }
-                if (values.length === 0) {
-                    overrides.delete(overrideId);
+                    const property = this.properties.get(key);
+                    if (property) {
+                        this.setJSONSchemasProperty(key, property);
+                    }
                 }
             }
             if (overrides.size === 0) {

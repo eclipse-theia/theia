@@ -385,11 +385,14 @@ export class ElectronMainApplication {
                     options.preventAutomaticShow = true;
                 }
                 this.initialWindow = await this.createWindow({ ...options });
-                TheiaRendererAPI.onApplicationStateChanged(this.initialWindow.webContents, state => {
-                    if (state === 'ready' && urlToOpen) {
-                        this.openUrl(urlToOpen);
-                    }
-                });
+                if (urlToOpen) {
+                    const listener = TheiaRendererAPI.onApplicationStateChanged(this.initialWindow.webContents, state => {
+                        if (state === 'ready') {
+                            listener.dispose();
+                            this.openUrl(urlToOpen);
+                        }
+                    });
+                }
                 if (this.isShowSplashScreen()) {
                     console.log('Showing splash screen');
                     this.configureAndShowSplashScreen(this.initialWindow);
