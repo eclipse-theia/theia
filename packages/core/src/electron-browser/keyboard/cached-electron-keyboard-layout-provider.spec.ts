@@ -18,14 +18,14 @@ import { expect } from 'chai';
 import { Emitter } from '../../common/event';
 import { Deferred } from '../../common/promise-util';
 import { NativeKeyboardLayout } from '../../common/keyboard/keyboard-layout-provider';
-import { ElectronKeyboardLayoutProvider } from './electron-keyboard-layout-provider';
+import { CachedElectronKeyboardLayoutProvider } from './cached-electron-keyboard-layout-provider';
 
-describe('ElectronKeyboardLayoutProvider', () => {
+describe('CachedElectronKeyboardLayoutProvider', () => {
 
     const us: NativeKeyboardLayout = { info: { id: 'com.apple.keylayout.US', lang: 'en' }, mapping: {} };
     const de: NativeKeyboardLayout = { info: { id: 'com.apple.keylayout.German', lang: 'de' }, mapping: {} };
 
-    class TestProvider extends ElectronKeyboardLayoutProvider {
+    class TestProvider extends CachedElectronKeyboardLayoutProvider {
         readonly stored = new Map<string, unknown>();
         readonly announced: NativeKeyboardLayout[] = [];
         readonly warnings: string[] = [];
@@ -35,7 +35,7 @@ describe('ElectronKeyboardLayoutProvider', () => {
         constructor(cached?: NativeKeyboardLayout) {
             super();
             if (cached) {
-                this.stored.set(ElectronKeyboardLayoutProvider.STORAGE_KEY, cached);
+                this.stored.set(CachedElectronKeyboardLayoutProvider.STORAGE_KEY, cached);
             }
             Object.assign(this, {
                 delegate: { getNativeLayout: () => this.backend.promise },
@@ -53,7 +53,7 @@ describe('ElectronKeyboardLayoutProvider', () => {
         }
 
         get cache(): NativeKeyboardLayout | undefined {
-            return this.stored.get(ElectronKeyboardLayoutProvider.STORAGE_KEY) as NativeKeyboardLayout | undefined;
+            return this.stored.get(CachedElectronKeyboardLayoutProvider.STORAGE_KEY) as NativeKeyboardLayout | undefined;
         }
     }
 

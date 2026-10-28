@@ -33,7 +33,7 @@ export const ElectronKeyboardLayoutDelegate = Symbol('ElectronKeyboardLayoutDele
  * they are resolved again when they are not.
  */
 @injectable()
-export class ElectronKeyboardLayoutProvider implements KeyboardLayoutProvider {
+export class CachedElectronKeyboardLayoutProvider implements KeyboardLayoutProvider {
 
     static readonly STORAGE_KEY = 'keyboard.nativeLayout';
 
@@ -48,7 +48,7 @@ export class ElectronKeyboardLayoutProvider implements KeyboardLayoutProvider {
     @inject(ElectronKeyboardLayoutChangeNotifier)
     protected readonly changeNotifier: ElectronKeyboardLayoutChangeNotifier;
 
-    @inject(ILogger) @named('core:ElectronKeyboardLayoutProvider')
+    @inject(ILogger) @named('core:CachedElectronKeyboardLayoutProvider')
     protected readonly logger: ILogger;
 
     @postConstruct()
@@ -57,7 +57,7 @@ export class ElectronKeyboardLayoutProvider implements KeyboardLayoutProvider {
     }
 
     async getNativeLayout(): Promise<NativeKeyboardLayout> {
-        const cached = await this.storage.getData<NativeKeyboardLayout>(ElectronKeyboardLayoutProvider.STORAGE_KEY);
+        const cached = await this.storage.getData<NativeKeyboardLayout>(CachedElectronKeyboardLayoutProvider.STORAGE_KEY);
         const fresh = this.delegate.getNativeLayout().then(layout => {
             this.storeLayout(layout);
             return layout;
@@ -78,7 +78,7 @@ export class ElectronKeyboardLayoutProvider implements KeyboardLayoutProvider {
     }
 
     protected storeLayout(layout: NativeKeyboardLayout): void {
-        this.storage.setData(ElectronKeyboardLayoutProvider.STORAGE_KEY, layout)
+        this.storage.setData(CachedElectronKeyboardLayoutProvider.STORAGE_KEY, layout)
             .catch(error => this.logger.warn('Could not cache the native keyboard layout.', error));
     }
 }

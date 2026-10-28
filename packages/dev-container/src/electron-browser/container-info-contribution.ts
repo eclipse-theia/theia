@@ -60,7 +60,7 @@ export class ContainerInfoContribution implements FrontendApplicationContributio
         ]);
         this.status = status;
 
-        this.portForwardingService.forwardedPorts.push(...Object.entries(containerInfo?.NetworkSettings.Ports ?? {}).flatMap(([_, ports]) => (
+        this.portForwardingService.addForwardedPorts(Object.entries(containerInfo?.NetworkSettings.Ports ?? {}).flatMap(([_, ports]) => (
             ports.map(port => ({
                 editing: false,
                 address: port.HostIp ?? '',

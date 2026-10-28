@@ -825,7 +825,7 @@ configure(): void {
 
 <a name="startup-needed-request"></a>
 
-* [1.1](#startup-needed-request) A result that the workbench cannot be shown without should be requested once, as early as possible, and cached where it is stable across sessions, so that the start-up uses the cached value and only refreshes it in the background. See `ElectronKeyboardLayoutProvider` for the native keyboard layout.
+* [1.1](#startup-needed-request) A result that the workbench cannot be shown without should be requested once, as early as possible, and cached where it is stable across sessions, so that the start-up uses the cached value and only refreshes it in the background. See `CachedElectronKeyboardLayoutProvider` for the native keyboard layout.
 
 <a name="startup-no-serial-requests"></a>
 
