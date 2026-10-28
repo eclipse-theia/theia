@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 import * as path from 'path';
-import { isAppFileUrl } from '../electron-common/app-scheme';
 import { FrontendApplicationConfig } from '@theia/application-package';
 import { FrontendApplicationState, StopReason } from '../common/frontend-application-state';
 import { BrowserWindow, BrowserWindowConstructorOptions } from '../../electron-shared/electron';
@@ -25,6 +24,7 @@ import { DisposableCollection, Emitter, Event } from '../common';
 import { createDisposableListener } from './event-utils';
 import { TheiaRendererAPI } from './electron-api-main';
 import { LaunchArgsStore } from './launch-args-store';
+import { ElectronAppSchemeService } from './electron-app-scheme-service';
 
 /**
  * Theia tracks the maximized state of Electron Browser Windows.
@@ -64,6 +64,7 @@ export class TheiaElectronWindow {
     @inject(WindowApplicationConfig) protected readonly config: WindowApplicationConfig;
     @inject(ElectronMainApplicationGlobals) protected readonly globals: ElectronMainApplicationGlobals;
     @inject(LaunchArgsStore) protected readonly launchArgsStore: LaunchArgsStore;
+    @inject(ElectronAppSchemeService) protected readonly appSchemeService: ElectronAppSchemeService;
 
     protected onDidCloseEmitter = new Emitter<void>();
 
@@ -173,7 +174,7 @@ export class TheiaElectronWindow {
 
     protected async handleStopRequest(onSafeCallback: () => Promise<unknown>, reason: StopReason): Promise<boolean> {
         // Only confirm close to windows that have loaded our frontend, i.e. the frontend page under the application scheme.
-        const isFrontend = isAppFileUrl(this.window.webContents.getURL(), path.basename(this.globals.THEIA_FRONTEND_HTML_PATH));
+        const isFrontend = this.appSchemeService.isFrontendUrl(this.window.webContents.getURL(), path.basename(this.globals.THEIA_FRONTEND_HTML_PATH));
         const safeToClose = !isFrontend || await this.checkSafeToStop(reason);
         if (safeToClose) {
             try {

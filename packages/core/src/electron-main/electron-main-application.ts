@@ -47,7 +47,7 @@ import { StopReason } from '../common/frontend-application-state';
 import { dynamicRequire } from '../node/dynamic-require';
 import { ThemeMode } from '../common/theme';
 import { backendGlobal } from '../node/backend-global';
-import { appSchemePrivileges, appUri, handleAppScheme, isAppFileUrl, PrivilegedScheme, registerPrivilegedSchemes } from './app-scheme';
+import { ElectronAppSchemeService } from './electron-app-scheme-service';
 
 export { ElectronMainApplicationGlobals };
 
@@ -195,6 +195,10 @@ export class ElectronMainApplication {
     @inject(ElectronMainApplicationGlobals)
     protected readonly globals: ElectronMainApplicationGlobals;
 
+    /** Registers the application scheme as soon as the main process resolves the application, before the app is ready. */
+    @inject(ElectronAppSchemeService)
+    protected readonly appSchemeService: ElectronAppSchemeService;
+
     @inject(ElectronMainProcessArgv)
     protected processArgv: ElectronMainProcessArgv;
 
@@ -232,7 +236,6 @@ export class ElectronMainApplication {
 
     /** Used to temporarily store the reference to an early created main window */
     protected initialWindow?: BrowserWindow;
-    protected frontendServed = false;
 
     get config(): FrontendApplicationConfig {
         if (!this._config) {
@@ -253,22 +256,6 @@ export class ElectronMainApplication {
         } else {
             return false;
         }
-    }
-
-    constructor() {
-        // The privileged schemes must be registered before the app is ready, and the frontend must be served
-        // once it is, whatever a subclass does in `start()`: both are arranged here, when the main process
-        // resolves the application.
-        registerPrivilegedSchemes(this.getPrivilegedSchemes());
-        app.whenReady().then(() => this.serveFrontend());
-    }
-
-    /**
-     * The schemes to register as privileged, in one call, before the app is ready. Subclasses that need
-     * their own privileged schemes add them here.
-     */
-    protected getPrivilegedSchemes(): PrivilegedScheme[] {
-        return [appSchemePrivileges()];
     }
 
     async start(config: FrontendApplicationConfig): Promise<void> {
@@ -693,25 +680,17 @@ export class ElectronMainApplication {
         }
     }
 
-    /** Serves the frontend directory through the application scheme. Called once the app is ready. */
-    protected serveFrontend(): void {
-        if (!this.frontendServed) {
-            this.frontendServed = true;
-            handleAppScheme(path.dirname(this.globals.THEIA_FRONTEND_HTML_PATH));
-        }
-    }
-
     protected async createWindowUri(params: WindowSearchParams = {}): Promise<URI> {
         if (!('port' in params)) {
             params.port = (await this.backendPort).toString();
         }
         const query = Object.entries(params).map(([name, value]) => `${name}=${value}`).join('&');
-        return new URI(appUri(path.basename(this.globals.THEIA_FRONTEND_HTML_PATH)))
+        return new URI(this.appSchemeService.getFrontendUrl(path.basename(this.globals.THEIA_FRONTEND_HTML_PATH)))
             .withQuery(query);
     }
 
     protected isSecondaryWindowUrl(url: string): boolean {
-        return isAppFileUrl(url, path.basename(this.globals.THEIA_SECONDARY_WINDOW_HTML_PATH));
+        return this.appSchemeService.isFrontendUrl(url, path.basename(this.globals.THEIA_SECONDARY_WINDOW_HTML_PATH));
     }
 
     protected getDefaultTheiaWindowOptions(): TheiaBrowserWindowOptions {

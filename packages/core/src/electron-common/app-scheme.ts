@@ -39,23 +39,3 @@ export function isAppFileUrl(url: string, fileName: string): boolean {
         return false;
     }
 }
-
-/** A scheme to register as privileged with Electron's `protocol.registerSchemesAsPrivileged`. */
-export interface PrivilegedScheme {
-    scheme: string;
-    privileges: {
-        standard?: boolean;
-        secure?: boolean;
-        bypassCSP?: boolean;
-        allowServiceWorkers?: boolean;
-        supportFetchAPI?: boolean;
-        corsEnabled?: boolean;
-        stream?: boolean;
-        codeCache?: boolean;
-    };
-}
-
-/** The application scheme's registration: a standard, secure scheme with a V8 code cache. */
-export function appSchemePrivileges(): PrivilegedScheme {
-    return { scheme: APP_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, codeCache: true } };
-}

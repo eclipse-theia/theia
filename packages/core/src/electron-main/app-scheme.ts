@@ -15,10 +15,9 @@
 // *****************************************************************************
 
 import * as path from 'path';
-import { pathToFileURL } from 'url';
-import { APP_HOST, APP_SCHEME, PrivilegedScheme } from '../electron-common/app-scheme';
+import { APP_HOST, APP_SCHEME } from '../electron-common/app-scheme';
 
-export { APP_HOST, APP_ORIGIN, APP_SCHEME, appSchemePrivileges, appUri, isAppFileUrl, PrivilegedScheme } from '../electron-common/app-scheme';
+export { APP_HOST, APP_ORIGIN, APP_SCHEME, appUri, isAppFileUrl } from '../electron-common/app-scheme';
 
 /**
  * The absolute path of the frontend file an application-scheme URL names, or `undefined` for a URL of
@@ -44,36 +43,4 @@ export function resolveAppFile(url: string, frontendRoot: string, pathModule: pa
     const root = pathModule.resolve(frontendRoot);
     const file = pathModule.normalize(pathModule.join(root, pathname));
     return file.startsWith(root + pathModule.sep) ? file : undefined;
-}
-
-/**
- * Registers the given schemes as privileged. Electron accepts this call only before the app is ready,
- * and only the last call counts, so the application makes it once with every scheme it needs.
- */
-export function registerPrivilegedSchemes(schemes: PrivilegedScheme[]): void {
-    const { app, protocol } = require('../../electron-shared/electron') as typeof import('../../electron-shared/electron');
-    if (app.isReady()) {
-        throw new Error('Privileged schemes must be registered before the app is ready.');
-    }
-    protocol.registerSchemesAsPrivileged(schemes);
-}
-
-/**
- * Serves the files of `frontendRoot` under {@link APP_SCHEME}, streamed by Electron's own file fetch,
- * which also answers range requests and sets the content type. Must run once the app is ready.
- */
-export function handleAppScheme(frontendRoot: string): void {
-    const { net, protocol } = require('../../electron-shared/electron') as typeof import('../../electron-shared/electron');
-    protocol.handle(APP_SCHEME, async request => {
-        const file = resolveAppFile(request.url, frontendRoot);
-        if (!file) {
-            return new Response('Not found', { status: 404 });
-        }
-        try {
-            return await net.fetch(pathToFileURL(file).href, { method: request.method, headers: request.headers });
-        } catch (error) {
-            console.debug(`Could not serve ${request.url}:`, error);
-            return new Response('Not found', { status: 404 });
-        }
-    });
 }
