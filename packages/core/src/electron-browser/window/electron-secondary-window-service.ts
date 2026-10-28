@@ -18,7 +18,7 @@ import { inject, injectable, postConstruct } from 'inversify';
 import { DefaultSecondaryWindowService } from '../../browser/window/default-secondary-window-service';
 import { ApplicationShell, ExtractableWidget } from '../../browser';
 import { ElectronWindowService } from './electron-window-service';
-import { createDragPanel, createTitleElement, createWindowControlsContainer, setupMaximizeRestoreToggle } from '../menu/electron-window-title-bar-utils';
+import { ElectronWindowTitleBarService } from '../menu/electron-window-title-bar-service';
 import { Deferred, timeout } from '../../common/promise-util';
 import { isOSX } from '../../common/os';
 import { ElectronWindowPreferences, PREF_WINDOW_ZOOM_LEVEL } from '../../electron-common/electron-window-preferences';
@@ -28,6 +28,9 @@ export class ElectronSecondaryWindowService extends DefaultSecondaryWindowServic
 
     @inject(ElectronWindowPreferences)
     protected readonly electronWindowPreferences: ElectronWindowPreferences;
+
+    @inject(ElectronWindowTitleBarService)
+    protected readonly titleBarService: ElectronWindowTitleBarService;
 
     @postConstruct()
     override init(): void {
@@ -104,11 +107,11 @@ export class ElectronSecondaryWindowService extends DefaultSecondaryWindowServic
         const doc = newWindow.document;
         const windowName = newWindow.name;
 
-        topPanel.appendChild(createDragPanel(doc));
-        topPanel.appendChild(createTitleElement(doc, widget.title.label));
-        topPanel.appendChild(createWindowControlsContainer(doc, windowName));
+        topPanel.appendChild(this.titleBarService.createDragPanel(doc));
+        topPanel.appendChild(this.titleBarService.createTitleElement(doc, widget.title.label));
+        topPanel.appendChild(this.titleBarService.createWindowControlsContainer(doc, windowName));
 
-        setupMaximizeRestoreToggle(doc.body, windowName);
+        this.titleBarService.setupMaximizeRestoreToggle(doc.body, windowName);
     }
     private async canClose(extractableWidget: ExtractableWidget, shell: ApplicationShell, newWindow: Window): Promise<boolean> {
         return this.restoreWidgets(newWindow, extractableWidget, shell);

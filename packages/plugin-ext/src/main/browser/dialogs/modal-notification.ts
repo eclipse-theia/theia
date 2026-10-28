@@ -13,10 +13,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, unmanaged } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@lumino/messaging';
 import { codiconArray, Key } from '@theia/core/lib/browser';
-import { AbstractDialog } from '@theia/core/lib/browser/dialogs';
+import { AbstractDialog, DialogProps } from '@theia/core/lib/browser/dialogs';
 import '../../../../src/main/browser/dialogs/style/modal-notification.css';
 import { MainMessageItem, MainMessageOptions } from '../../../common/plugin-api-rpc';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
@@ -38,8 +38,8 @@ export class ModalNotification extends AbstractDialog<string | undefined> {
 
     protected actionTitle: string | undefined;
 
-    constructor() {
-        super({ title: FrontendApplicationConfigProvider.get().applicationName });
+    constructor(@unmanaged() props?: Partial<DialogProps>) {
+        super({ title: FrontendApplicationConfigProvider.get().applicationName, ...props });
     }
 
     protected override onCloseRequest(msg: Message): void {

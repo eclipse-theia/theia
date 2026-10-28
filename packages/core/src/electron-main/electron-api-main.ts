@@ -77,6 +77,7 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
     protected electronSecurityToken: ElectronSecurityToken;
 
     protected readonly openPopups = new Map<number, Menu>();
+    protected readonly subscribedSecondaryWindowNames = new Set<string>();
 
     onStart(application: ElectronMainApplication): MaybePromise<void> {
         ipcMain.on(CHANNEL_WC_METADATA, event => {
@@ -119,12 +120,7 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
         });
 
         ipcMain.on(CHANNEL_SET_MENU_BAR_VISIBLE, (event, visible: boolean, windowName: string | undefined) => {
-            let electronWindow;
-            if (windowName) {
-                electronWindow = BrowserWindow.getAllWindows().find(win => win.webContents.mainFrame.name === windowName);
-            } else {
-                electronWindow = BrowserWindow.fromWebContents(event.sender);
-            }
+            const electronWindow = this.resolveWindow(event, windowName);
             if (electronWindow) {
                 electronWindow.setMenuBarVisibility(visible);
             } else {
@@ -133,12 +129,7 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
         });
 
         ipcMain.on(CHANNEL_SET_AUTO_HIDE_MENU_BAR, (event, enabled: boolean, windowName: string | undefined) => {
-            let electronWindow;
-            if (windowName) {
-                electronWindow = BrowserWindow.getAllWindows().find(win => win.webContents.mainFrame.name === windowName);
-            } else {
-                electronWindow = BrowserWindow.fromWebContents(event.sender);
-            }
+            const electronWindow = this.resolveWindow(event, windowName);
             if (electronWindow) {
                 electronWindow.autoHideMenuBar = enabled;
             } else {
@@ -156,12 +147,7 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
             y = Math.round(y * zoom) + offset;
             const popup = Menu.buildFromTemplate(this.fromMenuDto(event.sender, menuId, menu));
             this.openPopups.set(menuId, popup);
-            let electronWindow: BrowserWindow | undefined;
-            if (windowName) {
-                electronWindow = BrowserWindow.getAllWindows().find(win => win.webContents.mainFrame.name === windowName);
-            } else {
-                electronWindow = BrowserWindow.fromWebContents(event.sender) || undefined;
-            }
+            const electronWindow = this.resolveWindow(event, windowName);
             popup.popup({
                 window: electronWindow,
                 x,
@@ -181,9 +167,7 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
 
         // focus windows for secondary window support
         ipcMain.on(CHANNEL_FOCUS_WINDOW, (event, windowName) => {
-            const electronWindow = windowName
-                ? BrowserWindow.getAllWindows().find(win => win.webContents.mainFrame.name === windowName)
-                : BrowserWindow.fromWebContents(event.sender);
+            const electronWindow = this.resolveWindow(event, windowName);
             if (electronWindow) {
                 if (electronWindow.isMinimized()) {
                     electronWindow.restore();
@@ -211,43 +195,32 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
         ipcMain.on(CHANNEL_SET_THEME, (event, theme) => application.setTheme(theme));
 
         ipcMain.on(CHANNEL_MINIMIZE, (event, windowName?: string) => {
-            const win = windowName
-                ? BrowserWindow.getAllWindows().find(w => w.webContents.mainFrame.name === windowName)
-                : BrowserWindow.fromWebContents(event.sender);
-            win?.minimize();
+            this.resolveWindow(event, windowName)?.minimize();
         });
 
         ipcMain.on(CHANNEL_IS_MAXIMIZED, (event, windowName?: string) => {
-            const win = windowName
-                ? BrowserWindow.getAllWindows().find(w => w.webContents.mainFrame.name === windowName)
-                : BrowserWindow.fromWebContents(event.sender);
-            event.returnValue = win?.isMaximized() ?? false;
+            event.returnValue = this.resolveWindow(event, windowName)?.isMaximized() ?? false;
         });
 
         ipcMain.on(CHANNEL_MAXIMIZE, (event, windowName?: string) => {
-            const win = windowName
-                ? BrowserWindow.getAllWindows().find(w => w.webContents.mainFrame.name === windowName)
-                : BrowserWindow.fromWebContents(event.sender);
-            win?.maximize();
+            this.resolveWindow(event, windowName)?.maximize();
         });
 
         ipcMain.on(CHANNEL_UNMAXIMIZE, (event, windowName?: string) => {
-            const win = windowName
-                ? BrowserWindow.getAllWindows().find(w => w.webContents.mainFrame.name === windowName)
-                : BrowserWindow.fromWebContents(event.sender);
-            win?.unmaximize();
+            this.resolveWindow(event, windowName)?.unmaximize();
         });
 
         ipcMain.on(CHANNEL_CLOSE, (event, windowName?: string) => {
-            const win = windowName
-                ? BrowserWindow.getAllWindows().find(w => w.webContents.mainFrame.name === windowName)
-                : BrowserWindow.fromWebContents(event.sender);
-            win?.close();
+            this.resolveWindow(event, windowName)?.close();
         });
 
         ipcMain.on(CHANNEL_SUBSCRIBE_SECONDARY_WINDOW_EVENT, (event, windowName: string) => {
-            const targetWindow = BrowserWindow.getAllWindows().find(w => w.webContents.mainFrame.name === windowName);
+            if (this.subscribedSecondaryWindowNames.has(windowName)) {
+                return;
+            }
+            const targetWindow = this.resolveWindow(event, windowName);
             if (targetWindow) {
+                this.subscribedSecondaryWindowNames.add(windowName);
                 const sender = event.sender;
                 const onMaximize = () => sender.send(CHANNEL_ON_SECONDARY_WINDOW_EVENT, windowName, 'maximize');
                 const onUnmaximize = () => sender.send(CHANNEL_ON_SECONDARY_WINDOW_EVENT, windowName, 'unmaximize');
@@ -259,6 +232,7 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
                     targetWindow.removeListener('maximize', onMaximize);
                     targetWindow.removeListener('unmaximize', onUnmaximize);
                     targetWindow.removeListener('focus', onFocus);
+                    this.subscribedSecondaryWindowNames.delete(windowName);
                 });
             }
         });
@@ -272,7 +246,7 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
         });
 
         ipcMain.on(CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW, (event, windowName: string) => {
-            const electronWindow = BrowserWindow.getAllWindows().find(win => win.webContents.mainFrame.name === windowName);
+            const electronWindow = this.resolveWindow(event, windowName);
             if (electronWindow) {
                 electronWindow.webContents.openDevTools();
             } else {
@@ -281,12 +255,7 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
         });
 
         ipcMain.on(CHANNEL_SET_ZOOM_LEVEL, (event, zoomLevel: number, windowName: string | undefined) => {
-            let electronWindow;
-            if (windowName) {
-                electronWindow = BrowserWindow.getAllWindows().find(win => win.webContents.mainFrame.name === windowName);
-            } else {
-                electronWindow = BrowserWindow.fromWebContents(event.sender);
-            }
+            const electronWindow = this.resolveWindow(event, windowName);
             if (electronWindow) {
                 electronWindow.webContents.setZoomLevel(zoomLevel);
             } else {
@@ -376,6 +345,13 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
                 console.warn(`Could not set Jump List with recent workspaces (result = "${result}")`);
             }
         });
+    }
+
+    protected resolveWindow(event: { sender: WebContents }, windowName?: string): BrowserWindow | undefined {
+        if (windowName) {
+            return BrowserWindow.getAllWindows().find(w => w.webContents.mainFrame.name === windowName);
+        }
+        return BrowserWindow.fromWebContents(event.sender) ?? undefined;
     }
 
     fromMenuDto(sender: WebContents, menuId: number, menuDto: InternalMenuDto[]): MenuItemConstructorOptions[] {

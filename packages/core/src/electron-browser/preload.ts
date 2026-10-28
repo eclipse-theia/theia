@@ -44,6 +44,8 @@ let nextMenuId = mainMenuId + 1;
 
 let openUrlHandler: ((url: string) => Promise<boolean>) | undefined;
 
+const subscribedSecondaryWindows = new Set<string>();
+
 ipcRenderer.on(CHANNEL_OPEN_URL, async (event: Electron.IpcRendererEvent, url: string, replyChannel: string) => {
     if (openUrlHandler) {
         event.sender.send(replyChannel, await openUrlHandler(url));
@@ -169,7 +171,10 @@ const api: TheiaCoreAPI = {
         return Disposable.create(() => ipcRenderer.off(CHANNEL_ON_WINDOW_EVENT, h));
     },
     onSecondaryWindowEvent: function (windowName: string, event: WindowEvent, handler: () => void): Disposable {
-        ipcRenderer.send(CHANNEL_SUBSCRIBE_SECONDARY_WINDOW_EVENT, windowName);
+        if (!subscribedSecondaryWindows.has(windowName)) {
+            subscribedSecondaryWindows.add(windowName);
+            ipcRenderer.send(CHANNEL_SUBSCRIBE_SECONDARY_WINDOW_EVENT, windowName);
+        }
         const h = (_event: unknown, name: string, evt: WindowEvent) => {
             if (name === windowName && event === evt) {
                 handler();

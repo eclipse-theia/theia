@@ -749,14 +749,3 @@ export function extractSecondaryWindow(widget: Widget | undefined | null): Windo
     return undefined;
 }
 
-export function getActiveWindow(secondaryWindowService?: SecondaryWindowService): Window {
-    if (window.document.hasFocus()) {
-        return window;
-    }
-    for (const win of secondaryWindowService?.getWindows() ?? []) {
-        if (win.document.hasFocus()) {
-            return win;
-        }
-    }
-    return window;
-}

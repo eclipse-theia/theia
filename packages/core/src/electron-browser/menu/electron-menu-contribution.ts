@@ -30,7 +30,7 @@ import { PREF_WINDOW_ZOOM_LEVEL, ZoomLevel } from '../../electron-common/electro
 import { BrowserMenuBarContribution, MenuBarWidget } from '../../browser/menu/browser-menu-plugin';
 import { WindowService } from '../../browser/window/window-service';
 import { WindowTitleService } from '../../browser/window/window-title-service';
-import { createWindowControlsContainer, setupMaximizeRestoreToggle } from './electron-window-title-bar-utils';
+import { ElectronWindowTitleBarService } from './electron-window-title-bar-service';
 
 import '../../../src/electron-browser/menu/electron-menu-style.css';
 import { ThemeService } from '../../browser/theming';
@@ -98,6 +98,9 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
 
     @inject(CustomTitleWidgetFactory)
     protected readonly customTitleWidgetFactory: CustomTitleWidgetFactory;
+
+    @inject(ElectronWindowTitleBarService)
+    protected readonly titleBarService: ElectronWindowTitleBarService;
 
     protected titleBarStyleChangeFlag = false;
     protected titleBarStyle?: string;
@@ -241,8 +244,8 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         app.shell.addWidget(dragPanel, { area: 'top' });
         this.appendMenu(app.shell);
         this.createCustomTitleWidget(app);
-        app.shell.topPanel.node.append(createWindowControlsContainer(document));
-        setupMaximizeRestoreToggle(document.body);
+        app.shell.topPanel.node.append(this.titleBarService.createWindowControlsContainer(document));
+        this.titleBarService.setupMaximizeRestoreToggle(document.body);
     }
 
     protected createCustomTitleWidget(app: FrontendApplication): void {

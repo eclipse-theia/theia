@@ -18,13 +18,17 @@ import { interfaces } from '@theia/core/shared/inversify';
 import { MainMessageType, MainMessageOptions, MainMessageItem } from '../../common/plugin-api-rpc';
 import { ModalNotification, MessageType } from './dialogs/modal-notification';
 import { BasicMessageRegistryMainImpl } from '../common/basic-message-registry-main';
+import { WindowFocusService } from '@theia/core/lib/browser/window/window-focus-service';
 
 /**
  * Message registry implementation that adds support for the model option via dialog in the browser.
  */
 export class MessageRegistryMainImpl extends BasicMessageRegistryMainImpl {
+    protected readonly windowFocusService: WindowFocusService;
+
     constructor(container: interfaces.Container) {
         super(container);
+        this.windowFocusService = container.get(WindowFocusService);
     }
 
     protected override async doShowMessage(type: MainMessageType, message: string,
@@ -34,7 +38,9 @@ export class MessageRegistryMainImpl extends BasicMessageRegistryMainImpl {
             const messageType = type === MainMessageType.Error ? MessageType.Error :
                 type === MainMessageType.Warning ? MessageType.Warning :
                     MessageType.Info;
-            const modalNotification = new ModalNotification();
+            const modalNotification = new ModalNotification({
+                targetWindow: this.windowFocusService.focusedWindow ?? window
+            });
             return modalNotification.showDialog(messageType, message, options, actions);
         }
         return super.doShowMessage(type, message, options, actions);

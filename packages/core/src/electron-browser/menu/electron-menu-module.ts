@@ -22,6 +22,7 @@ import { ElectronContextMenuRenderer, ElectronTextInputContextMenuContribution }
 import { CustomTitleWidget, CustomTitleWidgetFactory, ElectronMenuContribution } from './electron-menu-contribution';
 import { BrowserMenuNodeFactory } from '../../browser/menu/browser-menu-node-factory';
 import { BrowserMainMenuFactory } from '../../browser/menu/browser-menu-plugin';
+import { ElectronWindowTitleBarService } from './electron-window-title-bar-service';
 
 export default new ContainerModule(bind => {
     bind(ElectronMainMenuFactory).toSelf().inSingletonScope();
@@ -42,4 +43,5 @@ export default new ContainerModule(bind => {
     bind(MenuContribution).to(ElectronTextInputContextMenuContribution).inSingletonScope();
     bind(BrowserMenuNodeFactory).toSelf().inSingletonScope();
     bind(MenuNodeFactory).toService(BrowserMenuNodeFactory);
+    bind(ElectronWindowTitleBarService).toSelf().inSingletonScope();
 });

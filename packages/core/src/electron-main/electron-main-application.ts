@@ -959,7 +959,7 @@ export class ElectronMainApplication {
                 const defaultOptions = this.getDefaultOptions();
                 const options: BrowserWindowConstructorOptions = {
                     ...this.getDefaultTheiaSecondaryWindowBounds(),
-                    frame: this.useNativeWindowFrame,
+                    frame: this.didUseNativeWindowFrameOnStart.get(webContents.id) ?? this.useNativeWindowFrame,
                     minWidth: defaultOptions.minWidth,
                     minHeight: defaultOptions.minHeight,
                     webPreferences: {
