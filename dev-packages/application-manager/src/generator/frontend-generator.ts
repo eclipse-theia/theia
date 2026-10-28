@@ -180,9 +180,9 @@ ${Array.from(frontendModules.values(), jsModulePath => `\
     /** HTML for secondary windows that contain an extracted widget. */
     protected compileSecondaryWindowHtml(): string {
         return `<!DOCTYPE html>
-    <html lang="en">
+<html lang="en">
 
-    <head>
+<head>
     <meta charset="UTF-8">
     <title>Theia — Secondary Window</title>
     <style>
@@ -221,14 +221,14 @@ ${Array.from(frontendModules.values(), jsModulePath => `\
     </style>
     <link rel="stylesheet" href="./bundle.css">
     <link rel="stylesheet" href="./secondary-window.css">
-    </head>
+</head>
 
-    <body>
+<body>
     <div id="theia-top-panel"></div>
     <div id="widget-host"></div>
-    </body>
+</body>
 
-    </html>`;
+</html>`;
     }
 
     protected compileSecondaryIndexJs(secondaryWindowModules: Map<string, string>): string {

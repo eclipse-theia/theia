@@ -4,12 +4,12 @@ A sample VS Code extension for testing menus, toolbars, and dialogs in Theia sec
 
 ## What it tests
 
-- **Tab bar toolbar buttons** (`editor/title`) — icon buttons that appear in the tab title area
-- **Tab context menu** (`editor/title/context`) — right-click menu on the tab
-- **Notifications** — `showInformationMessage` / `showWarningMessage` triggered from commands and webview buttons
-- **Dialogs** — input boxes, quick picks, and save dialogs triggered from the secondary window
-- **Webview message passing** — `postMessage` / `onDidReceiveMessage` across windows
-- **Style consistency** — dynamic CSS injection/removal works identically in main and secondary windows
+- **Tab bar toolbar buttons** (`editor/title`): icon buttons that appear in the tab title area
+- **Tab context menu** (`editor/title/context`): right-click menu on the tab
+- **Notifications**: `showInformationMessage` / `showWarningMessage` triggered from commands and webview buttons
+- **Dialogs**: input boxes, quick picks, and save dialogs triggered from the secondary window
+- **Webview message passing**: `postMessage` / `onDidReceiveMessage` across windows
+- **Style consistency**: dynamic CSS injection/removal works identically in main and secondary windows
 
 ## How to use
 

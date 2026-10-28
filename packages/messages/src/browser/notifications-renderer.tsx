@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import * as React from '@theia/core/shared/react';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { ApplicationShell, ContextMenuRenderer } from '@theia/core/lib/browser';
@@ -71,15 +72,25 @@ export class NotificationsRenderer {
         }));
     }
 
+    /**
+     * Creates a notification overlay in the given secondary window.
+     *
+     * Both toasts and the notification center are rendered into every window
+     * (main and secondary), all driven by the same {@link NotificationManager}
+     * state. This means:
+     * - A toast triggered from any window appears in all windows simultaneously.
+     * - Toggling the notification center opens/closes it in all windows at once.
+     *
+     * Showing toasts everywhere ensures users don't miss notifications regardless
+     * of which window they are looking at. Per-window notification center gating
+     * is a potential future improvement.
+     */
     protected createSecondaryWindowOverlay(win: Window): void {
         const container = win.document.createElement('div');
         container.className = 'theia-notifications-overlay';
         win.document.body.appendChild(container);
         const root = createRoot(container);
-        root.render(<div>
-            <NotificationToastsComponent manager={this.manager} corePreferences={this.corePreferences} contextMenuRenderer={this.contextMenuRenderer} />
-            <NotificationCenterComponent manager={this.manager} contextMenuRenderer={this.contextMenuRenderer} />
-        </div>);
+        root.render(this.renderNotificationComponents());
         this.secondaryWindowRoots.set(win, { root, container });
     }
 
@@ -93,10 +104,21 @@ export class NotificationsRenderer {
     }
 
     protected render(): void {
-        this.containerRoot.render(<div>
-            <NotificationToastsComponent manager={this.manager} corePreferences={this.corePreferences} contextMenuRenderer={this.contextMenuRenderer} />
-            <NotificationCenterComponent manager={this.manager} contextMenuRenderer={this.contextMenuRenderer} />
-        </div>);
+        this.containerRoot.render(this.renderNotificationComponents());
+    }
+
+    protected renderNotificationComponents(): React.ReactNode {
+        return <div>
+            <NotificationToastsComponent
+                manager={this.manager}
+                corePreferences={this.corePreferences}
+                contextMenuRenderer={this.contextMenuRenderer}
+            />
+            <NotificationCenterComponent
+                manager={this.manager}
+                contextMenuRenderer={this.contextMenuRenderer}
+            />
+        </div>;
     }
 
 }
