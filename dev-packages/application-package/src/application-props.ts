@@ -64,6 +64,14 @@ export namespace ElectronFrontendApplicationConfig {
          * Mandatory attribute.
          */
         content?: string;
+        /**
+         * The platforms on which the splash screen is shown, as values of `process.platform`,
+         * e.g. `["win32", "linux"]` for an application that follows the macOS convention of
+         * not showing a splash window there.
+         *
+         * Defaults to all platforms.
+         */
+        platforms?: string[];
     }
     export interface Partial {
 
