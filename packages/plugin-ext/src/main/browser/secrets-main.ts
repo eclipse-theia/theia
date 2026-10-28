@@ -20,6 +20,7 @@
  *--------------------------------------------------------------------------------------------*/
 // code copied and modified from https://github.com/microsoft/vscode/blob/1.55.2/src/vs/workbench/api/browser/mainThreadSecretState.ts
 
+import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { SecretsExt, SecretsMain } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { interfaces } from '@theia/core/shared/inversify';
@@ -35,13 +36,22 @@ export class SecretsMainImpl implements SecretsMain {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.SECRETS_EXT);
         this.credentialsService = container.get(CredentialsService);
         this.credentialsService.onDidChangePassword(e => {
-            const extensionId = e.service.substring(window.location.hostname.length + 1);
+            const extensionId = e.service.substring(SecretsMainImpl.getHost().length + 1);
             this.proxy.$onDidChangePassword({ extensionId, key: e.account });
         });
     }
 
+    /**
+     * The host part of the secret storage keys: the page's host when the backend serves it, otherwise empty.
+     * The Electron frontend thus keeps the empty host of its former `file:` origin, so that secrets stored
+     * before it loaded through the application scheme stay readable.
+     */
+    private static getHost(): string {
+        return Endpoint.isServedByBackend(window.location) ? window.location.hostname : '';
+    }
+
     private static getFullKey(extensionId: string): string {
-        return `${window.location.hostname}-${extensionId}`;
+        return `${SecretsMainImpl.getHost()}-${extensionId}`;
     }
 
     async $getPassword(extensionId: string, key: string): Promise<string | undefined> {
