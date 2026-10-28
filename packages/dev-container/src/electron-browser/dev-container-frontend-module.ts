@@ -21,7 +21,7 @@ import { RemoteContainerConnectionProvider, RemoteContainerConnectionProviderPat
 import { ContainerConnectionContribution } from './container-connection-contribution';
 import { ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ContainerOutputProvider } from './container-output-provider';
-import { ContainerInfoContribution } from './container-info-contribution';
+import { ContainerInfoContribution, ContainerInfoTitleUpdater } from './container-info-contribution';
 import { FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
 import { WorkspaceOpenHandlerContribution } from '@theia/workspace/lib/browser/workspace-service';
 import { WindowTitleContribution } from '@theia/core/lib/browser/window/window-title-service';
@@ -46,6 +46,8 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toService(ContainerInfoContribution);
     bind(WindowTitleContribution).toService(ContainerInfoContribution);
     bind(LabelProviderContribution).toService(ContainerInfoContribution);
+    bind(ContainerInfoTitleUpdater).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(ContainerInfoTitleUpdater);
 
     bind(DevContainerSuggestionContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(DevContainerSuggestionContribution);
