@@ -27,6 +27,7 @@ import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
 import { ProcessTerminateMessage, ProcessTerminatedMessage } from './hosted-plugin-protocol';
 import { ProcessUtils } from '@theia/core/lib/node/process-utils';
+import { ProcessEnvironment } from '@theia/core/lib/node/process-environment';
 
 export interface IPCConnectionOptions {
     readonly serverName: string;
@@ -68,11 +69,20 @@ export class HostedPluginProcess implements ServerPluginRunner {
     @inject(PluginHostNavigatorState)
     protected readonly navigatorState: PluginHostNavigatorState;
 
+    @inject(ProcessEnvironment)
+    protected readonly processEnvironment: ProcessEnvironment;
+
     private childProcess: cp.ChildProcess | undefined;
     private messagePipe?: BinaryMessagePipe;
     private client: HostedPluginClient;
 
     private terminatingPluginServer = false;
+    /** Identifies the latest `runPluginServer` request, so that a superseded or terminated one does not fork. */
+    private runRequest = 0;
+    /** Whether a `runPluginServer` request is waiting for the environment before it forks. */
+    private forkPending = false;
+    /** Messages for the plugin host received before it was forked. */
+    private pendingMessages: Uint8Array[] = [];
 
     public setClient(client: HostedPluginClient): void {
         if (this.client) {
@@ -100,10 +110,16 @@ export class HostedPluginProcess implements ServerPluginRunner {
     public onMessage(pluginHostId: string, message: Uint8Array): void {
         if (this.messagePipe) {
             this.messagePipe.send(message);
+        } else if (this.forkPending) {
+            this.pendingMessages.push(message);
         }
     }
 
     async terminatePluginServer(): Promise<void> {
+        // Cancel a fork that is still waiting for the environment, see `runPluginServer`
+        this.runRequest++;
+        this.forkPending = false;
+        this.pendingMessages = [];
         if (this.childProcess === undefined) {
             return;
         }
@@ -145,16 +161,33 @@ export class HostedPluginProcess implements ServerPluginRunner {
             this.terminatePluginServer();
         }
         this.terminatingPluginServer = false;
-        this.childProcess = this.fork({
-            serverName: serverName ?? 'hosted-plugin',
-            logger: this.logger,
-            args: []
-        });
+        this.messagePipe = undefined;
+        const request = ++this.runRequest;
+        this.forkPending = true;
+        // The plugin host and the processes that plugins spawn (language servers, debug adapters) inherit the
+        // environment of the backend, which may still be waiting for the PATH of the user's login shell.
+        // Messages for the plugin host that arrive in the meantime are kept and delivered once it runs.
+        this.processEnvironment.ready.then(() => {
+            if (request !== this.runRequest || this.terminatingPluginServer) {
+                return;
+            }
+            this.forkPending = false;
+            this.childProcess = this.fork({
+                serverName: serverName ?? 'hosted-plugin',
+                logger: this.logger,
+                args: []
+            });
 
-        this.messagePipe = new BinaryMessagePipe(this.childProcess.stdio[4] as Duplex);
-        this.messagePipe.onMessage(buffer => {
-            if (this.client) {
-                this.client.postMessage(PLUGIN_HOST_BACKEND, buffer);
+            this.messagePipe = new BinaryMessagePipe(this.childProcess.stdio[4] as Duplex);
+            this.messagePipe.onMessage(buffer => {
+                if (this.client) {
+                    this.client.postMessage(PLUGIN_HOST_BACKEND, buffer);
+                }
+            });
+            const pending = this.pendingMessages;
+            this.pendingMessages = [];
+            for (const message of pending) {
+                this.messagePipe.send(message);
             }
         });
     }

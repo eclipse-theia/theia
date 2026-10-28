@@ -19,6 +19,7 @@ import * as fs from 'fs';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { EnvironmentUtils } from '@theia/core/lib/node/environment-utils';
+import { ProcessEnvironment } from '@theia/core/lib/node/process-environment';
 import { BaseTerminalServer } from './base-terminal-server';
 import { ShellProcessFactory, getRootPath } from './shell-process';
 import { ProcessManager, TerminalProcess } from '@theia/process/lib/node';
@@ -47,6 +48,7 @@ interface WindowsProcess {
 @injectable()
 export class ShellTerminalServer extends BaseTerminalServer implements IShellTerminalServer {
     @inject(EnvironmentUtils) protected environmentUtils: EnvironmentUtils;
+    @inject(ProcessEnvironment) protected readonly processEnvironment: ProcessEnvironment;
 
     readonly collections: MultiKeyMap<string, EnvironmentVariableCollectionWithPersistence> = new MultiKeyMap(2);
 
@@ -60,6 +62,8 @@ export class ShellTerminalServer extends BaseTerminalServer implements IShellTer
 
     async create(options: IShellTerminalServerOptions): Promise<number> {
         try {
+            // The shell inherits the environment of the backend, which may still be waiting for the PATH of the user's login shell.
+            await this.processEnvironment.ready;
             this.validateTerminalOptions(options);
             if (options.strictEnv !== true) {
                 options.env = this.environmentUtils.mergeProcessEnv(options.env);

@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import * as path from 'path';
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { ProcessEnvironment } from '@theia/core/lib/node/process-environment';
 import { spawn, ChildProcess, execSync } from 'child_process';
 import { ShellExecutionServer, ShellExecutionRequest, ShellExecutionResult } from '../common/shell-execution-server';
 
@@ -26,10 +27,15 @@ const MAX_OUTPUT_SIZE = 1024 * 1024; // 1MB
 @injectable()
 export class ShellExecutionServerImpl implements ShellExecutionServer {
 
+    @inject(ProcessEnvironment)
+    protected readonly processEnvironment: ProcessEnvironment;
+
     protected readonly runningProcesses = new Map<string, ChildProcess>();
     protected readonly canceledExecutions = new Set<string>();
 
     async execute(request: ShellExecutionRequest): Promise<ShellExecutionResult> {
+        // The command inherits the environment of the backend, which may still be waiting for the PATH of the user's login shell.
+        await this.processEnvironment.ready;
         const { command, cwd, timeout, executionId } = request;
         if (cwd && !path.isAbsolute(cwd)) {
             throw new Error(

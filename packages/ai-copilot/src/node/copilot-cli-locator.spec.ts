@@ -24,8 +24,8 @@ import { CopilotCliLocator, COPILOT_CLI_PATH_ENV } from './copilot-cli-locator';
 class TestableCopilotCliLocator extends CopilotCliLocator {
     constructor() {
         super();
-        // The logger is injected in production, and read-only for everyone else.
-        Object.assign(this, { logger: new MockLogger() });
+        // The logger and the process environment are injected in production, and read-only for everyone else.
+        Object.assign(this, { logger: new MockLogger(), processEnvironment: { ready: Promise.resolve() } });
     }
 
     callToPlatformPackageCandidates(base: string): string[] {

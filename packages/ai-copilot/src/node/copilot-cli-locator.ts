@@ -21,6 +21,7 @@ import { delimiter, dirname, join } from 'path';
 import { promisify } from 'util';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ILogger, nls } from '@theia/core';
+import { ProcessEnvironment } from '@theia/core/lib/node/process-environment';
 
 const execFileAsync = promisify(execFile);
 
@@ -50,6 +51,9 @@ const NPM_ROOT_TIMEOUT_MS = 5_000;
  */
 @injectable()
 export class CopilotCliLocator {
+
+    @inject(ProcessEnvironment)
+    protected readonly processEnvironment: ProcessEnvironment;
 
     @inject(ILogger) @named('ai-copilot:CopilotCliLocator')
     protected readonly logger: ILogger;
@@ -89,6 +93,9 @@ export class CopilotCliLocator {
     }
 
     protected async doResolve(): Promise<string> {
+        // The lookup goes by the PATH of the backend, which may still be waiting for that of the user's login shell,
+        // and the CLI it finds is spawned with that environment, e.g. by the model discovery at start-up.
+        await this.processEnvironment.ready;
         if (this.configuredPath) {
             const configured = await this.resolveConfiguredPath(this.configuredPath);
             if (!configured) {

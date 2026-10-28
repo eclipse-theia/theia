@@ -22,6 +22,7 @@ import { MCPOAuthClientProviderFactory } from './mcp-oauth-client-provider-facto
 import { MCPOAuthCredentialStore } from './mcp-oauth-credential-store';
 import { deriveCredentialScope, normalizeOAuthUrl } from './mcp-oauth-keystore';
 import { PreferenceUtils, ILogger } from '@theia/core';
+import { ProcessEnvironment } from '@theia/core/lib/node/process-environment';
 import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
 
 @injectable()
@@ -34,6 +35,9 @@ export class MCPServerManagerImpl implements MCPServerManager {
     protected client?: MCPFrontendNotificationService;
     protected serverListeners: Map<string, Disposable> = new Map();
     protected roots: string[] | undefined;
+
+    @inject(ProcessEnvironment)
+    protected readonly processEnvironment: ProcessEnvironment;
 
     @inject(MCPOAuthClientProviderFactory)
     protected readonly oauthClientProviderFactory: MCPOAuthClientProviderFactory;
@@ -121,6 +125,9 @@ export class MCPServerManagerImpl implements MCPServerManager {
                 server.update(resolved);
             }
         }
+        // A local server is a command that inherits the environment of the backend, which may still be waiting
+        // for the PATH of the user's login shell, e.g. when the server starts automatically at start-up.
+        await this.processEnvironment.ready;
         await server.start({ interactive: !!options.interactive });
         this.notifyClients();
     }

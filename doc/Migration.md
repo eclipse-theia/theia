@@ -9,6 +9,10 @@ Please see the latest version (`master`) for the most up-to-date information. Pl
 
 ### General
 
+_Electron: the login shell environment arrives after the backend has started_:
+
+The Electron main process no longer blocks on the user's login shell before anything else happens. The backend is forked right away, with the environment of the GUI application, and receives the shell's `PATH` from the main process once it has been resolved. Backend code that spawns processes which must find the user's tools must await `ProcessEnvironment.ready` from `@theia/core/lib/node/process-environment` before spawning; the plugin host, terminals, tasks, MCP servers and the AI shell tools do so. Code that spawns without waiting may run with the GUI application's `PATH`, which the blocking `fix-path` of earlier versions prevented. In a browser deployment, on Windows, and in `--no-cluster` mode `ready` resolves at once. The `@theia/electron/shared/fix-path` re-export stays available but is deprecated; `@theia/electron/shared/shell-path` is what the main process uses now.
+
 _AI Configuration View_:
 
 The AI Configuration view (`@theia/ai-ide`) has been reworked from a tabbed dock panel into a master–detail tree driven by a new public contribution point, `AiConfigurationCategory`.
