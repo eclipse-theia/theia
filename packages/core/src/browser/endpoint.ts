@@ -45,7 +45,12 @@ export class Endpoint {
      * and the `port` search parameter.
      */
     protected get isServedByBackend(): boolean {
-        return this.location.protocol === Endpoint.PROTO_HTTP || this.location.protocol === Endpoint.PROTO_HTTPS;
+        return Endpoint.isServedByBackend(this.location);
+    }
+
+    /** Whether a page at `location` is served by the backend over HTTP(S). */
+    static isServedByBackend(location: Pick<Endpoint.Location, 'protocol'>): boolean {
+        return location.protocol === Endpoint.PROTO_HTTP || location.protocol === Endpoint.PROTO_HTTPS;
     }
 
     protected get pathname(): string {

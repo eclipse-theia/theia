@@ -220,7 +220,7 @@ export class WebSocketConnectionSource implements ConnectionSource {
      * Path for Socket.io to make its requests to.
      */
     protected createSocketIoPath(url: string): string | undefined {
-        if (location.protocol !== Endpoint.PROTO_HTTP && location.protocol !== Endpoint.PROTO_HTTPS) {
+        if (!Endpoint.isServedByBackend(location)) {
             // The page is not served by the backend (a file or application scheme origin): the backend is at its root.
             return '/socket.io';
         }

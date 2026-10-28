@@ -21,6 +21,15 @@ const expect = chai.expect;
 
 describe('Endpoint', () => {
 
+    describe('00 #isServedByBackend', () => {
+        it('is served by the backend over HTTP and HTTPS only', () => {
+            expect(Endpoint.isServedByBackend({ protocol: 'http:' })).to.be.true;
+            expect(Endpoint.isServedByBackend({ protocol: 'https:' })).to.be.true;
+            expect(Endpoint.isServedByBackend({ protocol: 'file:' })).to.be.false;
+            expect(Endpoint.isServedByBackend({ protocol: 'theia-app:' })).to.be.false;
+        });
+    });
+
     describe('01 #getWebSocketUrl', () => {
 
         it('Should correctly join root pathname', () => {
