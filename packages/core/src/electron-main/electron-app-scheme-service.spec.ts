@@ -37,6 +37,9 @@ class TestElectronAppSchemeService extends ElectronAppSchemeServiceImpl {
     override bridgeBackendRequests(electronSession: Session): void {
         super.bridgeBackendRequests(electronSession);
     }
+    override storageMigrationScript(entries: [string, string][]): string {
+        return super.storageMigrationScript(entries);
+    }
 }
 
 /** A session that holds the token cookie for {@link BACKEND_URL} only. */
@@ -207,6 +210,33 @@ describe('ElectronAppSchemeServiceImpl', () => {
             await sendHeaders(request(1, {}));
             errorOccurred({ id: 1 });
             expect(await receiveHeaders(response(1, {}))).to.deep.equal({});
+        });
+    });
+
+    describe('storageMigrationScript', () => {
+
+        /** Runs the script as the migration page would, against the given storage. */
+        function runScript(storage: Map<string, string>, entries: [string, string][]): number {
+            const localStorage = {
+                getItem: (key: string) => storage.get(key),
+                setItem: (key: string, value: string) => storage.set(key, value)
+            };
+            return new Function('localStorage', `return ${service.storageMigrationScript(entries)};`)(localStorage);
+        }
+
+        it('copies the entries that the storage does not have', () => {
+            const storage = new Map<string, string>();
+            const copied = runScript(storage, [['theia:/workspace:layout', '{"version":5}'], ['localeId', 'de']]);
+            expect(copied).to.equal(2);
+            expect([...storage]).to.deep.equal([['theia:/workspace:layout', '{"version":5}'], ['localeId', 'de']]);
+        });
+
+        it('keeps the entries that the storage has already', () => {
+            const storage = new Map<string, string>([['localeId', 'fr']]);
+            const copied = runScript(storage, [['localeId', 'de'], ['other', 'a "quoted" value\nover two lines']]);
+            expect(copied).to.equal(1);
+            expect(storage.get('localeId')).to.equal('fr');
+            expect(storage.get('other')).to.equal('a "quoted" value\nover two lines');
         });
     });
 });

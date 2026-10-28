@@ -14,15 +14,39 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import { pathToFileURL } from 'url';
 import {
-    app, CustomScheme, net, OnBeforeSendHeadersListenerDetails, OnHeadersReceivedListenerDetails, protocol, session, Session
+    app, CustomScheme, net, OnBeforeSendHeadersListenerDetails, OnHeadersReceivedListenerDetails, protocol, session, Session, WebContents, WebContentsView
 } from '../../electron-shared/electron';
 import { inject, injectable, postConstruct } from '../../shared/inversify';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 import { APP_ORIGIN, APP_SCHEME, appUri, isAppFileUrl, resolveAppFile } from './app-scheme';
 import { ElectronMainApplicationGlobals } from './electron-main-constants';
+
+/** The page under the application scheme through which the storage of the former `file:` origin is migrated. */
+const STORAGE_MIGRATION_PAGE = 'theia-storage-migration.html';
+/** The file in the user data folder that records that the storage has been migrated. */
+const STORAGE_MIGRATION_MARKER = '.theia-app-storage-migrated';
+/** How long the frontend waits for the storage migration at most. */
+const STORAGE_MIGRATION_TIMEOUT = 5000;
+
+/**
+ * Copies the given local storage entries into the page's local storage, except those that it has already.
+ * Runs in the migration page, so it must not refer to anything outside of its body.
+ */
+function copyMissingStorageEntries(storage: Pick<Storage, 'getItem' | 'setItem'>, entries: [string, string][]): number {
+    let copied = 0;
+    for (const [key, value] of entries) {
+        if (typeof storage.getItem(key) !== 'string') {
+            storage.setItem(key, value);
+            copied++;
+        }
+    }
+    return copied;
+}
 
 export const ElectronAppSchemeService = Symbol('ElectronAppSchemeService');
 /**
@@ -53,10 +77,14 @@ export class ElectronAppSchemeServiceImpl implements ElectronAppSchemeService {
      */
     protected readonly backendRequests = new Map<number, { preflight: boolean, requestedHeaders?: string }>();
 
+    /** Settles when the frontend's storage has been migrated from its former origin, or that has failed. */
+    protected storageMigrated: Promise<void> = Promise.resolve();
+
     @postConstruct()
     protected init(): void {
         this.registerPrivilegedSchemes(this.getPrivilegedSchemes());
         app.whenReady().then(() => {
+            this.storageMigrated = this.migrateStorageOnce();
             this.serveFrontend();
             this.bridgeBackendRequests(session.defaultSession);
         });
@@ -180,6 +208,11 @@ export class ElectronAppSchemeServiceImpl implements ElectronAppSchemeService {
      * own file fetch, which also answers range requests and sets the content type.
      */
     protected async handleRequest(request: Request): Promise<Response> {
+        if (this.isFrontendUrl(request.url, STORAGE_MIGRATION_PAGE)) {
+            return new Response('<!DOCTYPE html><html><head><title></title></head><body></body></html>', { headers: { 'Content-Type': 'text/html' } });
+        }
+        // No page of the frontend may run before its storage is in place.
+        await this.storageMigrated;
         const file = this.resolveFrontendFile(request.url);
         if (!file) {
             return new Response('Not found', { status: 404 });
@@ -198,5 +231,82 @@ export class ElectronAppSchemeServiceImpl implements ElectronAppSchemeService {
      */
     protected resolveFrontendFile(url: string): string | undefined {
         return resolveAppFile(url, path.dirname(this.globals.THEIA_FRONTEND_HTML_PATH));
+    }
+
+    /**
+     * Migrates the local storage of the frontend's former `file:` origin, once per user data folder, waiting
+     * at most {@link STORAGE_MIGRATION_TIMEOUT} milliseconds. Failures are logged, the frontend starts anyway.
+     */
+    protected migrateStorageOnce(): Promise<void> {
+        const marker = path.join(app.getPath('userData'), STORAGE_MIGRATION_MARKER);
+        if (fs.existsSync(marker)) {
+            return Promise.resolve();
+        }
+        const migration = this.migrateStorage()
+            .then(() => fs.promises.writeFile(marker, new Date().toISOString()))
+            .catch(error => console.warn('Could not migrate the local storage of the frontend from its former file: origin:', error));
+        const timeout = new Promise<void>(resolve => setTimeout(() => {
+            resolve();
+        }, STORAGE_MIGRATION_TIMEOUT).unref());
+        return Promise.race([migration, timeout]);
+    }
+
+    /**
+     * Copies the local storage of the `file:` origin, under which earlier versions loaded the frontend, into the
+     * application scheme's origin, so that the frontend keeps its layout, its locale and the other state it stores
+     * there. Entries that the new origin has already are kept. Without any local storage in the user data folder,
+     * as on a fresh installation, there is nothing to migrate.
+     */
+    protected async migrateStorage(): Promise<void> {
+        if (!fs.existsSync(path.join(app.getPath('userData'), 'Local Storage'))) {
+            return;
+        }
+        const entries = await this.readFileOriginStorage();
+        if (entries.length === 0) {
+            return;
+        }
+        const copied = await this.withHiddenPage(async page => {
+            await page.loadURL(this.getFrontendUrl(STORAGE_MIGRATION_PAGE));
+            return page.executeJavaScript(this.storageMigrationScript(entries));
+        });
+        await session.defaultSession.flushStorageData();
+        console.info(`Migrated ${copied} of ${entries.length} local storage entries of the frontend from its former file: origin.`);
+    }
+
+    /** The script that the migration page runs to copy the given entries into its local storage. */
+    protected storageMigrationScript(entries: [string, string][]): string {
+        return `(${copyMissingStorageEntries.toString()})(localStorage, ${JSON.stringify(entries)})`;
+    }
+
+    /** Reads the local storage of the `file:` origin through a blank page that is not shown. */
+    protected async readFileOriginStorage(): Promise<[string, string][]> {
+        const folder = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'theia-storage-migration-'));
+        try {
+            const page = path.join(folder, 'blank.html');
+            await fs.promises.writeFile(page, '<!DOCTYPE html><html><head><title></title></head><body></body></html>');
+            return await this.withHiddenPage(async contents => {
+                await contents.loadFile(page);
+                return contents.executeJavaScript('Object.keys(localStorage).map(key => [key, localStorage.getItem(key)])');
+            });
+        } finally {
+            await fs.promises.rm(folder, { recursive: true, force: true });
+        }
+    }
+
+    /**
+     * Runs `task` with the web contents of a view without node integration that is not attached to any window,
+     * so that it neither shows nor counts as a window, whose closing could otherwise quit the application. The
+     * page is closed afterwards.
+     */
+    protected async withHiddenPage<T>(task: (contents: WebContents) => Promise<T>): Promise<T> {
+        const view = new WebContentsView({ webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false } });
+        try {
+            return await task(view.webContents);
+        } finally {
+            // Closing rather than destroying lets the page unload, which hands its storage changes to the browser process.
+            const destroyed = new Promise<void>(resolve => view.webContents.once('destroyed', () => resolve()));
+            view.webContents.close();
+            await destroyed;
+        }
     }
 }
