@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, named, postConstruct } from 'inversify';
+import { inject, injectable, named } from 'inversify';
 import {
     screen, app, BrowserWindow, WebContents, Event as ElectronEvent, BrowserWindowConstructorOptions, nativeImage,
     nativeTheme, shell, dialog
@@ -47,7 +47,7 @@ import { StopReason } from '../common/frontend-application-state';
 import { dynamicRequire } from '../node/dynamic-require';
 import { ThemeMode } from '../common/theme';
 import { backendGlobal } from '../node/backend-global';
-import { APP_SCHEME, appUri, handleAppScheme, registerAppScheme } from './app-scheme';
+import { appSchemePrivileges, appUri, handleAppScheme, isAppFileUrl, PrivilegedScheme, registerPrivilegedSchemes } from './app-scheme';
 
 export { ElectronMainApplicationGlobals };
 
@@ -255,14 +255,20 @@ export class ElectronMainApplication {
         }
     }
 
+    constructor() {
+        // The privileged schemes must be registered before the app is ready, and the frontend must be served
+        // once it is, whatever a subclass does in `start()`: both are arranged here, when the main process
+        // resolves the application.
+        registerPrivilegedSchemes(this.getPrivilegedSchemes());
+        app.whenReady().then(() => this.serveFrontend());
+    }
+
     /**
-     * Registers the application scheme as soon as the application is constructed: the scheme must be
-     * registered before the app is ready, and applications that override `start()` must not have to
-     * remember it.
+     * The schemes to register as privileged, in one call, before the app is ready. Subclasses that need
+     * their own privileged schemes add them here.
      */
-    @postConstruct()
-    protected init(): void {
-        registerAppScheme();
+    protected getPrivilegedSchemes(): PrivilegedScheme[] {
+        return [appSchemePrivileges()];
     }
 
     async start(config: FrontendApplicationConfig): Promise<void> {
@@ -293,7 +299,6 @@ export class ElectronMainApplication {
                     const port = await this.stopwatch.startAsync('electron-main-start-backend', 'Starting backend', () => this.startBackend());
                     this._backendPort.resolve(port);
                     await app.whenReady();
-                    this.serveFrontend();
                     await this.stopwatch.startAsync('electron-main-security-token', 'Attaching security token',
                         () => this.attachElectronSecurityToken(port));
                     await this.stopwatch.startAsync('electron-main-start-contributions', 'Starting contributions',
@@ -391,7 +396,6 @@ export class ElectronMainApplication {
     protected showInitialWindow(urlToOpen: string | undefined): void {
         if (this.isShowWindowEarly() || this.isShowSplashScreen()) {
             app.whenReady().then(async () => {
-                this.serveFrontend();
                 const options = await this.getLastWindowOptions();
                 // If we want to show a splash screen, don't auto open the main window
                 if (this.isShowSplashScreen()) {
@@ -689,10 +693,7 @@ export class ElectronMainApplication {
         }
     }
 
-    /**
-     * Serves the frontend directory through the application scheme. Called once the app is ready, from
-     * whichever path gets there first: the early window or the regular startup sequence.
-     */
+    /** Serves the frontend directory through the application scheme. Called once the app is ready. */
     protected serveFrontend(): void {
         if (!this.frontendServed) {
             this.frontendServed = true;
@@ -710,8 +711,7 @@ export class ElectronMainApplication {
     }
 
     protected isSecondaryWindowUrl(url: string): boolean {
-        const uri = new URI(url);
-        return uri.scheme === APP_SCHEME && uri.path.base === path.basename(this.globals.THEIA_SECONDARY_WINDOW_HTML_PATH);
+        return isAppFileUrl(url, path.basename(this.globals.THEIA_SECONDARY_WINDOW_HTML_PATH));
     }
 
     protected getDefaultTheiaWindowOptions(): TheiaBrowserWindowOptions {
