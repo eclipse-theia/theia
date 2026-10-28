@@ -42,20 +42,12 @@ function createMirror(
     onWindowLoadedEmitter: Emitter<Window>,
     onWindowClosedEmitter: Emitter<Window>
 ): SecondaryWindowStyleMirror {
-    const mirror = Object.create(SecondaryWindowStyleMirror.prototype);
-    (mirror as { secondaryWindowService: Partial<SecondaryWindowService> }).secondaryWindowService = {
+    const mirror = new SecondaryWindowStyleMirror();
+    // Stub the @inject-decorated field that inversify would normally provide
+    (mirror as unknown as { secondaryWindowService: Partial<SecondaryWindowService> }).secondaryWindowService = {
         onWindowLoaded: onWindowLoadedEmitter.event,
         onWindowClosed: onWindowClosedEmitter.event,
     };
-    // Initialize internal state
-    (mirror as { cloneMap: Map<unknown, unknown> }).cloneMap = new Map();
-    (mirror as { trackedWindows: Set<Window> }).trackedWindows = new Set();
-    (mirror as { cssomRules: Map<unknown, unknown> }).cssomRules = new Map();
-    (mirror as { mainOriginatedClasses: Map<Window, Set<string>> }).mainOriginatedClasses = new Map();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (mirror as any).toDispose = { push: () => ({ dispose: () => { } }), dispose: () => { } };
-    (mirror as { pendingRuleSyncs: Set<unknown> }).pendingRuleSyncs = new Set();
-    (mirror as { pendingRuleSyncScheduled: boolean }).pendingRuleSyncScheduled = false;
     return mirror;
 }
 
@@ -80,6 +72,10 @@ describe('SecondaryWindowStyleMirror', () => {
         onWindowLoadedEmitter = new Emitter<Window>();
         onWindowClosedEmitter = new Emitter<Window>();
         mirror = createMirror(onWindowLoadedEmitter, onWindowClosedEmitter);
+    });
+
+    afterEach(() => {
+        mirror.onStop();
     });
 
     describe('style element mirroring', () => {
