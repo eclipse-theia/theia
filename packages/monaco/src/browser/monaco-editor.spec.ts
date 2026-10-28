@@ -26,12 +26,16 @@ import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform
 import type { MonacoEditor as MonacoEditorType, MonacoEditorServices } from './monaco-editor';
 import type { MonacoEditorModel } from './monaco-editor-model';
 import type { MonacoDiffEditor as MonacoDiffEditorType } from './monaco-diff-editor';
+import type { MonacoToProtocolConverter as MonacoToProtocolConverterType } from './monaco-to-protocol-converter';
+import type { ProtocolToMonacoConverter as ProtocolToMonacoConverterType } from './protocol-to-monaco-converter';
 
 disableJSDOM();
 
 describe('MonacoEditor visibility', () => {
     let MonacoEditor: typeof MonacoEditorType;
     let MonacoDiffEditor: typeof MonacoDiffEditorType;
+    let MonacoToProtocolConverter: typeof MonacoToProtocolConverterType;
+    let ProtocolToMonacoConverter: typeof ProtocolToMonacoConverterType;
 
     before(async () => {
         disableJSDOM = enableJSDOM();
@@ -39,11 +43,19 @@ describe('MonacoEditor visibility', () => {
         StandaloneServices.get(IInstantiationService);
         ({ MonacoEditor } = await import('./monaco-editor'));
         ({ MonacoDiffEditor } = await import('./monaco-diff-editor'));
+        ({ MonacoToProtocolConverter } = await import('./monaco-to-protocol-converter'));
+        ({ ProtocolToMonacoConverter } = await import('./protocol-to-monaco-converter'));
     });
     after(() => disableJSDOM());
 
-    const model = {};
-    const viewState = {};
+    const model = {
+        validatePosition: (position: object) => position,
+        getLineContent: () => '\tfoo',
+        getOptions: () => ({ tabSize: 4 })
+    };
+    const viewState = {
+        cursorState: [{ inSelectionMode: false, selectionStart: { lineNumber: 1, column: 3 }, position: { lineNumber: 1, column: 3 } }]
+    };
     let editor: MonacoEditorType;
     let control: ReturnType<typeof createControl>;
 
@@ -53,6 +65,8 @@ describe('MonacoEditor visibility', () => {
             createContextKey: sinon.spy(),
             setModel: sinon.spy((value: object | undefined) => currentModel = value),
             getModel: () => currentModel,
+            getPosition: () => currentModel ? { lineNumber: 1, column: 1 } : undefined,
+            getVisibleColumnFromPosition: sinon.stub().returns(1),
             saveViewState: sinon.stub().returns(viewState),
             restoreViewState: sinon.spy(),
             focus: sinon.spy(),
@@ -68,7 +82,10 @@ describe('MonacoEditor visibility', () => {
                     textEditorModel: model,
                     onDidChangeReadOnly: Event.None,
                     onDidChangeEncoding: Event.None
-                } as unknown as MonacoEditorModel, document.createElement('div'), {} as MonacoEditorServices);
+                } as unknown as MonacoEditorModel, document.createElement('div'), {
+                    m2p: new MonacoToProtocolConverter(),
+                    p2m: new ProtocolToMonacoConverter()
+                } as unknown as MonacoEditorServices);
             }
 
             protected override create(): Disposable {
@@ -94,6 +111,15 @@ describe('MonacoEditor visibility', () => {
         expect(control.restoreViewState.calledOnceWithExactly(viewState)).to.be.true;
         expect(control.focus.called).to.be.false;
         expect(control.setModel.secondCall.calledBefore(control.restoreViewState.firstCall)).to.be.true;
+    });
+
+    it('should read the cursor and its visible column from the saved view state and the document while hidden', () => {
+        editor.handleVisibilityChanged(false);
+        const cursor = editor.cursor;
+        expect(cursor).to.deep.equal({ line: 0, character: 2 });
+        // the tab before the cursor takes up 4 columns
+        expect(editor.getVisibleColumn(cursor)).to.equal(6);
+        expect(control.getVisibleColumnFromPosition.called).to.be.false;
     });
 
     it('should retain the model and view state without focusing when opting out', () => {

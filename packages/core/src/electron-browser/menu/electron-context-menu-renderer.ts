@@ -122,7 +122,8 @@ export class ElectronContextMenuRenderer extends BrowserContextMenuRenderer {
             const contextMenu = this.electronMenuFactory.createElectronContextMenu(params.menuPath, params.menu, params.contextMatcher, params.args, params.context);
             const { x, y } = coordinateFromAnchor(params.anchor);
 
-            const windowName = params.context?.ownerDocument.defaultView?.Window.name;
+            // the name of the window, e.g. of a secondary window, in which the menu is to be shown; empty for the main window
+            const windowName = params.context?.ownerDocument.defaultView?.name;
 
             const menuHandle = window.electronTheiaCore.popup(contextMenu, x, y, () => {
                 if (params.onHide) {

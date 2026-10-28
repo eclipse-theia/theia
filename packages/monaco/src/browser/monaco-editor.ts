@@ -53,6 +53,7 @@ import { ServiceCollection } from '@theia/monaco-editor-core/esm/vs/platform/ins
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { ConfigurationChangedEvent, IEditorOptions, ShowLightbulbIconMode } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
 import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
+import { CursorColumns } from '@theia/monaco-editor-core/esm/vs/editor/common/core/cursorColumns';
 import { ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
 import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 import { IKeybindingService } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/keybinding';
@@ -359,8 +360,15 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     }
 
     get cursor(): Position {
-        const { lineNumber, column } = this.editor.getPosition()!;
+        // a hidden editor has no model, see `handleVisibilityChanged`, its cursor is kept in the saved view state then
+        const { lineNumber, column } = this.editor.getPosition() ?? this.getSavedCursorPosition() ?? { lineNumber: 1, column: 1 };
         return this.m2p.asPosition(lineNumber, column);
+    }
+
+    protected getSavedCursorPosition(): monaco.IPosition | undefined {
+        const viewState = this.savedViewState;
+        const codeEditorViewState = viewState && 'modified' in viewState ? viewState.modified : viewState;
+        return codeEditorViewState?.cursorState[0]?.position;
     }
 
     set cursor(cursor: Position) {
@@ -633,7 +641,14 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     }
 
     getVisibleColumn(position: Position): number {
-        return this.editor.getVisibleColumnFromPosition(this.p2m.asPosition(position));
+        const monacoPosition = this.p2m.asPosition(position);
+        if (this.editor.getModel()) {
+            return this.editor.getVisibleColumnFromPosition(monacoPosition);
+        }
+        // a hidden editor has no model, see `handleVisibilityChanged`, compute the column from the document like Monaco does
+        const model = this.document.textEditorModel;
+        const { lineNumber, column } = model.validatePosition(monacoPosition);
+        return CursorColumns.visibleColumnFromColumn(model.getLineContent(lineNumber), column, model.getOptions().tabSize) + 1;
     }
 
     async replaceText(params: ReplaceTextParams): Promise<boolean> {

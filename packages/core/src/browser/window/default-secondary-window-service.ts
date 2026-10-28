@@ -14,15 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { inject, injectable, postConstruct, named } from 'inversify';
-import { SecondaryWindow, SecondaryWindowService } from './secondary-window-service';
+import { SecondaryWindow, SecondaryWindowOptions, SecondaryWindowService } from './secondary-window-service';
 import { WindowService } from './window-service';
 import { ExtractableWidget, Widget } from '../widgets';
 import { ApplicationShell } from '../shell';
-import { Saveable } from '../saveable';
 import { Emitter, environment, Event, PreferenceService, ILogger } from '../../common';
 import { SaveableService } from '../saveable-service';
-import { getAllWidgetsFromSecondaryWindow, getDefaultRestoreArea } from '../secondary-window-handler';
+import { getAllWidgetsFromSecondaryWindow, getDefaultRestoreArea, SecondaryWindowHandler } from '../secondary-window-handler';
 import { WindowFocusService } from './window-focus-service';
+import { SecondaryWindowCloseContribution } from './secondary-window-close-contribution';
+import { ContributionProvider } from '../../common/contribution-provider';
 
 @injectable()
 export class DefaultSecondaryWindowService implements SecondaryWindowService {
@@ -47,6 +48,12 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
 
     protected secondaryWindows: Window[] = [];
 
+    /**
+     * Whether the main window is shutting down, which closes all secondary windows. Such a close is not handled like a close by the user:
+     * the widgets stay in their windows, so that the windows are stored with the layout and restored on the next start.
+     */
+    protected shuttingDown = false;
+
     @inject(WindowService)
     protected readonly windowService: WindowService;
 
@@ -61,6 +68,9 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
 
     @inject(ILogger) @named('core:DefaultSecondaryWindowService')
     protected readonly logger: ILogger;
+
+    @inject(ContributionProvider) @named(SecondaryWindowCloseContribution)
+    protected readonly closeContributions: ContributionProvider<SecondaryWindowCloseContribution>;
 
     @postConstruct()
     init(): void {
@@ -97,6 +107,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
     protected registerShutdownListeners(): void {
         // Close all open windows when the main window is closed.
         this.windowService.onUnload(() => {
+            this.shuttingDown = true;
             // Iterate backwards because calling window.close might remove the window from the array
             for (let i = this.secondaryWindows.length - 1; i >= 0; i--) {
                 this.secondaryWindows[i].close();
@@ -104,13 +115,18 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
         });
     }
 
-    createSecondaryWindow(widget: ExtractableWidget, shell: ApplicationShell): Window | SecondaryWindow | undefined {
-        const [height, width, left, top] = this.findSecondaryWindowCoordinates(widget);
-        let options = `popup=1,width=${width},height=${height},left=${left},top=${top}`;
-        if (this.preferenceService.get('window.secondaryWindowAlwaysOnTop')) {
-            options += ',alwaysOnTop=true';
+    createSecondaryWindow(widget: ExtractableWidget, shell: ApplicationShell, options?: SecondaryWindowOptions): Window | SecondaryWindow | undefined {
+        let [height, width, left, top] = options?.position
+            ? [widget.node.clientHeight, widget.node.clientWidth, options.position.x, options.position.y]
+            : this.findSecondaryWindowCoordinates(widget);
+        if (options?.size) {
+            ({ width, height } = options.size);
         }
-        const newWindow = window.open(DefaultSecondaryWindowService.SECONDARY_WINDOW_URL, this.nextWindowId(), options) ?? undefined;
+        let features = `popup=1,width=${width},height=${height},left=${left},top=${top}`;
+        if (this.preferenceService.get('window.secondaryWindowAlwaysOnTop')) {
+            features += ',alwaysOnTop=true';
+        }
+        const newWindow = window.open(DefaultSecondaryWindowService.SECONDARY_WINDOW_URL, this.nextWindowId(), features) ?? undefined;
         if (newWindow) {
             this.secondaryWindows.push(newWindow);
             this.onWindowOpenedEmitter.fire(newWindow);
@@ -121,11 +137,13 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
                 this.onWindowLoadedEmitter.fire(newWindow);
                 const focusRegistration = this.windowFocusService.registerWindow(newWindow);
                 newWindow.addEventListener('beforeunload', evt => {
+                    if (this.shuttingDown) {
+                        // the main window has asked about unsaved changes already
+                        return;
+                    }
                     const widgets = getAllWidgetsFromSecondaryWindow(newWindow) ?? [widget];
                     for (const w of widgets) {
-                        const saveable = Saveable.get(w);
-                        const wouldLoseState = !!saveable && saveable.dirty && this.saveResourceService.autoSave === 'off';
-                        if (wouldLoseState) {
+                        if (this.saveResourceService.wouldLoseChangesOnClose(w)) {
                             evt.returnValue = '';
                             evt.preventDefault();
                             return 'non-empty';
@@ -143,8 +161,8 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
                 });
                 this.windowCreated(newWindow, widget, shell);
             });
+            (newWindow as SecondaryWindow).rootWidget = undefined;
         }
-        (newWindow as SecondaryWindow).rootWidget = undefined;
         return newWindow;
     }
 
@@ -217,30 +235,64 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
         return `${this.prefix}-secondaryWindow-${this.nextId++}`;
     }
 
+    async restoreWidget(widget: Widget, secondaryWindow: Window, shell: ApplicationShell): Promise<void> {
+        const area = SecondaryWindowHandler.getMainWindowArea(ExtractableWidget.is(widget) ? widget.previousArea : getDefaultRestoreArea(secondaryWindow));
+        // fire removed event before adding it to shell
+        this.beforeWidgetRestoreEmitter.fire([widget, secondaryWindow]);
+        // reset ExtractableWidget properties before moving back so that handler evaluation is correct immediately
+        if (ExtractableWidget.is(widget)) {
+            widget.secondaryWindow = undefined;
+            widget.previousArea = undefined;
+        }
+        await shell.addWidget(widget, { area });
+        // Don't wait for the widget to accept focus: while the secondary window is being closed, the main window may not
+        // have focus yet, so waiting would delay closing the window until the activation times out.
+        shell.activateWidget(widget.id);
+    }
+
     /**
-     * Restore the widgets back to the main window. SecondaryWindowHandler needs to get informated about this.
+     * @returns whether the given widget is to be moved back to the main window instead of being closed with its secondary window
+     */
+    protected async shouldRestoreOnClose(widget: Widget): Promise<boolean> {
+        for (const contribution of this.closeContributions.getContributions()) {
+            try {
+                if (await contribution.shouldRestoreOnClose(widget)) {
+                    return true;
+                }
+            } catch (e) {
+                this.logger.error('Failed to determine whether to move a widget back to the main window', e);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Restore the widgets back to the main window, or close them, depending on the `window.secondaryWindowCloseBehavior` preference.
+     * SecondaryWindowHandler needs to get informated about this.
      */
     protected async restoreWidgets(newWindow: Window, extractableWidget: ExtractableWidget, shell: ApplicationShell): Promise<boolean> {
-        const widgets = getAllWidgetsFromSecondaryWindow(newWindow) ?? new Set([extractableWidget]);
-        const defaultRestoreArea = getDefaultRestoreArea(newWindow);
-
+        if (this.shuttingDown) {
+            // The widgets stay in the window, so that it is stored with the layout and restored with its widgets on the next start.
+            return true;
+        }
+        // Copy, as moving a widget back removes it from the secondary window's widgets.
+        // A window closed before it has been populated has no root widget, its widgets are still where they were.
+        const widgets = [...getAllWidgetsFromSecondaryWindow(newWindow) ?? []];
+        const closeWidgets = this.preferenceService.get('window.secondaryWindowCloseBehavior', 'close') === 'close';
         let allMovedOrDisposed = true;
         for (const widget of widgets) {
             if (widget.isDisposed) {
                 continue;
             }
             try {
-                const preferredRestoreArea = ExtractableWidget.is(widget) ? widget.previousArea : defaultRestoreArea;
-                const area = (preferredRestoreArea === undefined || preferredRestoreArea === 'top' || preferredRestoreArea === 'secondaryWindow') ? 'main' : preferredRestoreArea;
-                // fire removed event before adding it to shell
-                this.beforeWidgetRestoreEmitter.fire([widget, newWindow]);
-                // reset ExtractableWidget properties before moving back so that handler evaluation is correct immediately
-                if (ExtractableWidget.is(widget)) {
-                    widget.secondaryWindow = undefined;
-                    widget.previousArea = undefined;
+                if (closeWidgets && !await this.shouldRestoreOnClose(widget)) {
+                    await shell.closeWidget(widget.id);
                 }
-                await shell.addWidget(widget, { area });
-                await shell.activateWidget(widget.id);
+                // widgets that are not disposed when closed would be lost with the window
+                if (!widget.isDisposed) {
+                    await this.restoreWidget(widget, newWindow, shell);
+                }
             } catch (e) {
                 // we can't move back, close instead
                 // otherwise the window will just stay open with no way to close it

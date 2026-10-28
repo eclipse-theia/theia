@@ -86,6 +86,14 @@ export class SaveableService implements FrontendApplicationContribution {
         this.updateAutoSaveMode(value);
     }
 
+    /**
+     * @returns whether closing the given widget would discard changes, i.e. whether it is dirty and not saved automatically
+     */
+    wouldLoseChangesOnClose(widget: Widget): boolean {
+        const saveable = Saveable.get(widget);
+        return !!saveable && saveable.dirty && this.autoSave === 'off';
+    }
+
     get autoSaveDelay(): number {
         return this.saveDelay;
     }
