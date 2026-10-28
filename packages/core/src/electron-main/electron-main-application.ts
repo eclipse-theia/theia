@@ -272,7 +272,9 @@ export class ElectronMainApplication {
                 async args => {
                     if (args.electronUserData) {
                         console.info(`using electron user data area : '${args.electronUserData}'`);
-                        await fs.mkdir(args.electronUserData, { recursive: true });
+                        // Synchronously, before the app can become ready: services such as the app scheme use the
+                        // default session as soon as it is, which fixes its storage location.
+                        mkdirSync(args.electronUserData, { recursive: true });
                         app.setPath('userData', args.electronUserData);
                     }
                     const startupMeasurement = this.stopwatch.start('electron-main-startup');
