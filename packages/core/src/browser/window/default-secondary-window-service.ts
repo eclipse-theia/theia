@@ -161,8 +161,8 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
                 });
                 this.windowCreated(newWindow, widget, shell);
             });
+            (newWindow as SecondaryWindow).rootWidget = undefined;
         }
-        (newWindow as SecondaryWindow).rootWidget = undefined;
         return newWindow;
     }
 

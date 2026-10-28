@@ -359,8 +359,15 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     }
 
     get cursor(): Position {
-        const { lineNumber, column } = this.editor.getPosition()!;
+        // a hidden editor has no model, see `handleVisibilityChanged`, its cursor is kept in the saved view state then
+        const { lineNumber, column } = this.editor.getPosition() ?? this.getSavedCursorPosition() ?? { lineNumber: 1, column: 1 };
         return this.m2p.asPosition(lineNumber, column);
+    }
+
+    protected getSavedCursorPosition(): monaco.IPosition | undefined {
+        const viewState = this.savedViewState;
+        const codeEditorViewState = viewState && 'modified' in viewState ? viewState.modified : viewState;
+        return codeEditorViewState?.cursorState[0]?.position;
     }
 
     set cursor(cursor: Position) {
