@@ -14,38 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { promises as fs } from 'fs';
 import * as path from 'path';
+import { pathToFileURL } from 'url';
+import { APP_HOST, APP_SCHEME, PrivilegedScheme } from '../electron-common/app-scheme';
 
-import { APP_HOST, APP_SCHEME } from '../electron-common/app-scheme';
-
-export { APP_HOST, APP_ORIGIN, APP_SCHEME, appUri } from '../electron-common/app-scheme';
-
-const CONTENT_TYPES: Record<string, string> = {
-    '.html': 'text/html',
-    '.js': 'text/javascript',
-    '.mjs': 'text/javascript',
-    '.css': 'text/css',
-    '.json': 'application/json',
-    '.map': 'application/json',
-    '.wasm': 'application/wasm',
-    '.svg': 'image/svg+xml',
-    '.png': 'image/png',
-    '.woff': 'font/woff',
-    '.woff2': 'font/woff2',
-    '.ttf': 'font/ttf',
-};
-
-/** The content type served for a frontend file, by its extension. */
-export function contentTypeOf(file: string): string {
-    return CONTENT_TYPES[path.extname(file).toLowerCase()] ?? 'application/octet-stream';
-}
+export { APP_HOST, APP_ORIGIN, APP_SCHEME, appSchemePrivileges, appUri, isAppFileUrl, PrivilegedScheme } from '../electron-common/app-scheme';
 
 /**
  * The absolute path of the frontend file an application-scheme URL names, or `undefined` for a URL of
- * another scheme or host, or a path that would leave the frontend directory.
+ * another scheme or host, or a path that would leave the frontend directory. The URL parser removes
+ * dot segments; the path check covers what it does not normalize, such as encoded separators.
  */
-export function resolveAppFile(url: string, frontendRoot: string): string | undefined {
+export function resolveAppFile(url: string, frontendRoot: string, pathModule: path.PlatformPath = path): string | undefined {
     let parsed: URL;
     try {
         parsed = new URL(url);
@@ -61,32 +41,38 @@ export function resolveAppFile(url: string, frontendRoot: string): string | unde
     } catch {
         return undefined;
     }
-    const root = path.resolve(frontendRoot);
-    const file = path.normalize(path.join(root, pathname));
-    return file.startsWith(root + path.sep) ? file : undefined;
+    const root = pathModule.resolve(frontendRoot);
+    const file = pathModule.normalize(pathModule.join(root, pathname));
+    return file.startsWith(root + pathModule.sep) ? file : undefined;
 }
 
-/** Registers {@link APP_SCHEME} as a privileged standard scheme with a code cache. Must run before the app is ready. */
-export function registerAppScheme(): void {
-    const { protocol } = require('../../electron-shared/electron') as typeof import('../../electron-shared/electron');
-    protocol.registerSchemesAsPrivileged([{
-        scheme: APP_SCHEME,
-        privileges: { standard: true, secure: true, supportFetchAPI: true, codeCache: true }
-    }]);
+/**
+ * Registers the given schemes as privileged. Electron accepts this call only before the app is ready,
+ * and only the last call counts, so the application makes it once with every scheme it needs.
+ */
+export function registerPrivilegedSchemes(schemes: PrivilegedScheme[]): void {
+    const { app, protocol } = require('../../electron-shared/electron') as typeof import('../../electron-shared/electron');
+    if (app.isReady()) {
+        throw new Error('Privileged schemes must be registered before the app is ready.');
+    }
+    protocol.registerSchemesAsPrivileged(schemes);
 }
 
-/** Serves the files of `frontendRoot` under {@link APP_SCHEME}. Must run once the app is ready. */
+/**
+ * Serves the files of `frontendRoot` under {@link APP_SCHEME}, streamed by Electron's own file fetch,
+ * which also answers range requests and sets the content type. Must run once the app is ready.
+ */
 export function handleAppScheme(frontendRoot: string): void {
-    const { protocol } = require('../../electron-shared/electron') as typeof import('../../electron-shared/electron');
+    const { net, protocol } = require('../../electron-shared/electron') as typeof import('../../electron-shared/electron');
     protocol.handle(APP_SCHEME, async request => {
         const file = resolveAppFile(request.url, frontendRoot);
         if (!file) {
             return new Response('Not found', { status: 404 });
         }
         try {
-            const content = await fs.readFile(file);
-            return new Response(content, { headers: { 'Content-Type': contentTypeOf(file) } });
-        } catch {
+            return await net.fetch(pathToFileURL(file).href, { method: request.method, headers: request.headers });
+        } catch (error) {
+            console.debug(`Could not serve ${request.url}:`, error);
             return new Response('Not found', { status: 404 });
         }
     });

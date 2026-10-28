@@ -29,3 +29,33 @@ export const APP_ORIGIN = `${APP_SCHEME}://${APP_HOST}`;
 export function appUri(file: string): string {
     return `${APP_ORIGIN}/${file}`;
 }
+
+/** Whether `url` names the file `fileName` of the frontend directory under the application scheme. */
+export function isAppFileUrl(url: string, fileName: string): boolean {
+    try {
+        const parsed = new URL(url);
+        return parsed.protocol === `${APP_SCHEME}:` && parsed.host === APP_HOST && parsed.pathname === `/${fileName}`;
+    } catch {
+        return false;
+    }
+}
+
+/** A scheme to register as privileged with Electron's `protocol.registerSchemesAsPrivileged`. */
+export interface PrivilegedScheme {
+    scheme: string;
+    privileges: {
+        standard?: boolean;
+        secure?: boolean;
+        bypassCSP?: boolean;
+        allowServiceWorkers?: boolean;
+        supportFetchAPI?: boolean;
+        corsEnabled?: boolean;
+        stream?: boolean;
+        codeCache?: boolean;
+    };
+}
+
+/** The application scheme's registration: a standard, secure scheme with a V8 code cache. */
+export function appSchemePrivileges(): PrivilegedScheme {
+    return { scheme: APP_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, codeCache: true } };
+}

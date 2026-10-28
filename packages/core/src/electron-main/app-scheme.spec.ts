@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { appUri, contentTypeOf, resolveAppFile } from './app-scheme';
+import * as path from 'path';
+import { appUri, isAppFileUrl, resolveAppFile } from './app-scheme';
 
 describe('app-scheme', () => {
 
@@ -41,18 +42,32 @@ describe('app-scheme', () => {
         }
         expect(resolveAppFile('theia-app://theia/../package.json', root)).to.equal('/app/lib/frontend/package.json');
         expect(resolveAppFile('theia-app://theia//etc/passwd', root)).to.equal('/app/lib/frontend/etc/passwd');
+        // Encoded separators survive the URL parser and reach the path guard.
+        expect(resolveAppFile('theia-app://theia/%2F..%2F..%2Fetc/passwd', root)).to.equal(undefined);
+        expect(resolveAppFile('theia-app://theia/sub/%2F..%2F..%2F..%2Fetc', root)).to.equal(undefined);
+    });
+
+    it('contains Windows paths, including backslashes and drive letters', () => {
+        const win = 'C:\\app\\lib\\frontend';
+        expect(resolveAppFile('theia-app://theia/index.html', win, path.win32)).to.equal('C:\\app\\lib\\frontend\\index.html');
+        expect(resolveAppFile('theia-app://theia/%5C..%5C..%5CWindows%5Cwin.ini', win, path.win32)).to.equal(undefined);
+        expect(resolveAppFile('theia-app://theia/sub%5C..%5C..%5Cpackage.json', win, path.win32)).to.equal(undefined);
+        expect(resolveAppFile('theia-app://theia/D:%5Cother%5Cfile', win, path.win32)!.startsWith(win + '\\')).to.equal(true);
+    });
+
+    it('recognises a frontend file by scheme, host and name', () => {
+        expect(isAppFileUrl('theia-app://theia/index.html?port=1#/ws', 'index.html')).to.equal(true);
+        expect(isAppFileUrl('theia-app://theia/secondary-window.html', 'secondary-window.html')).to.equal(true);
+        expect(isAppFileUrl('theia-app://theia/secondary-window.html', 'index.html')).to.equal(false);
+        expect(isAppFileUrl('theia-app://other/index.html', 'index.html')).to.equal(false);
+        expect(isAppFileUrl('theia-app://theia/x/index.html', 'index.html')).to.equal(false);
+        expect(isAppFileUrl('file:///app/lib/frontend/index.html', 'index.html')).to.equal(false);
+        expect(isAppFileUrl('not a url', 'index.html')).to.equal(false);
     });
 
     it('refuses other hosts and schemes', () => {
         expect(resolveAppFile('theia-app://other/index.html', root)).to.equal(undefined);
         expect(resolveAppFile('file:///app/lib/frontend/index.html', root)).to.equal(undefined);
-    });
-
-    it('maps file extensions to content types', () => {
-        expect(contentTypeOf('bundle.js')).to.equal('text/javascript');
-        expect(contentTypeOf('bundle.css')).to.equal('text/css');
-        expect(contentTypeOf('index.html')).to.equal('text/html');
-        expect(contentTypeOf('x.bin')).to.equal('application/octet-stream');
     });
 
     it('builds application URIs', () => {
