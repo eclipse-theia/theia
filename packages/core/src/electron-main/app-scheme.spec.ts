@@ -20,11 +20,12 @@ import { appUri, isAppFileUrl, resolveAppFile } from './app-scheme';
 
 describe('app-scheme', () => {
 
+    // Resolved with POSIX paths on every platform; the Windows test below covers win32.
     const root = '/app/lib/frontend';
 
     it('resolves files under the frontend root, ignoring query and fragment', () => {
-        expect(resolveAppFile('theia-app://theia/index.html?port=1#x', root)).to.equal('/app/lib/frontend/index.html');
-        expect(resolveAppFile('theia-app://theia/sub/bundle.js', root)).to.equal('/app/lib/frontend/sub/bundle.js');
+        expect(resolveAppFile('theia-app://theia/index.html?port=1#x', root, path.posix)).to.equal('/app/lib/frontend/index.html');
+        expect(resolveAppFile('theia-app://theia/sub/bundle.js', root, path.posix)).to.equal('/app/lib/frontend/sub/bundle.js');
     });
 
     it('never resolves a file outside the frontend root', () => {
@@ -36,15 +37,15 @@ describe('app-scheme', () => {
             'theia-app://theia/%2e%2e/package.json',
             'theia-app://theia//etc/passwd',
         ]) {
-            const file = resolveAppFile(url, root);
+            const file = resolveAppFile(url, root, path.posix);
             expect(file, url).to.not.equal(undefined);
             expect(file!.startsWith(root + '/'), url).to.equal(true);
         }
-        expect(resolveAppFile('theia-app://theia/../package.json', root)).to.equal('/app/lib/frontend/package.json');
-        expect(resolveAppFile('theia-app://theia//etc/passwd', root)).to.equal('/app/lib/frontend/etc/passwd');
+        expect(resolveAppFile('theia-app://theia/../package.json', root, path.posix)).to.equal('/app/lib/frontend/package.json');
+        expect(resolveAppFile('theia-app://theia//etc/passwd', root, path.posix)).to.equal('/app/lib/frontend/etc/passwd');
         // Encoded separators survive the URL parser and reach the path guard.
-        expect(resolveAppFile('theia-app://theia/%2F..%2F..%2Fetc/passwd', root)).to.equal(undefined);
-        expect(resolveAppFile('theia-app://theia/sub/%2F..%2F..%2F..%2Fetc', root)).to.equal(undefined);
+        expect(resolveAppFile('theia-app://theia/%2F..%2F..%2Fetc/passwd', root, path.posix)).to.equal(undefined);
+        expect(resolveAppFile('theia-app://theia/sub/%2F..%2F..%2F..%2Fetc', root, path.posix)).to.equal(undefined);
     });
 
     it('contains Windows paths, including backslashes and drive letters', () => {
@@ -66,8 +67,8 @@ describe('app-scheme', () => {
     });
 
     it('refuses other hosts and schemes', () => {
-        expect(resolveAppFile('theia-app://other/index.html', root)).to.equal(undefined);
-        expect(resolveAppFile('file:///app/lib/frontend/index.html', root)).to.equal(undefined);
+        expect(resolveAppFile('theia-app://other/index.html', root, path.posix)).to.equal(undefined);
+        expect(resolveAppFile('file:///app/lib/frontend/index.html', root, path.posix)).to.equal(undefined);
     });
 
     it('builds application URIs', () => {
