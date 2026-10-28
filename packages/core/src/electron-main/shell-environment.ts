@@ -14,11 +14,37 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { execFile } from 'child_process';
+import * as os from 'os';
 import { inject, injectable } from 'inversify';
 import { Stopwatch } from '../common/performance';
-import shellPathModule = require('../../electron-shared/shell-path');
 
 export const ShellEnvironment = Symbol('ShellEnvironment');
+
+/** Separates the output of the `env` command from whatever the user's dotfiles print. */
+const ENV_DELIMITER = '_THEIA_SHELL_ENV_DELIMITER_';
+
+const ANSI_ESCAPE = new RegExp([
+    '[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)',
+    '(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-ntqry=><~]))'
+].join('|'), 'g');
+
+/**
+ * Extracts the `PATH` from the output of the login shell command of {@link ShellEnvironmentImpl}, or `undefined`
+ * if the output does not define one.
+ */
+export function parseShellPath(output: string): string | undefined {
+    const env = output.split(ENV_DELIMITER)[1];
+    if (env === undefined) {
+        return undefined;
+    }
+    for (const line of env.replace(ANSI_ESCAPE, '').split('\n')) {
+        if (line.startsWith('PATH=')) {
+            return line.substring('PATH='.length);
+        }
+    }
+    return undefined;
+}
 
 /**
  * Resolves the `PATH` of the user's login shell and applies it to the environment of the Electron main process.
@@ -64,9 +90,64 @@ export class ShellEnvironmentImpl implements ShellEnvironment {
         if (process.platform === 'win32') {
             return;
         }
-        const { shellPath } = await shellPathModule;
-        const resolved = await this.withTimeout(shellPath());
+        const resolved = await this.withTimeout(this.resolveShellPath());
         process.env.PATH = resolved || this.getFallbackPath();
+    }
+
+    /**
+     * Runs the user's login shell, falling back to other POSIX shells if it fails, and returns the `PATH` that
+     * its environment defines.
+     *
+     * This does what the `shell-path` package does, without its dependency on `execa`: `execa` installs
+     * `signal-exit` listeners while the shell runs, and when it removes them, Node resets SIGINT, SIGTERM and
+     * the other signals to their default action, which discards the handlers that Chromium installed to shut the
+     * application down gracefully and to report crashes.
+     */
+    protected async resolveShellPath(): Promise<string | undefined> {
+        const defaultShell = this.getDefaultShell();
+        const shells = [defaultShell, ...['/bin/zsh', '/bin/bash'].filter(shell => shell !== defaultShell)];
+        let lastError: unknown;
+        for (const shell of shells) {
+            try {
+                return parseShellPath(await this.runLoginShell(shell));
+            } catch (error) {
+                lastError = error;
+            }
+        }
+        throw lastError;
+    }
+
+    protected getDefaultShell(): string {
+        try {
+            const { shell } = os.userInfo();
+            if (shell) {
+                return shell;
+            }
+        } catch {
+            // Fall back to the environment
+        }
+        return process.env.SHELL || (process.platform === 'darwin' ? '/bin/zsh' : '/bin/sh');
+    }
+
+    protected runLoginShell(shell: string): Promise<string> {
+        // The `command` builtin avoids aliases and functions named `env`.
+        const script = `echo -n "${ENV_DELIMITER}"; command env; echo -n "${ENV_DELIMITER}"; exit`;
+        const env = {
+            ...process.env,
+            // Keep Oh My Zsh from blocking on its auto-update and its tmux plugin from starting tmux.
+            DISABLE_AUTO_UPDATE: 'true',
+            ZSH_TMUX_AUTOSTARTED: 'true',
+            ZSH_TMUX_AUTOSTART: 'false'
+        };
+        return new Promise((resolve, reject) => {
+            execFile(shell, ['-ilc', script], { env, timeout: this.timeoutMs, encoding: 'utf8' }, (error, stdout) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(stdout);
+                }
+            });
+        });
     }
 
     protected withTimeout<T>(promise: Promise<T>): Promise<T> {
