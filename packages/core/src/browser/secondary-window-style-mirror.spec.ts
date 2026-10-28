@@ -51,6 +51,11 @@ function createMirror(
     (mirror as { cloneMap: Map<unknown, unknown> }).cloneMap = new Map();
     (mirror as { trackedWindows: Set<Window> }).trackedWindows = new Set();
     (mirror as { cssomRules: Map<unknown, unknown> }).cssomRules = new Map();
+    (mirror as { mainOriginatedClasses: Map<Window, Set<string>> }).mainOriginatedClasses = new Map();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (mirror as any).toDispose = { push: () => ({ dispose: () => { } }), dispose: () => { } };
+    (mirror as { pendingRuleSyncs: Set<unknown> }).pendingRuleSyncs = new Set();
+    (mirror as { pendingRuleSyncScheduled: boolean }).pendingRuleSyncScheduled = false;
     return mirror;
 }
 
@@ -175,6 +180,22 @@ describe('SecondaryWindowStyleMirror', () => {
             const clonedTexts = Array.from(clonedStyles).map(s => s.textContent);
             expect(clonedTexts).to.not.include('.contributed { color: black; }');
         });
+
+        it('excludes elements with class theia-icon-theme', () => {
+            const style = document.createElement('style');
+            style.classList.add('theia-icon-theme');
+            style.textContent = '.icon-theme { background: url(icon.png); }';
+            document.head.appendChild(style);
+
+            mirror.onStart();
+
+            const secondaryWin = createSecondaryWindow();
+            onWindowLoadedEmitter.fire(secondaryWin);
+
+            const clonedStyles = secondaryWin.document.head.querySelectorAll('style');
+            const clonedTexts = Array.from(clonedStyles).map(s => s.textContent);
+            expect(clonedTexts).to.not.include('.icon-theme { background: url(icon.png); }');
+        });
     });
 
     describe('body class mirroring', () => {
@@ -222,6 +243,103 @@ describe('SecondaryWindowStyleMirror', () => {
 
             expect(secondaryWin.document.body.classList.contains('theia-mod-debugging')).to.be.false;
         });
+
+        it('preserves secondary-window-only classes when main body changes', async () => {
+            document.body.classList.add('theia-dark');
+
+            mirror.onStart();
+
+            const secondaryWin = createSecondaryWindow();
+            onWindowLoadedEmitter.fire(secondaryWin);
+
+            // Secondary window adds its own class (e.g. maximized from setupMaximizeRestoreToggle)
+            secondaryWin.document.body.classList.add('maximized');
+
+            // Main body changes — add a new class
+            document.body.classList.add('theia-mod-debugging');
+
+            // Wait for MutationObserver
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            // The secondary-window-only class should be preserved
+            expect(secondaryWin.document.body.classList.contains('maximized')).to.be.true;
+            // The newly added main class should be propagated
+            expect(secondaryWin.document.body.classList.contains('theia-mod-debugging')).to.be.true;
+            // The original main class should still be there
+            expect(secondaryWin.document.body.classList.contains('theia-dark')).to.be.true;
+        });
+
+        it('does not remove secondary-only classes when main class is removed', async () => {
+            document.body.classList.add('theia-dark');
+
+            mirror.onStart();
+
+            const secondaryWin = createSecondaryWindow();
+            onWindowLoadedEmitter.fire(secondaryWin);
+
+            // Secondary window adds its own class
+            secondaryWin.document.body.classList.add('maximized');
+
+            // Remove a class from main
+            document.body.classList.remove('theia-dark');
+
+            // Wait for MutationObserver
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            // The main-originated class should be removed
+            expect(secondaryWin.document.body.classList.contains('theia-dark')).to.be.false;
+            // The secondary-only class should still be there
+            expect(secondaryWin.document.body.classList.contains('maximized')).to.be.true;
+        });
+
+        it('only removes classes that were added by the mirror', async () => {
+            mirror.onStart();
+
+            const secondaryWin = createSecondaryWindow();
+            onWindowLoadedEmitter.fire(secondaryWin);
+
+            // Secondary window has a class that was never from main
+            secondaryWin.document.body.classList.add('custom-secondary-class');
+
+            // Add and then remove a class from main
+            document.body.classList.add('temp-class');
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            expect(secondaryWin.document.body.classList.contains('temp-class')).to.be.true;
+
+            document.body.classList.remove('temp-class');
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            expect(secondaryWin.document.body.classList.contains('temp-class')).to.be.false;
+            expect(secondaryWin.document.body.classList.contains('custom-secondary-class')).to.be.true;
+        });
+    });
+
+    describe('bundle.css duplication prevention', () => {
+
+        it('skips cloning a link element whose href already exists in the secondary window', () => {
+            // Simulate a <link> in the main window
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = './bundle.css';
+            document.head.appendChild(link);
+
+            mirror.onStart();
+
+            const secondaryWin = createSecondaryWindow();
+
+            // Pre-add a matching <link> in the secondary window (as the HTML template would)
+            const existingLink = secondaryWin.document.createElement('link');
+            existingLink.rel = 'stylesheet';
+            existingLink.href = './bundle.css';
+            secondaryWin.document.head.appendChild(existingLink);
+
+            onWindowLoadedEmitter.fire(secondaryWin);
+
+            // Should still have only the one pre-existing link, not a duplicate
+            const links = secondaryWin.document.head.querySelectorAll('link[rel="stylesheet"]');
+            expect(links.length).to.equal(1);
+        });
     });
 
     describe('window lifecycle', () => {
@@ -245,6 +363,21 @@ describe('SecondaryWindowStyleMirror', () => {
             const clonedStyles = secondaryWin.document.head.querySelectorAll('style');
             const clonedTexts = Array.from(clonedStyles).map(s => s.textContent);
             expect(clonedTexts).to.not.include('.after-close { color: pink; }');
+        });
+
+        it('cleans up mainOriginatedClasses when window is closed', () => {
+            mirror.onStart();
+
+            const secondaryWin = createSecondaryWindow();
+            onWindowLoadedEmitter.fire(secondaryWin);
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const mirrorAny = mirror as any;
+            expect(mirrorAny.mainOriginatedClasses.has(secondaryWin)).to.be.true;
+
+            onWindowClosedEmitter.fire(secondaryWin);
+
+            expect(mirrorAny.mainOriginatedClasses.has(secondaryWin)).to.be.false;
         });
     });
 });

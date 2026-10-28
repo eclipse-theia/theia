@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
+import { Disposable, DisposableCollection } from '../common/disposable';
 import { FrontendApplicationContribution } from './frontend-application-contribution';
 import { SecondaryWindowService } from './window/secondary-window-service';
 
@@ -26,6 +27,7 @@ import { SecondaryWindowService } from './window/secondary-window-service';
  * Elements that are already managed by dedicated services are excluded:
  * - `monaco-colors` class stylesheets (managed by `MonacoFrontendApplicationContribution`)
  * - `contributedColorTheme` ID stylesheets (managed by `StylingService`)
+ * - `theia-icon-theme` class stylesheets (managed by `PluginIconThemeService`)
  */
 @injectable()
 export class SecondaryWindowStyleMirror implements FrontendApplicationContribution {
@@ -46,27 +48,45 @@ export class SecondaryWindowStyleMirror implements FrontendApplicationContributi
     protected originalInsertRule: typeof CSSStyleSheet.prototype.insertRule | undefined;
     protected originalDeleteRule: typeof CSSStyleSheet.prototype.deleteRule | undefined;
 
+    /** Tracks which classes this mirror has added to each secondary window's body. */
+    protected readonly mainOriginatedClasses = new Map<Window, Set<string>>();
+
+    /** Disposable collection for cleanup on stop. */
+    protected readonly toDispose = new DisposableCollection();
+
+    /** Pending CSSOM rule re-syncs after insertRule (to capture rule.style mutations). */
+    protected readonly pendingRuleSyncs = new Set<{ sheet: CSSStyleSheet; index: number }>();
+    protected pendingRuleSyncScheduled = false;
+
     onStart(): void {
         this.observeHeadMutations();
         this.observeBodyClassMutations();
         this.patchCSSOM();
 
-        this.secondaryWindowService.onWindowLoaded(win => {
+        this.toDispose.push(this.secondaryWindowService.onWindowLoaded(win => {
             this.trackedWindows.add(win);
+            this.mainOriginatedClasses.set(win, new Set());
             this.snapshotExistingElements(win);
             this.syncBodyClasses(win);
-        });
+        }));
 
-        this.secondaryWindowService.onWindowClosed(win => {
+        this.toDispose.push(this.secondaryWindowService.onWindowClosed(win => {
             this.trackedWindows.delete(win);
+            this.mainOriginatedClasses.delete(win);
             for (const clones of this.cloneMap.values()) {
                 clones.delete(win);
             }
-        });
+        }));
+    }
+
+    onStop(): void {
+        this.toDispose.dispose();
     }
 
     protected shouldExclude(element: HTMLStyleElement | HTMLLinkElement): boolean {
-        return element.classList.contains('monaco-colors') || element.id === 'contributedColorTheme';
+        return element.classList.contains('monaco-colors')
+            || element.id === 'contributedColorTheme'
+            || element.classList.contains('theia-icon-theme');
     }
 
     protected isStyleOrLink(node: Node): node is HTMLStyleElement | HTMLLinkElement {
@@ -91,15 +111,60 @@ export class SecondaryWindowStyleMirror implements FrontendApplicationContributi
             }
         });
         observer.observe(document.head, { childList: true });
+        this.toDispose.push(Disposable.create(() => observer.disconnect()));
     }
 
     protected observeBodyClassMutations(): void {
-        const observer = new MutationObserver(() => {
-            for (const win of this.trackedWindows) {
-                this.syncBodyClasses(win);
+        const observer = new MutationObserver(mutations => {
+            for (const mutation of mutations) {
+                const oldValue = mutation.oldValue || '';
+                const newValue = document.body.getAttribute('class') || '';
+                const oldClasses = new Set(oldValue.split(/\s+/).filter(c => c.length > 0));
+                const newClasses = new Set(newValue.split(/\s+/).filter(c => c.length > 0));
+
+                const added: string[] = [];
+                const removed: string[] = [];
+
+                for (const cls of newClasses) {
+                    if (!oldClasses.has(cls)) {
+                        added.push(cls);
+                    }
+                }
+                for (const cls of oldClasses) {
+                    if (!newClasses.has(cls)) {
+                        removed.push(cls);
+                    }
+                }
+
+                if (added.length === 0 && removed.length === 0) {
+                    continue;
+                }
+
+                for (const win of this.trackedWindows) {
+                    const tracked = this.mainOriginatedClasses.get(win);
+                    if (!tracked) {
+                        continue;
+                    }
+                    const secondaryBody = win.document.body;
+                    if (!secondaryBody) {
+                        continue;
+                    }
+
+                    for (const cls of added) {
+                        secondaryBody.classList.add(cls);
+                        tracked.add(cls);
+                    }
+                    for (const cls of removed) {
+                        if (tracked.has(cls)) {
+                            secondaryBody.classList.remove(cls);
+                            tracked.delete(cls);
+                        }
+                    }
+                }
             }
         });
-        observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+        observer.observe(document.body, { attributes: true, attributeFilter: ['class'], attributeOldValue: true });
+        this.toDispose.push(Disposable.create(() => observer.disconnect()));
     }
 
     protected patchCSSOM(): void {
@@ -118,6 +183,15 @@ export class SecondaryWindowStyleMirror implements FrontendApplicationContributi
             self.originalDeleteRule!.call(this, index);
             self.onDeleteRule(this, index);
         };
+
+        this.toDispose.push(Disposable.create(() => {
+            if (this.originalInsertRule) {
+                proto.insertRule = this.originalInsertRule;
+            }
+            if (this.originalDeleteRule) {
+                proto.deleteRule = this.originalDeleteRule;
+            }
+        }));
     }
 
     protected onInsertRule(sheet: CSSStyleSheet, rule: string, index: number): void {
@@ -133,9 +207,64 @@ export class SecondaryWindowStyleMirror implements FrontendApplicationContributi
 
         for (const [, clonedElement] of clones) {
             try {
-                clonedElement.sheet?.insertRule(rule, index);
+                this.originalInsertRule!.call(clonedElement.sheet!, rule, index);
             } catch {
                 // ignore — e.g. if the cloned sheet is in a closed window
+            }
+        }
+
+        this.scheduleRuleResync(sheet, index);
+    }
+
+    protected scheduleRuleResync(sheet: CSSStyleSheet, index: number): void {
+        this.pendingRuleSyncs.add({ sheet, index });
+        if (!this.pendingRuleSyncScheduled) {
+            this.pendingRuleSyncScheduled = true;
+            queueMicrotask(() => this.flushRuleResyncs());
+        }
+    }
+
+    protected flushRuleResyncs(): void {
+        this.pendingRuleSyncScheduled = false;
+        const entries = Array.from(this.pendingRuleSyncs);
+        this.pendingRuleSyncs.clear();
+
+        for (const { sheet, index } of entries) {
+            const ownerElement = sheet.ownerNode;
+            if (!(ownerElement instanceof HTMLStyleElement) || this.shouldExclude(ownerElement)) {
+                continue;
+            }
+
+            const clones = this.cloneMap.get(ownerElement);
+            if (!clones) {
+                continue;
+            }
+
+            let sourceRule: CSSRule | undefined;
+            try {
+                sourceRule = sheet.cssRules[index];
+            } catch {
+                continue;
+            }
+            if (!sourceRule) {
+                continue;
+            }
+            const sourceCssText = sourceRule.cssText;
+
+            for (const [, clonedElement] of clones) {
+                try {
+                    const clonedSheet = clonedElement.sheet;
+                    if (!clonedSheet) {
+                        continue;
+                    }
+                    const clonedRule = clonedSheet.cssRules[index];
+                    if (clonedRule && clonedRule.cssText !== sourceCssText) {
+                        this.originalDeleteRule!.call(clonedSheet, index);
+                        this.originalInsertRule!.call(clonedSheet, sourceCssText, index);
+                    }
+                } catch {
+                    // ignore
+                }
             }
         }
     }
@@ -153,7 +282,7 @@ export class SecondaryWindowStyleMirror implements FrontendApplicationContributi
 
         for (const [, clonedElement] of clones) {
             try {
-                clonedElement.sheet?.deleteRule(index);
+                this.originalDeleteRule!.call(clonedElement.sheet!, index);
             } catch {
                 // ignore
             }
@@ -190,6 +319,14 @@ export class SecondaryWindowStyleMirror implements FrontendApplicationContributi
             return;
         }
 
+        // Skip <link> elements whose href already exists in the target window's <head>
+        if (element instanceof HTMLLinkElement) {
+            const sourceHref = element.getAttribute('href');
+            if (sourceHref && this.hasMatchingLink(win, sourceHref)) {
+                return;
+            }
+        }
+
         const cloned = win.document.importNode(element, true) as HTMLStyleElement | HTMLLinkElement;
         win.document.head.appendChild(cloned);
         clones.set(win, cloned);
@@ -197,7 +334,6 @@ export class SecondaryWindowStyleMirror implements FrontendApplicationContributi
         // If the source element has CSSOM-only rules (added via insertRule, not present in textContent),
         // we need to replay them into the cloned sheet after it's attached.
         if (element instanceof HTMLStyleElement && element.sheet) {
-            // Use requestAnimationFrame to ensure the cloned element's sheet is available
             const replayCssomRules = (): void => {
                 if (cloned instanceof HTMLStyleElement && cloned.sheet && element.sheet) {
                     const sourceRules = element.sheet.cssRules;
@@ -225,6 +361,18 @@ export class SecondaryWindowStyleMirror implements FrontendApplicationContributi
         }
     }
 
+    protected hasMatchingLink(win: Window, href: string): boolean {
+        const existingLinks = win.document.head.querySelectorAll('link[rel="stylesheet"]');
+        for (let i = 0; i < existingLinks.length; i++) {
+            const existing = existingLinks[i] as HTMLLinkElement;
+            const existingHref = existing.getAttribute('href');
+            if (existingHref === href) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     protected removeClones(element: HTMLStyleElement | HTMLLinkElement): void {
         const clones = this.cloneMap.get(element);
         if (clones) {
@@ -242,22 +390,18 @@ export class SecondaryWindowStyleMirror implements FrontendApplicationContributi
             return;
         }
 
-        // Add classes from main that are missing in secondary
-        for (let i = 0; i < mainClasses.length; i++) {
-            if (!secondaryBody.classList.contains(mainClasses[i])) {
-                secondaryBody.classList.add(mainClasses[i]);
-            }
+        const tracked = this.mainOriginatedClasses.get(win);
+        if (!tracked) {
+            return;
         }
 
-        // Remove classes from secondary that are no longer on main
-        const toRemove: string[] = [];
-        for (let i = 0; i < secondaryBody.classList.length; i++) {
-            if (!mainClasses.contains(secondaryBody.classList[i])) {
-                toRemove.push(secondaryBody.classList[i]);
+        // Add classes from main that are missing in secondary, and track them
+        for (let i = 0; i < mainClasses.length; i++) {
+            const cls = mainClasses[i];
+            if (!secondaryBody.classList.contains(cls)) {
+                secondaryBody.classList.add(cls);
             }
-        }
-        for (const cls of toRemove) {
-            secondaryBody.classList.remove(cls);
+            tracked.add(cls);
         }
     }
 }
