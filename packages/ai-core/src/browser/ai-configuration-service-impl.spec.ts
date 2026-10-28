@@ -23,7 +23,7 @@ import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { PreferenceChange, PreferenceInspection, PreferenceScope, PreferenceService } from '@theia/core/lib/common/preferences';
+import { PreferenceChange, PreferenceInspection, PreferenceResolveOptions, PreferenceScope, PreferenceService } from '@theia/core/lib/common/preferences';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { TrustAwarePreferenceReader } from './trust-aware-preference-reader';
 import { AiConfigurationChange } from '../common/ai-configuration-service';
@@ -59,9 +59,11 @@ class StubPreferenceService {
         this.scopeMap(key).set(scope, value);
     }
 
-    get<T>(preferenceName: string, defaultValue?: T): T | undefined {
-        const inspection = this.inspect<T>(preferenceName);
-        return (inspection?.value as T | undefined) ?? defaultValue;
+    get<T>(preferenceName: string, defaultValue?: T, _resourceUri?: string, options?: PreferenceResolveOptions): T | undefined {
+        const map = this.values.get(preferenceName);
+        const scope = [PreferenceScope.Folder, PreferenceScope.Workspace, PreferenceScope.User, PreferenceScope.Default]
+            .find(candidate => !options?.excludeScopes?.includes(candidate) && map?.get(candidate) !== undefined);
+        return scope === undefined ? defaultValue : map?.get(scope) as T;
     }
 
     set(preferenceName: string, value: unknown, scope: PreferenceScope = PreferenceScope.User): Promise<void> {
