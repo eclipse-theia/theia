@@ -26,6 +26,7 @@ import { AIChatInputWidget } from './chat-input-widget';
 import { ChatBannerWidget } from './chat-banner-widget';
 import { ChatViewTreeWidget, ChatWelcomeMessageProvider } from './chat-tree-view/chat-view-tree-widget';
 import { AIActivationService } from '@theia/ai-core/lib/browser/ai-activation-service';
+import { CHAT_VIEW_WIDGET_ID, CHAT_VIEW_WIDGET_LABEL, CHAT_VIEW_WIDGET_MARKER } from './chat-contract';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
@@ -40,8 +41,11 @@ export namespace ChatViewWidget {
 @injectable()
 export class ChatViewWidget extends BaseWidget implements ExtractableWidget, StatefulWidget {
 
-    public static ID = 'chat-view-widget';
-    static LABEL = nls.localize('theia/ai/chat/view/label', 'AI Chat');
+    public static ID = CHAT_VIEW_WIDGET_ID;
+    static LABEL = CHAT_VIEW_WIDGET_LABEL;
+
+    /** Marker enabling `isChatViewWidget` without a static import of this class. */
+    readonly [CHAT_VIEW_WIDGET_MARKER] = true;
 
     @inject(ChatService)
     protected chatService: ChatService;

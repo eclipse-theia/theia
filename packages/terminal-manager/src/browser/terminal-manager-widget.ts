@@ -36,7 +36,8 @@ import {
 import { Disposable, DisposableCollection, Emitter, nls, ILogger } from '@theia/core';
 import { UUID } from '@theia/core/shared/@lumino/coreutils';
 import { TerminalWidget, TerminalWidgetOptions } from '@theia/terminal/lib/browser/base/terminal-widget';
-import { TerminalWidgetImpl, nextTerminalCreationToken } from '@theia/terminal/lib/browser/terminal-widget-impl';
+import { isTerminalWidget, nextTerminalCreationToken } from '@theia/terminal/lib/browser/terminal-contract';
+import type { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { TerminalManagerPreferences } from './terminal-manager-preferences';
@@ -304,9 +305,9 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
      * or a new one is created (with special-page config applied if available).
      */
     addTerminalPage(widget: Widget, pageId?: TerminalManagerTreeTypes.PageId): void {
-        if (widget instanceof TerminalWidgetImpl) {
+        if (isTerminalWidget(widget)) {
             const resolvedPageId = pageId ?? this.createPagePanel().id;
-            const terminalKey = TerminalManagerTreeTypes.generateTerminalKey(widget);
+            const terminalKey = TerminalManagerTreeTypes.generateTerminalKey(widget as TerminalWidgetImpl);
             this.addTerminalReference(widget, terminalKey);
             this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
             const groupPanel = this.createTerminalGroupPanel();
@@ -441,8 +442,8 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         if (!this.treeWidget) {
             return;
         }
-        if (widget instanceof TerminalWidgetImpl) {
-            const terminalId = TerminalManagerTreeTypes.generateTerminalKey(widget);
+        if (isTerminalWidget(widget)) {
+            const terminalId = TerminalManagerTreeTypes.generateTerminalKey(widget as TerminalWidgetImpl);
             this.addTerminalReference(widget, terminalId);
             this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
             const groupPanel = this.createTerminalGroupPanel();
@@ -519,8 +520,8 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     addWidgetToTerminalGroup(widget: Widget, groupId: TerminalManagerTreeTypes.GroupId): void {
-        if (widget instanceof TerminalWidgetImpl) {
-            const newTerminalId = TerminalManagerTreeTypes.generateTerminalKey(widget);
+        if (isTerminalWidget(widget)) {
+            const newTerminalId = TerminalManagerTreeTypes.generateTerminalKey(widget as TerminalWidgetImpl);
             this.addTerminalReference(widget, newTerminalId);
             this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
             this.treeWidget.model.addTerminal(newTerminalId, groupId, widget.title.label);
@@ -561,10 +562,10 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     protected handleOnDidChangeActiveWidget(widget: Widget | null): void {
-        if (!(widget instanceof TerminalWidgetImpl)) {
+        if (!(isTerminalWidget(widget))) {
             return;
         }
-        const terminalKey = TerminalManagerTreeTypes.generateTerminalKey(widget);
+        const terminalKey = TerminalManagerTreeTypes.generateTerminalKey(widget as TerminalWidgetImpl);
         this.treeWidget.model.selectTerminalNode(terminalKey);
     }
 
@@ -673,8 +674,8 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
                 const { childLayouts: widgetLayouts } = groupLayout;
                 for (const widgetLayout of widgetLayouts) {
                     const { widget } = widgetLayout;
-                    if (widget instanceof TerminalWidgetImpl) {
-                        const widgetId = TerminalManagerTreeTypes.generateTerminalKey(widget);
+                    if (isTerminalWidget(widget)) {
+                        const widgetId = TerminalManagerTreeTypes.generateTerminalKey(widget as TerminalWidgetImpl);
                         const widgetNode = treeWidget.model.getNode(widgetId);
                         if (!TerminalManagerTreeTypes.isTerminalNode(widgetNode)) {
                             throw TerminalManagerWidget.createRestoreError(widgetId);

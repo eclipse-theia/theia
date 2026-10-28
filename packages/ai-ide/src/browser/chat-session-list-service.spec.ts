@@ -22,6 +22,7 @@ import { expect } from 'chai';
 import { Emitter } from '@theia/core';
 import { ChatAgentLocation, ChatService, ChatSession, ChatSessionMetadata, ChatSessionStatus } from '@theia/ai-chat';
 import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
+import { CHAT_VIEW_WIDGET_MARKER } from '@theia/ai-chat-ui/lib/browser/chat-contract';
 import { ApplicationShell, Widget } from '@theia/core/lib/browser';
 import { ChatSessionListService } from './chat-session-list-service';
 import { SectionedSessions, SessionRow, computeVisibleSessionSlots } from './chat-session-list-components';
@@ -93,6 +94,9 @@ describe('ChatSessionListService', () => {
         beforeEach(() => {
             activeSessionId = undefined;
             chatViewWidget = Object.create(ChatViewWidget.prototype) as ChatViewWidget;
+            // The service matches the view via the widget marker; a
+            // prototype-only fake has no instance property, so stamp it.
+            (chatViewWidget as unknown as { [CHAT_VIEW_WIDGET_MARKER]?: unknown })[CHAT_VIEW_WIDGET_MARKER] = true;
             otherWidget = {};
             activeWidget = undefined;
             widgetForActiveElement = undefined;

@@ -20,7 +20,7 @@ import { AIHistoryView } from './ai-history-widget';
 import { Command, CommandRegistry, Emitter, nls } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { LanguageModelService } from '@theia/ai-core';
-import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
+import { isChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-contract';
 
 export const AI_HISTORY_TOGGLE_COMMAND_ID = 'aiHistory:toggle';
 export const OPEN_AI_HISTORY_VIEW = Command.toLocalizedCommand({
@@ -234,7 +234,7 @@ export class AIHistoryViewContribution extends AIViewContribution<AIHistoryView>
             tooltip: nls.localize('theia/ai/history/open-history-tooltip', 'Open AI Agent History'),
             group: 'ai-settings',
             priority: 1,
-            isVisible: widget => this.activationService.isActive && widget instanceof ChatViewWidget
+            isVisible: widget => this.activationService.isActive && isChatViewWidget(widget)
         });
     }
 }

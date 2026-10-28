@@ -27,7 +27,7 @@ import { ToolConfirmationKeybindingHints, withToolCallConfirmation } from '@thei
 import {
     APPROVE_LATEST_TOOL_CONFIRMATION_COMMAND,
     DENY_LATEST_TOOL_CONFIRMATION_COMMAND
-} from '@theia/ai-chat-ui/lib/browser/tool-confirmation-keybinding-contribution';
+} from '@theia/ai-chat-ui/lib/browser/chat-contract';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 import { PendingToolConfirmationTracker } from '@theia/ai-chat/lib/browser/pending-tool-confirmation-tracker';
 import { ToolInvocationRegistry } from '@theia/ai-core';

@@ -24,7 +24,7 @@ import { TerminalServiceMain, TerminalServiceExt, MAIN_RPC_CONTEXT, TerminalOpti
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { SerializableEnvironmentVariableCollection, ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-terminal-protocol';
-import { TerminalLink, TerminalLinkProvider } from '@theia/terminal/lib/browser/terminal-link-provider';
+import { TerminalLink, TerminalLinkProvider } from '@theia/terminal/lib/browser/terminal-contract';
 import { URI } from '@theia/core/lib/common/uri';
 import { PluginTerminalRegistry } from './plugin-terminal-registry';
 import { CancellationToken, isObject } from '@theia/core';

@@ -16,7 +16,7 @@
 import { Command, CommandRegistry, MenuModelRegistry, nls } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { AI_SHOW_SETTINGS_COMMAND, AIViewContribution } from '@theia/ai-core/lib/browser';
-import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
+import { isChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-contract';
 import { codicon, CommonCommands, CommonMenus, KeybindingRegistry } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AIConfigurationContainerWidget } from './ai-configuration-widget';
@@ -205,7 +205,7 @@ export class AIConfigurationViewContribution extends AIViewContribution<AIConfig
             tooltip: nls.localize('theia/ai-ide/open-ai-configuration-tooltip', 'Open AI Configuration'),
             group: 'ai-settings',
             priority: 2,
-            isVisible: widget => this.activationService.isActive && widget instanceof ChatViewWidget
+            isVisible: widget => this.activationService.isActive && isChatViewWidget(widget)
         });
         // Escape hatch from the AI Configuration view to the regular Settings UI. OPEN_PREFERENCES ignores
         // the widget argument the toolbar passes (it only acts on a string search term), and this view's

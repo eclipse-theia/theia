@@ -45,7 +45,9 @@ import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-v
 import { TaskContextService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { SESSION_STORAGE_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 
-export const AI_CHAT_TOGGLE_COMMAND_ID = 'aiChat:toggle';
+import { AI_CHAT_TOGGLE_COMMAND_ID } from './chat-contract';
+
+export { AI_CHAT_TOGGLE_COMMAND_ID };
 
 @injectable()
 export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
@@ -206,7 +208,12 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     }
 
     override registerCommands(registry: CommandRegistry): void {
-        super.registerCommands(registry);
+        // The toggle command is already registered on startup by the
+        // lightweight contribution in ai-chat-ui-frontend-module.ts;
+        // re-registering it would throw. Register the remaining commands.
+        if (!registry.getCommand(this.toggleCommand?.id ?? '')) {
+            super.registerCommands(registry);
+        }
         registry.registerCommand(ChatCommands.SCROLL_LOCK_WIDGET, {
             isEnabled: widget => this.withWidget(widget, chatWidget => !chatWidget.isLocked) && !this.activeSessionEmpty,
             isVisible: widget => this.withWidget(widget, chatWidget => !chatWidget.isLocked) && !this.activeSessionEmpty,
@@ -377,7 +384,12 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     }
 
     override registerKeybindings(keybindings: KeybindingRegistry): void {
-        super.registerKeybindings(keybindings);
+        // With lazy loading the toggle keybinding is already registered on
+        // startup by the lightweight contribution; re-registering would
+        // create a duplicate.
+        if (this.toggleCommand && keybindings.getKeybindingsForCommand(this.toggleCommand.id).length === 0) {
+            super.registerKeybindings(keybindings);
+        }
         // Scoped to chat view active so we don't shadow global bindings (e.g. ctrl+shift+l =
         // "Select All Occurrences" in editors). We use chatViewActive in addition to the more
         // specific input/response focus keys so clicks on non-focusable parts of the chat view

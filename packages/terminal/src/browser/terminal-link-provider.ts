@@ -14,27 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CancellationToken, ContributionProvider, DisposableCollection, disposableTimeout, isOSX, ILogger } from '@theia/core';
+import { ContributionProvider, DisposableCollection, disposableTimeout, isOSX, ILogger } from '@theia/core';
 import { PreferenceService } from '@theia/core/lib/common';
 import { inject, injectable, interfaces, named, postConstruct } from '@theia/core/shared/inversify';
 import { IBufferRange, ILink, ILinkDecorations } from 'xterm';
-import { TerminalWidget } from './base/terminal-widget';
 import { TerminalContribution } from './terminal-contribution';
 import { convertLinkRangeToBuffer, getLinkContext, LinkContext } from './terminal-link-helpers';
 import { TerminalWidgetImpl } from './terminal-widget-impl';
+import { TerminalLink, TerminalLinkProvider } from './terminal-contract';
 
-export const TerminalLinkProvider = Symbol('TerminalLinkProvider');
-export interface TerminalLinkProvider {
-    provideLinks(line: string, terminal: TerminalWidget, cancellationToken?: CancellationToken): Promise<TerminalLink[]>;
-}
-
-export const TerminalLink = Symbol('TerminalLink');
-export interface TerminalLink {
-    startIndex: number;
-    length: number;
-    tooltip?: string;
-    handle(): Promise<void>;
-}
+export { TerminalLink, TerminalLinkProvider };
 
 export const XtermLink = Symbol('XtermLink');
 export const XtermLinkFactory = Symbol('XtermLinkFactory');
