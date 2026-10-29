@@ -160,6 +160,35 @@ describe('PluginDebugAdapterSession', () => {
         expect(adapter.received).to.deep.equal([setBreakpoints]);
     });
 
+    it('starts the session without trackers whose factory throws or rejects', async () => {
+        const consoleError = sinon.stub(console, 'error');
+        try {
+            const tracker = await PluginDebugAdapterTracker.create(theiaSession, [
+                ['*', {
+                    createDebugAdapterTracker: () => {
+                        throw new Error('factory failure');
+                    }
+                }],
+                ['*', { createDebugAdapterTracker: () => Promise.reject(new Error('factory failure')) }],
+                ['lua', {
+                    createDebugAdapterTracker: () => ({
+                        onWillReceiveMessage: message => {
+                            message.arguments = { ...message.arguments, sourceContent: 'print(1)' };
+                        }
+                    })
+                }]
+            ]);
+            await startSession(tracker);
+
+            channel.fromClient(setBreakpoints);
+
+            expect(JSON.parse(adapter.received[0]).arguments.sourceContent).to.equal('print(1)');
+            expect(consoleError.callCount).to.equal(2);
+        } finally {
+            consoleError.restore();
+        }
+    });
+
     it('keeps calling the other trackers when one of them throws', async () => {
         const consoleError = sinon.stub(console, 'error');
         try {

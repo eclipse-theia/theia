@@ -26,9 +26,13 @@ export class PluginDebugAdapterTracker implements theia.DebugAdapterTracker {
 
         const factories = trackerFactories.filter(tuple => tuple[0] === '*' || tuple[0] === session.type).map(tuple => tuple[1]);
         for (const factory of factories) {
-            const tracker = await factory.createDebugAdapterTracker(session);
-            if (tracker) {
-                trackers.push(tracker);
+            try {
+                const tracker = await factory.createDebugAdapterTracker(session);
+                if (tracker) {
+                    trackers.push(tracker);
+                }
+            } catch (error) {
+                console.error('Debug adapter tracker factory failed:', error);
             }
         }
 
