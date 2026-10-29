@@ -179,7 +179,8 @@ export class TaskServerImpl implements TaskServer, Disposable {
     protected fireTaskExitedEvent(event: TaskExitedEvent, task?: Task): void {
         this.logger.debug(log => log('task has exited:', event));
 
-        if (task instanceof ProcessTask) {
+        // A custom execution's pseudoterminal ends like a process, with the exit code the plugin reported, as in VS Code.
+        if (task instanceof ProcessTask || task instanceof CustomTask) {
             this.clients.forEach(client => {
                 client.onDidEndTaskProcess(event);
             });
