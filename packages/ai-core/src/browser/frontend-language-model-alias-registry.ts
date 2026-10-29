@@ -29,44 +29,44 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         {
             id: 'default/code',
             defaultModelIds: [
-                'anthropic/claude-opus-5',
-                'openai/gpt-5.6-sol',
-                'google/gemini-3.1-pro-preview'
+                'anthropic/claude-opus-5-5',
+                'openai/gpt-6.1-sol',
+                'google/gemini-4-argon'
             ],
             description: nls.localize('theia/ai/core/defaultModelAliases/code/description', 'Optimized for code understanding and generation tasks.')
         },
         {
             id: 'default/universal',
             defaultModelIds: [
-                'anthropic/claude-opus-5',
-                'openai/gpt-5.6-sol',
-                'google/gemini-3.1-pro-preview'
+                'anthropic/claude-opus-5-5',
+                'openai/gpt-6.1-sol',
+                'google/gemini-4-argon'
             ],
             description: nls.localize('theia/ai/core/defaultModelAliases/universal/description', 'Well-balanced for both code and general language use.')
         },
         {
             id: 'default/code-completion',
             defaultModelIds: [
-                'anthropic/claude-sonnet-5',
-                'openai/gpt-5.6-sol',
-                'google/gemini-3.1-pro-preview'
+                'anthropic/claude-sonnet-5-5',
+                'openai/gpt-6.1-sol',
+                'google/gemini-4-argon'
             ],
             description: nls.localize('theia/ai/core/defaultModelAliases/code-completion/description', 'Best suited for code autocompletion scenarios.')
         },
         {
             id: 'default/summarize',
             defaultModelIds: [
-                'anthropic/claude-opus-5',
-                'openai/gpt-5.6-sol',
-                'google/gemini-3.1-pro-preview'
+                'anthropic/claude-opus-5-5',
+                'openai/gpt-6.1-sol',
+                'google/gemini-4-argon'
             ],
             description: nls.localize('theia/ai/core/defaultModelAliases/summarize/description', 'Models prioritized for summarization and condensation of content.')
         },
         {
             id: 'default/fast',
             defaultModelIds: [
-                'anthropic/claude-haiku-4-5',
-                'openai/gpt-5.6-luna',
+                'anthropic/claude-haiku-5-5',
+                'openai/gpt-6-luna',
                 'google/gemini-3.8-flash'
             ],
             description: nls.localize('theia/ai/core/defaultModelAliases/fast/description',

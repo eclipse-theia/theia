@@ -17,7 +17,7 @@
 import { expect } from 'chai';
 import type { Model } from '@google/genai';
 import { DiscoveredModel, ReasoningApi } from '@theia/ai-core';
-import { GoogleLanguageModelsManagerImpl, reasoningApiFromModelId } from './google-language-models-manager-impl';
+import { GoogleLanguageModelsManagerImpl, reasoningApiFromModelId, reasoningSupportFromModelId } from './google-language-models-manager-impl';
 import { GoogleModelDescription } from '../common';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { TestModelDiscoveryFetcher } from '@theia/ai-core/lib/node/test/test-model-discovery-fetcher';
@@ -95,6 +95,11 @@ describe('reasoningApiFromModelId', () => {
         expect(reasoningApiFromModelId('gemini-3-flash')).to.equal('effort');
     });
 
+    it('maps Gemini 4 family ids to "effort"', () => {
+        expect(reasoningApiFromModelId('gemini-4-argon')).to.equal('effort');
+        expect(reasoningApiFromModelId('gemini-4.1-pro')).to.equal('effort');
+    });
+
     it('maps Gemini 2.5 family ids to "budget"', () => {
         expect(reasoningApiFromModelId('gemini-2.5-pro')).to.equal('budget');
         expect(reasoningApiFromModelId('gemini-2.5-flash')).to.equal('budget');
@@ -108,9 +113,25 @@ describe('reasoningApiFromModelId', () => {
         expect(reasoningApiFromModelId('text-bison')).to.equal(undefined);
     });
 
-    it('does not match prefixes that only happen to start with gemini-2 or gemini-3', () => {
+    it('does not match prefixes that only happen to start with gemini-2, gemini-3 or gemini-4', () => {
         expect(reasoningApiFromModelId('gemini-30-foo')).to.equal(undefined);
+        expect(reasoningApiFromModelId('gemini-40-foo')).to.equal(undefined);
         expect(reasoningApiFromModelId('gemini-2.55')).to.equal(undefined);
+    });
+});
+
+describe('reasoningSupportFromModelId', () => {
+    it('offers neither "off" nor "minimal" for Gemini 4, which always thinks', () => {
+        const { supportedLevels } = reasoningSupportFromModelId('gemini-4-argon');
+        expect(supportedLevels).to.include.members(['low', 'medium', 'high', 'auto']);
+        expect(supportedLevels).to.not.include('minimal');
+        expect(supportedLevels).to.not.include('off');
+    });
+
+    it('keeps the full range of levels for Gemini 3 and 2.5', () => {
+        expect(reasoningSupportFromModelId('gemini-3.8-flash').supportedLevels).to.include.members(['off', 'minimal']);
+        expect(reasoningSupportFromModelId('gemini-2.5-pro').supportedLevels).to.include.members(['off', 'minimal']);
+        expect(reasoningSupportFromModelId('gemini-40-foo').supportedLevels).to.include('minimal');
     });
 });
 
