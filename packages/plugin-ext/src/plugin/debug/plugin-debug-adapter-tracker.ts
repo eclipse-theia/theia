@@ -21,65 +21,55 @@ import * as theia from '@theia/plugin';
 export class PluginDebugAdapterTracker implements theia.DebugAdapterTracker {
     constructor(protected readonly trackers: theia.DebugAdapterTracker[]) { }
 
-    static async create(session: theia.DebugSession, trackerFactories: [string, theia.DebugAdapterTrackerFactory][]): Promise<PluginDebugAdapterTracker> {
+    static async create(session: theia.DebugSession, trackerFactories: [string, theia.DebugAdapterTrackerFactory][]): Promise<PluginDebugAdapterTracker | undefined> {
         const trackers: theia.DebugAdapterTracker[] = [];
 
         const factories = trackerFactories.filter(tuple => tuple[0] === '*' || tuple[0] === session.type).map(tuple => tuple[1]);
         for (const factory of factories) {
-            const tracker = await factory.createDebugAdapterTracker(session);
-            if (tracker) {
-                trackers.push(tracker);
+            try {
+                const tracker = await factory.createDebugAdapterTracker(session);
+                if (tracker) {
+                    trackers.push(tracker);
+                }
+            } catch (error) {
+                console.error('Debug adapter tracker factory failed:', error);
             }
         }
 
-        return new PluginDebugAdapterTracker(trackers);
+        return trackers.length > 0 ? new PluginDebugAdapterTracker(trackers) : undefined;
     }
 
     onWillStartSession(): void {
-        this.trackers.forEach(tracker => {
-            if (tracker.onWillStartSession) {
-                tracker.onWillStartSession();
-            }
-        });
+        this.forEachTracker(tracker => tracker.onWillStartSession?.());
     }
 
     onWillReceiveMessage(message: any): void {
-        this.trackers.forEach(tracker => {
-            if (tracker.onWillReceiveMessage) {
-                tracker.onWillReceiveMessage(message);
-            }
-        });
+        this.forEachTracker(tracker => tracker.onWillReceiveMessage?.(message));
     }
 
     onDidSendMessage(message: any): void {
-        this.trackers.forEach(tracker => {
-            if (tracker.onDidSendMessage) {
-                tracker.onDidSendMessage(message);
-            }
-        });
+        this.forEachTracker(tracker => tracker.onDidSendMessage?.(message));
     }
 
     onWillStopSession(): void {
-        this.trackers.forEach(tracker => {
-            if (tracker.onWillStopSession) {
-                tracker.onWillStopSession();
-            }
-        });
+        this.forEachTracker(tracker => tracker.onWillStopSession?.());
     }
 
     onError(error: Error): void {
-        this.trackers.forEach(tracker => {
-            if (tracker.onError) {
-                tracker.onError(error);
-            }
-        });
+        this.forEachTracker(tracker => tracker.onError?.(error));
     }
 
     onExit(code: number | undefined, signal: string | undefined): void {
-        this.trackers.forEach(tracker => {
-            if (tracker.onExit) {
-                tracker.onExit(code, signal);
+        this.forEachTracker(tracker => tracker.onExit?.(code, signal));
+    }
+
+    protected forEachTracker(callback: (tracker: theia.DebugAdapterTracker) => void): void {
+        for (const tracker of this.trackers) {
+            try {
+                callback(tracker);
+            } catch (error) {
+                console.error('Debug adapter tracker failed:', error);
             }
-        });
+        }
     }
 }
