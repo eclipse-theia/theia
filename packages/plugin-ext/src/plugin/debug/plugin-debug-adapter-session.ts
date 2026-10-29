@@ -28,7 +28,7 @@ export class PluginDebugAdapterSession extends DebugAdapterSessionImpl implement
 
     constructor(
         override readonly debugAdapter: DebugAdapter,
-        protected readonly tracker: theia.DebugAdapterTracker,
+        protected readonly tracker: theia.DebugAdapterTracker | undefined,
         protected readonly theiaSession: theia.DebugSession) {
 
         super(theiaSession.id, debugAdapter);
@@ -52,14 +52,14 @@ export class PluginDebugAdapterSession extends DebugAdapterSessionImpl implement
     };
 
     override async start(channel: DebugChannel): Promise<void> {
-        if (this.tracker.onWillStartSession) {
+        if (this.tracker?.onWillStartSession) {
             this.tracker.onWillStartSession();
         }
         await super.start(channel);
     }
 
     override async stop(): Promise<void> {
-        if (this.tracker.onWillStopSession) {
+        if (this.tracker?.onWillStopSession) {
             this.tracker.onWillStopSession();
         }
         await super.stop();
@@ -74,14 +74,14 @@ export class PluginDebugAdapterSession extends DebugAdapterSessionImpl implement
     }
 
     protected override onDebugAdapterError(error: Error): void {
-        if (this.tracker.onError) {
+        if (this.tracker?.onError) {
             this.tracker.onError(error);
         }
         super.onDebugAdapterError(error);
     }
 
     protected override send(message: string): void {
-        if (!this.tracker.onDidSendMessage) {
+        if (!this.tracker?.onDidSendMessage) {
             super.send(message);
             return;
         }
@@ -94,16 +94,20 @@ export class PluginDebugAdapterSession extends DebugAdapterSessionImpl implement
     }
 
     protected override write(message: string): void {
-        if (this.tracker.onWillReceiveMessage) {
-            const parsed = JSON.parse(message);
-            this.tracker.onWillReceiveMessage(parsed);
-            message = JSON.stringify(parsed);
+        if (!this.tracker?.onWillReceiveMessage) {
+            super.write(message);
+            return;
         }
-        super.write(message);
+        const parsed = JSON.parse(message);
+        try {
+            this.tracker.onWillReceiveMessage(parsed);
+        } finally {
+            super.write(JSON.stringify(parsed));
+        }
     }
 
     protected override onDebugAdapterExit(): void {
-        if (this.tracker.onExit) {
+        if (this.tracker?.onExit) {
             this.tracker.onExit(undefined, undefined);
         }
         super.onDebugAdapterExit();

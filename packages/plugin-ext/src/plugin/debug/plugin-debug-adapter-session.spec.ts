@@ -15,11 +15,13 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { Emitter } from '@theia/core/lib/common/event';
 import { DebugAdapter } from '@theia/debug/lib/common/debug-model';
 import { DebugChannel } from '@theia/debug/lib/common/debug-service';
 import * as theia from '@theia/plugin';
 import { PluginDebugAdapterSession } from './plugin-debug-adapter-session';
+import { PluginDebugAdapterTracker } from './plugin-debug-adapter-tracker';
 
 class FakeDebugAdapter implements DebugAdapter {
     readonly received: string[] = [];
@@ -72,7 +74,7 @@ describe('PluginDebugAdapterSession', () => {
     let adapter: FakeDebugAdapter;
     let channel: FakeDebugChannel;
 
-    async function startSession(tracker: theia.DebugAdapterTracker): Promise<void> {
+    async function startSession(tracker: theia.DebugAdapterTracker | undefined): Promise<void> {
         adapter = new FakeDebugAdapter();
         channel = new FakeDebugChannel();
         await new PluginDebugAdapterSession(adapter, tracker, theiaSession).start(channel);
@@ -119,8 +121,13 @@ describe('PluginDebugAdapterSession', () => {
         expect(channel.sent).to.deep.equal([stopped]);
     });
 
-    it('passes messages through verbatim when the tracker has no message handlers', async () => {
-        await startSession({});
+    it('passes messages through verbatim when no tracker factory applies to the session', async () => {
+        const tracker = await PluginDebugAdapterTracker.create(theiaSession, [
+            ['node', { createDebugAdapterTracker: () => ({ onWillReceiveMessage: () => { } }) }],
+            ['lua', { createDebugAdapterTracker: () => undefined }]
+        ]);
+        expect(tracker).to.equal(undefined);
+        await startSession(tracker);
         const request = JSON.stringify(JSON.parse(setBreakpoints), undefined, 2);
         const event = JSON.stringify(JSON.parse(stopped), undefined, 2);
 
@@ -140,5 +147,47 @@ describe('PluginDebugAdapterSession', () => {
 
         expect(() => adapter.messageEmitter.fire(stopped)).to.throw('tracker failure');
         expect(channel.sent).to.deep.equal([stopped]);
+    });
+
+    it('still sends a request to the adapter when onWillReceiveMessage throws', async () => {
+        await startSession({
+            onWillReceiveMessage: () => {
+                throw new Error('tracker failure');
+            }
+        });
+
+        expect(() => channel.fromClient(setBreakpoints)).to.throw('tracker failure');
+        expect(adapter.received).to.deep.equal([setBreakpoints]);
+    });
+
+    it('keeps calling the other trackers when one of them throws', async () => {
+        const consoleError = sinon.stub(console, 'error');
+        try {
+            const failure = (): void => {
+                throw new Error('tracker failure');
+            };
+            await startSession(await PluginDebugAdapterTracker.create(theiaSession, [
+                ['*', { createDebugAdapterTracker: () => ({ onWillReceiveMessage: failure, onDidSendMessage: failure }) }],
+                ['lua', {
+                    createDebugAdapterTracker: () => ({
+                        onWillReceiveMessage: message => {
+                            message.arguments = { ...message.arguments, sourceContent: 'print(1)' };
+                        },
+                        onDidSendMessage: message => {
+                            message.body = { ...message.body, description: 'Paused on breakpoint' };
+                        }
+                    })
+                }]
+            ]));
+
+            channel.fromClient(setBreakpoints);
+            adapter.messageEmitter.fire(stopped);
+
+            expect(JSON.parse(adapter.received[0]).arguments.sourceContent).to.equal('print(1)');
+            expect(JSON.parse(channel.sent[0]).body.description).to.equal('Paused on breakpoint');
+            expect(consoleError.callCount).to.equal(2);
+        } finally {
+            consoleError.restore();
+        }
     });
 });

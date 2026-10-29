@@ -501,7 +501,7 @@ export class DebugExtImpl implements DebugExt {
         );
     }
 
-    protected async createDebugAdapterTracker(session: theia.DebugSession): Promise<theia.DebugAdapterTracker> {
+    protected async createDebugAdapterTracker(session: theia.DebugSession): Promise<theia.DebugAdapterTracker | undefined> {
         return PluginDebugAdapterTracker.create(session, this.trackerFactories);
     }
 
