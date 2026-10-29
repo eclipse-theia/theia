@@ -120,7 +120,7 @@ describe('ToolsConfigurationCategory', () => {
         }
     });
 
-    it('marks the rows of the tools that a session value sets', async () => {
+    it('marks the rows of the tools that a session value sets, and not as modified', async () => {
         const category = createCategory({ a: {}, b: {} }, {}, ToolConfirmationMode.CONFIRM);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (category as any).confirmationManager = {
@@ -143,6 +143,10 @@ describe('ToolsConfigurationCategory', () => {
             expect(marker('tool:a')?.textContent).to.equal('Overridden by session');
             expect(marker('tool:a')?.title).to.include('--session-preference').and.to.include('"always_allow"');
             expect(marker('tool:b')).to.not.exist;
+            // As on setting rows, the modified bar shows a saved value only, not the session value.
+            const modified = (rowId: string) => container.querySelector(`[data-ai-config-row-id="${rowId}"]`)?.classList.contains('modified');
+            expect(modified('tool:a')).to.be.false;
+            expect(modified('tool:b')).to.be.true;
         } finally {
             flushSync(() => root.unmount());
             container.remove();

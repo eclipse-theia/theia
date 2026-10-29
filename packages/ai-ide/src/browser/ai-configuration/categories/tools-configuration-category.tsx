@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AiConfigurationService, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
+import { AiConfigurationInspection, AiConfigurationService, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 import {
     DEFAULT_TOOL_CONFIRMATION_PREFERENCE,
@@ -93,6 +93,8 @@ export class ToolsConfigurationCategory extends SinglePageCategoryRenderer imple
 
     protected toolNames: string[] = [];
     protected toolConfirmationModes: Record<string, ToolConfirmationMode> = {};
+    /** The per-tool modes without the session value, whose rows show the modified bar. */
+    protected persistedToolConfirmationModes: Record<string, ToolConfirmationMode> = {};
     /** The per-tool modes set via `--session-preference`, whose rows are marked "Overridden by session". */
     protected sessionToolConfirmationModes: Record<string, ToolConfirmationMode> = {};
     protected defaultState: ToolConfirmationMode = ToolConfirmationMode.CONFIRM;
@@ -172,7 +174,12 @@ export class ToolsConfigurationCategory extends SinglePageCategoryRenderer imple
     protected async loadConfirmation(): Promise<void> {
         this.defaultState = this.confirmationManager.getDefaultConfirmationMode();
         this.toolConfirmationModes = this.confirmationManager.getAllConfirmationSettings();
-        const sessionValue = this.aiConfigurationService.inspect(TOOL_CONFIRMATION_PREFERENCE)?.sessionValue;
+        const inspection = this.aiConfigurationService.inspect(TOOL_CONFIRMATION_PREFERENCE);
+        const persistedValue = AiConfigurationInspection.valueWithoutSession(inspection);
+        this.persistedToolConfirmationModes = persistedValue !== undefined && JSONExt.isObject(persistedValue)
+            ? persistedValue as Record<string, ToolConfirmationMode>
+            : {};
+        const sessionValue = inspection?.sessionValue;
         this.sessionToolConfirmationModes = sessionValue !== undefined && JSONExt.isObject(sessionValue) ? sessionValue as Record<string, ToolConfirmationMode> : {};
     }
 
@@ -249,7 +256,7 @@ export class ToolsConfigurationCategory extends SinglePageCategoryRenderer imple
                 toolNames={this.toolNames}
                 getDescription={name => this.toolInvocationRegistry.getFunction(name)?.description}
                 getEffectiveState={name => this.getEffectiveState(name)}
-                isModified={name => this.toolConfirmationModes[name] !== undefined}
+                isModified={name => this.persistedToolConfirmationModes[name] !== undefined}
                 getSessionMode={name => this.sessionToolConfirmationModes[name]}
                 onChangeMode={(name, value) => this.handleToolConfirmationModeChange(name, value)}
             />
