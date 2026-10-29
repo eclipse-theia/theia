@@ -220,14 +220,16 @@ export class ShellCommandPermissionService {
 
     /**
      * Adds the patterns missing from the list without the session value (set via `--session-preference`), which
-     * writing the effective list back would save to a settings file. The write clears the session value, unless the
-     * written list equals it.
+     * writing the effective list back would save to a settings file. Writes when a pattern is missing from either
+     * list: the write clears the session value, unless the written list equals it, so a pattern that only the saved
+     * list has takes effect too.
      */
-    protected addPatternsToList(patterns: string[], preferenceKey: string, _getCurrentPatterns: () => string[]): Promise<void> {
+    protected addPatternsToList(patterns: string[], preferenceKey: string, getCurrentPatterns: () => string[]): Promise<void> {
         const validated = patterns.map(p => this.validatePattern(p));
         const persistedPatterns = this.getPersistedPatterns(preferenceKey);
+        const currentPatterns = getCurrentPatterns();
         const newPatterns = validated.filter(p => !persistedPatterns.includes(p));
-        if (newPatterns.length > 0) {
+        if (newPatterns.length > 0 || validated.some(p => !currentPatterns.includes(p))) {
             return this.aiConfigurationService.update(
                 preferenceKey,
                 [...persistedPatterns, ...newPatterns]

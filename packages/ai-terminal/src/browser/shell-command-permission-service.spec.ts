@@ -749,24 +749,25 @@ describe('ShellCommandPermissionService', () => {
     });
 
     describe('with a list set for this session', () => {
-        let userPatterns: string[] | undefined;
-        let sessionPatterns: string[] | undefined;
+        let userPatterns: Record<string, string[] | undefined>;
+        let sessionPatterns: Record<string, string[] | undefined>;
 
         beforeEach(() => {
-            userPatterns = ['rm *'];
-            sessionPatterns = ['curl *'];
-            // Resolves the allowlist as `AiConfigurationService` does: the session list replaces the user list, and
+            userPatterns = { [SHELL_COMMAND_ALLOWLIST_PREFERENCE]: ['rm *'], [SHELL_COMMAND_DENYLIST_PREFERENCE]: ['rm *'] };
+            sessionPatterns = { [SHELL_COMMAND_ALLOWLIST_PREFERENCE]: ['curl *'], [SHELL_COMMAND_DENYLIST_PREFERENCE]: ['curl *'] };
+            // Resolves both lists as `AiConfigurationService` does: the session list replaces the user list, and
             // `update` writes User scope and clears the session value unless the list is unchanged.
+            const effective = (key: string) => sessionPatterns[key] ?? userPatterns[key];
             const configuration = {
-                get: (key: string, fallback?: string[]) => key === SHELL_COMMAND_ALLOWLIST_PREFERENCE ? sessionPatterns ?? userPatterns ?? fallback : fallback,
-                inspect: (key: string) => key === SHELL_COMMAND_ALLOWLIST_PREFERENCE
-                    ? { preferenceName: key, defaultValue: [], globalValue: userPatterns, sessionValue: sessionPatterns, value: sessionPatterns ?? userPatterns ?? [] }
+                get: (key: string, fallback?: string[]) => effective(key) ?? fallback,
+                inspect: (key: string) => key in userPatterns
+                    ? { preferenceName: key, defaultValue: [], globalValue: userPatterns[key], sessionValue: sessionPatterns[key], value: effective(key) ?? [] }
                     : undefined,
                 update: (key: string, value: string[]) => {
                     // Like `updateValue`, write nothing when the list equals the one in effect.
-                    if (JSON.stringify(value) !== JSON.stringify(sessionPatterns ?? userPatterns ?? [])) {
-                        userPatterns = value;
-                        sessionPatterns = undefined;
+                    if (JSON.stringify(value) !== JSON.stringify(effective(key) ?? [])) {
+                        userPatterns[key] = value;
+                        sessionPatterns[key] = undefined;
                     }
                     return Promise.resolve();
                 }
@@ -777,13 +778,26 @@ describe('ShellCommandPermissionService', () => {
         it('adds a pattern to the user list without saving the session list', async () => {
             await service.addAllowlistPatterns('git log *');
 
-            expect(userPatterns).to.deep.equal(['rm *', 'git log *']);
+            expect(userPatterns[SHELL_COMMAND_ALLOWLIST_PREFERENCE]).to.deep.equal(['rm *', 'git log *']);
         });
 
         it('saves a pattern that only the session list has', async () => {
             await service.addAllowlistPatterns('curl *');
 
-            expect(userPatterns).to.deep.equal(['rm *', 'curl *']);
+            expect(userPatterns[SHELL_COMMAND_ALLOWLIST_PREFERENCE]).to.deep.equal(['rm *', 'curl *']);
+        });
+
+        it('allows a pattern that only the user list has', async () => {
+            await service.addAllowlistPatterns('rm *');
+
+            expect(service.getAllowlistPatterns()).to.deep.equal(['rm *']);
+        });
+
+        it('denies a pattern that only the user list has', async () => {
+            await service.addDenylistPatterns('rm *');
+
+            expect(service.getDenylistPatterns()).to.deep.equal(['rm *']);
+            expect(service.checkCommand('rm -rf build').reason).to.equal('denied');
         });
 
         it('removes a pattern that only the session list has, and keeps the user list', async () => {
@@ -795,7 +809,7 @@ describe('ShellCommandPermissionService', () => {
         it('removes a pattern from the user list without saving the session list', async () => {
             await service.removeAllowlistPattern('rm *');
 
-            expect(userPatterns).to.deep.equal([]);
+            expect(userPatterns[SHELL_COMMAND_ALLOWLIST_PREFERENCE]).to.deep.equal([]);
         });
     });
 });
