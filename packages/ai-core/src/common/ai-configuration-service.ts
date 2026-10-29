@@ -16,7 +16,7 @@
 
 import { Event } from '@theia/core';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
-import { PreferenceInspection, PreferenceScope } from '@theia/core/lib/common/preferences';
+import { PreferenceInspection, PreferenceScope, PreferenceUtils } from '@theia/core/lib/common/preferences';
 
 export const AiConfigurationService = Symbol('AiConfigurationService');
 
@@ -34,12 +34,36 @@ export interface AiConfigurationInspection<T extends JSONValue = JSONValue> exte
      * `Session` holds values passed with `--session-preference`. It isn't tied to a resource, wins over
      * `Folder`, and has no settings file behind it, so it can't be used to pick a file to edit. Writing the key
      * to another scope through {@link AiConfigurationService.set} or {@link AiConfigurationService.update}
-     * clears the session value until the window reloads.
+     * clears the session value until the window reloads. A value read with {@link AiConfigurationService.get}
+     * includes the session value, so writing it back saves the session value to that scope's settings file. To
+     * change part of an object or a list, start from {@link AiConfigurationInspection.valueWithoutSession}.
      *
      * For object values, {@link PreferenceInspection.value} is the object set in `sourceScope` alone, while
      * {@link AiConfigurationService.get} merges the object across all scopes.
      */
     sourceScope?: PreferenceScope;
+}
+
+export namespace AiConfigurationInspection {
+    /**
+     * Resolves the scopes of `inspection` other than `Session` as {@link AiConfigurationService.get} resolves them:
+     * object values merge across the scopes, and other values come from the highest scope that sets them.
+     * Workspace and folder values count only if `inspection` holds them, which an inspection from
+     * {@link AiConfigurationService.inspect} doesn't while the workspace is untrusted.
+     *
+     * This is the value to change and write back with {@link AiConfigurationService.update}, so that a value
+     * set with `--session-preference` isn't saved to a settings file. A write clears the session value, unless the
+     * written value equals it.
+     */
+    export function valueWithoutSession<T extends JSONValue>(inspection: PreferenceInspection<T> | undefined): T | undefined {
+        let value: JSONValue | undefined;
+        for (const scopeValue of [inspection?.defaultValue, inspection?.globalValue, inspection?.workspaceValue, inspection?.workspaceFolderValue]) {
+            if (scopeValue !== undefined) {
+                value = PreferenceUtils.merge(value, scopeValue);
+            }
+        }
+        return value as T | undefined;
+    }
 }
 
 /**
@@ -90,7 +114,8 @@ export interface AiConfigurationService {
     readonly ready: Promise<void>;
 
     /**
-     * Retrieves the effective, trust-aware value for the given preference.
+     * Retrieves the effective, trust-aware value for the given preference, including a session value. To change
+     * part of an object or a list and write it back, start from {@link AiConfigurationInspection.valueWithoutSession}.
      *
      * @param key the preference identifier.
      * @param defaultValue the value to return when no value is stored.

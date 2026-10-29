@@ -24,6 +24,8 @@ import {
     ToolConfirmationMode
 } from '../common/chat-tool-preferences';
 import { AiConfigurationService, ToolRequest } from '@theia/ai-core';
+import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
+import { PreferenceInspection, PreferenceUtils } from '@theia/core/lib/common/preferences';
 
 interface InspectResult<T> {
     defaultValue?: T;
@@ -85,7 +87,8 @@ describe('ToolConfirmationManager', () => {
             }),
             inspect: sinon.stub().callsFake((name: string) => {
                 if (name === TOOL_CONFIRMATION_PREFERENCE) {
-                    return perToolInspectResult;
+                    // While trusted, the stored record is the user value that `get` returns.
+                    return trusted ? { ...perToolInspectResult, globalValue: storedPerToolPreferences } : perToolInspectResult;
                 }
                 if (name === DEFAULT_TOOL_CONFIRMATION_PREFERENCE) {
                     return defaultInspectResult;
@@ -398,6 +401,120 @@ describe('ToolConfirmationManager', () => {
 
             const mode = manager.getConfirmationMode('shellExecute', 'chat-1', toolRequest);
             expect(mode).to.equal(ToolConfirmationMode.DISABLED);
+        });
+    });
+
+    describe('with a value set for this session', () => {
+        /**
+         * Default, User and Session values for each key, resolved as `AiConfigurationService` resolves them in a
+         * trusted workspace with no workspace values: `get` merges objects across the scopes, and `update` writes
+         * User scope and clears the session value unless the value is unchanged.
+         */
+        class ScopedConfiguration {
+            readonly defaults = new Map<string, JSONValue>([
+                [TOOL_CONFIRMATION_PREFERENCE, {}],
+                [DEFAULT_TOOL_CONFIRMATION_PREFERENCE, ToolConfirmationMode.CONFIRM]
+            ]);
+            readonly user = new Map<string, JSONValue>();
+            readonly session = new Map<string, JSONValue>();
+            readonly ready = Promise.resolve();
+
+            get<T>(key: string, fallback?: T): T | undefined {
+                let value: JSONValue | undefined;
+                for (const scope of [this.defaults, this.user, this.session]) {
+                    if (scope.has(key)) {
+                        value = PreferenceUtils.merge(value, scope.get(key)!);
+                    }
+                }
+                return (value as T | undefined) ?? fallback;
+            }
+
+            inspect(key: string): PreferenceInspection<JSONValue> {
+                const defaultValue = this.defaults.get(key);
+                const globalValue = this.user.get(key);
+                const sessionValue = this.session.get(key);
+                return {
+                    preferenceName: key, defaultValue, globalValue, workspaceValue: undefined, workspaceFolderValue: undefined, sessionValue,
+                    value: sessionValue ?? globalValue ?? defaultValue
+                };
+            }
+
+            update(key: string, value: JSONValue): Promise<void> {
+                // Like `updateValue`, write nothing when the value equals the one of the highest scope that sets it.
+                if (!PreferenceUtils.deepEqual(this.inspect(key).value, value)) {
+                    this.user.set(key, value);
+                    this.session.delete(key);
+                }
+                return Promise.resolve();
+            }
+        }
+
+        let configuration: ScopedConfiguration;
+
+        beforeEach(() => {
+            configuration = new ScopedConfiguration();
+            const container = new Container();
+            container.bind(ToolConfirmationManager).toSelf().inSingletonScope();
+            container.bind(AiConfigurationService).toConstantValue(configuration as unknown as AiConfigurationService);
+            manager = container.get(ToolConfirmationManager);
+            configuration.user.set(TOOL_CONFIRMATION_PREFERENCE, { getFileContent: ToolConfirmationMode.DISABLED });
+            configuration.session.set(TOOL_CONFIRMATION_PREFERENCE, { shellExecute: ToolConfirmationMode.ALWAYS_ALLOW });
+        });
+
+        it('setConfirmationMode doesn\'t save the session value to the user settings', async () => {
+            await manager.setConfirmationMode('writeFileContent', ToolConfirmationMode.DISABLED);
+
+            expect(configuration.user.get(TOOL_CONFIRMATION_PREFERENCE)).to.deep.equal({
+                getFileContent: ToolConfirmationMode.DISABLED,
+                writeFileContent: ToolConfirmationMode.DISABLED
+            });
+        });
+
+        it('setConfirmationModes doesn\'t save the session value to the user settings', async () => {
+            await manager.setConfirmationModes([
+                { toolId: 'writeFileContent', mode: ToolConfirmationMode.DISABLED },
+                { toolId: 'getFileContent', mode: ToolConfirmationMode.CONFIRM }
+            ]);
+
+            expect(configuration.user.get(TOOL_CONFIRMATION_PREFERENCE)).to.deep.equal({ writeFileContent: ToolConfirmationMode.DISABLED });
+        });
+
+        it('setConfirmationMode resets a tool without saving the session value to the user settings', async () => {
+            await manager.setConfirmationMode('getFileContent', ToolConfirmationMode.CONFIRM);
+
+            expect(configuration.user.get(TOOL_CONFIRMATION_PREFERENCE)).to.deep.equal({});
+        });
+
+        it('setConfirmationMode resets a tool that only the session value sets', async () => {
+            await manager.setConfirmationMode('shellExecute', ToolConfirmationMode.CONFIRM);
+
+            expect(manager.getConfirmationMode('shellExecute', 'chat-1')).to.equal(ToolConfirmationMode.CONFIRM);
+            expect(configuration.user.get(TOOL_CONFIRMATION_PREFERENCE)).to.deep.equal({ getFileContent: ToolConfirmationMode.DISABLED });
+        });
+
+        it('setConfirmationModes resets a tool that only the session value sets', async () => {
+            await manager.setConfirmationModes([{ toolId: 'shellExecute', mode: ToolConfirmationMode.CONFIRM }]);
+
+            expect(manager.getConfirmationMode('shellExecute', 'chat-1')).to.equal(ToolConfirmationMode.CONFIRM);
+            expect(configuration.user.get(TOOL_CONFIRMATION_PREFERENCE)).to.deep.equal({ getFileContent: ToolConfirmationMode.DISABLED });
+        });
+
+        it('setConfirmationModes applies a mode that only the session value overrides', async () => {
+            configuration.user.set(TOOL_CONFIRMATION_PREFERENCE, { shellExecute: ToolConfirmationMode.ALWAYS_ALLOW });
+            configuration.session.set(TOOL_CONFIRMATION_PREFERENCE, { shellExecute: ToolConfirmationMode.DISABLED });
+
+            await manager.setConfirmationModes([{ toolId: 'shellExecute', mode: ToolConfirmationMode.ALWAYS_ALLOW }]);
+
+            expect(manager.getConfirmationMode('shellExecute', 'chat-1')).to.equal(ToolConfirmationMode.ALWAYS_ALLOW);
+        });
+
+        it('setConfirmationModes saves a mode that the session value already sets', async () => {
+            await manager.setConfirmationModes([{ toolId: 'shellExecute', mode: ToolConfirmationMode.ALWAYS_ALLOW }]);
+
+            expect(configuration.user.get(TOOL_CONFIRMATION_PREFERENCE)).to.deep.equal({
+                getFileContent: ToolConfirmationMode.DISABLED,
+                shellExecute: ToolConfirmationMode.ALWAYS_ALLOW
+            });
         });
     });
 });

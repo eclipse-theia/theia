@@ -26,7 +26,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { PreferenceChange, PreferenceInspection, PreferenceScope, PreferenceService } from '@theia/core/lib/common/preferences';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { TrustAwarePreferenceReader } from './trust-aware-preference-reader';
-import { AiConfigurationChange } from '../common/ai-configuration-service';
+import { AiConfigurationChange, AiConfigurationInspection } from '../common/ai-configuration-service';
 import { AiConfigurationServiceImpl } from './ai-configuration-service-impl';
 
 disableJSDOM();
@@ -235,6 +235,54 @@ describe('AiConfigurationServiceImpl', () => {
             expect(changes[0].affectsPreference(KEY)).to.equal(true);
             expect(changes[0].affectsPreference('ai-features.anythingElse')).to.equal(true);
             expect(changes[0].affectsPreference('editor.fontSize')).to.equal(false);
+        });
+    });
+
+    describe('valueWithoutSession', () => {
+        it('merges the object values of the trusted scopes, without the session value', async () => {
+            await createService(true);
+            preferences.setScopeValue(KEY, PreferenceScope.Default, { a: 'default', b: 'default' });
+            preferences.setScopeValue(KEY, PreferenceScope.User, { b: 'user' });
+            preferences.setScopeValue(KEY, PreferenceScope.Workspace, { c: 'workspace' });
+            preferences.setScopeValue(KEY, PreferenceScope.Session, { a: 'session', d: 'session' });
+
+            expect(AiConfigurationInspection.valueWithoutSession(service.inspect(KEY))).to.deep.equal({ a: 'default', b: 'user', c: 'workspace' });
+        });
+
+        it('leaves out the workspace value when untrusted', async () => {
+            await createService(false);
+            preferences.setScopeValue(KEY, PreferenceScope.User, { b: 'user' });
+            preferences.setScopeValue(KEY, PreferenceScope.Workspace, { c: 'workspace' });
+            preferences.setScopeValue(KEY, PreferenceScope.Session, { d: 'session' });
+
+            expect(AiConfigurationInspection.valueWithoutSession(service.inspect(KEY))).to.deep.equal({ b: 'user' });
+        });
+
+        it('takes a list from the highest scope that sets it, without the session value', async () => {
+            await createService(true);
+            preferences.setScopeValue(KEY, PreferenceScope.Default, []);
+            preferences.setScopeValue(KEY, PreferenceScope.User, ['rm *']);
+            preferences.setScopeValue(KEY, PreferenceScope.Session, ['curl *']);
+
+            expect(AiConfigurationInspection.valueWithoutSession(service.inspect(KEY))).to.deep.equal(['rm *']);
+        });
+
+        it('returns a copy that writing doesn\'t share with the inspected values', async () => {
+            await createService(true);
+            const user = { b: 'user' };
+            preferences.setScopeValue(KEY, PreferenceScope.User, user);
+
+            const value = AiConfigurationInspection.valueWithoutSession<{ [key: string]: string }>(service.inspect(KEY))!;
+            value.c = 'changed';
+
+            expect(user).to.deep.equal({ b: 'user' });
+        });
+
+        it('returns undefined when only a session value is set', async () => {
+            await createService(true);
+            preferences.setScopeValue(KEY, PreferenceScope.Session, 'session');
+
+            expect(AiConfigurationInspection.valueWithoutSession(service.inspect(KEY))).to.equal(undefined);
         });
     });
 

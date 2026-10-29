@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { AiConfigurationService } from '@theia/ai-core';
+import { AiConfigurationInspection, AiConfigurationService } from '@theia/ai-core';
 import { SHELL_COMMAND_ALLOWLIST_PREFERENCE, SHELL_COMMAND_DENYLIST_PREFERENCE } from '../common/shell-command-preferences';
 import { ShellCommandAnalyzer } from '../common/shell-command-analyzer';
 
@@ -218,28 +218,41 @@ export class ShellCommandPermissionService {
         return trimmed;
     }
 
-    protected addPatternsToList(patterns: string[], preferenceKey: string, getCurrentPatterns: () => string[]): Promise<void> {
+    /**
+     * Adds the patterns missing from the list without the session value (set via `--session-preference`), which
+     * writing the effective list back would save to a settings file. The write clears the session value, unless the
+     * written list equals it.
+     */
+    protected addPatternsToList(patterns: string[], preferenceKey: string, _getCurrentPatterns: () => string[]): Promise<void> {
         const validated = patterns.map(p => this.validatePattern(p));
-        const currentPatterns = getCurrentPatterns();
-        const newPatterns = validated.filter(p => !currentPatterns.includes(p));
+        const persistedPatterns = this.getPersistedPatterns(preferenceKey);
+        const newPatterns = validated.filter(p => !persistedPatterns.includes(p));
         if (newPatterns.length > 0) {
             return this.aiConfigurationService.update(
                 preferenceKey,
-                [...currentPatterns, ...newPatterns]
+                [...persistedPatterns, ...newPatterns]
             );
         }
         return Promise.resolve();
     }
 
+    /**
+     * Removes the pattern from the list without the session value, and writes that list when the pattern is in
+     * either list. The write clears the session value, so a pattern that only the session value has goes too.
+     * When the written list equals the session value, nothing is written, and the effective list is already right.
+     */
     protected removePatternFromList(pattern: string, preferenceKey: string, getCurrentPatterns: () => string[]): Promise<void> {
-        const currentPatterns = getCurrentPatterns();
-        const filtered = currentPatterns.filter(p => p !== pattern);
-        if (filtered.length !== currentPatterns.length) {
+        const persistedPatterns = this.getPersistedPatterns(preferenceKey);
+        if (persistedPatterns.includes(pattern) || getCurrentPatterns().includes(pattern)) {
             return this.aiConfigurationService.update(
                 preferenceKey,
-                filtered
+                persistedPatterns.filter(p => p !== pattern)
             );
         }
         return Promise.resolve();
+    }
+
+    protected getPersistedPatterns(preferenceKey: string): string[] {
+        return AiConfigurationInspection.valueWithoutSession(this.aiConfigurationService.inspect<string[]>(preferenceKey)) ?? [];
     }
 }

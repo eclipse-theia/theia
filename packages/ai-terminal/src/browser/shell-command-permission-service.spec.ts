@@ -41,6 +41,15 @@ describe('ShellCommandPermissionService', () => {
                 }
                 return defaultValue;
             }),
+            inspect: sinon.stub().callsFake((key: string) => {
+                if (key === SHELL_COMMAND_ALLOWLIST_PREFERENCE) {
+                    return { preferenceName: key, globalValue: storedPatterns };
+                }
+                if (key === SHELL_COMMAND_DENYLIST_PREFERENCE) {
+                    return { preferenceName: key, globalValue: storedDenylistPatterns };
+                }
+                return undefined;
+            }),
             update: sinon.stub().callsFake((key: string, value: string[]) => {
                 if (key === SHELL_COMMAND_ALLOWLIST_PREFERENCE) {
                     storedPatterns = value;
@@ -736,6 +745,57 @@ describe('ShellCommandPermissionService', () => {
             expect(result.allowed).to.be.false;
             expect(result.reason).to.equal('denied');
             expect(result.matchedPattern).to.equal('git push *');
+        });
+    });
+
+    describe('with a list set for this session', () => {
+        let userPatterns: string[] | undefined;
+        let sessionPatterns: string[] | undefined;
+
+        beforeEach(() => {
+            userPatterns = ['rm *'];
+            sessionPatterns = ['curl *'];
+            // Resolves the allowlist as `AiConfigurationService` does: the session list replaces the user list, and
+            // `update` writes User scope and clears the session value unless the list is unchanged.
+            const configuration = {
+                get: (key: string, fallback?: string[]) => key === SHELL_COMMAND_ALLOWLIST_PREFERENCE ? sessionPatterns ?? userPatterns ?? fallback : fallback,
+                inspect: (key: string) => key === SHELL_COMMAND_ALLOWLIST_PREFERENCE
+                    ? { preferenceName: key, defaultValue: [], globalValue: userPatterns, sessionValue: sessionPatterns, value: sessionPatterns ?? userPatterns ?? [] }
+                    : undefined,
+                update: (key: string, value: string[]) => {
+                    // Like `updateValue`, write nothing when the list equals the one in effect.
+                    if (JSON.stringify(value) !== JSON.stringify(sessionPatterns ?? userPatterns ?? [])) {
+                        userPatterns = value;
+                        sessionPatterns = undefined;
+                    }
+                    return Promise.resolve();
+                }
+            };
+            (service as unknown as { aiConfigurationService: unknown }).aiConfigurationService = configuration;
+        });
+
+        it('adds a pattern to the user list without saving the session list', async () => {
+            await service.addAllowlistPatterns('git log *');
+
+            expect(userPatterns).to.deep.equal(['rm *', 'git log *']);
+        });
+
+        it('saves a pattern that only the session list has', async () => {
+            await service.addAllowlistPatterns('curl *');
+
+            expect(userPatterns).to.deep.equal(['rm *', 'curl *']);
+        });
+
+        it('removes a pattern that only the session list has, and keeps the user list', async () => {
+            await service.removeAllowlistPattern('curl *');
+
+            expect(service.getAllowlistPatterns()).to.deep.equal(['rm *']);
+        });
+
+        it('removes a pattern from the user list without saving the session list', async () => {
+            await service.removeAllowlistPattern('rm *');
+
+            expect(userPatterns).to.deep.equal([]);
         });
     });
 });
