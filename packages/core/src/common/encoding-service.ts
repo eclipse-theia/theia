@@ -40,6 +40,11 @@ const AUTO_ENCODING_GUESS_MAX_BYTES = 512 * 128;  // set an upper limit for the 
 // - UTF-32: we do not support this encoding in VSCode
 const IGNORE_ENCODINGS = ['ascii', 'utf-16', 'utf-32'];
 
+const JSCHARDET_TO_ICONV_ENCODINGS: { [name: string]: string } = {
+    'ibm866': 'cp866',
+    'big5': 'cp950'
+};
+
 export interface ResourceEncoding {
     encoding: string
     hasBOM: boolean
@@ -91,6 +96,17 @@ export class EncodingService {
             return UTF8; // iconv does not distinguish UTF 8 with or without BOM, so we need to help it
         }
         return encoding;
+    }
+
+    /**
+     * Transforms jschardet encoding names into encoding ids. It's a port of VS Code's `toIconvLiteEncoding` from:
+     * https://github.com/microsoft/vscode/blob/a7e1fc08139956da66cc7fb6333a390b06b61876/src/vs/workbench/services/textfile/common/encoding.ts#L404
+     */
+    protected fromJschardetEncoding(encodingName: string): string {
+        const normalizedEncodingName = encodingName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+        const mapped = JSCHARDET_TO_ICONV_ENCODINGS[normalizedEncodingName];
+
+        return mapped || normalizedEncodingName;
     }
 
     async toResourceEncoding(encoding: string, options: {
@@ -178,7 +194,7 @@ export class EncodingService {
 
         // Auto guess encoding if configured
         if (autoGuessEncoding && !seemsBinary && !encoding && buffer) {
-            const guessedEncoding = await this.guessEncodingByBuffer(buffer.slice(0, bytesRead));
+            const guessedEncoding = await this.guessEncodingByBuffer(buffer.subarray(0, bytesRead));
             return {
                 seemsBinary: false,
                 encoding: guessedEncoding
@@ -223,7 +239,12 @@ export class EncodingService {
     protected async guessEncodingByBuffer(buffer: Buffer): Promise<string | undefined> {
         const jschardet = await import('jschardet');
 
-        const guessed = jschardet.detect(buffer.slice(0, AUTO_ENCODING_GUESS_MAX_BYTES)); // ensure to limit buffer for guessing due to https://github.com/aadsm/jschardet/issues/53
+        // jschardet only converts its input to a binary string if it is an instance of the global `Buffer`,
+        // which does not exist in the frontend, so we convert it ourselves: https://github.com/aadsm/jschardet/blob/v2.3.0/src/index.js#L49-L53
+        const guessed = jschardet.detect(
+            // Use `subarray` to ensure to limit buffer for guessing due to https://github.com/aadsm/jschardet/issues/53
+            buffer.subarray(0, AUTO_ENCODING_GUESS_MAX_BYTES).toString('binary')
+        );
         if (!guessed || !guessed.encoding) {
             return undefined;
         }
@@ -233,7 +254,7 @@ export class EncodingService {
             return undefined; // see comment above why we ignore some encodings
         }
 
-        return this.toIconvEncoding(guessed.encoding);
+        return this.fromJschardetEncoding(guessed.encoding);
     }
 
     decodeStream(source: BinaryBufferReadableStream, options: DecodeStreamOptions): Promise<DecodeStreamResult> {

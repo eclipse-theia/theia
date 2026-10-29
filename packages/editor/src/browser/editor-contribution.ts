@@ -122,8 +122,9 @@ export class EditorContribution implements FrontendApplicationContribution,
             statusBar.removeElement('editor-status-encoding');
             return;
         }
+        const rawEncoding = editor.getEncoding();
         statusBar.setElement('editor-status-encoding', {
-            text: SUPPORTED_ENCODINGS[editor.getEncoding()].labelShort,
+            text: (typeof rawEncoding === 'string' ? SUPPORTED_ENCODINGS[rawEncoding]?.labelShort : undefined) ?? rawEncoding,
             alignment: StatusBarAlignment.RIGHT,
             priority: 10,
             command: EditorCommands.CHANGE_ENCODING.id,
