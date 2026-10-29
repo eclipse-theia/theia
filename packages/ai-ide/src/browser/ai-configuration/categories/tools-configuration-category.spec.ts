@@ -142,6 +142,8 @@ describe('ToolsConfigurationCategory', () => {
             const marker = (rowId: string) => container.querySelector(`[data-ai-config-row-id="${rowId}"] .ai-settings-row-session`) as HTMLElement | null;
             expect(marker('tool:a')?.textContent).to.equal('Overridden by session');
             expect(marker('tool:a')?.title).to.include('--session-preference').and.to.include('"always_allow"');
+            // Changing any tool's mode writes the whole object, which clears the session value of every tool.
+            expect(marker('tool:a')?.title).to.include('every tool');
             expect(marker('tool:b')).to.not.exist;
             // As on setting rows, the modified bar shows a saved value only, not the session value.
             const modified = (rowId: string) => container.querySelector(`[data-ai-config-row-id="${rowId}"]`)?.classList.contains('modified');

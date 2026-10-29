@@ -183,6 +183,22 @@ export class ToolsConfigurationCategory extends SinglePageCategoryRenderer imple
         this.sessionToolConfirmationModes = sessionValue !== undefined && JSONExt.isObject(sessionValue) ? sessionValue as Record<string, ToolConfirmationMode> : {};
     }
 
+    /**
+     * Tooltip of a tool's "Overridden by session" marker. A tool's mode is an entry of
+     * `ai-features.chat.toolConfirmation`, and changing any tool's mode writes the whole object, which clears the
+     * session value of every tool.
+     */
+    protected describeSessionMode(shownValue: string | undefined): string {
+        return shownValue === undefined
+            ? nls.localize('theia/ai/ide/toolsConfiguration/sessionOverride/tooltip',
+                'Set for this session via --session-preference. ' +
+                'Changing any tool\'s mode here, or resetting all tools, clears the session value for every tool until the window reloads.')
+            : nls.localize('theia/ai/ide/toolsConfiguration/sessionOverride/tooltipWithValue',
+                'Set for this session via --session-preference: {0}. ' +
+                'Changing any tool\'s mode here, or resetting all tools, clears the session value for every tool until the window reloads.',
+                shownValue);
+    }
+
     protected getEffectiveState(toolName: string): ToolConfirmationMode {
         const explicit = this.toolConfirmationModes[toolName];
         if (explicit !== undefined) {
@@ -258,6 +274,7 @@ export class ToolsConfigurationCategory extends SinglePageCategoryRenderer imple
                 getEffectiveState={name => this.getEffectiveState(name)}
                 isModified={name => this.persistedToolConfirmationModes[name] !== undefined}
                 getSessionMode={name => this.sessionToolConfirmationModes[name]}
+                describeSessionMode={shownValue => this.describeSessionMode(shownValue)}
                 onChangeMode={(name, value) => this.handleToolConfirmationModeChange(name, value)}
             />
             {/* The allow/deny lists are plain `string[]` preferences, rendered as normal setting rows with the
@@ -405,8 +422,9 @@ const ToolConfirmationTable: React.FC<{
     getEffectiveState: (name: string) => ToolConfirmationMode;
     isModified: (name: string) => boolean;
     getSessionMode: (name: string) => ToolConfirmationMode | undefined;
+    describeSessionMode: (shownValue: string | undefined) => string;
     onChangeMode: (name: string, value: ToolConfirmationMode) => void;
-}> = ({ toolNames, getDescription, getEffectiveState, isModified, getSessionMode, onChangeMode }) => {
+}> = ({ toolNames, getDescription, getEffectiveState, isModified, getSessionMode, describeSessionMode, onChangeMode }) => {
     const [filter, setFilter] = React.useState('');
     const term = filter.trim().toLowerCase();
     const filtered = term ? toolNames.filter(name => name.toLowerCase().includes(term)) : toolNames;
@@ -425,6 +443,7 @@ const ToolConfirmationTable: React.FC<{
                 description={getDescription(name)}
                 modified={isModified(name)}
                 sessionValue={getSessionMode(name)}
+                sessionTooltip={describeSessionMode}
                 trailing={<AiEnumSelect
                     ariaLabel={modeLabel}
                     value={getEffectiveState(name)}

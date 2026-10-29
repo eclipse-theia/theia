@@ -114,17 +114,27 @@ function tagLabel(tag: string): string {
  * set via `--session-preference`. The tooltip shows that value only when it is a primitive and `secret` isn't set:
  * a list or an object can hold a key too, like the `apiKey` of a custom OpenAI model. Renders nothing when
  * `sessionValue` is `undefined`.
+ *
+ * `tooltip` replaces the tooltip, for a marker whose session value is one entry of a setting's value. It gets the
+ * value as JSON, or `undefined` when the value must not be shown.
  */
-export const AiSettingSessionMarker: React.FC<{ sessionValue: unknown; secret?: boolean }> = ({ sessionValue, secret }) => {
+export const AiSettingSessionMarker: React.FC<{
+    sessionValue: unknown;
+    secret?: boolean;
+    tooltip?: (shownValue: string | undefined) => string;
+}> = ({ sessionValue, secret, tooltip: describe }) => {
     if (sessionValue === undefined) {
         return <></>;
     }
-    const tooltip = secret || !JSONExt.isPrimitive(sessionValue as JSONValue)
-        ? nls.localize('theia/ai/core/aiConfiguration/sessionOverride/tooltip',
-            'Set for this session via --session-preference. Changing or resetting it here clears the session value until the window reloads.')
-        : nls.localize('theia/ai/core/aiConfiguration/sessionOverride/tooltipWithValue',
-            'Set for this session via --session-preference: {0}. Changing or resetting it here clears the session value until the window reloads.',
-            JSON.stringify(sessionValue));
+    const shownValue = secret || !JSONExt.isPrimitive(sessionValue as JSONValue) ? undefined : JSON.stringify(sessionValue);
+    const tooltip = describe
+        ? describe(shownValue)
+        : shownValue === undefined
+            ? nls.localize('theia/ai/core/aiConfiguration/sessionOverride/tooltip',
+                'Set for this session via --session-preference. Changing or resetting it here clears the session value until the window reloads.')
+            : nls.localize('theia/ai/core/aiConfiguration/sessionOverride/tooltipWithValue',
+                'Set for this session via --session-preference: {0}. Changing or resetting it here clears the session value until the window reloads.',
+                shownValue);
     return <span className='ai-settings-row-session' title={tooltip}>
         {nls.localize('theia/preferences/sessionOverride/suffix', 'Overridden by session')}
     </span>;

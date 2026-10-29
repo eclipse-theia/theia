@@ -440,6 +440,20 @@ describe('AI Configuration primitives', () => {
         expect(tooltip(undefined, { type: 'string' })).to.equal(undefined);
     });
 
+    it('AiConfigurationItemRow uses its own session tooltip, given the value only for a primitive', () => {
+        const tooltip = (sessionValue: unknown): string | undefined => {
+            const { container, dispose } = mount(React.createElement(AiConfigurationItemRow, {
+                label: 'item', sessionValue, sessionTooltip: (shownValue: string | undefined) => `entry: ${shownValue}`
+            }));
+            const title = (container.querySelector('.ai-settings-row-session') as HTMLElement | null)?.title;
+            dispose();
+            return title;
+        };
+        expect(tooltip('always_allow')).to.equal('entry: "always_allow"');
+        expect(tooltip({ apiKey: 'sk-entry-key' })).to.equal('entry: undefined');
+        expect(tooltip(undefined)).to.equal(undefined);
+    });
+
     it('the setting-row gear delegates to the preference context menu, anchored at the gear', () => {
         const host = document.createElement('div');
         document.body.appendChild(host);
