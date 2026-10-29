@@ -38,7 +38,6 @@ export class TasksExtImpl implements TasksExt {
     private callId = 0;
     private adaptersMap = new Map<number, TaskProviderAdapter>();
     private executions = new Map<number, theia.TaskExecution>();
-    private runCustomExecutionIds = new Map<number, string>();
     protected callbackIdBase: string = UUID.uuid4();
     protected callbackId = 0;
     protected customExecutionIds: Map<ExecutionCallback, string> = new Map();
@@ -96,11 +95,6 @@ export class TasksExtImpl implements TasksExt {
         }
 
         this.executions.delete(id);
-        const runId = this.runCustomExecutionIds.get(id);
-        if (runId) {
-            this.runCustomExecutionIds.delete(id);
-            this.forgetRun(runId);
-        }
 
         this.onDidTerminateTask.fire({
             execution: taskExecution
@@ -150,8 +144,8 @@ export class TasksExtImpl implements TasksExt {
     async executeTask(task: theia.Task): Promise<theia.TaskExecution> {
         const taskDto = converter.fromTask(task);
         if (taskDto) {
-            // A custom execution gets an id for this run only, so the plugin's task can be handed back
-            // for it and dropped when it ends, as in VS Code.
+            // Each run of a custom execution gets its own id, so runs that share an execution keep their own
+            // task. It stays registered after the run ends, because Rerun Last Task starts it again with that id.
             const customExecution = task.execution && CustomExecution.is(task.execution) ? task.execution : undefined;
             const runId = customExecution ? this.nextCallbackId() : undefined;
             if (customExecution && runId) {
@@ -252,9 +246,7 @@ export class TasksExtImpl implements TasksExt {
         // so subclasses of CustomExecution keep their members.
         const customExecutionId = execution.task.executionId;
         let task = customExecutionId ? this.customExecutionTasks.get(customExecutionId) : undefined;
-        if (task) {
-            this.runCustomExecutionIds.set(executionId, customExecutionId!);
-        } else {
+        if (!task) {
             task = converter.toTask(execution.task);
             const provided = customExecutionId ? this.providedCustomExecutions.get(customExecutionId) : undefined;
             if (provided) {

@@ -58,6 +58,7 @@ describe('Tasks with a CustomExecution subclass', () => {
         let ext: TasksExtImpl;
         let nextId: number;
         let startExternally: (dto: TaskDto) => Promise<TaskExecutionDto>;
+        let attached: number[];
 
         beforeEach(() => {
             nextId = 1;
@@ -72,7 +73,9 @@ describe('Tasks with a CustomExecution subclass', () => {
                     return proxy as unknown as T;
                 }
             } as RPCProtocol;
-            ext = new TasksExtImpl(rpc, { attachPtyToTerminal: () => { } } as unknown as TerminalServiceExtImpl);
+            attached = [];
+            const terminalExt = { attachPtyToTerminal: (terminalId: number) => attached.push(terminalId) };
+            ext = new TasksExtImpl(rpc, terminalExt as unknown as TerminalServiceExtImpl);
             startExternally = async dto => {
                 const execution = { id: nextId++, task: dto };
                 await ext.$onDidStartTask(execution, 1);
@@ -93,7 +96,7 @@ describe('Tasks with a CustomExecution subclass', () => {
             expect(execution.task).to.equal(task);
         });
 
-        it('stops handing out the task once its execution ended', async () => {
+        it('runs the task again when Rerun Last Task starts it after it ended', async () => {
             const task = createTask(new CommandCustomExecution('make', ['build']));
             let dto: TaskDto | undefined;
             const start = startExternally;
@@ -103,11 +106,11 @@ describe('Tasks with a CustomExecution subclass', () => {
 
             const started: theia.TaskExecution[] = [];
             ext.onDidStartTask(e => started.push(e.execution));
-            await ext.$onDidStartTask({ id: 2, task: dto! }, 1);
+            // TaskService.runLastTask() sends the saved task again, with the same executionId.
+            await ext.$onDidStartTask({ id: 2, task: dto! }, 2);
 
-            expect(dto!.executionId).to.be.a('string');
-            expect(started).to.have.length(1);
-            expect(started[0].task).to.not.equal(task);
+            expect(attached).to.deep.equal([1, 2]);
+            expect(started[0].task).to.equal(task);
         });
 
         it('does not hand a remembered task to an unrelated execution', async () => {
