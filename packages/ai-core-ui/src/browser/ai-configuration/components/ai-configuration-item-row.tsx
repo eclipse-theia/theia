@@ -20,7 +20,7 @@ import * as React from '@theia/core/shared/react';
 import { AiConfigurationItemStatus } from '../ai-configuration-category';
 import { AiConfigurationKindBadge, AiConfigurationStatusBadge } from './ai-configuration-primitives';
 import { AiConfigurationOrigin, AiConfigurationOriginBadges } from './ai-configuration-origin-badge';
-import { AiSettingGearButton } from './ai-configuration-setting-row';
+import { AiSettingGearButton, AiSettingSessionMarker } from './ai-configuration-setting-row';
 
 /** A classifying label on an item row, with a tooltip of its own where the label alone is too short to explain itself. */
 export interface AiConfigurationRowTag {
@@ -47,6 +47,18 @@ export interface AiConfigurationItemRowProps {
     readonly origins?: AiConfigurationOrigin[];
     /** Status badge shown on the right (e.g. an alias' resolved model). */
     readonly status?: AiConfigurationItemStatus;
+    /**
+     * Value set for this item via `--session-preference`, such as a tool's entry in a session value of
+     * `ai-features.chat.toolConfirmation`. When defined, the label is marked "Overridden by session", matching
+     * {@link AiConfigurationSettingRow}.
+     */
+    readonly sessionValue?: unknown;
+    /**
+     * Tooltip of the "Overridden by session" marker, given the session value as JSON, or `undefined` when it must
+     * not be shown. Writing one entry of an object preference clears the session value of every entry, which the
+     * default tooltip doesn't say.
+     */
+    readonly sessionTooltip?: (shownValue: string | undefined) => string;
     /** `true` reveals the modified edge (left indicator bar), matching {@link AiConfigurationSettingRow}. */
     readonly modified?: boolean;
     /** Optional trailing content (extra stats, or an inline control such as a select) shown on the right. */
@@ -136,7 +148,8 @@ const AiConfigurationItemRowDescription: React.FC<{ description: string }> = ({ 
  * alternative to a card grid, matching the Settings and extensions lists; every non-label slot is optional.
  */
 export const AiConfigurationItemRow: React.FC<AiConfigurationItemRowProps> = ({
-    label, rowId, tags, origins, monospaceLabel, iconClass, description, status, modified, trailing, onOpenMenu, onSelect, onActivateLabel, labelTooltip
+    label, rowId, tags, origins, monospaceLabel, iconClass, description, status, sessionValue, sessionTooltip, modified, trailing, onOpenMenu, onSelect, onActivateLabel,
+    labelTooltip
 }) => {
     const navigable = onSelect !== undefined;
     const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
@@ -178,6 +191,7 @@ export const AiConfigurationItemRow: React.FC<AiConfigurationItemRowProps> = ({
                         : <AiConfigurationKindBadge key={tag.label} label={tag.label} title={tag.title} variant='outline' />)}
                 </span>}
                 <AiConfigurationOriginBadges origins={origins} />
+                <AiSettingSessionMarker sessionValue={sessionValue} tooltip={sessionTooltip} />
             </div>
             {description && <AiConfigurationItemRowDescription description={description} />}
         </div>

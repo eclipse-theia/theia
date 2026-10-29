@@ -100,6 +100,8 @@ export const AiSettingsRow: React.FC<AiSettingsRowProps> = ({
         renderMarkdown={renderMarkdown}
         modified={inspection.modified}
         tags={service.tags(preferenceId)}
+        sessionValue={inspection.sessionValue}
+        secret={control.type === 'string' && control.password}
         onOpenMenu={openMenu}
         control={below ? undefined : controlNode}
         below={below ? controlNode : undefined}

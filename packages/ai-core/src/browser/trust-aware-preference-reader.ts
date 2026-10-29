@@ -18,7 +18,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import { Emitter, Event } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { PreferenceInspection, PreferenceService } from '@theia/core/lib/common/preferences';
+import { PreferenceInspection, PreferenceService, PreferenceUtils } from '@theia/core/lib/common/preferences';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 
 /**
@@ -43,7 +43,7 @@ export class TrustAwarePreferenceReader {
     /**
      * Cached trust flag updated via `onDidChangeWorkspaceTrust`. Defaults to
      * `false` (fail closed): until the initial trust state has resolved, reads
-     * return only user/default scope values. Asynchronous callers should
+     * return only session/user/default scope values. Asynchronous callers should
      * `await ready` before their first read.
      */
     protected trusted = false;
@@ -98,7 +98,7 @@ export class TrustAwarePreferenceReader {
 
     /**
      * Reads the preference, ignoring workspace/folder scopes when the workspace
-     * is untrusted. Returns `globalValue ?? defaultValue ?? fallback`.
+     * is untrusted, and resolves the session, user and default scopes like `PreferenceService.get`.
      */
     get<T>(preferenceName: string, fallback?: T, resourceUri?: string): T | undefined {
         if (this.trusted) {
@@ -109,12 +109,19 @@ export class TrustAwarePreferenceReader {
             return fallback;
         }
         const suppressed = this.suppressUntrusted(inspection);
-        return ((suppressed.globalValue ?? suppressed.defaultValue) as T | undefined) ?? fallback;
+        // Resolve the remaining scopes as `PreferenceService.get` does, merging object values.
+        let value: JSONValue | undefined;
+        for (const scopeValue of [suppressed.defaultValue, suppressed.globalValue, suppressed.sessionValue]) {
+            if (scopeValue !== undefined) {
+                value = PreferenceUtils.merge(value, scopeValue);
+            }
+        }
+        return (value as T | undefined) ?? fallback;
     }
 
     /**
      * Narrows a raw {@link PreferenceInspection} according to workspace trust: when the workspace is
-     * untrusted the folder and workspace scope values are dropped so that only the user and default
+     * untrusted the folder and workspace scope values are dropped so that only the session, user and default
      * scopes contribute (failing closed until the trust state resolves). A trusted inspection is
      * returned unchanged. This is the single definition of the trust-suppression rule, shared by
      * {@link get} and by inspection-based consumers, so value reads and inspections cannot drift.

@@ -20,7 +20,7 @@ import {
     TOOL_CONFIRMATION_PREFERENCE,
     DEFAULT_TOOL_CONFIRMATION_PREFERENCE
 } from '../common/chat-tool-preferences';
-import { AiConfigurationService, ToolRequest } from '@theia/ai-core';
+import { AiConfigurationInspection, AiConfigurationService, ToolRequest } from '@theia/ai-core';
 
 /**
  * The loop-invariant inputs to {@link ToolConfirmationManager.computeEffectiveDefaultForTool}:
@@ -102,18 +102,17 @@ export class ToolConfirmationManager {
      * @param toolRequest - Optional ToolRequest to check for confirmAlwaysAllow flag
      */
     setConfirmationMode(toolId: string, mode: ToolConfirmationMode, toolRequest?: ToolRequest): Promise<void> {
-        const current = this.aiConfigurationService.get<Record<string, ToolConfirmationMode>>(
-            TOOL_CONFIRMATION_PREFERENCE, {}
-        ) ?? {};
+        const persisted = this.getPersistedConfirmationSettings();
         const effectiveDefault = this.computeEffectiveDefaultForTool(toolId, toolRequest);
         if (mode === effectiveDefault) {
-            if (toolId in current) {
-                const { [toolId]: _, ...rest } = current;
+            // A write also clears the session value, so this resets a tool that only the session value sets.
+            if (toolId in this.getAllConfirmationSettings()) {
+                const { [toolId]: _, ...rest } = persisted;
                 return this.aiConfigurationService.update(TOOL_CONFIRMATION_PREFERENCE, rest);
             }
             return Promise.resolve();
         }
-        const updated = { ...current, [toolId]: mode };
+        const updated = { ...persisted, [toolId]: mode };
         return this.aiConfigurationService.update(TOOL_CONFIRMATION_PREFERENCE, updated);
     }
 
@@ -125,21 +124,20 @@ export class ToolConfirmationManager {
      * round-trip per tool.
      */
     setConfirmationModes(updates: Iterable<{ toolId: string; mode: ToolConfirmationMode; toolRequest?: ToolRequest }>): Promise<void> {
-        const current = this.aiConfigurationService.get<Record<string, ToolConfirmationMode>>(
-            TOOL_CONFIRMATION_PREFERENCE, {}
-        ) ?? {};
-        const next: Record<string, ToolConfirmationMode> = { ...current };
+        const current = this.getAllConfirmationSettings();
+        const next: Record<string, ToolConfirmationMode> = { ...this.getPersistedConfirmationSettings() };
         // Read the loop-invariant schema/global defaults once, not once per tool.
         const defaults = this.readConfirmationDefaults();
         let changed = false;
         for (const { toolId, mode, toolRequest } of updates) {
             const effectiveDefault = this.computeEffectiveDefaultForTool(toolId, toolRequest, defaults);
             if (mode === effectiveDefault) {
-                if (toolId in next) {
+                if (toolId in current) {
                     delete next[toolId];
                     changed = true;
                 }
-            } else if (next[toolId] !== mode) {
+            } else if (next[toolId] !== mode || current[toolId] !== mode) {
+                // When only the session value differs, the write still applies `mode`, since it clears the session value.
                 next[toolId] = mode;
                 changed = true;
             }
@@ -181,6 +179,15 @@ export class ToolConfirmationManager {
         return this.aiConfigurationService.get<Record<string, ToolConfirmationMode>>(
             TOOL_CONFIRMATION_PREFERENCE, {}
         ) ?? {};
+    }
+
+    /**
+     * The per-tool modes without the session value (set via `--session-preference`). The setters change this
+     * record and write it back, so the session value isn't saved to a settings file.
+     */
+    protected getPersistedConfirmationSettings(): { [toolId: string]: ToolConfirmationMode } {
+        const inspection = this.aiConfigurationService.inspect<Record<string, ToolConfirmationMode>>(TOOL_CONFIRMATION_PREFERENCE);
+        return AiConfigurationInspection.valueWithoutSession(inspection) ?? {};
     }
 
     resetAllConfirmationModeSettings(): Promise<void> {

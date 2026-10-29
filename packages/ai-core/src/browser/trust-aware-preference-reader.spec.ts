@@ -163,6 +163,19 @@ describe('TrustAwarePreferenceReader', () => {
             const value = reader.get<string>(PREFERENCE_NAME, 'fallback');
             expect(value).to.equal('fallback');
         });
+
+        it('merges the user object into the default object, like PreferenceService.get', () => {
+            preferences.inspectResult = {
+                defaultValue: { list: ['a'], mode: 'default', kept: true },
+                globalValue: { list: ['b'], mode: 'user' },
+                workspaceValue: { list: ['c'], mode: 'workspace' }
+            };
+            const value = reader.get(PREFERENCE_NAME);
+            // Nested arrays are concatenated and the user's primitives win, as in the trusted read.
+            expect(value).to.deep.equal({ list: ['a', 'b'], mode: 'user', kept: true });
+            // The merge works on a copy: the inspected default stays as it was.
+            expect(preferences.inspectResult.defaultValue).to.deep.equal({ list: ['a'], mode: 'default', kept: true });
+        });
     });
 
     describe('suppressUntrusted', () => {

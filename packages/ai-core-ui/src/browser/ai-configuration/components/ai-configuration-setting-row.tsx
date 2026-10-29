@@ -17,6 +17,7 @@
 import { nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
+import { JSONExt, JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import { AiMarkdownDescription } from './ai-configuration-primitives';
 
 export interface AiConfigurationSettingRowProps {
@@ -38,6 +39,13 @@ export interface AiConfigurationSettingRowProps {
     readonly modified: boolean;
     /** Schema tags shown as badges next to the title (e.g. `experimental`, `preview`), mirroring the Settings UI. */
     readonly tags?: string[];
+    /**
+     * Value set for this session via `--session-preference`. When defined, the title is marked "Overridden by
+     * session", as in the Settings UI, and the marker's tooltip shows a primitive value unless {@link secret} is set.
+     */
+    readonly sessionValue?: unknown;
+    /** `true` for a setting holding a secret (an API key, for instance), whose session value must not be shown. */
+    readonly secret?: boolean;
     /**
      * Opens this view's setting context menu (Reset Setting / Copy Setting ID / Copy Setting as JSON)
      * anchored at the gear element. When omitted the gear is hidden. The owner wires this to
@@ -64,7 +72,7 @@ export interface AiConfigurationSettingRowProps {
  * DI-free; owners supply the values, a bound markdown renderer and the callbacks.
  */
 export const AiConfigurationSettingRow: React.FC<AiConfigurationSettingRowProps> = ({
-    preferenceId, title, description, renderMarkdown, modified, tags, onOpenMenu, control, below, actions
+    preferenceId, title, description, renderMarkdown, modified, tags, sessionValue, secret, onOpenMenu, control, below, actions
 }) => (
     <div className={`ai-settings-row${modified ? ' modified' : ''}`} data-ai-config-row-id={preferenceId}>
         <AiSettingRowGear onOpenMenu={onOpenMenu} />
@@ -79,6 +87,7 @@ export const AiConfigurationSettingRow: React.FC<AiConfigurationSettingRowProps>
                             </span>
                         ))}
                     </span>}
+                    <AiSettingSessionMarker sessionValue={sessionValue} secret={secret} />
                 </div>
                 {description !== undefined && (typeof description === 'string' && renderMarkdown
                     ? <AiMarkdownDescription renderMarkdown={renderMarkdown} markdown={description} />
@@ -99,6 +108,37 @@ function tagLabel(tag: string): string {
         : tag === 'preview' ? nls.localizeByDefault('Preview')
             : tag;
 }
+
+/**
+ * "Overridden by session" marker for a setting's title, as in the Settings UI, shown when the setting has a value
+ * set via `--session-preference`. The tooltip shows that value only when it is a primitive and `secret` isn't set:
+ * a list or an object can hold a key too, like the `apiKey` of a custom OpenAI model. Renders nothing when
+ * `sessionValue` is `undefined`.
+ *
+ * `tooltip` replaces the tooltip, for a marker whose session value is one entry of a setting's value. It gets the
+ * value as JSON, or `undefined` when the value must not be shown.
+ */
+export const AiSettingSessionMarker: React.FC<{
+    sessionValue: unknown;
+    secret?: boolean;
+    tooltip?: (shownValue: string | undefined) => string;
+}> = ({ sessionValue, secret, tooltip: describe }) => {
+    if (sessionValue === undefined) {
+        return <></>;
+    }
+    const shownValue = secret || !JSONExt.isPrimitive(sessionValue as JSONValue) ? undefined : JSON.stringify(sessionValue);
+    const tooltip = describe
+        ? describe(shownValue)
+        : shownValue === undefined
+            ? nls.localize('theia/ai/core/aiConfiguration/sessionOverride/tooltip',
+                'Set for this session via --session-preference. Changing or resetting it here clears the session value until the window reloads.')
+            : nls.localize('theia/ai/core/aiConfiguration/sessionOverride/tooltipWithValue',
+                'Set for this session via --session-preference: {0}. Changing or resetting it here clears the session value until the window reloads.',
+                shownValue);
+    return <span className='ai-settings-row-session' title={tooltip}>
+        {nls.localize('theia/preferences/sessionOverride/suffix', 'Overridden by session')}
+    </span>;
+};
 
 /** Hover text for a preference tag badge, matching the Settings UI. */
 function tagTooltip(tag: string): string {

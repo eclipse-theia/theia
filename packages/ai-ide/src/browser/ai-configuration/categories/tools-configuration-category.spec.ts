@@ -120,6 +120,41 @@ describe('ToolsConfigurationCategory', () => {
         }
     });
 
+    it('marks the rows of the tools that a session value sets, and not as modified', async () => {
+        const category = createCategory({ a: {}, b: {} }, {}, ToolConfirmationMode.CONFIRM);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (category as any).confirmationManager = {
+            getDefaultConfirmationMode: () => ToolConfirmationMode.CONFIRM,
+            getAllConfirmationSettings: () => ({ a: ToolConfirmationMode.ALWAYS_ALLOW, b: ToolConfirmationMode.DISABLED })
+        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (category as any).aiConfigurationService = {
+            inspect: () => ({ globalValue: { b: ToolConfirmationMode.DISABLED }, sessionValue: { a: ToolConfirmationMode.ALWAYS_ALLOW } })
+        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (category as any).loadConfirmation();
+        const container = document.createElement('div');
+        document.body.appendChild(container);
+        const root = createRoot(container);
+        const ctx: AiConfigurationRenderContext = { scope: 'user', navigate: () => { }, update: () => { } };
+        try {
+            flushSync(() => root.render(category.renderPage(ctx)));
+            const marker = (rowId: string) => container.querySelector(`[data-ai-config-row-id="${rowId}"] .ai-settings-row-session`) as HTMLElement | null;
+            expect(marker('tool:a')?.textContent).to.equal('Overridden by session');
+            expect(marker('tool:a')?.title).to.include('--session-preference').and.to.include('"always_allow"');
+            // Changing any tool's mode writes the whole object, which clears the session value of every tool.
+            expect(marker('tool:a')?.title).to.include('every tool');
+            expect(marker('tool:b')).to.not.exist;
+            // As on setting rows, the modified bar shows a saved value only, not the session value.
+            const modified = (rowId: string) => container.querySelector(`[data-ai-config-row-id="${rowId}"]`)?.classList.contains('modified');
+            expect(modified('tool:a')).to.be.false;
+            expect(modified('tool:b')).to.be.true;
+        } finally {
+            flushSync(() => root.unmount());
+            container.remove();
+        }
+    });
+
     it('indexes the default-mode setting plus one item per tool', () => {
         const category = createCategory({ a: {}, mcp_x: {} }, {}, ToolConfirmationMode.CONFIRM);
         const items = category.getSearchItems();

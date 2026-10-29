@@ -37,7 +37,8 @@ import { AiArrayInput, AiEnumSelect, AiNumberStepper } from './ai-configuration-
 import { ConfirmDialog } from '@theia/core/lib/browser';
 import { PromptCustomizationDialogs } from './prompt-customization-dialogs';
 import { VariantSetCard } from './variant-set-card';
-import { AiSettingsRowService } from './ai-settings-row-service';
+import { AiSettingsControl, AiSettingsRowService } from './ai-settings-row-service';
+import { AiSettingsRow } from './ai-settings-row';
 import { PromptFragment, PromptService } from '@theia/ai-core/lib/common/prompt-service';
 
 disableJSDOM();
@@ -393,6 +394,64 @@ describe('AI Configuration primitives', () => {
         expect((host.querySelector('.ai-settings-row') as HTMLElement).classList.contains('modified')).to.equal(false);
         root.unmount();
         host.remove();
+    });
+
+    it('AiConfigurationSettingRow marks a row with a session value and shows the value on hover', () => {
+        const props = { preferenceId: 'ai-features.demo', title: 'Demo', modified: false };
+        const { container, dispose } = mount(React.createElement(AiConfigurationSettingRow, { ...props, sessionValue: 'session text' }));
+        const marker = container.querySelector('.ai-settings-row-title .ai-settings-row-session') as HTMLElement;
+        expect(marker.textContent).to.equal('Overridden by session');
+        expect(marker.title).to.include('--session-preference').and.to.include('"session text"');
+        dispose();
+        // `false` is a session value like any other; only `undefined` means there is none.
+        const withFalse = mount(React.createElement(AiConfigurationSettingRow, { ...props, sessionValue: false }));
+        expect(withFalse.container.querySelector('.ai-settings-row-session')).to.exist;
+        withFalse.dispose();
+        const without = mount(React.createElement(AiConfigurationSettingRow, props));
+        expect(without.container.querySelector('.ai-settings-row-session')).to.not.exist;
+        without.dispose();
+    });
+
+    it('AiSettingsRow marks a session value, and shows it in the tooltip only for a primitive that isn\'t a secret', () => {
+        const service = (sessionValue: unknown) => ({
+            inspect: () => ({ value: 'shown', scopeValue: undefined, defaultValue: undefined, modified: false, sessionValue }),
+            describe: () => ({ label: 'Demo' }),
+            tags: () => [],
+            renderMarkdown: () => document.createElement('div')
+        }) as unknown as AiSettingsRowService;
+        const tooltip = (sessionValue: unknown, control: AiSettingsControl): string | undefined => {
+            const { container, dispose } = mount(React.createElement(AiSettingsRow, {
+                service: service(sessionValue), preferenceId: 'ai-features.demo', scope: 'user', control
+            }));
+            const title = (container.querySelector('.ai-settings-row-session') as HTMLElement | null)?.title;
+            dispose();
+            return title;
+        };
+        const secret = tooltip('sk-session-key', { type: 'string', password: true });
+        expect(secret).to.include('--session-preference').and.to.not.include('sk-session-key');
+        // A list or an object can hold a key as well, e.g. the `apiKey` of a custom OpenAI model.
+        const models = tooltip([{ model: 'demo', apiKey: 'sk-model-key' }], { type: 'json' });
+        expect(models).to.include('--session-preference').and.to.not.include('sk-model-key');
+        expect(tooltip({ token: 'sk-object-key' }, { type: 'json' })).to.include('--session-preference').and.to.not.include('sk-object-key');
+        expect(tooltip(['curl *'], { type: 'array' })).to.include('--session-preference').and.to.not.include('curl *');
+        expect(tooltip('session text', { type: 'string' })).to.include('"session text"');
+        expect(tooltip(false, { type: 'boolean' })).to.include('false');
+        expect(tooltip(3, { type: 'number' })).to.include('3');
+        expect(tooltip(undefined, { type: 'string' })).to.equal(undefined);
+    });
+
+    it('AiConfigurationItemRow uses its own session tooltip, given the value only for a primitive', () => {
+        const tooltip = (sessionValue: unknown): string | undefined => {
+            const { container, dispose } = mount(React.createElement(AiConfigurationItemRow, {
+                label: 'item', sessionValue, sessionTooltip: (shownValue: string | undefined) => `entry: ${shownValue}`
+            }));
+            const title = (container.querySelector('.ai-settings-row-session') as HTMLElement | null)?.title;
+            dispose();
+            return title;
+        };
+        expect(tooltip('always_allow')).to.equal('entry: "always_allow"');
+        expect(tooltip({ apiKey: 'sk-entry-key' })).to.equal('entry: undefined');
+        expect(tooltip(undefined)).to.equal(undefined);
     });
 
     it('the setting-row gear delegates to the preference context menu, anchored at the gear', () => {
