@@ -38,18 +38,29 @@ const GEMINI_REASONING_SUPPORT: ReasoningSupport = {
     defaultLevel: 'auto'
 };
 
+// Gemini 4 always thinks and rejects the `minimal` level of Gemini 3.
+const GEMINI_4_REASONING_SUPPORT: ReasoningSupport = {
+    supportedLevels: ['low', 'medium', 'high', 'auto'],
+    defaultLevel: 'auto'
+};
+
 /**
- * Maps a Gemini model id to its reasoning API shape (Gemini 3 → `effort`, Gemini 2.5 → `budget`).
+ * Maps a Gemini model id to its reasoning API shape (Gemini 3 and 4 → `effort`, Gemini 2.5 → `budget`).
  * Inferred from the id because /v1beta/models only exposes a single `thinking` boolean.
  */
 export function reasoningApiFromModelId(modelId: string): ReasoningApi | undefined {
-    if (/^gemini-3(?:\.|-)/i.test(modelId)) {
+    if (/^gemini-[34](?:\.|-)/i.test(modelId)) {
         return 'effort';
     }
     if (/^gemini-2\.5(?:-|$)/i.test(modelId)) {
         return 'budget';
     }
     return undefined;
+}
+
+/** The reasoning levels of a Gemini model that supports reasoning, inferred from its id. */
+export function reasoningSupportFromModelId(modelId: string): ReasoningSupport {
+    return /^gemini-4(?:\.|-)/i.test(modelId) ? GEMINI_4_REASONING_SUPPORT : GEMINI_REASONING_SUPPORT;
 }
 
 interface ResolvedModelMetadata {
@@ -244,7 +255,7 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
         const reasoningApi = description.reasoningApi ?? this.deriveReasoningApi(description.model, info);
         return {
             maxInputTokens: info?.inputTokenLimit,
-            reasoningSupport: description.reasoningSupport ?? (reasoningApi ? GEMINI_REASONING_SUPPORT : undefined),
+            reasoningSupport: description.reasoningSupport ?? (reasoningApi ? reasoningSupportFromModelId(description.model) : undefined),
             reasoningApi
         };
     }
