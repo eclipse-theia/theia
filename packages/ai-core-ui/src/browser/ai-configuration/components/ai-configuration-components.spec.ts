@@ -398,10 +398,10 @@ describe('AI Configuration primitives', () => {
 
     it('AiConfigurationSettingRow marks a row with a session value and shows the value on hover', () => {
         const props = { preferenceId: 'ai-features.demo', title: 'Demo', modified: false };
-        const { container, dispose } = mount(React.createElement(AiConfigurationSettingRow, { ...props, sessionValue: ['curl *'] }));
+        const { container, dispose } = mount(React.createElement(AiConfigurationSettingRow, { ...props, sessionValue: 'session text' }));
         const marker = container.querySelector('.ai-settings-row-title .ai-settings-row-session') as HTMLElement;
         expect(marker.textContent).to.equal('Overridden by session');
-        expect(marker.title).to.include('--session-preference').and.to.include('["curl *"]');
+        expect(marker.title).to.include('--session-preference').and.to.include('"session text"');
         dispose();
         // `false` is a session value like any other; only `undefined` means there is none.
         const withFalse = mount(React.createElement(AiConfigurationSettingRow, { ...props, sessionValue: false }));
@@ -412,7 +412,7 @@ describe('AI Configuration primitives', () => {
         without.dispose();
     });
 
-    it('AiSettingsRow marks a session value, and keeps a secret session value out of the tooltip', () => {
+    it('AiSettingsRow marks a session value, and shows it in the tooltip only for a primitive that isn\'t a secret', () => {
         const service = (sessionValue: unknown) => ({
             inspect: () => ({ value: 'shown', scopeValue: undefined, defaultValue: undefined, modified: false, sessionValue }),
             describe: () => ({ label: 'Demo' }),
@@ -427,10 +427,16 @@ describe('AI Configuration primitives', () => {
             dispose();
             return title;
         };
-        expect(tooltip(['curl *'], { type: 'array' })).to.include('["curl *"]');
         const secret = tooltip('sk-session-key', { type: 'string', password: true });
         expect(secret).to.include('--session-preference').and.to.not.include('sk-session-key');
+        // A list or an object can hold a key as well, e.g. the `apiKey` of a custom OpenAI model.
+        const models = tooltip([{ model: 'demo', apiKey: 'sk-model-key' }], { type: 'json' });
+        expect(models).to.include('--session-preference').and.to.not.include('sk-model-key');
+        expect(tooltip({ token: 'sk-object-key' }, { type: 'json' })).to.include('--session-preference').and.to.not.include('sk-object-key');
+        expect(tooltip(['curl *'], { type: 'array' })).to.include('--session-preference').and.to.not.include('curl *');
         expect(tooltip('session text', { type: 'string' })).to.include('"session text"');
+        expect(tooltip(false, { type: 'boolean' })).to.include('false');
+        expect(tooltip(3, { type: 'number' })).to.include('3');
         expect(tooltip(undefined, { type: 'string' })).to.equal(undefined);
     });
 
