@@ -62,8 +62,10 @@ export class TasksMainImpl implements TasksMain, Disposable {
     private readonly taskDefinitionRegistry: TaskDefinitionRegistry;
 
     private readonly taskProviders = new Map<number, Disposable>();
-    /** The tasks that plugins requested to run with `$executeTask`, by request id, until the start of their execution is reported. */
+    /** The tasks that plugins requested to run with `$executeTask`, by request id, until `runTask` settles for them. */
     private readonly pendingExecuteRequests = new Map<number, TaskConfiguration>();
+    /** The started tasks that may have been started by a pending request, by task id, with the events for them that are held until it is known. */
+    private readonly heldTaskEvents = new Map<number, { info: TaskInfo, events: (() => void)[] }>();
     private readonly toDispose = new DisposableCollection();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
@@ -75,29 +77,29 @@ export class TasksMainImpl implements TasksMain, Disposable {
         this.taskDefinitionRegistry = container.get(TaskDefinitionRegistry);
 
         this.toDispose.push(this.taskWatcher.onTaskCreated((event: TaskInfo) => {
-            this.proxy.$onDidStartTask({
-                id: event.taskId,
-                task: this.fromTaskConfiguration(event.config),
-                executeRequestId: this.claimExecuteRequest(event)
-            }, event.terminalId!);
+            if (this.mayBeStartedByExecuteRequest(event)) {
+                this.heldTaskEvents.set(event.taskId, { info: event, events: [] });
+            } else {
+                this.reportTaskStart(event, undefined);
+            }
         }));
 
         this.toDispose.push(this.taskWatcher.onTaskExit((event: TaskExitedEvent) => {
-            this.proxy.$onDidEndTask(event.taskId);
+            this.reportTaskEvent(event.taskId, () => this.proxy.$onDidEndTask(event.taskId));
         }));
 
         this.toDispose.push(this.taskWatcher.onDidStartTaskProcess((event: TaskInfo) => {
             if (event.processId !== undefined) {
-                this.proxy.$onDidStartTaskProcess(event.processId, {
+                this.reportTaskEvent(event.taskId, () => this.proxy.$onDidStartTaskProcess(event.processId!, {
                     id: event.taskId,
                     task: this.fromTaskConfiguration(event.config)
-                });
+                }));
             }
         }));
 
         this.toDispose.push(this.taskWatcher.onDidEndTaskProcess((event: TaskExitedEvent) => {
             if (event.code !== undefined) {
-                this.proxy.$onDidEndTaskProcess(event.code, event.taskId);
+                this.reportTaskEvent(event.taskId, () => this.proxy.$onDidEndTaskProcess(event.code!, event.taskId));
             }
         }));
 
@@ -157,36 +159,62 @@ export class TasksMainImpl implements TasksMain, Disposable {
     async $executeTask(taskDto: TaskDto, executeRequestId: number): Promise<TaskExecutionDto | undefined> {
         const taskConfig = this.toTaskConfiguration(taskDto);
         this.pendingExecuteRequests.set(executeRequestId, taskConfig);
+        let taskInfo: TaskInfo | undefined;
         try {
-            const taskInfo = await this.taskService.runTask(taskConfig);
-            if (taskInfo) {
-                return {
-                    id: taskInfo.taskId,
-                    task: this.fromTaskConfiguration(taskInfo.config),
-                    executeRequestId
-                };
-            }
+            taskInfo = await this.taskService.runTask(taskConfig);
         } finally {
             this.pendingExecuteRequests.delete(executeRequestId);
+            this.releaseHeldTaskEvents(taskInfo?.taskId, executeRequestId);
+        }
+        if (taskInfo) {
+            return {
+                id: taskInfo.taskId,
+                task: this.fromTaskConfiguration(taskInfo.config),
+                executeRequestId
+            };
         }
     }
 
     /**
-     * The start of an execution is reported before `runTask` resolves, so the plugin host can't know yet that it was started by its request.
-     * `runTask` doesn't start a task that is already running, so a created task that matches a pending request is the one started by it.
-     * @returns the id of the request that started the task, if any
+     * The start of an execution is reported before `runTask` resolves, so it's not known yet whether a pending request started it.
+     * The events for a task that matches a pending request are therefore held until `runTask` settles for the requests it matches.
      */
-    protected claimExecuteRequest(event: TaskInfo): number | undefined {
-        if (!this.taskService.isEventForThisClient(event.ctx)) {
-            return undefined;
-        }
-        for (const [executeRequestId, pendingConfig] of this.pendingExecuteRequests) {
-            if (this.taskDefinitionRegistry.compareTasks(pendingConfig, event.config)) {
-                this.pendingExecuteRequests.delete(executeRequestId);
-                return executeRequestId;
+    protected mayBeStartedByExecuteRequest(event: TaskInfo): boolean {
+        return this.taskService.isEventForThisClient(event.ctx)
+            && [...this.pendingExecuteRequests.values()].some(pendingConfig => this.taskDefinitionRegistry.compareTasks(pendingConfig, event.config));
+    }
+
+    /**
+     * Reports the held events of the task started by a request, and of the tasks that no pending request may have started anymore.
+     * @param startedTaskId the id of the task started by the request, if any
+     * @param executeRequestId the id of the request for which `runTask` settled
+     */
+    protected releaseHeldTaskEvents(startedTaskId: number | undefined, executeRequestId: number): void {
+        for (const [taskId, held] of this.heldTaskEvents) {
+            const startedByRequest = taskId === startedTaskId;
+            if (startedByRequest || !this.mayBeStartedByExecuteRequest(held.info)) {
+                this.heldTaskEvents.delete(taskId);
+                this.reportTaskStart(held.info, startedByRequest ? executeRequestId : undefined);
+                held.events.forEach(report => report());
             }
         }
-        return undefined;
+    }
+
+    protected reportTaskStart(event: TaskInfo, executeRequestId: number | undefined): void {
+        this.proxy.$onDidStartTask({
+            id: event.taskId,
+            task: this.fromTaskConfiguration(event.config),
+            executeRequestId
+        }, event.terminalId!);
+    }
+
+    protected reportTaskEvent(taskId: number, report: () => void): void {
+        const held = this.heldTaskEvents.get(taskId);
+        if (held) {
+            held.events.push(report);
+        } else {
+            report();
+        }
     }
 
     async $taskExecutions(): Promise<{
