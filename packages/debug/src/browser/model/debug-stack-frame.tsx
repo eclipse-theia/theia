@@ -32,6 +32,7 @@ import { DebugSession } from '../debug-session';
 import { DebugThread } from './debug-thread';
 import * as monaco from '@theia/monaco-editor-core';
 import { stringHash } from '@theia/core/lib/common/hash';
+import { nls } from '@theia/core/lib/common/nls';
 
 export class DebugStackFrameData {
     readonly raw: DebugProtocol.StackFrame;
@@ -63,7 +64,28 @@ export class DebugStackFrame extends DebugStackFrameData implements TreeElement 
         this._source = this.raw.source && this.session.getSource(this.raw.source);
     }
 
+    /**
+     * Whether the debug adapter supports restarting frames at all.
+     */
+    get supportsRestartFrame(): boolean {
+        return !!this.session.capabilities.supportsRestartFrame;
+    }
+
+    /**
+     * Whether this frame can be restarted. Per the debug protocol, `canRestart` defaults to `true` if the adapter supports restarting frames.
+     */
+    get isRestartable(): boolean {
+        return this.supportsRestartFrame && this.raw.canRestart !== false;
+    }
+
+    /**
+     * Restarts this frame. As in VS Code, rejects if the debug adapter does not support restarting frames,
+     * and leaves it to the debug adapter to reject frames that cannot be restarted, see {@link isRestartable}.
+     */
     async restart(): Promise<void> {
+        if (!this.supportsRestartFrame) {
+            throw new Error(nls.localize('theia/debug/restartFrameNotSupported', 'The debug adapter does not support restarting frames.'));
+        }
         await this.session.sendRequest('restartFrame', this.toArgs({
             threadId: this.thread.id
         }));
