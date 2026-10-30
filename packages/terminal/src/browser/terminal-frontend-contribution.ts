@@ -328,8 +328,20 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         });
     }
 
-    async initializeLayout(): Promise<void> {
-        await this.preferenceService.ready;
+    initializeLayout(): void {
+        // The default layout includes a terminal in the collapsed bottom panel. The user cannot see it
+        // until the panel is expanded, so neither the preferences nor the terminal itself are awaited
+        // here: that would delay the reveal of the workbench by the start of a shell process.
+        this.preferenceService.ready
+            .then(() => this.addDefaultLayoutTerminal())
+            .catch(error => this.logger.error('Failed to initialize terminal in default layout', error));
+    }
+
+    /**
+     * Add the terminal of the default layout to the bottom panel, unless the terminals are grouped
+     * in the terminal manager view. The terminal process is started once the terminal is shown.
+     */
+    protected async addDefaultLayoutTerminal(): Promise<void> {
         // `terminal.grouping.mode` is defined in @theia/terminal-manager, which this package
         // cannot depend on. Reading via generic PreferenceService; undefined safely
         // falls through to standard terminal behavior.
@@ -337,15 +349,11 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         if (groupingMode === 'tree') {
             return;
         }
-        try {
-            const termWidget = await this.newTerminal({});
-            await termWidget.start();
-            // Use shell.addWidget directly (not this.open()) to add the terminal
-            // to the bottom panel without expanding it on startup.
-            this.shell.addWidget(termWidget, { area: 'bottom' });
-        } catch (error) {
-            this.logger.error('Failed to initialize terminal in default layout', error);
-        }
+        const termWidget = await this.newTerminal({});
+        // Use shell.addWidget directly (not this.open()) to add the terminal
+        // to the bottom panel without expanding it on startup.
+        this.shell.addWidget(termWidget, { area: 'bottom' });
+        termWidget.startWhenShown();
     }
 
     async contributeDefaultProfiles(): Promise<void> {

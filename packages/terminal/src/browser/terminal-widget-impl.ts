@@ -141,6 +141,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected lastMousePosition: { x: number, y: number } | undefined;
     protected isAttachedCloseListener: boolean = false;
     protected shown = false;
+    /** The pending {@link startWhenShown} request, if the widget has not been shown yet. */
+    protected deferredStart: { id?: number } | undefined;
+    /** Text sent before the terminal was connected, delivered once it is. */
+    protected pendingText: string[] = [];
     protected enhancedPreviewNode: Node | undefined;
     protected styleElement: HTMLStyleElement | undefined;
     override lastCwd = new URI();
@@ -153,7 +157,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(ShellTerminalServerProxy) protected readonly shellTerminalServer: ShellTerminalServerProxy;
     @inject(TerminalWatcher) protected readonly terminalWatcher: TerminalWatcher;
     @inject(ILogger) @named('terminal:TerminalWidgetImpl')
-    protected readonly logger: ILogger;
+    protected override readonly logger: ILogger;
     @inject('terminal-dom-id') readonly _terminalDOMId: string;
     @inject(TerminalPreferences) protected readonly preferences: TerminalPreferences;
     @inject(ContributionProvider) @named(TerminalContribution) protected readonly terminalContributionProvider: ContributionProvider<TerminalContribution>;
@@ -790,6 +794,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     async hasChildProcesses(): Promise<boolean> {
+        if (!IBaseTerminalServer.validateId(this.terminalId)) {
+            // Not started, e.g. deferred until the widget is shown: nothing can be running in it.
+            return false;
+        }
         return this.shellTerminalServer.hasChildProcesses(await this.processId);
     }
 
@@ -814,7 +822,14 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             this.title.label = state.titleLabel;
             this.hasUserTitle = state.hasUserTitle ?? false;
             this._shellName = state.shellName;
-            this.start(state.terminalId);
+            if (!IBaseTerminalServer.validateId(state.terminalId) && this.kind === 'user') {
+                // The terminal was never started, e.g. because it stayed in a collapsed panel, so there is
+                // no process to attach to. Do not spawn one until the user actually gets to see the terminal.
+                // Terminals of other kinds (tasks, extensions) are not recreated, see `attachTerminal`.
+                this.startWhenShown();
+            } else {
+                this.start(state.terminalId);
+            }
         }
     }
 
@@ -824,6 +839,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
      * If id is provided attach to the terminal for this id.
      */
     async start(id?: number): Promise<number> {
+        this.deferredStart = undefined;
         this._terminalId = typeof id !== 'number' ? await this.createTerminal() : await this.attachTerminal(id);
         this.resizeTerminalProcess();
         this.connectTerminalProcess();
@@ -834,6 +850,21 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
         this.onDidOpenFailureEmitter.fire(undefined);
         throw new Error('Failed to start terminal' + (id ? ` for id: ${id}.` : '.'));
+    }
+
+    override startWhenShown(id?: number): void {
+        if (this.isVisible) {
+            this.startInBackground(id);
+        } else {
+            this.deferredStart = { id };
+        }
+    }
+
+    /**
+     * Start the terminal without awaiting it, logging a failure instead of rejecting.
+     */
+    protected startInBackground(id?: number): void {
+        this.start(id).catch(error => this.logger.error('Failed to start the terminal', error));
     }
 
     protected async attachTerminal(id: number): Promise<number> {
@@ -907,11 +938,25 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         super.onAfterShow(msg);
         this.update();
         this.shown = true;
+        this.startIfDeferred();
     }
     protected override onAfterAttach(msg: Message): void {
         Widget.attach(this.searchBox, this.node);
         super.onAfterAttach(msg);
         this.update();
+        // A widget attached to a visible parent gets no `after-show` of its own
+        this.startIfDeferred();
+    }
+
+    /**
+     * Start the terminal now if {@link startWhenShown} deferred it and the widget is visible.
+     */
+    protected startIfDeferred(): void {
+        if (this.deferredStart && this.isVisible) {
+            const { id } = this.deferredStart;
+            this.deferredStart = undefined;
+            this.startInBackground(id);
+        }
     }
     protected override onBeforeDetach(msg: Message): void {
         Widget.detach(this.searchBox);
@@ -954,6 +999,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.connectionClosed = false;
         this.waitingForConnectionCloseToDispose = false;
         const waitForConnection = this.waitForConnection = new Deferred<Channel>();
+        const pendingText = this.pendingText;
+        this.pendingText = [];
+        pendingText.forEach(text => this.sendText(text));
         this.connectionProvider.listen(
             `${terminalsPath}/${this.terminalId}`,
             (_path, connection) => {
@@ -1068,6 +1116,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             this.waitForConnection.promise.then(connection =>
                 connection.getWriteBuffer().writeString(text).commit()
             );
+        } else if (!this.options.isPseudoTerminal) {
+            // Not connected yet, e.g. the start is deferred until the widget is shown or still in progress.
+            this.pendingText.push(text);
         }
     }
 
