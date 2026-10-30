@@ -86,6 +86,7 @@
 }
 
 #theia-top-panel {
+  position: relative;
   background: var(--theia-titleBar-activeBackground);
   color: var(--theia-titleBar-activeForeground);
   display: flex;

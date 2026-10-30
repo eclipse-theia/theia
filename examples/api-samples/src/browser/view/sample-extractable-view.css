@@ -1,0 +1,63 @@
+/********************************************************************************
+ * Copyright (C) 2026 EclipseSource and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.sample-extractable-view {
+    padding: 20px;
+    font-family: var(--theia-ui-font-family);
+    color: var(--theia-foreground);
+}
+
+.sample-extractable-view h2 {
+    font-size: 1.4em;
+    margin-bottom: 0.5em;
+}
+
+.sample-extractable-view p {
+    margin-bottom: 1em;
+    line-height: 1.5;
+}
+
+.sample-extractable-view .button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 300px;
+}
+
+.sample-extractable-view button {
+    padding: 8px 16px;
+    border: 1px solid var(--theia-button-border, transparent);
+    background-color: var(--theia-button-background);
+    color: var(--theia-button-foreground);
+    cursor: pointer;
+    font-size: 13px;
+    border-radius: 2px;
+}
+
+.sample-extractable-view button:hover {
+    background-color: var(--theia-button-hoverBackground);
+}
+
+.sample-extractable-view .status {
+    margin-top: 20px;
+    padding: 10px;
+    border: 1px solid var(--theia-panel-border);
+    background-color: var(--theia-editor-inactiveSelectionBackground);
+    border-radius: 4px;
+    min-height: 40px;
+    font-family: var(--theia-editor-font-family);
+    font-size: 12px;
+}

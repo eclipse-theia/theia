@@ -193,21 +193,38 @@ ${Array.from(frontendModules.values(), jsModulePath => `\
 
     body {
         margin: 0;
+        display: flex;
+        flex-direction: column;
     }
 
     html,
     head,
-    body,
-    .secondary-widget-root,
+    body {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    #theia-top-panel {
+        flex: 0 0 auto;
+    }
+
     #widget-host {
+        width: 100% !important;
+        flex: 1 1 auto;
+        overflow: hidden;
+    }
+
+    .secondary-widget-root {
         width: 100% !important;
         height: 100% !important;
     }
     </style>
+    <link rel="stylesheet" href="./bundle.css">
     <link rel="stylesheet" href="./secondary-window.css">
 </head>
 
 <body>
+    <div id="theia-top-panel"></div>
     <div id="widget-host"></div>
 </body>
 

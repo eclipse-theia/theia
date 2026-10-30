@@ -22,6 +22,7 @@ import { Emitter, Event } from '../../common/event';
 import { FocusTracker, PanelLayout, SplitPanel } from '@lumino/widgets';
 import { addEventListener, Widget } from '../widgets';
 import { NativeTabDragService } from './native-tab-drag-service';
+import { SecondaryWindowService } from '../window/secondary-window-service';
 /**
  * Contribution that tracks `mouseup` and `mousedown` events.
  *
@@ -38,6 +39,9 @@ export class ApplicationShellMouseTracker implements FrontendApplicationContribu
 
     @inject(NativeTabDragService)
     protected readonly nativeTabDragService: NativeTabDragService;
+
+    @inject(SecondaryWindowService)
+    protected readonly secondaryWindowService: SecondaryWindowService;
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly toDisposeOnActiveChange = new DisposableCollection();
@@ -74,6 +78,19 @@ export class ApplicationShellMouseTracker implements FrontendApplicationContribu
 
         // The `mouseup` event has to be tracked on the `document`. Lumino attaches to there.
         document.addEventListener('mouseup', this.mouseupListener, true);
+
+        // Also track `mouseup` in secondary windows so that overlays are correctly hidden
+        // when the mouse is released in a secondary window.
+        this.toDispose.push(this.secondaryWindowService.onWindowLoaded(win => {
+            win.document.addEventListener('mouseup', this.mouseupListener, true);
+        }));
+        this.toDispose.push(this.secondaryWindowService.onWindowClosed(win => {
+            try {
+                win.document.removeEventListener('mouseup', this.mouseupListener, true);
+            } catch {
+                // window may already be destroyed
+            }
+        }));
 
         // Native tab drags end without a `mouseup` event. They may also start in a secondary window, whose `mousedown` events are not tracked.
         this.toDispose.pushAll([

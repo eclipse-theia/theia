@@ -13,10 +13,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, unmanaged } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@lumino/messaging';
 import { codiconArray, Key } from '@theia/core/lib/browser';
-import { AbstractDialog } from '@theia/core/lib/browser/dialogs';
+import { AbstractDialog, DialogProps } from '@theia/core/lib/browser/dialogs';
 import '../../../../src/main/browser/dialogs/style/modal-notification.css';
 import { MainMessageItem, MainMessageOptions } from '../../../common/plugin-api-rpc';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
@@ -38,8 +38,8 @@ export class ModalNotification extends AbstractDialog<string | undefined> {
 
     protected actionTitle: string | undefined;
 
-    constructor() {
-        super({ title: FrontendApplicationConfigProvider.get().applicationName });
+    constructor(@unmanaged() props?: Partial<DialogProps>) {
+        super({ title: FrontendApplicationConfigProvider.get().applicationName, ...props });
     }
 
     protected override onCloseRequest(msg: Message): void {
@@ -57,23 +57,24 @@ export class ModalNotification extends AbstractDialog<string | undefined> {
     }
 
     protected createMessageNode(messageType: MessageType, text: string, options: MainMessageOptions, actions: MainMessageItem[]): HTMLElement {
-        const messageNode = document.createElement('div');
+        const doc = this.node.ownerDocument;
+        const messageNode = doc.createElement('div');
         messageNode.classList.add(NOTIFICATION);
 
-        const iconContainer = messageNode.appendChild(document.createElement('div'));
+        const iconContainer = messageNode.appendChild(doc.createElement('div'));
         iconContainer.classList.add(ICON);
-        const iconElement = iconContainer.appendChild(document.createElement('i'));
+        const iconElement = iconContainer.appendChild(doc.createElement('i'));
         iconElement.classList.add(...this.toIconClass(messageType), messageType.toString());
 
-        const textContainer = messageNode.appendChild(document.createElement('div'));
+        const textContainer = messageNode.appendChild(doc.createElement('div'));
         textContainer.classList.add(TEXT);
-        const textElement = textContainer.appendChild(document.createElement('p'));
+        const textElement = textContainer.appendChild(doc.createElement('p'));
         textElement.textContent = text;
 
         if (options.detail) {
-            const detailContainer = textContainer.appendChild(document.createElement('div'));
+            const detailContainer = textContainer.appendChild(doc.createElement('div'));
             detailContainer.classList.add(DETAIL);
-            const detailElement = detailContainer.appendChild(document.createElement('p'));
+            const detailElement = detailContainer.appendChild(doc.createElement('p'));
             detailElement.textContent = options.detail;
         }
 

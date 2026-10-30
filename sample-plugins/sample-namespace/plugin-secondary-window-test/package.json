@@ -1,0 +1,105 @@
+{
+  "private": true,
+  "name": "plugin-secondary-window-test",
+  "version": "1.77.1",
+  "main": "extension.js",
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
+  "publisher": "sample-namespace",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "engines": {
+    "vscode": "^1.125.0"
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "This sample plugin does not support untrusted workspaces."
+    }
+  },
+  "activationEvents": [
+    "onCommand:secondary-window-test.openPanel"
+  ],
+  "devDependencies": {
+    "@types/vscode": "^1.125.0"
+  },
+  "scripts": {
+    "build": "npx @vscode/vsce@3 package --no-dependencies"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "secondary-window-test.openPanel",
+        "title": "Open Test Panel",
+        "category": "Secondary Window Test"
+      },
+      {
+        "command": "secondary-window-test.toolbarAction",
+        "title": "Toolbar Action",
+        "category": "Secondary Window Test",
+        "icon": "$(play)"
+      },
+      {
+        "command": "secondary-window-test.showDialog",
+        "title": "Show Dialog",
+        "category": "Secondary Window Test",
+        "icon": "$(info)"
+      },
+      {
+        "command": "secondary-window-test.saveFile",
+        "title": "Save File Dialog",
+        "category": "Secondary Window Test",
+        "icon": "$(save)"
+      },
+      {
+        "command": "secondary-window-test.toggleColors",
+        "title": "Toggle Colors",
+        "category": "Secondary Window Test",
+        "icon": "$(symbol-color)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "secondary-window-test.toolbarAction",
+          "when": "activeWebviewPanelId == 'secondaryWindowTest'",
+          "group": "navigation"
+        },
+        {
+          "command": "secondary-window-test.showDialog",
+          "when": "activeWebviewPanelId == 'secondaryWindowTest'",
+          "group": "navigation"
+        },
+        {
+          "command": "secondary-window-test.saveFile",
+          "when": "activeWebviewPanelId == 'secondaryWindowTest'",
+          "group": "navigation"
+        },
+        {
+          "command": "secondary-window-test.toggleColors",
+          "when": "activeWebviewPanelId == 'secondaryWindowTest'",
+          "group": "navigation"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "command": "secondary-window-test.toolbarAction",
+          "when": "activeWebviewPanelId == 'secondaryWindowTest'"
+        },
+        {
+          "command": "secondary-window-test.showDialog",
+          "when": "activeWebviewPanelId == 'secondaryWindowTest'"
+        },
+        {
+          "command": "secondary-window-test.saveFile",
+          "when": "activeWebviewPanelId == 'secondaryWindowTest'"
+        },
+        {
+          "command": "secondary-window-test.toggleColors",
+          "when": "activeWebviewPanelId == 'secondaryWindowTest'"
+        }
+      ]
+    }
+  }
+}

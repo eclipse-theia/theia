@@ -75,12 +75,12 @@ class OpenNewTabDialog extends AbstractDialog<string> {
         });
         this.windowService = windowService;
 
-        this.linkNode = document.createElement('a');
+        this.linkNode = this.node.ownerDocument.createElement('a');
         this.linkNode.target = '_blank';
         this.linkNode.setAttribute('style', 'color: var(--theia-editorWidget-foreground);');
         this.contentNode.appendChild(this.linkNode);
 
-        const messageNode = document.createElement('div');
+        const messageNode = this.node.ownerDocument.createElement('div');
         messageNode.innerText = 'You are going to open: ';
         messageNode.appendChild(this.linkNode);
         this.contentNode.appendChild(messageNode);

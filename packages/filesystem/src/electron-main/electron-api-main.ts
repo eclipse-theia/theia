@@ -50,7 +50,9 @@ export class ElectronApi implements ElectronMainApplicationContribution {
             };
 
             if (options.modal) {
-                const win = BrowserWindow.fromWebContents(event.sender);
+                const win = options.windowName
+                    ? BrowserWindow.getAllWindows().find(w => w.webContents.mainFrame.name === options.windowName)
+                    : BrowserWindow.fromWebContents(event.sender);
                 if (win) {
                     return (await dialog.showOpenDialog(win, dialogOpts)).filePaths;
                 }
@@ -66,7 +68,9 @@ export class ElectronApi implements ElectronMainApplicationContribution {
                 title: options.title
             };
             if (options.modal) {
-                const win = BrowserWindow.fromWebContents(event.sender);
+                const win = options.windowName
+                    ? BrowserWindow.getAllWindows().find(w => w.webContents.mainFrame.name === options.windowName)
+                    : BrowserWindow.fromWebContents(event.sender);
                 if (win) {
                     return (await dialog.showSaveDialog(win, dialogOpts)).filePath;
                 }

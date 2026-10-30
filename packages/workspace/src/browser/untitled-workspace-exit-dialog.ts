@@ -30,7 +30,7 @@ export class UntitledWorkspaceExitDialog extends AbstractDialog<UntitledWorkspac
         @inject(DialogProps) props: DialogProps
     ) {
         super(props);
-        const messageNode = document.createElement('div');
+        const messageNode = this.node.ownerDocument.createElement('div');
         messageNode.textContent = nls.localizeByDefault('Save your workspace if you plan to open it again.');
         this.contentNode.appendChild(messageNode);
         this.dontSaveButton = this.createButton(nls.localizeByDefault(UntitledWorkspaceExitDialog.Values["Don't Save"]));
