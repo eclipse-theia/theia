@@ -18,6 +18,9 @@
     {
       "frontend": "lib/browser/getting-started-frontend-module",
       "backend": "lib/node/getting-started-backend-module"
+    },
+    {
+      "frontendOnly": "lib/browser-only/getting-started-frontend-only-module"
     }
   ],
   "keywords": [
