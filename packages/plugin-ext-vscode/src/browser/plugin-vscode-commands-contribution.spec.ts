@@ -33,6 +33,8 @@ import { CommandRegistry, InMemoryTextResource, URI } from '@theia/core';
 import { MultiDiffEditorUri } from '@theia/scm/lib/browser/multi-diff-editor/multi-diff-editor-uri';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { DuplicateExtensionError } from '@theia/plugin-ext/lib/common/plugin-protocol';
+import { Title, Widget } from '@theia/core/lib/browser';
+import { EditorWidget } from '@theia/editor/lib/browser';
 import { VSCodeExtensionUri } from '../common/plugin-vscode-uri';
 import { EditorGroupNavigationRect, PluginVscodeCommandsContribution } from './plugin-vscode-commands-contribution';
 
@@ -204,6 +206,86 @@ describe('PluginVscodeCommandsContribution', () => {
             expect(calls).to.have.lengthOf(1);
             expect(calls[0][0]).to.equal(VSCodeExtensionUri.fromId('ms-python.python').toString());
             expect(calls[0][2]).to.deep.equal({ version: '1.2.3', ignoreOtherVersions: true });
+        });
+    });
+
+    describe('editor close commands', () => {
+        /** A shell with one tab bar whose `closeTabs` relies on `this`, like `ApplicationShell`. */
+        class FakeShell {
+            readonly closed: string[] = [];
+            readonly saved: string[] = [];
+            readonly tabBar: { titles: Title<Widget>[] };
+            readonly otherTabBar: { titles: Title<Widget>[] };
+
+            constructor(readonly widgets: Widget[], readonly currentWidget: Widget, otherGroup: Widget[]) {
+                this.tabBar = { titles: widgets.map(widget => widget.title) };
+                this.otherTabBar = { titles: otherGroup.map(widget => widget.title) };
+            }
+
+            get allTabBars(): unknown[] {
+                return [this.tabBar, this.otherTabBar];
+            }
+
+            getTabBarFor(): unknown {
+                return this.tabBar;
+            }
+
+            async closeMany(targets: Widget[]): Promise<Widget[]> {
+                this.closed.push(...targets.map(target => target.id));
+                return targets;
+            }
+
+            async closeTabs(tabBar: { titles: Title<Widget>[] }, filter?: (title: Title<Widget>, index: number) => boolean): Promise<void> {
+                await this.closeMany(this.getWidgetTitles(tabBar, filter).map(title => title.owner));
+            }
+
+            saveTabs(tabBar: { titles: Title<Widget>[] }, filter?: (title: Title<Widget>, index: number) => boolean): void {
+                this.saved.push(...this.getWidgetTitles(tabBar, filter).map(title => title.owner.id));
+            }
+
+            getWidgetTitles(tabBar: { titles: Title<Widget>[] }, filter?: (title: Title<Widget>, index: number) => boolean): Title<Widget>[] {
+                return filter ? tabBar.titles.filter(filter) : tabBar.titles;
+            }
+        }
+
+        function editor(id: string, pinned = false): EditorWidget {
+            const widget: EditorWidget = Object.create(EditorWidget.prototype);
+            Object.defineProperties(widget, { id: { value: id }, title: { value: { owner: widget, closable: !pinned } } });
+            return widget;
+        }
+
+        let shell: FakeShell;
+        let commands: CommandRegistry;
+
+        beforeEach(() => {
+            const widgets = [editor('a', true), editor('b'), editor('c'), editor('d', true), editor('e')];
+            shell = new FakeShell(widgets, widgets[2], [editor('f', true), editor('g')]);
+            Object.assign(contribution, { shell, editorManager: { currentEditor: widgets[2], all: widgets } });
+            commands = new CommandRegistry({ getContributions: () => [] });
+            contribution.registerCommands(commands);
+        });
+
+        const expectations: [string, string[]][] = [
+            ['workbench.action.closeAllEditors', ['b', 'c', 'e']],
+            ['workbench.action.closeOtherEditors', ['b', 'e']],
+            ['workbench.action.closeEditorsInGroup', ['b', 'c', 'e']],
+            ['workbench.action.closeEditorsToTheLeft', ['b']],
+            ['workbench.action.closeEditorsToTheRight', ['e']],
+            ['workbench.action.closeEditorsInOtherGroups', ['g']]
+        ];
+        for (const [command, closed] of expectations) {
+            it(`${command} should leave pinned editors open`, async () => {
+                await commands.executeCommand(command);
+                await new Promise(resolve => setTimeout(resolve));
+
+                expect(shell.closed).to.deep.equal(closed);
+            });
+        }
+
+        it('workbench.files.saveAllInGroup should save every editor in the group, pinned ones included', async () => {
+            await commands.executeCommand('workbench.files.saveAllInGroup');
+
+            expect(shell.saved).to.deep.equal(['a', 'b', 'c', 'd', 'e']);
         });
     });
 });

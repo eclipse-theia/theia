@@ -316,7 +316,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             execute: uri => this.openWithService.openWith(uri)
         }));
         registry.registerCommand(OpenEditorsCommands.CLOSE_ALL_TABS_FROM_TOOLBAR, {
-            execute: widget => this.withOpenEditorsWidget(widget, () => this.shell.closeMany(this.editorWidgets)),
+            execute: widget => this.withOpenEditorsWidget(widget, () => this.shell.closeMany(this.editorWidgets.filter(editor => editor.title.closable))),
             isEnabled: widget => this.withOpenEditorsWidget(widget, () => true),
             isVisible: widget => this.withOpenEditorsWidget(widget, () => true)
         });
