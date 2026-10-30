@@ -15,9 +15,10 @@
 // *****************************************************************************
 
 import { AIVariableResolutionRequest } from '@theia/ai-core';
-import { URI } from '@theia/core';
+import { Path, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { LabelProvider, LabelProviderContribution } from '@theia/core/lib/browser';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ChangeSetFileService } from './change-set-file-service';
 
 @injectable()
@@ -25,6 +26,9 @@ export class ContextFileVariableLabelProvider implements LabelProviderContributi
 
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     @inject(ChangeSetFileService)
     protected readonly changeSetFileService: ChangeSetFileService;
@@ -37,26 +41,65 @@ export class ContextFileVariableLabelProvider implements LabelProviderContributi
     }
 
     getIcon(element: object): string | undefined {
-        return this.labelProvider.getIcon(this.getUri(element)!);
+        const uri = this.getUri(element);
+        return uri ? this.labelProvider.getIcon(uri) : undefined;
     }
 
     getName(element: object): string | undefined {
-        return this.labelProvider.getName(this.getUri(element)!);
+        const uri = this.getUri(element);
+        return uri ? this.labelProvider.getName(uri) : undefined;
     }
 
     getLongName(element: object): string | undefined {
-        return this.labelProvider.getLongName(this.getUri(element)!);
+        const uri = this.getUri(element);
+        return uri ? this.labelProvider.getLongName(uri) : undefined;
     }
 
     getDetails(element: object): string | undefined {
-        return this.labelProvider.getDetails(this.getUri(element)!);
+        const uri = this.getUri(element);
+        return uri ? this.labelProvider.getDetails(uri) : undefined;
     }
 
     protected getUri(element: object): URI | undefined {
-        if (!AIVariableResolutionRequest.is(element)) {
+        if (!AIVariableResolutionRequest.is(element) || !element.arg) {
             return undefined;
         }
-        return new URI(element.arg);
+
+        const rawArg = element.arg.trim();
+        if (!rawArg) {
+            return undefined;
+        }
+
+        if (rawArg.includes('://')) {
+            return new URI(rawArg);
+        }
+
+        const normalized = Path.normalizePathSeparator(rawArg);
+        const path = new Path(normalized).normalize();
+        const segments = path.toString().split('/').filter(segment => segment.length > 0);
+        if (path.isAbsolute || Path.isDrive(segments[0] ?? '')) {
+            return URI.fromFilePath(normalized);
+        }
+
+        const relativePath = segments.join('/');
+        if (this.workspaceService) {
+            const rootPrefixed = this.workspaceService.resolveRootPrefixedPath(relativePath);
+            if (rootPrefixed) {
+                return rootPrefixed;
+            }
+
+            const supraRelative = this.workspaceService.resolveSupraRelativePath(relativePath);
+            if (supraRelative.length === 1) {
+                return supraRelative[0];
+            }
+
+            const roots = this.workspaceService.tryGetRoots();
+            if (roots && roots.length > 0) {
+                return roots[0].resource.resolve(relativePath);
+            }
+        }
+
+        return new URI(normalized);
     }
 
 }
