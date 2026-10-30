@@ -173,7 +173,8 @@ export default new ContainerModule(bind => {
     bind(AIVariableContribution).to(FileVariableContribution).inSingletonScope();
     bind(AgentsVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(AgentsVariableContribution);
-    bind(AIVariableContribution).to(OpenEditorsVariableContribution).inSingletonScope();
+    bind(OpenEditorsVariableContribution).toSelf().inSingletonScope();
+    bind(AIVariableContribution).toService(OpenEditorsVariableContribution);
     bind(SkillsVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(SkillsVariableContribution);
     bind(AgentsMdVariableContribution).toSelf().inSingletonScope();
