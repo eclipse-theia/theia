@@ -20,7 +20,7 @@ import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { LanguageModelRequest, LanguageModelResponse, ReasoningSupport, ToolCallExecutor, ToolCallExecutorImpl, UserRequest } from '@theia/ai-core';
 import { OpenAI } from 'openai';
-import { MistralFixedOpenAI, OpenAiModel, OpenAiModelParams } from './openai-language-model';
+import { createOpenAiClient, MistralFixedOpenAI, OpenAiClientOptions, OpenAiModel, OpenAiModelParams } from './openai-language-model';
 import { OpenAiModelUtils } from './openai-model-utils';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
 import { ChatCompletionStreamingAsyncIteratorFactory } from './openai-chat-completion-stream';
@@ -381,5 +381,52 @@ describe('OpenAiModel server-side compaction (Response API)', () => {
         const result = model.callApplyResponseApiCompaction({ stream: true }, { messages: [], compaction: { enabled: true } });
         expect(result.context_management).to.equal(undefined);
         expect(result).to.deep.equal({ stream: true });
+    });
+});
+
+describe('createOpenAiClient', () => {
+
+    const AZURE: OpenAiClientOptions = { apiKey: undefined, baseURL: 'https://gateway.example.com/openai', apiVersion: '2024-10-21', deployment: 'gpt-test' };
+
+    async function sentHeaders(options: OpenAiClientOptions): Promise<{ url: string, headers: Headers }> {
+        const { url, req } = await createOpenAiClient(options).buildRequest({
+            method: 'post', path: '/chat/completions', body: { model: 'gpt-test', messages: [] }
+        });
+        return { url, headers: new Headers(req.headers) };
+    }
+
+    it('sends no placeholder api-key to Azure when the headers authenticate the request', async () => {
+        const { url, headers } = await sentHeaders({ ...AZURE, headers: { Authorization: 'Bearer entra-token' } });
+        expect(url).to.equal('https://gateway.example.com/openai/deployments/gpt-test/chat/completions?api-version=2024-10-21');
+        expect(headers.get('authorization')).to.equal('Bearer entra-token');
+        expect(headers.has('api-key')).to.equal(false);
+    });
+
+    it('sends no placeholder api-key to an Azure endpoint that authenticates with another header', async () => {
+        const { headers } = await sentHeaders({ ...AZURE, headers: { 'Ocp-Apim-Subscription-Key': 'subscription-key' } });
+        expect(headers.get('ocp-apim-subscription-key')).to.equal('subscription-key');
+        expect(headers.has('api-key')).to.equal(false);
+    });
+
+    it('sends no placeholder api-key to a keyless Azure endpoint without headers', async () => {
+        const { headers } = await sentHeaders(AZURE);
+        expect(headers.has('api-key')).to.equal(false);
+    });
+
+    it('sends a configured Azure key next to an Authorization header', async () => {
+        const { headers } = await sentHeaders({ ...AZURE, apiKey: 'azure-key', headers: { Authorization: 'Bearer entra-token' } });
+        expect(headers.get('api-key')).to.equal('azure-key');
+        expect(headers.get('authorization')).to.equal('Bearer entra-token');
+    });
+
+    it('keeps an api-key header the configuration sets explicitly', async () => {
+        const { headers } = await sentHeaders({ ...AZURE, headers: { authorization: 'Bearer entra-token', 'Api-Key': 'from-headers' } });
+        expect(headers.get('api-key')).to.equal('from-headers');
+    });
+
+    it('lets the headers replace the key-based Authorization of a non-Azure endpoint', async () => {
+        const { headers } = await sentHeaders({ apiKey: undefined, baseURL: 'https://gateway.example.com/v1', headers: { Authorization: 'Bearer gateway-token' } });
+        expect(headers.get('authorization')).to.equal('Bearer gateway-token');
+        expect(headers.has('api-key')).to.equal(false);
     });
 });
