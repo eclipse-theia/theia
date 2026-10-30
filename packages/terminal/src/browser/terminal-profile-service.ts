@@ -87,7 +87,8 @@ export class DefaultProfileStore implements TerminalProfileStore {
 
 @injectable()
 export class DefaultTerminalProfileService implements TerminalProfileService {
-    protected defaultProfileIndex = 0;
+    /** The ID of the default profile. The first profile is the default if it is not set or not available. */
+    protected defaultProfileId: string | undefined;
     protected order: string[] = [];
     protected readonly stores: TerminalProfileStore[];
 
@@ -125,8 +126,10 @@ export class DefaultTerminalProfileService implements TerminalProfileService {
         if (index >= 0 && !this.getProfile(id)) {
             // the profile was removed, but it's still in the `order` array
             this.order.splice(index, 1);
-            this.defaultProfileIndex = Math.max(0, Math.min(this.order.length - 1, index));
             this.onRemovedEmitter.fire(id);
+            if (id === this.defaultProfileId) {
+                this.fireDefaultShellChanged();
+            }
         }
     }
 
@@ -135,29 +138,32 @@ export class DefaultTerminalProfileService implements TerminalProfileService {
         if (index < 0) {
             this.order.push(id);
             this.onAddedEmitter.fire(id);
+            if (id === this.defaultProfileId) {
+                this.fireDefaultShellChanged();
+            }
         }
     }
 
     get defaultProfile(): TerminalProfile | undefined {
-        const id = this.order[this.defaultProfileIndex];
-        if (id) {
-            return this.getProfile(id);
+        const defaultProfile = this.defaultProfileId !== undefined ? this.getProfile(this.defaultProfileId) : undefined;
+        if (defaultProfile) {
+            return defaultProfile;
         }
-        return undefined;
+        const firstId = this.order[0];
+        return firstId !== undefined ? this.getProfile(firstId) : undefined;
     }
 
     setDefaultProfile(id: string): void {
-        const profile = this.getProfile(id);
-        if (!profile) {
+        if (!this.getProfile(id)) {
             throw new Error(`Cannot set default to unknown profile '${id}' `);
         }
-        this.defaultProfileIndex = this.order.indexOf(id);
+        this.defaultProfileId = id;
+        this.fireDefaultShellChanged();
+    }
 
-        if (profile instanceof ShellTerminalProfile && profile.shellPath) {
-            this.onDidChangeDefaultShellEmitter.fire(profile.shellPath);
-        } else {
-            this.onDidChangeDefaultShellEmitter.fire('');
-        }
+    protected fireDefaultShellChanged(): void {
+        const profile = this.defaultProfile;
+        this.onDidChangeDefaultShellEmitter.fire(profile instanceof ShellTerminalProfile && profile.shellPath ? profile.shellPath : '');
     }
 
     getProfile(id: string): TerminalProfile | undefined {
