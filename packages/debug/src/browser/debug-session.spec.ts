@@ -50,7 +50,8 @@ class TestDebugChannel implements DebugChannel {
     send(content: string): void {
         const request: DebugProtocol.Request = JSON.parse(content);
         const body = request.command === 'initialize' ? this.capabilities : {};
-        this.receive({ type: 'response', seq: 0, request_seq: request.seq, command: request.command, success: true, body });
+        const response: DebugProtocol.Response = { type: 'response', seq: 0, request_seq: request.seq, command: request.command, success: true, body };
+        this.receive(response);
     }
 
     /** Sends a message of the debug adapter to Theia. */
