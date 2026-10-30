@@ -50,10 +50,10 @@ export class CommonVariableContribution implements VariableContribution {
     protected readonly appServer: ApplicationServer;
 
     async registerVariables(variables: VariableRegistry): Promise<void> {
-        const execPath = await this.env.getExecPath();
+        // Don't await anything before registering the variables: they need to be available to other contributions' `onStart`
         variables.registerVariable({
             name: 'execPath',
-            resolve: () => execPath
+            resolve: () => this.env.getExecPath()
         });
         variables.registerVariable({
             name: 'pathSeparator',
