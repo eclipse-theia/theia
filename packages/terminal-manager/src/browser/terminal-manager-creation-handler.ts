@@ -21,6 +21,7 @@ import { TerminalCreationHandler } from '@theia/terminal/lib/browser/terminal-cr
 import { TerminalManagerWidget } from './terminal-manager-widget';
 import { TerminalManagerFrontendViewContribution } from './terminal-manager-frontend-view-contribution';
 import { TerminalManagerPreferences } from './terminal-manager-preferences';
+import { TerminalManagerTreeTypes } from './terminal-manager-types';
 
 /**
  * A {@link TerminalCreationHandler} that routes terminals into the terminal
@@ -50,7 +51,7 @@ export class TerminalManagerCreationHandler implements TerminalCreationHandler {
     @inject(TerminalManagerPreferences)
     protected readonly preferences: TerminalManagerPreferences;
 
-    async onWillOpenTerminal(terminal: TerminalWidget, _options?: WidgetOpenerOptions): Promise<boolean | undefined> {
+    async onWillOpenTerminal(terminal: TerminalWidget, options?: WidgetOpenerOptions): Promise<boolean | undefined> {
         if (this.preferences.get('terminal.grouping.mode') !== 'tree') {
             return false;
         }
@@ -66,11 +67,42 @@ export class TerminalManagerCreationHandler implements TerminalCreationHandler {
         }
 
         if (!resolvedWidget.terminalWidgetIdsToNodeIds.has(terminal.id)) {
-            const specialConfig = resolvedWidget.treeWidget.model.getSpecialPageConfig(terminal.kind);
-            resolvedWidget.addTerminalPage(terminal, specialConfig?.pageId);
+            const splitGroupId = this.getSplitGroupId(resolvedWidget, terminal, options);
+            if (splitGroupId) {
+                resolvedWidget.addWidgetToTerminalGroup(terminal, splitGroupId);
+            } else {
+                const specialConfig = resolvedWidget.treeWidget.model.getSpecialPageConfig(terminal.kind);
+                resolvedWidget.addTerminalPage(terminal, specialConfig?.pageId);
+            }
             await this.terminalManagerViewContribution.openView({ reveal: true });
         }
 
         return true;
+    }
+
+    /**
+     * Returns the group to add the terminal to if it is opened as a split, either of a parent terminal
+     * given by its location or of the reference widget of a `split-*` mode. Falls back to the active group
+     * if a split is requested but the parent is not managed by the terminal manager.
+     */
+    protected getSplitGroupId(
+        managerWidget: TerminalManagerWidget, terminal: TerminalWidget, options?: WidgetOpenerOptions
+    ): TerminalManagerTreeTypes.GroupId | undefined {
+        const widgetOptions = options?.widgetOptions;
+        let parentId: string | undefined;
+        if (typeof terminal.location === 'object' && 'parentTerminal' in terminal.location) {
+            parentId = terminal.location.parentTerminal;
+        } else if (widgetOptions?.mode?.startsWith('split-')) {
+            parentId = widgetOptions.ref?.id;
+        } else {
+            return undefined;
+        }
+        const { model } = managerWidget.treeWidget;
+        const parentNodeId = parentId ? managerWidget.terminalWidgetIdsToNodeIds.get(parentId) : undefined;
+        const parentNode = parentNodeId ? model.getNode(parentNodeId) : undefined;
+        if (TerminalManagerTreeTypes.isTerminalNode(parentNode)) {
+            return parentNode.parentGroupId;
+        }
+        return model.activeGroupNode?.id;
     }
 }

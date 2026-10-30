@@ -25,7 +25,7 @@ export class ShellTerminalProfile implements TerminalProfile {
         return this.options.shellPath;
     }
 
-    constructor(protected readonly terminalService: TerminalService, protected readonly options: TerminalWidgetOptions) { }
+    constructor(protected readonly terminalService: TerminalService, protected readonly options: TerminalWidgetOptions, readonly label?: string) { }
 
     async start(): Promise<TerminalWidget> {
         const widget = await this.terminalService.newTerminal(this.options);
@@ -40,6 +40,6 @@ export class ShellTerminalProfile implements TerminalProfile {
      * @returns a modified copy of this profile
      */
     modify(options: { cwd?: string | URI }): TerminalProfile {
-        return new ShellTerminalProfile(this.terminalService, { ...this.options, ...options });
+        return new ShellTerminalProfile(this.terminalService, { ...this.options, ...options }, this.label);
     }
 }

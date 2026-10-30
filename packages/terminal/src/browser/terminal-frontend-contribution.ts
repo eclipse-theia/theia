@@ -60,6 +60,7 @@ import { ShellTerminalProfile } from './shell-terminal-profile';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { Color } from '@theia/core/lib/common/color';
 import { ContributionProvider, ILogger } from '@theia/core';
+import { Path } from '@theia/core/lib/common/path';
 import { TerminalCreationHandler } from './terminal-creation-handler';
 
 export namespace TerminalMenus {
@@ -90,6 +91,11 @@ export namespace TerminalCommands {
         id: 'terminal:new:profile',
         category: TERMINAL_CATEGORY,
         label: 'Create New Integrated Terminal from a Profile'
+    }, undefined, TERMINAL_CATEGORY_KEY);
+    export const PROFILE_SPLIT = Command.toLocalizedCommand({
+        id: 'terminal:split:profile',
+        category: TERMINAL_CATEGORY,
+        label: 'Split Terminal with Profile'
     }, undefined, TERMINAL_CATEGORY_KEY);
     export const PROFILE_DEFAULT = Command.toLocalizedCommand({
         id: 'terminal:profile:default',
@@ -357,11 +363,12 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                 ])!
             }));
         } else {
+            const shellPath = await this.resolveShellPath('${SHELL}');
             this.contributedProfileStore.registerTerminalProfile('SHELL', new ShellTerminalProfile(this, {
-                shellPath: await this.resolveShellPath('${SHELL}')!,
+                shellPath: shellPath!,
                 shellArgs: ['-l'],
                 iconClass: 'codicon codicon-terminal'
-            }));
+            }, shellPath ? new Path(shellPath).base : undefined));
         }
 
         // contribute default profiles based on legacy preferences
@@ -590,12 +597,25 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         });
 
         commands.registerCommand(TerminalCommands.PROFILE_NEW, {
-            execute: async () => {
-                const profile = await this.selectTerminalProfile(nls.localize('theia/terminal/selectProfile', 'Select a profile for the new terminal'));
+            execute: async (profileId?: unknown) => {
+                const profile = await this.getOrSelectTerminalProfile(profileId,
+                    nls.localize('theia/terminal/selectProfile', 'Select a profile for the new terminal'));
                 if (!profile) {
                     return;
                 }
-                this.openTerminal(undefined, profile[1]);
+                this.openTerminal(undefined, profile);
+            }
+        });
+
+        commands.registerCommand(TerminalCommands.PROFILE_SPLIT, {
+            execute: async (profileId?: unknown) => {
+                const profile = await this.getOrSelectTerminalProfile(profileId,
+                    nls.localize('theia/terminal/selectSplitProfile', 'Select a profile for the split terminal'));
+                if (!profile) {
+                    return;
+                }
+                const ref = this.currentTerminal;
+                await this.openTerminal(ref ? { ref, mode: 'split-right' } : undefined, profile);
             }
         });
 
@@ -1058,15 +1078,31 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                 resolve(undefined);
             } else {
                 const items = profiles.map(([id, profile]) => ({
-                    label: id,
+                    label: profile.label ?? id,
+                    id,
                     profile
                 }));
                 const selectedItem = await this.quickInputService?.showQuickPick(items, {
                     placeholder
                 });
-                resolve(selectedItem ? [selectedItem.label, selectedItem.profile] : undefined);
+                resolve(selectedItem ? [selectedItem.id, selectedItem.profile] : undefined);
             }
         });
+    }
+
+    /**
+     * Returns the profile with the given ID if `profileId` is a string, otherwise lets the user select a profile.
+     * Command handlers may be called with other arguments, e.g. the widget when executed from a menu.
+     */
+    protected async getOrSelectTerminalProfile(profileId: unknown, placeholder: string): Promise<TerminalProfile | undefined> {
+        if (typeof profileId === 'string') {
+            const profile = this.profileService.getProfile(profileId);
+            if (!profile) {
+                throw new Error(`Could not find terminal profile '${profileId}'`);
+            }
+            return profile;
+        }
+        return (await this.selectTerminalProfile(placeholder))?.[1];
     }
 
     protected async splitTerminal(referenceTerminal?: TerminalWidget): Promise<void> {
