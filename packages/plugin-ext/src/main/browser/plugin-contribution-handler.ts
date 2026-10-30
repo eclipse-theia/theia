@@ -466,7 +466,7 @@ export class PluginContributionHandler {
                         }
                     });
                     return Disposable.create(() => {
-                        this.contributedProfileStore.unregisterTerminalProfile(profile.id);
+                        this.contributedProfileStore.unregisterTerminalProfile(profile.title);
                     });
                 });
             }
