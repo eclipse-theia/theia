@@ -17,6 +17,7 @@
 import { ChatAgentLocation, ChatRequest, MutableChatModel } from '@theia/ai-chat';
 import { AIChatInputConfiguration, AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
 import { CHAT_VIEW_LANGUAGE_EXTENSION } from '@theia/ai-chat-ui/lib/browser/chat-view-language-contribution';
+import { GenericCapabilitySelections, ReasoningSettings } from '@theia/ai-core';
 import { generateUuid, URI, ILogger } from '@theia/core';
 import { inject, injectable, optional, postConstruct, named } from '@theia/core/shared/inversify';
 
@@ -76,13 +77,16 @@ export class AskAIInputWidget extends AIChatInputWidget {
         return new URI(`ask-ai:/input-${this.resourceId}.${CHAT_VIEW_LANGUAGE_EXTENSION}`);
     }
 
-    protected handleSubmit(query: string, mode?: string): Promise<void> {
+    protected handleSubmit(query: string, mode?: string, _capabilityOverrides?: Record<string, boolean>,
+        _genericCapabilitySelections?: GenericCapabilitySelections, _serverToolSelections?: Record<string, string[]>,
+        reasoning?: ReasoningSettings): Promise<void> {
         const userInput = query.trim();
         if (userInput) {
             const request: ChatRequest = {
                 text: userInput,
                 variables: this._chatModel.context.getVariables(),
-                modeId: mode
+                modeId: mode,
+                reasoning
             };
 
             this.args?.onSubmit(request);

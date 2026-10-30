@@ -20,7 +20,7 @@ import type { EditableRequestNode } from './chat-view-tree-widget';
 import { URI } from '@theia/core';
 import { CHAT_VIEW_LANGUAGE_EXTENSION } from '../chat-view-language-contribution';
 import type { ChatModel, ChatRequestModel, EditableChatRequestModel, ChatHierarchyBranch } from '@theia/ai-chat';
-import type { AIVariableResolutionRequest, GenericCapabilitySelections } from '@theia/ai-core';
+import type { AIVariableResolutionRequest, GenericCapabilitySelections, ReasoningSettings } from '@theia/ai-core';
 import { Key } from '@theia/core/lib/browser';
 
 export const AIChatTreeInputConfiguration = Symbol('AIChatTreeInputConfiguration');
@@ -39,7 +39,8 @@ export interface AIChatTreeInputArgs {
         modeId?: string,
         capabilityOverrides?: Record<string, boolean>,
         genericCapabilitySelections?: GenericCapabilitySelections,
-        serverToolSelections?: Record<string, string[]>
+        serverToolSelections?: Record<string, string[]>,
+        reasoning?: ReasoningSettings
     ) => Promise<void>;
     onUnpin?: () => void;
     onCancel?: (requestModel: ChatRequestModel) => void;
