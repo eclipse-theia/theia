@@ -979,16 +979,17 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
         return taskDto;
     }
 
+    // Before the shell check, which matches any object with a `command`, including CustomExecution subclasses.
+    if (types.CustomExecution.is(execution)) {
+        return fromCustomExecution(execution, taskDto);
+    }
+
     if (types.ShellExecution.is(execution)) {
         return fromShellExecution(execution, taskDto);
     }
 
     if (types.ProcessExecution.is(execution)) {
         return fromProcessExecution(execution, taskDto);
-    }
-
-    if (types.CustomExecution.is(execution)) {
-        return fromCustomExecution(execution, taskDto);
     }
 
     return taskDto;
