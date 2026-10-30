@@ -8,6 +8,7 @@
     "@types/multer": "^1.4.13",
     "@types/tar-fs": "^1.16.3",
     "@types/tar-stream": "^3.1.5",
+    "@types/yauzl": "^3.4.0",
     "async-mutex": "^0.3.2",
     "body-parser": "^1.20.8",
     "http-status-codes": "^1.4.0",
@@ -21,7 +22,8 @@
     "tar-stream": "^3.2.2",
     "trash": "^7.2.0",
     "tslib": "^2.8.1",
-    "vscode-languageserver-textdocument": "^1.0.15"
+    "vscode-languageserver-textdocument": "^1.0.15",
+    "yauzl": "^3.4.0"
   },
   "publishConfig": {
     "access": "public"

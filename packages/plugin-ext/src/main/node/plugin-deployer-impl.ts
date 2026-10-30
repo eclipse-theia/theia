@@ -36,6 +36,7 @@ import { PluginDeployerDirectoryHandlerContextImpl } from './plugin-deployer-dir
 import { ILogger, Emitter, ContributionProvider } from '@theia/core';
 import { PluginCliContribution } from './plugin-cli-contribution';
 import { Measurement, Stopwatch } from '@theia/core/lib/common';
+import { ArchiveExtractor } from '@theia/filesystem/lib/node/archive/archive-extractor';
 
 @injectable()
 export class PluginDeployerImpl implements PluginDeployer {
@@ -54,6 +55,9 @@ export class PluginDeployerImpl implements PluginDeployer {
 
     @inject(Stopwatch)
     protected readonly stopwatch: Stopwatch;
+
+    @inject(ArchiveExtractor)
+    protected readonly archiveExtractor: ArchiveExtractor;
 
     /**
      * Inject all plugin resolvers found at runtime.
@@ -340,7 +344,7 @@ export class PluginDeployerImpl implements PluginDeployer {
             this.pluginDeployerFileHandlers.map(async pluginFileHandler => {
                 const proxyPluginDeployerEntry = new ProxyPluginDeployerEntry(pluginFileHandler, (pluginDeployerEntry) as PluginDeployerEntryImpl);
                 if (await pluginFileHandler.accept(proxyPluginDeployerEntry)) {
-                    const pluginDeployerFileHandlerContext = new PluginDeployerFileHandlerContextImpl(proxyPluginDeployerEntry);
+                    const pluginDeployerFileHandlerContext = new PluginDeployerFileHandlerContextImpl(proxyPluginDeployerEntry, this.archiveExtractor);
                     await pluginFileHandler.handle(pluginDeployerFileHandlerContext);
                 }
             })
