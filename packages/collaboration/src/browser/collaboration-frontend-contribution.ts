@@ -21,7 +21,8 @@ import {
     URI
 } from '@theia/core';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
-import { AuthMetadata, AuthProvider, ConnectionProvider, FormAuthProvider, initializeProtocol, SocketIoTransportProvider, WebAuthProvider } from 'open-collaboration-protocol';
+import { AuthMetadata, AuthProvider, ConnectionProvider, FormAuthProvider, initializeProtocol, WebAuthProvider } from 'open-collaboration-protocol';
+import { CollaborationSocketIoTransportProvider } from './collaboration-socket-io-transport';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { CollaborationInstance, CollaborationInstanceFactory } from './collaboration-instance';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -104,7 +105,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
             client: FrontendApplicationConfigProvider.get().applicationName,
             fetch: window.fetch.bind(window),
             authenticationHandler: (token, meta) => this.handleAuth(serverUrl, token, meta),
-            transports: [SocketIoTransportProvider],
+            transports: [CollaborationSocketIoTransportProvider],
             userToken: localStorage.getItem(COLLABORATION_AUTH_TOKEN) ?? undefined
         });
     }
@@ -246,7 +247,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
             label: nls.localize('theia/collaboration/end', 'End Collaboration Session'),
             detail: nls.localize('theia/collaboration/endDetail', 'Terminate the session, cease content sharing, and revoke access for others.'),
             iconClasses: codiconArray('circle-slash'),
-            execute: () => this.currentInstance?.dispose()
+            execute: () => this.currentInstance?.leave()
         });
         await this.quickInputService?.showQuickPick(items, {
             placeholder: nls.localize('theia/collaboration/whatToDo', 'What would you like to do with other collaborators?')
@@ -264,7 +265,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
             label: nls.localize('theia/collaboration/leave', 'Leave Collaboration Session'),
             detail: nls.localize('theia/collaboration/leaveDetail', 'Disconnect from the current collaboration session and close the workspace.'),
             iconClasses: codiconArray('circle-slash'),
-            execute: () => this.currentInstance?.dispose()
+            execute: () => this.currentInstance?.leave()
         });
         await this.quickInputService?.showQuickPick(items, {
             placeholder: nls.localize('theia/collaboration/whatToDo', 'What would you like to do with other collaborators?')
@@ -328,7 +329,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
                     if (roomClaim.loginToken) {
                         localStorage.setItem(COLLABORATION_AUTH_TOKEN, roomClaim.loginToken);
                     }
-                    this.currentInstance?.dispose();
+                    await this.currentInstance?.leave();
                     const connection = await authHandler.connect(roomClaim.roomToken);
                     this.currentInstance = this.collaborationInstanceFactory({
                         role: 'host',
@@ -374,7 +375,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
                     if (roomClaim.loginToken) {
                         localStorage.setItem(COLLABORATION_AUTH_TOKEN, roomClaim.loginToken);
                     }
-                    this.currentInstance?.dispose();
+                    await this.currentInstance?.leave();
                     const connection = await authHandler.connect(roomClaim.roomToken, roomClaim.host);
                     this.currentInstance = this.collaborationInstanceFactory({
                         role: 'guest',

@@ -28,7 +28,7 @@ import { CollaborationWorkspaceService } from './collaboration-workspace-service
 import { Range as MonacoRange } from '@theia/monaco-editor-core';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import { Deferred } from '@theia/core/lib/common/promise-util';
+import { Deferred, timeout } from '@theia/core/lib/common/promise-util';
 import { EditorDecoration, EditorWidget, Selection, TextEditorDocument, TrackedRangeStickiness } from '@theia/editor/lib/browser';
 import { DecorationStyle, OpenerService, SaveReason } from '@theia/core/lib/browser';
 import { CollaborationFileSystemProvider, CollaborationURI } from './collaboration-file-system-provider';
@@ -39,6 +39,7 @@ import { FileChange, FileChangeType, FileOperation } from '@theia/filesystem/lib
 import { OpenCollaborationYjsProvider } from 'open-collaboration-yjs';
 import { createMutex } from 'lib0/mutex';
 import { CollaborationUtils } from './collaboration-utils';
+import { ServerCloseAwareTransport } from './collaboration-socket-io-transport';
 import { yTextDeltaToEdits } from './yjs-delta';
 import debounce = require('@theia/core/shared/lodash.debounce');
 
@@ -221,6 +222,9 @@ export class CollaborationInstance implements Disposable {
         });
         connection.room.onLeave((_, peer) => {
             this.peers.get(peer.id)?.dispose();
+            // Cursors are otherwise redrawn only when the awareness states change, so the peer's
+            // cursor would stay until its awareness state times out.
+            this.rerenderPresence();
         });
         connection.room.onClose(() => {
             this.dispose();
@@ -806,6 +810,86 @@ export class CollaborationInstance implements Disposable {
         } else {
             ref.dispose();
         }
+    }
+
+    /**
+     * How long {@link leave} waits for the server to handle the leave message before it disposes anyway.
+     */
+    protected readonly leaveTimeout: number = 2_000;
+
+    protected leaving?: Promise<void>;
+
+    /**
+     * Leaves the session and disposes this instance. When the host leaves, the session ends for everyone.
+     *
+     * Unlike {@link dispose}, this tells the server before closing the connection. The server keeps a peer
+     * whose connection closed for a reconnect grace period, so after a plain {@link dispose} the other
+     * participants keep seeing this one, and the guests of a host keep the session, until that period ends.
+     *
+     * Resolves once the server has handled the leave message and closed the connection, the instance closes, or
+     * {@link leaveTimeout} passes, and the instance is disposed. It never rejects. Calling it again while leaving
+     * returns the same promise.
+     */
+    leave(): Promise<void> {
+        if (!this.leaving) {
+            this.leaving = this.doLeave();
+        }
+        return this.leaving;
+    }
+
+    protected async doLeave(): Promise<void> {
+        if (this.toDispose.disposed) {
+            return;
+        }
+        // Stop waiting if the connection closes or the room ends in the meantime.
+        const closed = new Promise<'closed'>(resolve => this.onDidClose(() => resolve('closed')));
+        try {
+            const result = await Promise.race([
+                this.sendLeave().then(() => 'sent' as const),
+                timeout(this.leaveTimeout).then(() => 'timeout' as const),
+                closed
+            ]);
+            if (result === 'timeout') {
+                this.logger.warn(`Leaving the collaboration session took longer than ${this.leaveTimeout} ms, closing the connection anyway`);
+            }
+        } catch (error) {
+            this.logger.warn('Could not tell the collaboration server that this peer left', error);
+        }
+        if (!this.toDispose.disposed) {
+            this.dispose();
+        }
+    }
+
+    /**
+     * Sends `Room.Leave` and resolves once the server has closed the connection, which it does after it handles the
+     * message. Closing the connection from this side first can lose the message: socket.io on the server dispatches
+     * each message on the next tick and drops it if the connection closed in the meantime.
+     */
+    protected async sendLeave(): Promise<void> {
+        const serverClosed = this.whenServerCloses();
+        await this.options.connection.room.leave();
+        await serverClosed;
+    }
+
+    /**
+     * Resolves when the server closes the connection. Transports that don't report a close by the server
+     * report it through `onDisconnect`; the stock socket.io transport delays that by 30 s, so {@link leave}
+     * then waits for {@link leaveTimeout}.
+     */
+    protected whenServerCloses(): Promise<void> {
+        const transport = this.getTransport();
+        return new Promise(resolve => {
+            if (ServerCloseAwareTransport.is(transport)) {
+                transport.onServerClose(() => resolve());
+            } else {
+                transport?.onDisconnect(() => resolve());
+            }
+        });
+    }
+
+    protected getTransport(): types.MessageTransport | undefined {
+        const connection = this.options.connection;
+        return connection instanceof types.AbstractBroadcastConnection ? connection.options.transport : undefined;
     }
 
     dispose(): void {
