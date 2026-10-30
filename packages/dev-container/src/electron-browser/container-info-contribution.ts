@@ -14,8 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { WindowTitleContribution } from '@theia/core/lib/browser/window/window-title-service';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core/lib/common/logger';
+import { Deferred } from '@theia/core/lib/common/promise-util';
+import { WindowTitleContribution, WindowTitleService } from '@theia/core/lib/browser/window/window-title-service';
 import { RemoteStatus, RemoteStatusService } from '@theia/remote/lib/electron-common/remote-status-service';
 import { FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
 import type { ContainerInspectInfo } from 'dockerode';
@@ -35,16 +37,37 @@ export class ContainerInfoContribution implements FrontendApplicationContributio
     @inject(RemoteStatusService)
     protected readonly remoteStatusService: RemoteStatusService;
 
+    @inject(ILogger) @named('dev-container:ContainerInfoContribution')
+    protected readonly logger: ILogger;
+
     protected status: RemoteStatus | undefined;
     protected containerInfo: ContainerInspectInfo | undefined;
     protected containerFilePath: string | undefined;
 
-    async onStart(): Promise<void> {
-        const containerPort = parseInt(new URLSearchParams(location.search).get('port') ?? '0');
-        const containerInfo = await this.connectionProvider.getCurrentContainerInfo(containerPort);
-        this.status = await this.remoteStatusService.getStatus(containerPort);
+    protected readonly loadedDeferred = new Deferred<void>();
 
-        this.portForwardingService.forwardedPorts.push(...Object.entries(containerInfo?.NetworkSettings.Ports ?? {}).flatMap(([_, ports]) => (
+    /** Settles when the information about the container has been loaded, or that has failed. */
+    get loaded(): Promise<void> {
+        return this.loadedDeferred.promise;
+    }
+
+    onStart(): void {
+        // Not awaited: two round trips that only decorate the window title and fill the forwarded ports;
+        // the start-up does not wait for them.
+        this.loadContainerInfo()
+            .catch(error => this.logger.warn('Could not load the information about the container.', error))
+            .finally(() => this.loadedDeferred.resolve());
+    }
+
+    protected async loadContainerInfo(): Promise<void> {
+        const containerPort = parseInt(new URLSearchParams(location.search).get('port') ?? '0');
+        const [containerInfo, status] = await Promise.all([
+            this.connectionProvider.getCurrentContainerInfo(containerPort),
+            this.remoteStatusService.getStatus(containerPort)
+        ]);
+        this.status = status;
+
+        this.portForwardingService.addForwardedPorts(Object.entries(containerInfo?.NetworkSettings.Ports ?? {}).flatMap(([_, ports]) => (
             ports.map(port => ({
                 editing: false,
                 address: port.HostIp ?? '',
@@ -81,4 +104,23 @@ export class ContainerInfoContribution implements FrontendApplicationContributio
         return `${element.path.base} [Dev Container${dir && dir !== '.devcontainer' ? `: ${dir}` : ''}]`;
     }
 
+}
+
+/**
+ * Updates the window title once the {@link ContainerInfoContribution} knows the status of the container, as the
+ * title is computed before that. This is a separate contribution because the `WindowTitleService` constructs its
+ * contributions while it is being constructed itself, so a title contribution cannot depend on it.
+ */
+@injectable()
+export class ContainerInfoTitleUpdater implements FrontendApplicationContribution {
+
+    @inject(ContainerInfoContribution)
+    protected readonly containerInfoContribution: ContainerInfoContribution;
+
+    @inject(WindowTitleService)
+    protected readonly windowTitleService: WindowTitleService;
+
+    onStart(): void {
+        this.containerInfoContribution.loaded.then(() => this.windowTitleService.update({}));
+    }
 }
