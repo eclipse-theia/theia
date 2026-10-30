@@ -365,7 +365,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                 ])!
             }));
         } else {
-            const shellPath = await this.resolveShellPath('${SHELL}');
+            const shellPath = await this.resolveShellPath('${env:SHELL}');
             this.contributedProfileStore.registerTerminalProfile('SHELL', new ShellTerminalProfile(this, {
                 shellPath: shellPath!,
                 shellArgs: ['-l'],
