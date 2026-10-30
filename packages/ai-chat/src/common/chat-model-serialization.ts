@@ -141,6 +141,10 @@ export interface SerializableChatResponseData {
     /** Identifier of the language model that produced this response, if recorded. */
     languageModel?: string;
     tokenUsage?: ResponseTokenUsage;
+    /** Epoch milliseconds when the request that produced this response was dispatched. */
+    requestStartTime?: number;
+    /** Epoch milliseconds when this response settled (completed, errored, or was canceled). */
+    completionTime?: number;
     content: SerializableChatResponseContentData[];
 }
 
