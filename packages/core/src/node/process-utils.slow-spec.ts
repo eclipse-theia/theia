@@ -71,7 +71,7 @@ describe('ProcessUtils (real processes)', function (): void {
         // Do not leak processes if a test fails.
         for (const pid of childPids.splice(0)) {
             if (isAlive(pid)) {
-                process.kill(pid);
+                process.kill(pid, 'SIGKILL');
             }
         }
     });
@@ -95,6 +95,29 @@ describe('ProcessUtils (real processes)', function (): void {
     it('kills the children of the backend on graceful shutdown', async () => {
         // `BackendApplication.gracefulShutdown` exits with code 1 on purpose.
         await expectTerminatedTree({ env: { [EXITING_BACKEND_GRACEFUL]: 'true' } }, 1);
+    });
+
+    (process.platform === 'win32' ? it.skip : it)('kills the processes of a tree that ignore SIGTERM with SIGKILL', async () => {
+        const container = new Container();
+        container.bind(ProcessUtils).toSelf().inSingletonScope();
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
+        const processUtils = container.get(ProcessUtils);
+        (processUtils as unknown as { unixForceKillDelay: number }).unixForceKillDelay = 500;
+
+        // A parent with a child that ignores SIGTERM, which reports the PID of its child once the child is ready.
+        const childScript = 'process.on("SIGTERM", () => {}); console.log("ready"); setInterval(() => {}, 1000);';
+        const parentScript = `const child = require('child_process').spawn(process.execPath, ['-e', ${JSON.stringify(childScript)}], { stdio: ['ignore', 'pipe', 'ignore'] });
+            child.stdout.once('data', () => console.log(child.pid));
+            setInterval(() => {}, 1000);`;
+        const parent = cp.spawn(process.execPath, ['-e', parentScript], { stdio: ['ignore', 'pipe', 'ignore'] });
+        const childPid = await new Promise<number>(resolve => parent.stdout.once('data', data => resolve(Number.parseInt(String(data), 10))));
+        childPids.push(parent.pid!, childPid);
+
+        processUtils.terminateProcessTree(parent.pid!);
+
+        expect(await isAliveAfterKill(parent.pid!), 'the parent should exit on SIGTERM').to.be.false;
+        expect(isAlive(childPid), 'the child should survive SIGTERM').to.be.true;
+        expect(await isAliveAfterKill(childPid), 'the child should be killed with SIGKILL').to.be.false;
     });
 
     (process.platform === 'win32' ? it : it.skip)('kills the whole tree of the backend when PowerShell cannot be run', async () => {
