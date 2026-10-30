@@ -480,9 +480,15 @@ export class DebugSession implements CompositeTreeElement {
         return !!this.capabilities.supportsRestartRequest;
     }
 
-    async restart(): Promise<void> {
+    /**
+     * Restarts the debuggee with the given options, or the session's current ones, as the restart request's arguments.
+     */
+    async restart(options?: DebugConfigurationSessionOptions): Promise<void> {
         if (this.canRestart()) {
-            await this.sendRequest('restart', {});
+            if (options) {
+                this.data.options = options;
+            }
+            await this.sendRequest('restart', { arguments: this.configuration });
         }
     }
 
