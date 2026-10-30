@@ -137,6 +137,13 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         'debug'
     ]);
 
+    /** Built-in containers whose contributed views start collapsed regardless of their `visibility`, as in VS Code. */
+    private static readonly COLLAPSED_VIEW_CONTAINERS = new Set<string>([
+        'explorer',
+        'scm',
+        'debug'
+    ]);
+
     private static readonly ID_MAPPINGS: Map<string, string> = new Map([
         // VS Code Viewlets
         [EXPLORER_VIEW_CONTAINER_ID, 'workbench.view.explorer'],
@@ -305,11 +312,13 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     }
 
     protected isViewVisible(viewId: string): boolean {
-        const viewInfo = this.views.get(viewId);
-        if (!viewInfo) {
+        return this.isViewDefinitionVisible(this.views.get(viewId)?.[1]);
+    }
+
+    protected isViewDefinitionVisible(view: View | undefined): boolean {
+        if (!view) {
             return false;
         }
-        const [, view] = viewInfo;
         return view.when === undefined || view.when === 'true' || this.contextKeyService.match(view.when);
     }
 
@@ -872,13 +881,24 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             }
             const widget = await this.widgetManager.getOrCreateWidget<PluginViewWidget>(PLUGIN_VIEW_FACTORY_ID, identifier);
             if (containerWidget.getTrackableWidgets().indexOf(widget) === -1) {
+                const view = this.views.get(viewId)?.[1];
+                const hiddenByDefault = view?.visibility === 'hidden';
                 containerWidget.addWidget(widget, {
-                    initiallyCollapsed: !!containerWidget.getParts().length,
-                    initiallyHidden: !this.isViewVisible(viewId)
+                    initiallyCollapsed: this.isViewInitiallyCollapsed(view, viewContainerId),
+                    initiallyHidden: hiddenByDefault || !this.isViewDefinitionVisible(view),
+                    weight: view?.initialSize
                 });
+                if (hiddenByDefault) {
+                    // Treated like a view the user hid: its `when` clause must not show it again.
+                    widget.suppressUpdateViewVisibility = true;
+                }
             }
             this.registerWidgetPartEvents(widget, containerWidget);
         }
+    }
+
+    protected isViewInitiallyCollapsed(view: View | undefined, viewContainerId: string): boolean {
+        return view?.visibility === 'collapsed' || PluginViewRegistry.COLLAPSED_VIEW_CONTAINERS.has(viewContainerId);
     }
 
     protected registerWidgetPartEvents(widget: PluginViewWidget, containerWidget: ViewContainerWidget): ViewContainerPart | undefined {

@@ -430,6 +430,9 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.updateSplitterVisibility();
         this.update();
         this.fireDidChangeTrackableWidgets();
+        if (newPart.options.weight !== undefined) {
+            this.applyInitialPartSizes();
+        }
         toRemoveWidget.pushAll([
             Disposable.create(() => {
                 if (newPart.currentViewContainerId === this.id) {
@@ -472,6 +475,33 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
         newPart.disposed.connect(() => toRemoveWidget.dispose());
         return toRemoveWidget;
+    }
+
+    /**
+     * Sizes the parts by their weights once, on the first reveal, so that the parts added before it are sized together
+     * and a part added later does not reset the sizes of the parts already shown.
+     */
+    protected applyInitialPartSizes(): void {
+        if (this.initialPartSizesRequested) {
+            return;
+        }
+        this.initialPartSizesRequested = true;
+        this.setPartSizesWhenRevealed(() => this.layoutRestored ? undefined : this.getParts().map(part => part.options.weight));
+    }
+
+    /**
+     * Sets the part sizes that `sizes` computes once the container is revealed, unless it computes none. Callers waiting
+     * for the same reveal share one poll.
+     */
+    protected setPartSizesWhenRevealed(sizes: () => (number | undefined)[] | undefined): void {
+        this.pendingReveal ??= waitForRevealed(this).finally(() => this.pendingReveal = undefined);
+        this.pendingReveal.then(() => {
+            const partSizes = sizes();
+            if (partSizes && !this.isDisposed) {
+                this.containerLayout.setPartSizes(partSizes);
+                this.updateSplitterVisibility();
+            }
+        });
     }
 
     protected createPart(widget: Widget, partId: string, originalContainerId: string, originalContainerTitle?: ViewContainerTitleOptions,
@@ -521,6 +551,10 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     }
 
     protected lastVisibleState: ViewContainer.State | undefined;
+    /** Part weights only size a container whose layout was not restored from a previous session. */
+    protected layoutRestored = false;
+    protected initialPartSizesRequested = false;
+    protected pendingReveal: Promise<void> | undefined;
 
     storeState(): ViewContainer.State {
         if (!this.isVisible && this.lastVisibleState) {
@@ -551,6 +585,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     }
 
     restoreState(state: ViewContainer.State): void {
+        this.layoutRestored = true;
         this.lastVisibleState = state;
         this.doRestoreState(state);
     }
@@ -588,10 +623,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         }
 
         // Restore part sizes
-        waitForRevealed(this).then(() => {
-            this.containerLayout.setPartSizes(partStates.map(partState => partState.relativeSize));
-            this.updateSplitterVisibility();
-        });
+        this.setPartSizesWhenRevealed(() => partStates.map(partState => partState.relativeSize));
     }
 
     /**
@@ -917,6 +949,7 @@ export namespace ViewContainer {
 
         export interface WidgetOptions {
             readonly order?: number;
+            /** Relative size of the part, applied when the container is first shown without a restored layout. */
             readonly weight?: number;
             readonly initiallyCollapsed?: boolean;
             readonly canHide?: boolean;

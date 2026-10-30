@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { CustomEditorPriority, type GrammarsContribution, type PluginUiTheme, type WalkthroughContribution } from '../common/contribution-types';
+import { CustomEditorPriority, type GrammarsContribution, type PluginPackageView, type PluginUiTheme, type WalkthroughContribution } from '../common/contribution-types';
 import { PreferenceScope } from '../common/protocol-shims';
 import {
     deriveDefaultForType,
@@ -203,7 +203,9 @@ describe('normalize-contributions', () => {
                 id: 'sample.view',
                 name: 'Sample View',
                 when: undefined,
-                type: undefined
+                type: undefined,
+                visibility: undefined,
+                initialSize: undefined
             }]);
 
             const welcome = readViewsWelcome([{
@@ -215,6 +217,16 @@ describe('normalize-contributions', () => {
                 view: 'missing.view',
                 contents: 'Missing'
             }, ['sample.view']).order).to.equal(1);
+        });
+
+        it('keeps the initial visibility and size a view declares, and drops values of the wrong kind', () => {
+            const rawView: PluginPackageView = { id: 'sample.view', name: 'Sample View', visibility: 'collapsed', initialSize: 3 };
+            const malformedView = { id: 'malformed.view', name: 'Malformed View', visibility: 'shown', initialSize: Infinity } as unknown as PluginPackageView;
+
+            const [view, malformed] = readViews([rawView, malformedView]);
+
+            expect(view).to.include({ visibility: 'collapsed', initialSize: 3 });
+            expect(malformed).to.include({ visibility: undefined, initialSize: undefined });
         });
 
         it('skips view containers without a string icon and reports an error', () => {
@@ -714,7 +726,7 @@ describe('normalize-contributions', () => {
                 }]
             });
             expect(contributions.views).to.deep.equal({
-                explorer: [{ id: 'sample.view', name: 'Sample View', when: undefined, type: undefined }]
+                explorer: [{ id: 'sample.view', name: 'Sample View', when: undefined, type: undefined, visibility: undefined, initialSize: undefined }]
             });
             expect(contributions.viewsWelcome).to.deep.equal([{
                 view: 'sample.view',
@@ -823,6 +835,24 @@ describe('normalize-contributions', () => {
                 grammar: { scopeName: 'source.sample' },
                 grammarLocation: './grammar.json'
             }]);
+        });
+
+        it('keeps the initial size of a view only in a view container the same plugin contributes', async () => {
+            const ctx = createNormalizeCtx({
+                name: 'sized',
+                contributes: {
+                    viewsContainers: { activitybar: [{ id: 'own', title: 'Own', icon: '$(a)' }] },
+                    views: {
+                        own: [{ id: 'own.view', name: 'Own View', initialSize: 2 }],
+                        explorer: [{ id: 'foreign.view', name: 'Foreign View', initialSize: 3 }]
+                    }
+                }
+            });
+
+            const { views } = await normalizeContributions(ctx, {} as { views?: { [location: string]: PluginPackageView[] } });
+
+            expect(views?.own[0].initialSize).to.equal(2);
+            expect(views?.explorer[0].initialSize).to.equal(undefined);
         });
 
         it('merges aliased view container locations and reports async reader failures', async () => {
