@@ -17,9 +17,11 @@
 import '../../../src/browser/style/multi-diff-editor.css';
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { URI } from '@theia/core';
-import { LabelProviderContribution, NavigatableWidgetOptions, OpenHandler, WidgetFactory } from '@theia/core/lib/browser';
+import { CommandContribution, URI } from '@theia/core';
+import { KeybindingContribution, LabelProviderContribution, NavigatableWidgetOptions, OpenHandler, WidgetFactory } from '@theia/core/lib/browser';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { MultiDiffEditorOpenHandler, MultiDiffEditorLabelProvider } from './multi-diff-editor';
+import { MultiDiffEditorContribution } from './multi-diff-editor-contribution';
 import { MultiDiffEditorWidgetFactory } from './multi-diff-editor-widget-factory';
 
 export function bindMultiDiffEditor(bind: interfaces.Bind): void {
@@ -32,4 +34,9 @@ export function bindMultiDiffEditor(bind: interfaces.Bind): void {
     bind(MultiDiffEditorOpenHandler).toSelf().inSingletonScope();
     bind(OpenHandler).toService(MultiDiffEditorOpenHandler);
     bind(LabelProviderContribution).to(MultiDiffEditorLabelProvider).inSingletonScope();
+
+    bind(MultiDiffEditorContribution).toSelf().inSingletonScope();
+    for (const identifier of [CommandContribution, KeybindingContribution, TabBarToolbarContribution]) {
+        bind(identifier).toService(MultiDiffEditorContribution);
+    }
 }

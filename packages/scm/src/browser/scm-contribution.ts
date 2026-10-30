@@ -336,12 +336,12 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
         keybindings.registerKeybinding({
             command: SCM_COMMANDS.GOTO_NEXT_CHANGE.id,
             keybinding: 'alt+f5',
-            when: 'editorTextFocus'
+            when: 'editorTextFocus && !multiDiffEditorFocus'
         });
         keybindings.registerKeybinding({
             command: SCM_COMMANDS.GOTO_PREVIOUS_CHANGE.id,
             keybinding: 'shift+alt+f5',
-            when: 'editorTextFocus'
+            when: 'editorTextFocus && !multiDiffEditorFocus'
         });
         keybindings.registerKeybinding({
             command: SCM_COMMANDS.SHOW_NEXT_CHANGE.id,
