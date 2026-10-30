@@ -39,6 +39,12 @@ export class ProcessUtils {
     protected readonly logger: ILogger;
 
     /**
+     * How long the processes of a tree have to exit after `SIGTERM` before they are killed with `SIGKILL`,
+     * in milliseconds, see {@link unixTerminateProcessTree}.
+     */
+    protected readonly unixForceKillDelay: number = 5000;
+
+    /**
      * Kills the given process together with all of its descendants.
      *
      * This blocks the event loop, so that it can run in an `exit` handler, where the loop is no longer
@@ -175,8 +181,16 @@ export class ProcessUtils {
         return path.win32.join(systemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
     }
 
+    /**
+     * Sends `SIGTERM` to the given process and its descendants. Unless the given process is the current
+     * one, whose tree is only terminated when it exits, the processes of the tree that are still running
+     * after {@link unixForceKillDelay} are then killed with `SIGKILL`.
+     */
     protected unixTerminateProcessTree(ppid: number): void {
-        for (const pid of this.unixGetChildrenRecursive(ppid)) {
+        // Listed before the tree, so that a PID reused in between does not match its start time.
+        const startTimes = ppid === process.pid ? undefined : this.unixTryGetStartTimes();
+        const descendants = this.unixGetChildrenRecursive(ppid);
+        for (const pid of descendants) {
             // Prevent killing the current process:
             if (pid !== process.pid) {
                 this.unixKill(pid);
@@ -189,6 +203,84 @@ export class ProcessUtils {
             this.unixKill(-ppid);
         }
         this.unixKill(ppid);
+        if (startTimes) {
+            const tree = [ppid, ...descendants].filter(pid => pid !== process.pid && startTimes.has(pid));
+            this.unixScheduleForceKill(tree, startTimes);
+        }
+    }
+
+    /**
+     * Kills the given processes with `SIGKILL` after {@link unixForceKillDelay}, except for those that have
+     * exited by then. A PID whose start time differs from `startTimes` belongs to a new process and is left alone.
+     * The timer does not keep the current process alive.
+     */
+    protected unixScheduleForceKill(pids: number[], startTimes: Map<number, string>): void {
+        if (pids.length === 0) {
+            return;
+        }
+        setTimeout(() => {
+            try {
+                const survivors = pids.filter(pid => this.unixIsAlive(pid));
+                if (survivors.length === 0) {
+                    return;
+                }
+                const currentStartTimes = this.unixGetStartTimes();
+                for (const pid of survivors) {
+                    if (currentStartTimes.get(pid) === startTimes.get(pid)) {
+                        this.logger.warn(`[${pid}] still running ${this.unixForceKillDelay}ms after SIGTERM, killing it with SIGKILL`);
+                        this.unixKill(pid, 'SIGKILL');
+                    }
+                }
+            } catch (error) {
+                this.logger.error('Failed to kill the remaining processes of a process tree', error);
+            }
+        }, this.unixForceKillDelay).unref();
+    }
+
+    protected unixIsAlive(pid: number): boolean {
+        try {
+            process.kill(pid, 0);
+            return true;
+        } catch (error) {
+            return (error as NodeJS.ErrnoException | undefined)?.code !== 'ESRCH';
+        }
+    }
+
+    /**
+     * @returns the start times of all processes, see {@link unixGetStartTimes}, or `undefined` if they
+     * cannot be listed
+     */
+    protected unixTryGetStartTimes(): Map<number, string> | undefined {
+        try {
+            return this.unixGetStartTimes();
+        } catch (error) {
+            this.logger.warn('Failed to list the start times of processes, a process tree will only be sent SIGTERM', error);
+            return undefined;
+        }
+    }
+
+    /**
+     * @returns the start time of every process by PID, as printed by `ps`, which tells a process apart from
+     * a later one with the same PID. The values are only meant to be compared with each other.
+     */
+    protected unixGetStartTimes(): Map<number, string> {
+        // A fixed locale and time zone keep the output of `lstart` comparable across calls.
+        const { stdout } = this.spawnSync('ps', ['-A', '-o', 'pid=,lstart='], { env: { ...process.env, LC_ALL: 'C', TZ: 'UTC' } });
+        return this.unixParseStartTimes(stdout);
+    }
+
+    /**
+     * @param psOutput the output of `ps -A -o pid=,lstart=`
+     */
+    protected unixParseStartTimes(psOutput: string): Map<number, string> {
+        const startTimes = new Map<number, string>();
+        for (const line of psOutput.split('\n')) {
+            const match = line.trim().match(/^(\d+)\s+(.+)$/);
+            if (match) {
+                startTimes.set(Number.parseInt(match[1], 10), match[2]);
+            }
+        }
+        return startTimes;
     }
 
     protected async unixTerminateChildProcessTrees(ppid: number): Promise<void> {
@@ -201,9 +293,9 @@ export class ProcessUtils {
         }
     }
 
-    protected unixKill(pid: number): void {
+    protected unixKill(pid: number, signal?: NodeJS.Signals): void {
         try {
-            process.kill(pid);
+            process.kill(pid, signal);
         } catch (error) {
             // ESRCH means the process is already gone, which is the goal here. Log
             // anything else but keep going so the rest of the tree is still killed.
