@@ -51,6 +51,14 @@ describe('ElectronWsOriginValidator', () => {
         expect(createValidator().allowWsUpgrade(createRequest(undefined))).to.be.true;
     });
 
+    it('should allow the application scheme origin (the frontend loaded through theia-app://theia)', () => {
+        expect(createValidator().allowWsUpgrade(createRequest('theia-app://theia'))).to.be.true;
+    });
+
+    it('should reject another host under the application scheme', () => {
+        expect(createValidator().allowWsUpgrade(createRequest('theia-app://other'))).to.be.false;
+    });
+
     it('should reject cross-origin requests', () => {
         expect(createValidator().allowWsUpgrade(createRequest('http://evil.com'))).to.be.false;
     });

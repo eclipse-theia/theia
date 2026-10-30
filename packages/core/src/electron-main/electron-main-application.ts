@@ -27,7 +27,6 @@ import { existsSync, mkdirSync } from 'fs-extra';
 import { fork, ForkOptions } from 'child_process';
 import { DefaultTheme, ElectronFrontendApplicationConfig, FrontendApplicationConfig } from '@theia/application-package/lib/application-props';
 import URI from '../common/uri';
-import { FileUri } from '../common/file-uri';
 import { Deferred, timeout } from '../common/promise-util';
 import { MaybePromise } from '../common/types';
 import { Stopwatch } from '../common/performance';
@@ -35,7 +34,7 @@ import { ContributionProvider } from '../common/contribution-provider';
 import { ElectronSecurityTokenService } from './electron-security-token-service';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 import Storage = require('electron-store');
-import { CancellationTokenSource, Disposable, DisposableCollection, Path, isOSX, isWindows } from '../common';
+import { CancellationTokenSource, Disposable, DisposableCollection, isOSX, isWindows } from '../common';
 import { DEFAULT_WINDOW_HASH, WindowSearchParams } from '../common/window';
 import { LaunchArguments } from '../common/launch-arguments';
 import { LaunchArgvParser } from './launch-argv-parser';
@@ -48,6 +47,7 @@ import { StopReason } from '../common/frontend-application-state';
 import { dynamicRequire } from '../node/dynamic-require';
 import { ThemeMode } from '../common/theme';
 import { backendGlobal } from '../node/backend-global';
+import { ElectronAppSchemeService } from './electron-app-scheme-service';
 
 export { ElectronMainApplicationGlobals };
 
@@ -195,6 +195,10 @@ export class ElectronMainApplication {
     @inject(ElectronMainApplicationGlobals)
     protected readonly globals: ElectronMainApplicationGlobals;
 
+    /** Registers the application scheme as soon as the main process resolves the application, before the app is ready. */
+    @inject(ElectronAppSchemeService)
+    protected readonly appSchemeService: ElectronAppSchemeService;
+
     @inject(ElectronMainProcessArgv)
     protected processArgv: ElectronMainProcessArgv;
 
@@ -268,7 +272,9 @@ export class ElectronMainApplication {
                 async args => {
                     if (args.electronUserData) {
                         console.info(`using electron user data area : '${args.electronUserData}'`);
-                        await fs.mkdir(args.electronUserData, { recursive: true });
+                        // Synchronously, before the app can become ready: services such as the app scheme use the
+                        // default session as soon as it is, which fixes its storage location.
+                        mkdirSync(args.electronUserData, { recursive: true });
                         app.setPath('userData', args.electronUserData);
                     }
                     const startupMeasurement = this.stopwatch.start('electron-main-startup');
@@ -681,8 +687,12 @@ export class ElectronMainApplication {
             params.port = (await this.backendPort).toString();
         }
         const query = Object.entries(params).map(([name, value]) => `${name}=${value}`).join('&');
-        return FileUri.create(this.globals.THEIA_FRONTEND_HTML_PATH)
+        return new URI(this.appSchemeService.getFrontendUrl(path.basename(this.globals.THEIA_FRONTEND_HTML_PATH)))
             .withQuery(query);
+    }
+
+    protected isSecondaryWindowUrl(url: string): boolean {
+        return this.appSchemeService.isFrontendUrl(url, path.basename(this.globals.THEIA_SECONDARY_WINDOW_HTML_PATH));
     }
 
     protected getDefaultTheiaWindowOptions(): TheiaBrowserWindowOptions {
@@ -948,14 +958,14 @@ export class ElectronMainApplication {
     protected onWebContentsCreated(event: ElectronEvent, webContents: WebContents): void {
         // Block any in-page navigation except loading the secondary window contents
         webContents.on('will-navigate', evt => {
-            if (new URI(evt.url).path.fsPath() !== new Path(this.globals.THEIA_SECONDARY_WINDOW_HTML_PATH).fsPath()) {
+            if (!this.isSecondaryWindowUrl(evt.url)) {
                 evt.preventDefault();
             }
         });
 
         webContents.setWindowOpenHandler(details => {
             // if it's a secondary window, allow it to open
-            if (new URI(details.url).path.fsPath() === new Path(this.globals.THEIA_SECONDARY_WINDOW_HTML_PATH).fsPath()) {
+            if (this.isSecondaryWindowUrl(details.url)) {
                 const defaultOptions = this.getDefaultOptions();
                 const options: BrowserWindowConstructorOptions = {
                     ...this.getDefaultTheiaSecondaryWindowBounds(),

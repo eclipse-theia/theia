@@ -39,8 +39,22 @@ export class Endpoint {
         return new URI(`${this.httpScheme}//${this.host}${this.pathname}${this.path}`);
     }
 
+    /**
+     * Whether the frontend page itself is served by the backend over HTTP(S). Any other origin, such as a
+     * `file:` URL or a privileged application scheme in Electron, reaches the backend through `localhost`
+     * and the `port` search parameter.
+     */
+    protected get isServedByBackend(): boolean {
+        return Endpoint.isServedByBackend(this.location);
+    }
+
+    /** Whether a page at `location` is served by the backend over HTTP(S). */
+    static isServedByBackend(location: Pick<Endpoint.Location, 'protocol'>): boolean {
+        return location.protocol === Endpoint.PROTO_HTTP || location.protocol === Endpoint.PROTO_HTTPS;
+    }
+
     protected get pathname(): string {
-        if (this.location.protocol === Endpoint.PROTO_FILE) {
+        if (!this.isServedByBackend) {
             return '';
         }
         if (this.location.pathname === '/') {
@@ -56,7 +70,7 @@ export class Endpoint {
         if (this.options.host) {
             return this.options.host;
         }
-        if (this.location.host) {
+        if (this.isServedByBackend && this.location.host) {
             return this.location.host;
         }
         return 'localhost:' + this.port;
