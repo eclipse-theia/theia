@@ -27,7 +27,7 @@ import {
     PLUGIN_COPY_IGNORE,
     UNPUBLISHED,
 } from '@theia/plugin-utils/lib/common/constants';
-import { stripVscodeBuiltinNamePrefix } from '@theia/plugin-utils/lib/common/plugin-manifest';
+import { prepareLoadedManifest, stripVscodeBuiltinNamePrefix } from '@theia/plugin-utils/lib/common/plugin-manifest';
 import { updateActivationEvents } from '@theia/plugin-utils/lib/common/plugin-activation-events';
 import {
     applyTrustExtraction,
@@ -40,12 +40,14 @@ import {
 } from '@theia/plugin-utils/lib/common/plugin-model';
 import { getPluginRootFileUrl } from '@theia/plugin-utils/lib/node/plugin-model';
 import { normalizeContributions } from '@theia/plugin-utils/lib/node/normalize-contributions';
-import { readGrammarFromDisk } from '@theia/plugin-utils/lib/node/read-grammars';
+import { readGrammarFromDisk, toGrammarContribution } from '@theia/plugin-utils/lib/node/read-grammars';
 import { localizePackage } from '@theia/plugin-utils/lib/common/package-nls';
 import { loadPackageTranslations } from '@theia/plugin-utils/lib/node/package-nls';
 import { deepClone } from '@theia/plugin-utils/lib/common/utils';
 import type {
+    GrammarsContribution,
     NormalizedPluginContribution,
+    PluginPackageGrammarsContribution,
 } from '@theia/plugin-utils/lib/common/contribution-types';
 
 import {
@@ -140,10 +142,11 @@ async function processPlugin(pluginSourceDir: string, hostedPluginDir: string): 
         delete normalized.contributes;
 
         const translations = await loadPackageTranslations(buildTimePackageRoot);
-        if (translations.default && Object.keys(translations.default).length > 0) {
-            const resolve = (_: string, defaultVal: string): string => defaultVal;
-            normalized = localizePackage(normalized, translations, resolve);
-            contributes = localizePackage(contributes, translations, resolve);
+        const hasTranslations = !!translations.default && Object.keys(translations.default).length > 0;
+        const useDefaultTranslation = (_: string, defaultValue: string): string => defaultValue;
+        if (hasTranslations) {
+            normalized = localizePackage(normalized, translations, useDefaultTranslation);
+            contributes = localizePackage(contributes, translations, useDefaultTranslation);
         }
 
         const engineType = pickEngineType(normalized);
@@ -165,10 +168,16 @@ async function processPlugin(pluginSourceDir: string, hostedPluginDir: string): 
         resolveHostedEntryPoint(model.entryPoint, dst);
         rewriteModelPathsForHostedStatic(model, buildTimePackageRoot, pluginId);
 
-        // Raw VS Code-style package.json for worker rawModel (contributes stay unnormalized).
+        // Raw VS Code-style package.json (contributes stay unnormalized).
         const diskManifest = deepClone(rawManifest);
         prepareHostedPackageJson(diskManifest, pluginId, model.entryPoint);
         await fs.writeJson(path.join(dst, 'package.json'), diskManifest, { spaces: 2 });
+        // Same result as the worker's `loadManifest` on the file above. Spares the worker fetching
+        // `package.json` and `package.nls.json` per plugin at startup.
+        const loadedManifest = prepareLoadedManifest(diskManifest, { updateActivationEvents: false });
+        const manifest = hasTranslations
+            ? localizePackage(loadedManifest, translations, useDefaultTranslation)
+            : loadedManifest;
 
         return {
             plugin: {
@@ -180,7 +189,8 @@ async function processPlugin(pluginSourceDir: string, hostedPluginDir: string): 
                     host: PLUGIN_HOST_FRONTEND,
                     model,
                     lifecycle,
-                    outOfSync: false
+                    outOfSync: false,
+                    manifest
                 },
                 ...(Object.keys(contributes).length > 0 ? { contributes } : {})
             }
@@ -287,16 +297,7 @@ async function normalizeManifestForBrowserOnly(manifest: PluginManifest): Promis
         // through the `FileService` - those need a scheme.
         resolveUrl: relative => toPluginUrl(manifest, relative),
         resolveUri: (pck, relative) => toPluginUri(pck, relative),
-        readGrammars: async (grammars, pluginPath) => {
-            const result = [];
-            for (const rawGrammar of grammars) {
-                const grammar = await readGrammarFromDisk(rawGrammar, pluginPath, { onError });
-                if (grammar) {
-                    result.push(grammar);
-                }
-            }
-            return result;
-        },
+        readGrammars: (grammars, pluginPath) => readGrammarsForBrowserOnly(grammars, pluginPath, onError),
         onError,
         onWarn,
     }, contributes);
@@ -309,8 +310,41 @@ async function normalizeManifestForBrowserOnly(manifest: PluginManifest): Promis
 }
 
 /**
- * `list.json` carries normalized contributes + plugin metadata (single source of truth for Theia).
- * `hostedPlugin/<id>/package.json` stays a VS Code-style raw manifest for worker `rawModel`:
+ * Grammars are most of `list.json`'s size, so only their location goes in and the frontend fetches
+ * the file from the hosted copy when it needs it. Files the copy skips (`node_modules`) are inlined,
+ * and missing files are reported here instead of at runtime.
+ */
+async function readGrammarsForBrowserOnly(
+    grammars: readonly PluginPackageGrammarsContribution[],
+    pluginPath: string,
+    onError: (type: string, err: unknown, detail?: unknown) => void
+): Promise<GrammarsContribution[]> {
+    const result: GrammarsContribution[] = [];
+    for (const rawGrammar of grammars) {
+        const contribution = toGrammarContribution(rawGrammar, pluginPath, { onError });
+        if (!contribution) {
+            continue;
+        }
+        const grammarPath = path.resolve(pluginPath, rawGrammar.path);
+        if (!shouldCopyPluginPath(grammarPath, pluginPath)) {
+            const inlined = await readGrammarFromDisk(rawGrammar, pluginPath, { onError });
+            if (inlined) {
+                result.push(inlined);
+            }
+        } else if (await fs.pathExists(grammarPath)) {
+            result.push(contribution);
+        } else {
+            onError('grammars', new Error(`Grammar file '${rawGrammar.path}' of '${rawGrammar.scopeName}' does not exist.`));
+        }
+    }
+    return result;
+}
+
+/**
+ * `list.json` carries normalized contributes + plugin metadata (single source of truth for Theia),
+ * including the localized manifest the worker uses as `rawModel`.
+ * `hostedPlugin/<id>/package.json` stays a VS Code-style raw manifest for reads relative to the
+ * plugin root, and for the worker if the metadata comes without a manifest:
  * name-prefix strip, `main` removed, entry paths synced, `packagePath` set to the static hosted
  * root (needed so relative assets resolve via `toPluginUrl`), and `packageUri` set to the scheme
  * form of that same root (needed for assets read through the `FileService`).
