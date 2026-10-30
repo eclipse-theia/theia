@@ -23,10 +23,14 @@ import {
     MAXIMIZED_CLASS,
     Widget,
 } from '@theia/core/lib/browser';
-import { CommandRegistry, Disposable, Event, MenuModelRegistry, nls } from '@theia/core';
+import { CommandRegistry, Disposable, DisposableCollection, Event, MenuModelRegistry, nls } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { BOTTOM_AREA_ID } from '@theia/core/lib/browser/shell/theia-dock-panel';
-import { TerminalManagerCommands, TerminalManagerTreeTypes, TERMINAL_MANAGER_TREE_CONTEXT_MENU } from './terminal-manager-types';
+import { TerminalCommands } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
+import { TerminalProfileService } from '@theia/terminal/lib/browser/terminal-profile-service';
+import {
+    TerminalManagerCommands, TerminalManagerNewTerminalMenus, TerminalManagerTreeTypes, TERMINAL_MANAGER_NEW_TERMINAL_MENU, TERMINAL_MANAGER_TREE_CONTEXT_MENU
+} from './terminal-manager-types';
 import { TerminalManagerWidget } from './terminal-manager-widget';
 import { TerminalManagerTreeWidget } from './terminal-manager-tree-widget';
 import { ConfirmDialog, Dialog } from '@theia/core/lib/browser/dialogs';
@@ -39,7 +43,14 @@ export class TerminalManagerFrontendViewContribution extends AbstractViewContrib
     @inject(TerminalManagerPreferences)
     protected readonly preferences: TerminalManagerPreferences;
 
+    @inject(TerminalProfileService)
+    protected readonly profileService: TerminalProfileService;
+
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
+
     protected quickViewDisposable: Disposable | undefined;
+    protected readonly profileMenuDisposables = new DisposableCollection();
 
     constructor() {
         super({
@@ -263,6 +274,7 @@ export class TerminalManagerFrontendViewContribution extends AbstractViewContrib
 
     override registerMenus(menus: MenuModelRegistry): void {
         super.registerMenus(menus);
+        this.registerNewTerminalMenu(menus);
         menus.registerMenuAction(TERMINAL_MANAGER_TREE_CONTEXT_MENU, {
             commandId: TerminalManagerCommands.MANAGER_ADD_TERMINAL_TO_GROUP.id,
             order: 'a',
@@ -308,10 +320,61 @@ export class TerminalManagerFrontendViewContribution extends AbstractViewContrib
         });
     }
 
+    protected registerNewTerminalMenu(menus: MenuModelRegistry): void {
+        menus.registerMenuAction(TerminalManagerNewTerminalMenus.NEW, {
+            commandId: TerminalCommands.NEW.id,
+            label: nls.localizeByDefault('New Terminal'),
+            order: 'a',
+        });
+        menus.registerMenuAction(TerminalManagerNewTerminalMenus.NEW, {
+            commandId: TerminalCommands.SPLIT.id,
+            order: 'b',
+        });
+        menus.registerSubmenu(TerminalManagerNewTerminalMenus.SPLIT_PROFILE, nls.localizeByDefault('Split Terminal with Profile'));
+        menus.registerMenuAction(TerminalManagerNewTerminalMenus.CONFIGURE, {
+            commandId: TerminalCommands.PROFILE_DEFAULT.id,
+            label: nls.localize('theia/terminal/profileDefault', 'Choose Default Profile...'),
+        });
+        this.updateProfileMenus(menus);
+        this.profileService.onAdded(() => this.updateProfileMenus(menus));
+        this.profileService.onRemoved(() => this.updateProfileMenus(menus));
+        this.profileService.onDidChangeDefaultShell(() => this.updateProfileMenus(menus));
+    }
+
+    /**
+     * Registers an entry per terminal profile to create a new terminal and to split the active terminal with that profile.
+     * Menu items execute their command with the widget as argument, so each entry gets its own command passing the profile ID.
+     */
+    protected updateProfileMenus(menus: MenuModelRegistry): void {
+        this.profileMenuDisposables.dispose();
+        const { defaultProfile } = this.profileService;
+        this.profileService.all.forEach(([profileId, profile], index) => {
+            const order = String(index).padStart(4, '0');
+            const profileLabel = profile.label ?? profileId;
+            const label = profile === defaultProfile ? nls.localizeByDefault('{0} (Default)', profileLabel) : profileLabel;
+            const newCommandId = `terminal-manager:new-with-profile:${profileId}`;
+            const splitCommandId = `terminal-manager:split-with-profile:${profileId}`;
+            this.profileMenuDisposables.pushAll([
+                this.commandRegistry.registerCommand({ id: newCommandId }, {
+                    execute: () => this.commandRegistry.executeCommand(TerminalCommands.PROFILE_NEW.id, profileId),
+                }),
+                this.commandRegistry.registerCommand({ id: splitCommandId }, {
+                    execute: () => this.commandRegistry.executeCommand(TerminalCommands.PROFILE_SPLIT.id, profileId),
+                }),
+                menus.registerMenuAction(TerminalManagerNewTerminalMenus.PROFILES, { commandId: newCommandId, label, order }),
+                menus.registerMenuAction(TerminalManagerNewTerminalMenus.SPLIT_PROFILE, { commandId: splitCommandId, label, order }),
+            ]);
+        });
+    }
+
     registerToolbarItems(toolbar: TabBarToolbarRegistry): void {
         toolbar.registerItem({
             id: TerminalManagerCommands.MANAGER_NEW_PAGE_BOTTOM_TOOLBAR.id,
             command: TerminalManagerCommands.MANAGER_NEW_PAGE_BOTTOM_TOOLBAR.id,
+            menuPath: TERMINAL_MANAGER_NEW_TERMINAL_MENU,
+            tooltip: TerminalManagerCommands.MANAGER_NEW_PAGE_BOTTOM_TOOLBAR.label,
+            // the command's visibility and label are not considered for toolbar items with a menu
+            isVisible: widget => widget instanceof TerminalManagerWidget,
         });
         toolbar.registerItem({
             id: TerminalManagerCommands.MANAGER_SHOW_TREE_TOOLBAR.id,

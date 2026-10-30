@@ -39,6 +39,7 @@ import { TerminalWidget, TerminalWidgetOptions } from '@theia/terminal/lib/brows
 import { TerminalWidgetImpl, nextTerminalCreationToken } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
+import { TerminalProfileService } from '@theia/terminal/lib/browser/terminal-profile-service';
 import { TerminalManagerPreferences } from './terminal-manager-preferences';
 import { TerminalManagerTreeTypes } from './terminal-manager-types';
 import { TerminalManagerTreeWidget } from './terminal-manager-tree-widget';
@@ -110,6 +111,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     protected interceptCloseRequest = true;
 
     @inject(TerminalFrontendContribution) protected terminalFrontendContribution: TerminalFrontendContribution;
+    @inject(TerminalProfileService) protected readonly profileService: TerminalProfileService;
     @inject(TerminalManagerTreeWidget) readonly treeWidget: TerminalManagerTreeWidget;
     @inject(SplitPositionHandler) protected readonly splitPositionHandler: SplitPositionHandler;
 
@@ -167,7 +169,19 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         }
     }
 
-    async createTerminalWidget(options: TerminalWidgetOptions = {}): Promise<TerminalWidget> {
+    /**
+     * Creates and starts a terminal widget. Without `options`, the default terminal profile is used,
+     * falling back to a terminal with default options if no profile is available or it fails to start.
+     */
+    async createTerminalWidget(options?: TerminalWidgetOptions): Promise<TerminalWidget> {
+        const defaultProfile = options ? undefined : this.profileService.defaultProfile;
+        if (defaultProfile) {
+            try {
+                return await defaultProfile.start();
+            } catch (error) {
+                this.logger.error('Failed to start the default terminal profile', error);
+            }
+        }
         const terminalWidget = await this.terminalFrontendContribution.newTerminal({
             created: nextTerminalCreationToken(),
             ...options,
