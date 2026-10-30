@@ -19,6 +19,7 @@ import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-tr
 import { isRemoteMCPServerDescription, MCPFrontendService, MCPServerDescription, MCPServerManager, MCPServerStatus } from '../common/mcp-server-manager';
 import { ToolInvocationRegistry, ToolRequest, PromptService, ToolCallContent, ToolCallContentResult, isToolCallHtmlAppResult } from '@theia/ai-core';
 import { ListToolsResult, TextContent } from '@modelcontextprotocol/sdk/types';
+import { sanitizeMCPName } from '../common/mcp-utils';
 
 /**
  * Maps a single MCP call content item to a {@link ToolCallContentResult}.
@@ -152,11 +153,17 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
     }
 
     getPromptTemplateId(serverName: string): string {
-        return `mcp_${serverName}_tools`;
+        const prefix = this.getToolIdPrefix(serverName);
+        return `${prefix}_tools`;
+    }
+
+    getToolIdPrefix(serverName: string): string {
+        return `mcp_${sanitizeMCPName(serverName)}`;
     }
 
     protected unregisterTools(serverName: string): void {
-        this.toolInvocationRegistry.unregisterAllTools(`mcp_${serverName}`);
+        const prefix = this.getToolIdPrefix(serverName);
+        this.toolInvocationRegistry.unregisterAllTools(prefix);
         this.promptService.removePromptFragment(this.getPromptTemplateId(serverName));
     }
 
@@ -216,11 +223,12 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
     }
 
     private convertToToolRequest(tool: Awaited<ReturnType<MCPServerManager['getTools']>>['tools'][number], serverName: string): ToolRequest {
-        const id = `mcp_${serverName}_${tool.name}`;
+        const prefix = this.getToolIdPrefix(serverName);
+        const id = `${prefix}_${tool.name}`;
         return {
             id: id,
             name: id,
-            providerName: `mcp_${serverName}`,
+            providerName: prefix,
             parameters: ToolRequest.isToolRequestParameters(tool.inputSchema) ? {
                 type: tool.inputSchema.type,
                 properties: tool.inputSchema.properties,
