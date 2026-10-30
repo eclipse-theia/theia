@@ -92,11 +92,11 @@ export namespace TerminalCommands {
         category: TERMINAL_CATEGORY,
         label: 'Create New Integrated Terminal from a Profile'
     }, undefined, TERMINAL_CATEGORY_KEY);
-    export const PROFILE_SPLIT = Command.toLocalizedCommand({
+    export const PROFILE_SPLIT = Command.toDefaultLocalizedCommand({
         id: 'terminal:split:profile',
         category: TERMINAL_CATEGORY,
         label: 'Split Terminal with Profile'
-    }, undefined, TERMINAL_CATEGORY_KEY);
+    });
     export const PROFILE_DEFAULT = Command.toLocalizedCommand({
         id: 'terminal:profile:default',
         category: TERMINAL_CATEGORY,
