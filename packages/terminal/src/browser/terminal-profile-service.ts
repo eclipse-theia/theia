@@ -24,6 +24,10 @@ export const ContributedTerminalProfileStore = Symbol('ContributedTerminalProfil
 export const UserTerminalProfileStore = Symbol('UserTerminalProfileStore');
 
 export interface TerminalProfile {
+    /**
+     * A human-readable name to present the profile to the user. Defaults to the ID of the profile.
+     */
+    readonly label?: string;
     start(): Promise<TerminalWidget>;
 }
 
