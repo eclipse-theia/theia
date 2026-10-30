@@ -31,6 +31,7 @@ describe('PerspectiveService', () => {
     let service: PerspectiveServiceImpl;
     let addWidgetStub: sinon.SinonStub;
     let activateWidgetStub: sinon.SinonStub;
+    let revealWidgetStub: sinon.SinonStub;
     let getTabBarForStub: sinon.SinonStub;
     let getAreaForStub: sinon.SinonStub;
     let getOrCreateWidgetStub: sinon.SinonStub;
@@ -52,6 +53,7 @@ describe('PerspectiveService', () => {
 
         addWidgetStub = sinon.stub().resolves();
         activateWidgetStub = sinon.stub().resolves(undefined);
+        revealWidgetStub = sinon.stub().resolves(undefined);
         getTabBarForStub = sinon.stub().returns(undefined);
         getAreaForStub = sinon.stub().returns(undefined);
         getOrCreateWidgetStub = sinon.stub().resolves(testWidget);
@@ -65,6 +67,7 @@ describe('PerspectiveService', () => {
         const mockShell = {
             addWidget: addWidgetStub,
             activateWidget: activateWidgetStub,
+            revealWidget: revealWidgetStub,
             getTabBarFor: getTabBarForStub,
             getAreaFor: getAreaForStub,
             getLayoutData: getLayoutDataStub,
@@ -611,24 +614,24 @@ describe('PerspectiveService', () => {
         expect(mockLogger.warn.firstCall.args[1]).to.equal(widgetError);
     });
 
-    it('should log warning when widget activation fails during switchPerspective', async () => {
-        const activationError = new Error('Activation failed');
-        activateWidgetStub.rejects(activationError);
+    it('should log warning when widget reveal fails during switchPerspective', async () => {
+        const revealError = new Error('Reveal failed');
+        revealWidgetStub.rejects(revealError);
 
         service.registerPerspective({
-            id: 'activate-fail',
-            label: 'Activate Fail',
+            id: 'reveal-fail',
+            label: 'Reveal Fail',
             viewPlacements: new Map([['test-widget', 'main' as ApplicationShell.Area]])
         });
 
-        await service.switchPerspective('activate-fail');
+        await service.switchPerspective('reveal-fail');
 
         expect(mockLogger.warn.called).to.be.true;
-        const activateCall = mockLogger.warn.getCalls().find(
-            (c: sinon.SinonSpyCall) => c.args[0] === 'Failed to activate widget for perspective'
+        const revealCall = mockLogger.warn.getCalls().find(
+            (c: sinon.SinonSpyCall) => c.args[0] === 'Failed to reveal widget for perspective'
         );
-        expect(activateCall).to.not.be.undefined;
-        expect(activateCall!.args[1]).to.equal(activationError);
+        expect(revealCall).to.not.be.undefined;
+        expect(revealCall!.args[1]).to.equal(revealError);
     });
 
     // --- Reentrancy guard tests ---
@@ -716,6 +719,41 @@ describe('PerspectiveService', () => {
         service.initialize();
 
         expect(() => service.onLayoutRestored('non-existent')).to.not.throw();
+    });
+
+    it('should set the active placement map on the WidgetAreaResolver', () => {
+        service.registerPerspective({
+            id: 'ai-first',
+            label: 'AI First',
+            viewPlacements: new Map([
+                ['explorer', 'right' as ApplicationShell.Area],
+                ['chat-view', 'left' as ApplicationShell.Area]
+            ])
+        });
+
+        service.onLayoutRestored('ai-first');
+
+        // The resolver should now use the perspective's placement map
+        expect(widgetAreaResolver.resolveArea('explorer', 'left')).to.equal('right');
+        expect(widgetAreaResolver.resolveArea('chat-view', 'right')).to.equal('left');
+        // Unmapped widgets should still return undefined
+        expect(widgetAreaResolver.resolveArea('unknown-widget', 'main')).to.be.undefined;
+    });
+
+    it('should not set a placement map for an unregistered perspective', () => {
+        service.registerPerspective({
+            id: 'real-persp',
+            label: 'Real',
+            viewPlacements: new Map([['widget-a', 'right' as ApplicationShell.Area]])
+        });
+
+        // First set up a known state
+        service.onLayoutRestored('real-persp');
+        expect(widgetAreaResolver.resolveArea('widget-a', 'left')).to.equal('right');
+
+        // Calling with an unregistered ID should not change the map
+        service.onLayoutRestored('non-existent');
+        expect(widgetAreaResolver.resolveArea('widget-a', 'left')).to.equal('right');
     });
 
     // --- Rejection resilience tests ---
@@ -843,6 +881,7 @@ describe('PerspectiveService', () => {
             getOrCreateWidgetStub.resetHistory();
             addWidgetStub.resetHistory();
             activateWidgetStub.resetHistory();
+            revealWidgetStub.resetHistory();
 
             await service.resetCurrentPerspective();
 
@@ -2265,6 +2304,103 @@ describe('PerspectiveService', () => {
                 // Outline should be detached (not in AI First's saved layout)
                 expect(outlineWidget.isAttached).to.be.false;
             });
+        });
+    });
+
+    describe('registerCommands', () => {
+        it('should call switchPerspective when id argument is provided', async () => {
+            service.registerPerspective({
+                id: 'testPersp',
+                label: 'Test Perspective',
+                viewPlacements: new Map()
+            });
+
+            let capturedHandler: { execute: (id?: string) => Promise<void> } | undefined;
+            const mockRegistry = {
+                registerCommand: sinon.stub().callsFake((_cmd: unknown, handler: { execute: (id?: string) => Promise<void> }) => {
+                    if ((_cmd as { id: string }).id === 'perspective.switch') {
+                        capturedHandler = handler;
+                    }
+                })
+            };
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            service.registerCommands(mockRegistry as any);
+
+            expect(capturedHandler).to.not.be.undefined;
+
+            const switchSpy = sinon.spy(service, 'switchPerspective');
+
+            await capturedHandler!.execute('testPersp');
+
+            expect(switchSpy.calledOnce).to.be.true;
+            expect(switchSpy.calledWith('testPersp')).to.be.true;
+            expect(service.getActivePerspective()?.id).to.equal('testPersp');
+        });
+
+        it('should show perspective picker when no id argument is provided', async () => {
+            service.registerPerspective({
+                id: 'perspA',
+                label: 'A',
+                viewPlacements: new Map()
+            });
+            service.registerPerspective({
+                id: 'perspB',
+                label: 'B',
+                viewPlacements: new Map()
+            });
+
+            const showQuickPickStub = sinon.stub().resolves(undefined);
+            (service as unknown as Record<string, unknown>)['quickInputService'] = {
+                showQuickPick: showQuickPickStub
+            };
+
+            let capturedHandler: { execute: (id?: string) => Promise<void> } | undefined;
+            const mockRegistry = {
+                registerCommand: sinon.stub().callsFake((_cmd: unknown, handler: { execute: (id?: string) => Promise<void> }) => {
+                    if ((_cmd as { id: string }).id === 'perspective.switch') {
+                        capturedHandler = handler;
+                    }
+                })
+            };
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            service.registerCommands(mockRegistry as any);
+
+            expect(capturedHandler).to.not.be.undefined;
+
+            await capturedHandler!.execute();
+
+            expect(showQuickPickStub.calledOnce).to.be.true;
+        });
+
+        it('should not show perspective picker when id argument is provided', async () => {
+            service.registerPerspective({
+                id: 'testPersp',
+                label: 'Test',
+                viewPlacements: new Map()
+            });
+
+            const showQuickPickStub = sinon.stub().resolves(undefined);
+            (service as unknown as Record<string, unknown>)['quickInputService'] = {
+                showQuickPick: showQuickPickStub
+            };
+
+            let capturedHandler: { execute: (id?: string) => Promise<void> } | undefined;
+            const mockRegistry = {
+                registerCommand: sinon.stub().callsFake((_cmd: unknown, handler: { execute: (id?: string) => Promise<void> }) => {
+                    if ((_cmd as { id: string }).id === 'perspective.switch') {
+                        capturedHandler = handler;
+                    }
+                })
+            };
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            service.registerCommands(mockRegistry as any);
+
+            await capturedHandler!.execute('testPersp');
+
+            expect(showQuickPickStub.called).to.be.false;
         });
     });
 });
