@@ -18,8 +18,7 @@ import { LanguageModelMessage } from '@theia/ai-core';
 import { injectable } from '@theia/core/shared/inversify';
 import { DeveloperMessageSettings } from '@theia/ai-openai/lib/node/openai-language-model';
 import { OpenAiResponseApiUtils } from '@theia/ai-openai/lib/node/openai-response-api-utils';
-import { OpenAI } from 'openai';
-import type { ResponseCreateParamsStreaming, ResponseInputItem, ResponseStreamEvent } from 'openai/resources/responses/responses';
+import type { ResponseInputItem } from 'openai/resources/responses/responses';
 
 /** Used when a request carries no system message, which the ChatGPT endpoint rejects with `Instructions are required`. */
 export const DEFAULT_CHATGPT_INSTRUCTIONS = 'You are a helpful assistant.';
@@ -32,17 +31,6 @@ export const DEFAULT_CHATGPT_INSTRUCTIONS = 'You are a helpful assistant.';
 export class ChatGptResponseApiUtils extends OpenAiResponseApiUtils {
 
     override readonly compactionProvider = 'chatgpt-responses';
-
-    override async *streamResponse(openai: OpenAI, parameters: ResponseCreateParamsStreaming): AsyncIterable<ResponseStreamEvent> {
-        // ChatGPT emits extra events such as response.metadata that the SDK's response accumulator rejects.
-        const stream = await openai.responses.create(parameters);
-        for await (const event of stream) {
-            if (event.type === 'response.failed') {
-                throw new Error(event.response.error?.message ?? 'ChatGPT response failed.');
-            }
-            yield event;
-        }
-    }
 
     override processMessages(
         messages: LanguageModelMessage[],

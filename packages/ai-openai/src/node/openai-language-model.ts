@@ -31,7 +31,6 @@ import { CancellationToken, ILogger } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { OpenAI, AzureOpenAI } from 'openai';
 import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources';
-import { StreamingAsyncIterator } from './openai-streaming-iterator';
 import { ChatCompletionStreamingAsyncIteratorFactory } from './openai-chat-completion-stream';
 import { OPENAI_PROVIDER_ID } from '../common';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
@@ -83,6 +82,7 @@ export interface OpenAiClientOptions {
     readonly apiVersion?: string;
     readonly deployment?: string;
     readonly proxyUrl?: string;
+    readonly maxRetries?: number;
     /** Additional HTTP headers sent with every request, e.g. headers required by a gateway in front of the API. */
     readonly headers?: Record<string, string>;
 }
@@ -98,9 +98,10 @@ export function createOpenAiClient(options: OpenAiClientOptions): OpenAI {
     const proxyFetch = createProxyFetch(options.proxyUrl);
     return options.apiVersion
         ? new AzureOpenAI({
-            apiKey, baseURL: options.baseURL, apiVersion: options.apiVersion, deployment: options.deployment, fetch: proxyFetch, defaultHeaders: options.headers
+            apiKey, baseURL: options.baseURL, apiVersion: options.apiVersion, deployment: options.deployment,
+            fetch: proxyFetch, defaultHeaders: options.headers, maxRetries: options.maxRetries
         })
-        : new MistralFixedOpenAI({ apiKey, baseURL: options.baseURL, fetch: proxyFetch, defaultHeaders: options.headers });
+        : new MistralFixedOpenAI({ apiKey, baseURL: options.baseURL, fetch: proxyFetch, defaultHeaders: options.headers, maxRetries: options.maxRetries });
 }
 
 export interface OpenAiModelParams {
@@ -238,30 +239,18 @@ export class OpenAiModel implements LanguageModel {
         if (cancellationToken?.isCancellationRequested) {
             return { text: '' };
         }
-        const tools = this.createTools(request);
-
-        if (tools) {
-            return {
-                stream: this.chatCompletionStreamFactory({
-                    openai,
-                    model: this.model,
-                    request,
-                    messages: this.processMessages(request.messages),
-                    settings,
-                    tools,
-                    maxRetries: this.maxRetries,
-                    cancellationToken
-                })
-            };
-        }
-
-        const runner = openai.chat.completions.stream({
-            model: this.model,
-            messages: this.processMessages(request.messages),
-            stream: true,
-            ...settings
-        });
-        return { stream: new StreamingAsyncIterator(runner, cancellationToken) };
+        return {
+            stream: this.chatCompletionStreamFactory({
+                openai,
+                model: this.model,
+                request,
+                messages: this.processMessages(request.messages),
+                settings,
+                tools: this.createTools(request),
+                maxRetries: this.maxRetries,
+                cancellationToken
+            })
+        };
     }
 
     protected async handleNonStreamingRequest(openai: OpenAI, request: UserRequest): Promise<LanguageModelTextResponse> {
@@ -334,6 +323,7 @@ export class OpenAiModel implements LanguageModel {
             apiVersion: this.apiVersion(),
             deployment: this.deployment,
             proxyUrl: this.proxy,
+            maxRetries: this.maxRetries,
             headers: this.headers
         });
     }
