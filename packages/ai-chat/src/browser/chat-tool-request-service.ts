@@ -16,11 +16,17 @@
 
 import { ToolInvocationContext, ToolRequest } from '@theia/ai-core';
 import { ILogger } from '@theia/core';
+import { PreferenceService } from '@theia/core/lib/common';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { ChatToolRequestService, normalizeToolArgs } from '../common/chat-tool-request-service';
+import { ChatToolRequestService, normalizeToolArgs, ToolLoopGuardConfig } from '../common/chat-tool-request-service';
 import { raceConfirmationWithTimeout } from '../common/chat-tool-confirmation-timeout';
 import { MutableChatRequestModel, ToolCallChatResponseContent } from '../common/chat-model';
 import { ToolConfirmationMode, ChatToolPreferences, TOOL_CONFIRMATION_TIMEOUT_PREFERENCE } from '../common/chat-tool-preferences';
+import {
+    TOOL_LOOP_GUARD_ENABLED_PREF,
+    TOOL_LOOP_GUARD_REFRESH_THRESHOLD_PREF,
+    TOOL_LOOP_GUARD_FAIL_THRESHOLD_PREF
+} from '../common/ai-chat-preferences';
 import { ToolConfirmationManager } from './chat-tool-preference-bindings';
 
 /**
@@ -38,6 +44,17 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
     @inject(ChatToolPreferences)
     protected readonly preferences: ChatToolPreferences;
 
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
+    protected override getLoopGuardConfig(_request: MutableChatRequestModel): ToolLoopGuardConfig {
+        const enabled = this.preferenceService.get<boolean>(TOOL_LOOP_GUARD_ENABLED_PREF, true);
+        const refreshThreshold = Math.max(1, this.preferenceService.get<number>(TOOL_LOOP_GUARD_REFRESH_THRESHOLD_PREF, 3));
+        // Keep the fail threshold strictly above the refresh threshold, so a refresh always gets a chance to break the loop.
+        const failThreshold = Math.max(refreshThreshold + 1, this.preferenceService.get<number>(TOOL_LOOP_GUARD_FAIL_THRESHOLD_PREF, 5));
+        return { enabled, refreshThreshold, failThreshold };
+    }
+
     protected override toChatToolRequest(toolRequest: ToolRequest, request: MutableChatRequestModel): ToolRequest {
         return {
             ...toolRequest,
@@ -53,7 +70,8 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
                     case ToolConfirmationMode.ALWAYS_ALLOW: {
                         const toolCallContentAlwaysAllow = this.findToolCallContent(toolRequest, arg_string, request, toolCallId);
                         toolCallContentAlwaysAllow.confirm();
-                        const result = await toolRequest.handler(arg_string, this.createToolContext(request, ToolInvocationContext.create(toolCallContentAlwaysAllow.id)));
+                        const result = await this.invokeWithLoopGuard(toolRequest, arg_string, request,
+                            () => toolRequest.handler(arg_string, this.createToolContext(request, ToolInvocationContext.create(toolCallContentAlwaysAllow.id))));
                         // Signal completion for immediate UI update. The language model uses Promise.all
                         // for parallel tools, so without this the UI wouldn't update until all tools finish.
                         // The result will be overwritten with the same value when the LLM stream yields it.
@@ -96,7 +114,8 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
                         }
 
                         if (confirmed) {
-                            const result = await toolRequest.handler(arg_string, this.createToolContext(request, ToolInvocationContext.create(toolCallContent.id)));
+                            const result = await this.invokeWithLoopGuard(toolRequest, arg_string, request,
+                                () => toolRequest.handler(arg_string, this.createToolContext(request, ToolInvocationContext.create(toolCallContent.id))));
                             // Signal completion for immediate UI update (see ALWAYS_ALLOW case for details)
                             toolCallContent.complete(result);
                             return result;
