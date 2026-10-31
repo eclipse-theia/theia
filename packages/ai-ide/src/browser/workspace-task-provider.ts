@@ -50,6 +50,11 @@ export interface TaskListEntry {
      * disambiguate when multiple tasks share the same label.
      */
     workspaceRoot?: string;
+    /**
+     * What the task executes, so that tasks with similar labels can be told apart:
+     * the task's `detail` if set (e.g. the script of an npm task), otherwise the command line of a process or shell task.
+     */
+    detail?: string;
 }
 
 /**
@@ -91,7 +96,8 @@ export class TaskListProvider implements ToolProvider {
             id: LIST_TASKS_FUNCTION_ID,
             name: LIST_TASKS_FUNCTION_ID,
             description: 'Lists available tasks in the workspace that can be executed with runTask. Returns an array ' +
-                'of objects, each with a "label" (the task name) and a "workspaceRoot" (identifying where the task is defined). ' +
+                'of objects, each with a "label" (the task name), a "workspaceRoot" (identifying where the task is defined) ' +
+                'and, if known, a "detail" (what the task executes, e.g. its command line or script). ' +
                 'Use the filter parameter with an empty string "" to retrieve all tasks, or provide a substring ' +
                 'to filter (e.g., "test" returns tasks containing "test" in the name). ' +
                 'Always call this before runTask to discover exact task names and their workspace roots.',
@@ -127,7 +133,25 @@ export class TaskListProvider implements ToolProvider {
     private toTaskListEntry(task: TaskConfiguration): TaskListEntry {
         const entry: TaskListEntry = { label: task.label };
         entry.workspaceRoot = resolveScopeToken(task._scope, this.workspaceScope);
+        const detail = this.getTaskDetail(task);
+        if (detail) {
+            entry.detail = detail;
+        }
         return entry;
+    }
+
+    protected getTaskDetail(task: TaskConfiguration): string | undefined {
+        if (task.detail) {
+            return task.detail;
+        }
+        if (typeof task.command === 'string') {
+            const args: unknown[] = Array.isArray(task.args) ? task.args : [];
+            // Shell task arguments can also be objects with a quoting style
+            return [task.command, ...args.map(arg => typeof arg === 'string' ? arg : (arg as { value?: unknown })?.value)]
+                .filter(part => typeof part === 'string' && part.length > 0)
+                .join(' ');
+        }
+        return undefined;
     }
 }
 
