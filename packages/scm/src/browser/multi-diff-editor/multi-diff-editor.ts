@@ -17,11 +17,12 @@
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter, Event, nls, URI } from '@theia/core';
 import {
-    addEventListener, ApplicationShell, BaseWidget, BoxLayout, codicon, Key, LabelProvider, LabelProviderContribution,
+    ApplicationShell, BaseWidget, BoxLayout, codicon, Key, LabelProvider, LabelProviderContribution,
     Message, MessageLoop, Navigatable, NavigatableWidgetOpenHandler, Panel, PanelLayout, StatefulWidget,
     Widget, WidgetOpenerOptions
 } from '@theia/core/lib/browser';
 import { EditorWidget } from '@theia/editor/lib/browser';
+import * as monaco from '@theia/monaco-editor-core';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoDiffEditor } from '@theia/monaco/lib/browser/monaco-diff-editor';
 import { MultiDiffEditorUri, MultiDiffEditorResourcePair, MultiDiffEditorUriData } from './multi-diff-editor-uri';
@@ -144,8 +145,9 @@ export class DiffEntryErrorWidget extends BaseWidget {
 /**
  * A single diff entry combining a header and a content area that transitions through
  * loading, editor, and error states. The entry's outer height is controlled via
- * {@link DiffEntryWidget.setHeight} and, once the editor is loaded, tracks the
- * editor's content size up to 5000 pixels. A single entry fills the viewport.
+ * {@link DiffEntryWidget.setHeight} and reflects the editor's full content size to
+ * enable continuous scrolling in the outer container, while the rendered editor size
+ * is bounded to the available viewport space.
  * Entries can be collapsed (showing only the header) via {@link DiffEntryWidget.setCollapsed}.
  */
 export class DiffEntryWidget extends BaseWidget {
@@ -164,6 +166,10 @@ export class DiffEntryWidget extends BaseWidget {
     protected fillViewport = false;
     protected requestedHeight = MIN_ENTRY_HEIGHT;
     protected contentHeight?: number;
+    protected renderedEditorHeight?: number;
+    protected isSettingScrollTop = false;
+    protected lastScrollTop = 0;
+    protected savedViewState?: monaco.editor.IEditorViewState;
     protected innerScrolling?: boolean;
     protected loading = false;
     protected loadAttempted = false;
@@ -171,8 +177,14 @@ export class DiffEntryWidget extends BaseWidget {
     protected readonly onDidLoadEditorEmitter = new Emitter<void>();
     readonly onDidLoadEditor: Event<void> = this.onDidLoadEditorEmitter.event;
 
+    protected readonly onDidUnloadEditorEmitter = new Emitter<void>();
+    readonly onDidUnloadEditor: Event<void> = this.onDidUnloadEditorEmitter.event;
+
     protected readonly onDidChangeCollapsedEmitter = new Emitter<boolean>();
     readonly onDidChangeCollapsed: Event<boolean> = this.onDidChangeCollapsedEmitter.event;
+
+    protected readonly onDidRequestScrollOuterEmitter = new Emitter<number>();
+    readonly onDidRequestScrollOuter: Event<number> = this.onDidRequestScrollOuterEmitter.event;
 
     constructor(
         resource: MultiDiffEditorResourcePair,
@@ -190,7 +202,8 @@ export class DiffEntryWidget extends BaseWidget {
         this.boxLayout.addWidget(headerWidget);
 
         this.currentContent = new DiffEntryLoadingWidget();
-        BoxLayout.setStretch(this.currentContent, 1);
+        BoxLayout.setStretch(this.currentContent, 0);
+        BoxLayout.setSizeBasis(this.currentContent, MIN_ENTRY_HEIGHT);
         this.boxLayout.addWidget(this.currentContent);
 
         this.layout = this.boxLayout;
@@ -199,6 +212,8 @@ export class DiffEntryWidget extends BaseWidget {
         this.toDispose.pushAll([
             this.onDidChangeCollapsedEmitter,
             this.onDidLoadEditorEmitter,
+            this.onDidUnloadEditorEmitter,
+            this.onDidRequestScrollOuterEmitter,
             this.header.onDidToggleCollapse(() => this.setCollapsed(!this._isCollapsed))
         ]);
     }
@@ -211,6 +226,10 @@ export class DiffEntryWidget extends BaseWidget {
         return this._isCollapsed;
     }
 
+    get editorHeight(): number | undefined {
+        return this.renderedEditorHeight;
+    }
+
     setCollapsed(collapsed: boolean): void {
         if (this._isCollapsed === collapsed) {
             return;
@@ -220,6 +239,8 @@ export class DiffEntryWidget extends BaseWidget {
         this.currentContent.setHidden(collapsed);
         if (collapsed) {
             this.lastExpandedHeight = this.getCurrentHeight() || MIN_ENTRY_HEIGHT;
+            this.header.node.style.transform = '';
+            this.currentContent.node.style.transform = '';
             this.setNodeHeight(this.getNonContentHeight());
         } else {
             this.setNodeHeight(this.lastExpandedHeight);
@@ -255,6 +276,26 @@ export class DiffEntryWidget extends BaseWidget {
         }
     }
 
+    unloadEditor(): void {
+        if (!this._editorWidget || this.loading || this._isCollapsed) {
+            return;
+        }
+        if (typeof document !== 'undefined' && this.node.contains(document.activeElement)) {
+            return;
+        }
+        const monacoEditor = MonacoEditor.get(this._editorWidget);
+        if (monacoEditor) {
+            this.savedViewState = monacoEditor.storeViewState() as monaco.editor.IEditorViewState;
+        }
+        this.innerScrolling = undefined;
+        this.loadAttempted = false;
+        const editor = this._editorWidget;
+        this._editorWidget = undefined;
+        this.replaceContent(new DiffEntryLoadingWidget());
+        editor.dispose();
+        this.onDidUnloadEditorEmitter.fire();
+    }
+
     setError(message: string): void {
         this.replaceContent(new DiffEntryErrorWidget(message, () => this.loadEditor(true)));
     }
@@ -262,6 +303,12 @@ export class DiffEntryWidget extends BaseWidget {
     setEditor(editorWidget: EditorWidget): void {
         this._editorWidget = editorWidget;
         this.replaceContent(editorWidget);
+        const monacoEditor = MonacoEditor.get(editorWidget);
+        if (monacoEditor && this.savedViewState) {
+            monacoEditor.restoreViewState(this.savedViewState);
+            this.savedViewState = undefined;
+        }
+        this.updateInnerScrolling();
         this.trackContentHeight(editorWidget);
     }
 
@@ -277,7 +324,10 @@ export class DiffEntryWidget extends BaseWidget {
             return;
         }
         widget.setHidden(this._isCollapsed);
-        BoxLayout.setStretch(widget, 1);
+        BoxLayout.setStretch(widget, 0);
+        if (this.renderedEditorHeight !== undefined) {
+            BoxLayout.setSizeBasis(widget, this.renderedEditorHeight);
+        }
         this.boxLayout.addWidget(widget);
         this.currentContent = widget;
         // eslint-disable-next-line no-null/no-null
@@ -286,16 +336,25 @@ export class DiffEntryWidget extends BaseWidget {
     }
 
     /**
-     * Fit multiple entries to their content, capped at 5000 pixels; a single entry fills the viewport. While collapsed,
-     * remember the requested height for expansion.
+     * Fit multiple entries to their content to allow continuous outer scrolling,
+     * while bounding the embedded editor height to the available viewport space.
      */
     setHeight(height: number): void {
         this.requestedHeight = height;
-        const limit = this.fillViewport ? (this.availableHeight ?? MAX_ENTRY_HEIGHT) : 5000;
-        const clamped = Math.max(this.getNonContentHeight(), this.fillViewport ? limit : Math.min(limit, height));
-        this.lastExpandedHeight = clamped;
+        const nonContentHeight = this.getNonContentHeight();
+        const availableContent = this.availableHeight
+            ? Math.max(MIN_ENTRY_HEIGHT, this.availableHeight - nonContentHeight)
+            : MAX_ENTRY_HEIGHT;
+        const totalHeight = Math.max(nonContentHeight, this.fillViewport ? (this.availableHeight ?? MAX_ENTRY_HEIGHT) : height);
+        this.lastExpandedHeight = totalHeight;
+        this.renderedEditorHeight = this.fillViewport
+            ? availableContent
+            : Math.min(Math.max(MIN_ENTRY_HEIGHT, height - nonContentHeight), availableContent);
+        if (this.currentContent) {
+            BoxLayout.setSizeBasis(this.currentContent, this.renderedEditorHeight);
+        }
         if (!this._isCollapsed) {
-            this.setNodeHeight(clamped);
+            this.setNodeHeight(totalHeight);
         }
         this.updateInnerScrolling();
     }
@@ -307,6 +366,44 @@ export class DiffEntryWidget extends BaseWidget {
         this.setHeight(this.requestedHeight);
     }
 
+    updateScroll(panelScrollTop: number): void {
+        if (this._isCollapsed || !this.contentHeight || !this.renderedEditorHeight) {
+            return;
+        }
+        const maxScroll = Math.max(0, this.contentHeight - this.renderedEditorHeight);
+        if (maxScroll <= 0) {
+            if (this.header.node.style.transform !== '') {
+                this.header.node.style.transform = '';
+            }
+            if (this.currentContent.node.style.transform !== '') {
+                this.currentContent.node.style.transform = '';
+            }
+            return;
+        }
+        const offset = panelScrollTop - this.node.offsetTop;
+        const scroll = Math.max(0, Math.min(offset, maxScroll));
+        const transform = scroll > 0 ? `translateY(${scroll}px)` : '';
+        if (this.header.node.style.transform !== transform) {
+            this.header.node.style.transform = transform;
+        }
+        if (this.currentContent.node.style.transform !== transform) {
+            this.currentContent.node.style.transform = transform;
+        }
+        if (this._editorWidget) {
+            const monacoEditor = MonacoEditor.get(this._editorWidget);
+            const control = monacoEditor instanceof MonacoDiffEditor ? monacoEditor.diffEditor.getModifiedEditor() : monacoEditor?.getControl();
+            if (control && control.getScrollTop() !== scroll) {
+                try {
+                    this.isSettingScrollTop = true;
+                    this.lastScrollTop = scroll;
+                    control.setScrollTop(scroll);
+                } finally {
+                    this.isSettingScrollTop = false;
+                }
+            }
+        }
+    }
+
     protected getNonContentHeight(): number {
         const style = window.getComputedStyle(this.node);
         return HEADER_HEIGHT + (parseFloat(style.borderTopWidth) || 0) + (parseFloat(style.borderBottomWidth) || 0);
@@ -316,15 +413,13 @@ export class DiffEntryWidget extends BaseWidget {
         if (this.contentHeight === undefined || !this._editorWidget) {
             return;
         }
-        const scrolling = this.contentHeight > this.lastExpandedHeight - this.getNonContentHeight();
-        if (this.innerScrolling === scrolling) {
+        if (this.innerScrolling === false) {
             return;
         }
-        // Set this before updating Monaco options, which can emit content-size events synchronously.
-        this.innerScrolling = scrolling;
+        this.innerScrolling = false;
         const editor = MonacoEditor.get(this._editorWidget);
         const options = {
-            scrollbar: { vertical: scrolling ? 'auto' as const : 'hidden' as const, handleMouseWheel: scrolling, alwaysConsumeMouseWheel: false }
+            scrollbar: { vertical: 'hidden' as const, handleMouseWheel: false, alwaysConsumeMouseWheel: false }
         };
         if (editor instanceof MonacoDiffEditor) {
             editor.diffEditor.updateOptions(options);
@@ -364,20 +459,6 @@ export class DiffEntryWidget extends BaseWidget {
         if (!monacoEditor) {
             return;
         }
-        const control = monacoEditor instanceof MonacoDiffEditor ? monacoEditor.diffEditor.getModifiedEditor() : monacoEditor.getControl();
-        this.toDispose.push(addEventListener(editorWidget.node, 'wheel', event => {
-            if (!this.innerScrolling || event.ctrlKey || event.shiftKey || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) {
-                return;
-            }
-            const scrollTop = control.getScrollTop();
-            const atBoundary = event.deltaY < 0
-                ? scrollTop <= 0
-                : scrollTop >= control.getScrollHeight() - control.getLayoutInfo().height;
-            if (atBoundary) {
-                // Monaco does not apply alwaysConsumeMouseWheel changes to an existing scrollbar.
-                event.stopPropagation();
-            }
-        }, true));
         const getContentHeight = (): number => {
             if (monacoEditor instanceof MonacoDiffEditor) {
                 return Math.max(
@@ -391,11 +472,27 @@ export class DiffEntryWidget extends BaseWidget {
             this.contentHeight = getContentHeight();
             this.setHeight(this.contentHeight + this.getNonContentHeight());
         };
+        const onScrollChange = (e: { scrollTop: number; scrollTopChanged?: boolean }) => {
+            if (this.isSettingScrollTop || !e.scrollTopChanged) {
+                return;
+            }
+            const delta = e.scrollTop - this.lastScrollTop;
+            this.lastScrollTop = e.scrollTop;
+            this.onDidRequestScrollOuterEmitter.fire(delta);
+        };
         if (monacoEditor instanceof MonacoDiffEditor) {
             this.toDispose.push(monacoEditor.diffEditor.getOriginalEditor().onDidContentSizeChange(updateHeight));
             this.toDispose.push(monacoEditor.diffEditor.getModifiedEditor().onDidContentSizeChange(updateHeight));
+            const modified = monacoEditor.diffEditor.getModifiedEditor();
+            if (typeof modified.onDidScrollChange === 'function') {
+                this.toDispose.push(modified.onDidScrollChange(onScrollChange));
+            }
         } else {
             this.toDispose.push(monacoEditor.getControl().onDidContentSizeChange(updateHeight));
+            const control = monacoEditor.getControl();
+            if (typeof control.onDidScrollChange === 'function') {
+                this.toDispose.push(control.onDidScrollChange(onScrollChange));
+            }
         }
         updateHeight();
     }
@@ -449,14 +546,20 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
             this.entryObserver = new IntersectionObserver(entries => {
                 if (!this.isDisposed) {
                     for (const observed of entries) {
-                        if (observed.isIntersecting) {
-                            this.entryWidgets.find(entry => entry.node === observed.target)?.loadEditor();
+                        const entry = this.entryWidgets.find(e => e.node === observed.target);
+                        if (entry) {
+                            if (observed.isIntersecting) {
+                                entry.loadEditor();
+                            } else {
+                                entry.unloadEditor();
+                            }
                         }
                     }
                 }
             }, { root: this.entriesPanel.node, rootMargin: '500px 0px' });
             this.toDispose.push({ dispose: () => this.entryObserver?.disconnect() });
         }
+        this.addEventListener(this.entriesPanel.node, 'scroll', () => this.updateEntriesScroll());
         this.addEventListener(this.entriesPanel.node, 'focusin', event => {
             this.lastFocusedEntry = this.entryWidgets.find(entry => event.target instanceof Node && entry.node.contains(event.target));
         });
@@ -472,9 +575,16 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
         this.entriesPanel.addWidget(entry);
         this.toDispose.push(entry.onDidLoadEditor(() => {
             this.notifyTrackableWidgetsChanged();
+            entry.updateScroll(this.entriesPanel.node.scrollTop);
             if (this.pendingReveal === entry) {
                 this.scrollToEntry(entry);
             }
+        }));
+        this.toDispose.push(entry.onDidUnloadEditor(() => {
+            this.notifyTrackableWidgetsChanged();
+        }));
+        this.toDispose.push(entry.onDidRequestScrollOuter(delta => {
+            this.entriesPanel.node.scrollTop += delta;
         }));
         this.entryObserver?.observe(entry.node);
         return entry;
@@ -549,6 +659,13 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
         }
     }
 
+    updateEntriesScroll(): void {
+        const scrollTop = this.entriesPanel.node.scrollTop;
+        for (const entry of this.entryWidgets) {
+            entry.updateScroll(scrollTop);
+        }
+    }
+
     protected override onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
         const height = msg.height < 0 ? this.node.clientHeight : msg.height;
@@ -556,6 +673,7 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
             for (const entry of this.entryWidgets) {
                 entry.setAvailableHeight(height, this.entryWidgets.length === 1);
             }
+            this.updateEntriesScroll();
         }
     }
 
