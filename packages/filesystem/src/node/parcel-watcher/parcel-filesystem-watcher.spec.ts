@@ -163,6 +163,45 @@ describe('parcel-filesystem-watcher', function (): void {
         }
     });
 
+    it('Should receive file changes events once from a tree moved into the workspace', async function (): Promise<void> {
+        if (process.platform !== 'linux') {
+            // inotify only watches a directory that appears, not the ones it contains, see `ParcelWatcher.nestedWatchers`
+            this.skip();
+        }
+        const changes: FileChange[] = [];
+        const actualUris = new Set<string>();
+        const changeListeners: Array<() => void> = [];
+        watcherService.setClient({
+            onDidFilesChanged(event: DidFilesChangedParams): void {
+                changes.push(...event.changes);
+                event.changes.forEach(c => actualUris.add(c.uri.toString()));
+                changeListeners.forEach(l => l());
+            },
+            onError(): void {
+            }
+        });
+
+        const levels = ['1', '1/2', '1/2/3', '1/2/3/4'];
+        const staging = temp.mkdirSync('node-fs-staging');
+        fs.mkdirSync(`${staging}/${levels[levels.length - 1]}`, { recursive: true });
+        fs.renameSync(`${staging}/1`, FileUri.fsPath(root.resolve('1')));
+        await waitForChange(actualUris, changeListeners, root.resolve('1').toString());
+        // let the watcher pick up the new tree
+        await sleep(500);
+
+        const files = levels.map(level => root.resolve(`${level}/f.txt`));
+        for (const file of files) {
+            fs.writeFileSync(FileUri.fsPath(file), 'f');
+        }
+        for (const file of files) {
+            await waitForChange(actualUris, changeListeners, file.toString());
+        }
+        // give a second report of a change the time to arrive
+        await sleep(500);
+        const added = files.map(file => changes.filter(change => change.uri === file.toString() && change.type === FileChangeType.ADDED).length);
+        assert.deepStrictEqual(added, files.map(() => 1));
+    });
+
     function createParcelFileSystemWatcherService(): FileSystemWatcherServiceImpl {
         return new FileSystemWatcherServiceImpl({
             verbose: true

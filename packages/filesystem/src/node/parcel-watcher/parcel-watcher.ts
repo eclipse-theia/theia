@@ -53,6 +53,15 @@ export interface ParcelFileSystemWatcherServerOptions extends WatcherLogger {
  */
 export const WatcherDisposal = Symbol('WatcherDisposal');
 
+/** A subscription for a directory that appeared while watching, see {@link ParcelWatcher.nestedWatchers}. */
+export interface NestedParcelWatcher {
+    /** The {@link ParcelWatcher.eventBatchSequence} when the subscription was requested. */
+    readonly requestedAt: number
+    /** Set once the subscription is started: from then on, it reports the events in its directory. */
+    subscription?: AsyncSubscription
+    disposed: boolean
+}
+
 /**
  * Because URIs can be watched by different clients, we'll track
  * how many are listening for a given URI.
@@ -92,6 +101,21 @@ export class ParcelWatcher extends AbstractFileSystemWatcher {
      * despite being processed async.
      */
     protected parcelEventProcessingQueue: Promise<void> = Promise.resolve();
+
+    /**
+     * Subscriptions for directories that appeared while watching, by path. Only used with the inotify backend:
+     * it watches a directory that appears, but not the directories that it already contains, e.g. when a tree is
+     * moved into the watched one. A subscription for the new directory watches its whole tree.
+     *
+     * Each event is reported only by the subscription of the deepest directory that contains it,
+     * see {@link findReportingDirectory}.
+     *
+     * Can be removed once https://github.com/parcel-bundler/watcher/pull/270 is released.
+     */
+    protected readonly nestedWatchers = new Map<string, NestedParcelWatcher>();
+
+    /** Counts the batches of events received from parcel. */
+    protected eventBatchSequence = 0;
 
     /**
      * Promise that resolves when the watcher is fully started, or got disposed.
@@ -282,7 +306,7 @@ export class ParcelWatcher extends AbstractFileSystemWatcher {
         if ((await fsp.stat(fsPath)).isFile()) {
             fsPath = path.dirname(fsPath);
         }
-        return subscribe(fsPath, (err, events) => {
+        return this.subscribe(fsPath, (err, events) => {
             if (err) {
                 if (err.message && err.message.includes('File system must be re-scanned')) {
                     console.log(`FS Events were dropped on watcher ${fsPath}`);
@@ -296,7 +320,12 @@ export class ParcelWatcher extends AbstractFileSystemWatcher {
             if (events) {
                 this.handleWatcherEvents(events);
             }
-        }, {
+        });
+    }
+
+    /** Subscribes to the given directory with the options of this watcher. */
+    protected subscribe(fsPath: string, callback: (err: Error | null, events: Event[]) => unknown): Promise<AsyncSubscription> {
+        return subscribe(fsPath, callback, {
             backend: ParcelWatcher.PARCEL_WATCHER_BACKEND,
             ...this.parcelFileSystemWatchServerOptions.parcelOptions,
             // Pass the excludes to parcel's native `ignore` so excluded directories are pruned
@@ -309,7 +338,18 @@ export class ParcelWatcher extends AbstractFileSystemWatcher {
         });
     }
 
-    protected handleWatcherEvents(events: Event[]): void {
+    /**
+     * @param nestedDirectory the directory of the nested subscription that reported the events, if any, see {@link nestedWatchers}
+     */
+    protected handleWatcherEvents(events: Event[], nestedDirectory?: string): void {
+        const sequence = ++this.eventBatchSequence;
+        if (this.nestedWatchers.size > 0) {
+            // decided when the events arrive, as the nested subscriptions change while they wait in the queue
+            events = events.filter(event => this.findReportingDirectory(event.path) === nestedDirectory);
+        }
+        if (ParcelWatcher.PARCEL_WATCHER_BACKEND === 'inotify') {
+            this.parcelEventProcessingQueue = this.parcelEventProcessingQueue.then(() => this.updateNestedWatchers(events, sequence), console.error);
+        }
         // Only process events if someone is listening.
         if (this.isInUse()) {
             // This callback is async, but parcel won't wait for it to finish before firing the next one.
@@ -335,6 +375,107 @@ export class ParcelWatcher extends AbstractFileSystemWatcher {
                     });
                 }
             }, console.error);
+        }
+    }
+
+    /**
+     * Returns the deepest directory with a started nested subscription that contains the given path, other than the path itself,
+     * or `undefined` if the main subscription reports its events.
+     */
+    protected findReportingDirectory(filePath: string): string | undefined {
+        let reportingDirectory: string | undefined;
+        for (const [directory, nested] of this.nestedWatchers) {
+            if (nested.subscription && filePath.startsWith(directory + path.sep) && directory.length > (reportingDirectory?.length ?? 0)) {
+                reportingDirectory = directory;
+            }
+        }
+        return reportingDirectory;
+    }
+
+    protected updateNestedWatchers(events: Event[], sequence: number): void {
+        for (const event of events) {
+            if (event.type === 'delete') {
+                for (const directory of this.nestedWatchers.keys()) {
+                    if (directory === event.path || directory.startsWith(event.path + path.sep)) {
+                        this.disposeNestedWatcher(directory);
+                    }
+                }
+            } else if (event.type === 'create') {
+                this.watchNewDirectory(event.path, sequence).catch(error => console.error(`Failed to watch new directory "${event.path}":`, error));
+            }
+        }
+    }
+
+    /**
+     * Starts a nested subscription for a directory that appeared while watching, unless it is fully watched already.
+     * @param sequence the batch of events that reported the directory
+     */
+    protected async watchNewDirectory(directory: string, sequence: number): Promise<void> {
+        if (this.isIgnored(directory)) {
+            return;
+        }
+        let entries;
+        try {
+            entries = await fsp.readdir(directory, { withFileTypes: true });
+        } catch {
+            // not a directory, or deleted already
+            return;
+        }
+        // The subscription that reported the directory watches it, and reports its subdirectories created from now on,
+        // so only the subdirectories it already has may be missing.
+        if (!entries.some(entry => entry.isDirectory()) || this.isDisposed || this.isWatchedByNestedWatcher(directory, sequence)) {
+            return;
+        }
+        const nested: NestedParcelWatcher = { requestedAt: this.eventBatchSequence, disposed: false };
+        this.nestedWatchers.set(directory, nested);
+        let subscription: AsyncSubscription;
+        try {
+            subscription = await this.subscribe(directory, (err, events) => {
+                if (err) {
+                    console.error(`Watcher service error on "${directory}":`, err);
+                    this.disposeNestedWatcher(directory);
+                } else if (events) {
+                    this.handleWatcherEvents(events, directory);
+                }
+            });
+        } catch (error) {
+            if (this.nestedWatchers.get(directory) === nested) {
+                this.nestedWatchers.delete(directory);
+            }
+            // the directory was deleted meanwhile
+            if (await fsp.stat(directory).then(() => true, () => false)) {
+                throw error;
+            }
+            return;
+        }
+        if (nested.disposed) {
+            await this.stopWatcher(subscription);
+        } else {
+            nested.subscription = subscription;
+        }
+    }
+
+    /**
+     * Whether the given directory has a nested subscription, or is in the directory of one that was requested
+     * after the given batch of events, so that it watched the whole tree of the directory.
+     */
+    protected isWatchedByNestedWatcher(directory: string, sequence: number): boolean {
+        for (const [nestedDirectory, nested] of this.nestedWatchers) {
+            if (nestedDirectory === directory || (directory.startsWith(nestedDirectory + path.sep) && nested.requestedAt >= sequence)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected disposeNestedWatcher(directory: string): void {
+        const nested = this.nestedWatchers.get(directory);
+        if (nested) {
+            this.nestedWatchers.delete(directory);
+            nested.disposed = true;
+            if (nested.subscription) {
+                this.stopWatcher(nested.subscription);
+            }
         }
     }
 
@@ -391,6 +532,9 @@ export class ParcelWatcher extends AbstractFileSystemWatcher {
             if (this.watcher) {
                 this.stopWatcher(this.watcher);
                 this.watcher = undefined;
+            }
+            for (const directory of [...this.nestedWatchers.keys()]) {
+                this.disposeNestedWatcher(directory);
             }
             this.debug('DISPOSED');
         }
