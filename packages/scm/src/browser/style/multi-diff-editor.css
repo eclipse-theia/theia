@@ -57,6 +57,7 @@
     overflow: hidden;
     cursor: pointer;
     outline: none;
+    z-index: 2;
 }
 
 .theia-multi-diff-editor .multi-diff-entry-header:focus-visible {
