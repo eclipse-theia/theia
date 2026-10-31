@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { formatToolCallContentForModel, ToolCallExecutor, ToolCallResult, UserRequest } from '@theia/ai-core';
-import { CancellationError, CancellationToken, Disposable, ILogger } from '@theia/core';
+import { CancellationError, CancellationToken, Disposable, generateUuid, ILogger } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
 import { AbstractStreamingResponseIterator } from './streaming-response-iterator';
@@ -211,6 +211,11 @@ export class ChatCompletionStreamingAsyncIterator extends AbstractStreamingRespo
         }
         if (toolCallDelta.function?.name) {
             slot.name += toolCallDelta.function.name;
+        }
+        // Some OpenAI-compatible providers stream tool calls without an ID. Assign one, like the OpenAI SDK does, as the
+        // ID correlates the parts of the call, its result and the tool message of the next turn.
+        if (!slot.id && slot.name) {
+            slot.id = `call_${generateUuid()}`;
         }
         // Open the tool call (emit a `finished: false` part) once we know both its ID and name. `merge` on the
         // receiving `ToolCallChatResponseContentImpl` never updates the name afterwards, so opening early with an

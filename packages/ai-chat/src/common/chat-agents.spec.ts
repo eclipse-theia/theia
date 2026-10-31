@@ -32,6 +32,7 @@ import {
     ChatRequest,
     TextChatResponseContentImpl,
     ThinkingChatResponseContentImpl,
+    ToolCallChatResponseContentImpl,
 } from './chat-model';
 import { ParsedChatRequest, ParsedChatRequestTextPart } from './parsed-chat-request';
 import { FileReadTracker } from './file-read-tracker';
@@ -153,6 +154,36 @@ describe('AbstractChatAgent.getMessages', () => {
             .filter(m => m.actor === 'ai');
         expect(aiTextMessages).to.have.lengthOf(1);
         expect(aiTextMessages[0].text).to.equal('Partial reply before cancel');
+    });
+
+    it('skips tool calls without an ID or name, e.g. from a session recorded with a nonconforming provider stream', async () => {
+        const model = new MutableChatModel(ChatAgentLocation.Panel);
+        const request = model.addRequest(createParsedRequest('Hello'));
+
+        request.response.response.addContent(new ToolCallChatResponseContentImpl('call-nameless', undefined, '{}', true, 'denied'));
+        request.response.response.addContent(new ToolCallChatResponseContentImpl('', 'a', '{}', true, 'a-result'));
+        addTextResponse(request, 'Reply');
+        request.response.complete();
+
+        const messages = await agent.exposeGetMessages(model);
+
+        expect(messages.filter(LanguageModelMessage.isToolUseMessage)).to.have.lengthOf(0);
+        expect(messages.filter(LanguageModelMessage.isToolResultMessage)).to.have.lengthOf(0);
+        expect(messages.filter(LanguageModelMessage.isTextMessage).filter(m => m.actor === 'ai').map(m => m.text)).to.deep.equal(['Reply']);
+    });
+
+    it('keeps tool calls with a name', async () => {
+        const model = new MutableChatModel(ChatAgentLocation.Panel);
+        const request = model.addRequest(createParsedRequest('Hello'));
+
+        request.response.response.addContent(new ToolCallChatResponseContentImpl('call-a', 'a', '{}', true, 'a-result'));
+        request.response.complete();
+
+        const messages = await agent.exposeGetMessages(model);
+
+        const toolUses = messages.filter(LanguageModelMessage.isToolUseMessage);
+        expect(toolUses.map(m => [m.id, m.name])).to.deep.equal([['call-a', 'a']]);
+        expect(messages.filter(LanguageModelMessage.isToolResultMessage).map(m => m.tool_use_id)).to.deep.equal(['call-a']);
     });
 });
 
