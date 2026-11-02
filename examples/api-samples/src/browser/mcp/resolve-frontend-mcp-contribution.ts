@@ -32,7 +32,7 @@ export class ResolveMcpFrontendContribution
     @inject(ILogger) @named('api-samples:ResolveMcpFrontendContribution')
     protected readonly logger: ILogger;
 
-    async onStart(): Promise<void> {
+    onStart(): void {
         const githubServer: RemoteMCPServerDescription = {
             name: 'github',
             serverUrl: 'https://api.githubcopilot.com/mcp/',
@@ -58,6 +58,8 @@ export class ResolveMcpFrontendContribution
                 return serverDescription;
             }
         };
-        await this.mcpFrontendService.addOrUpdateServer(githubServer);
+        // Not awaited: registering the server is a round trip that the start-up does not wait for.
+        this.mcpFrontendService.addOrUpdateServer(githubServer)
+            .catch(error => this.logger.error('Could not register the GitHub MCP server.', error));
     }
 }

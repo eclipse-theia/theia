@@ -800,6 +800,37 @@ protected readonly logger: ILogger;
 
 > Following this convention allows to conveniently configure log levels for purpose, packages and concrete classes.
 
+## Start-up
+
+<a name="startup-no-awaited-request"></a>
+
+* [1.](#startup-no-awaited-request) Do not await a request to the backend in a start-up hook: `initialize`, `configure`, `onStart`, `initializeLayout` and `onDidInitializeLayout` of a `FrontendApplicationContribution`, and `onStart` of the command, keybinding and menu registries. Start the request and continue when it settles, or defer the work until `FrontendApplicationStateService.reachedState('ready')` or an idle callback.
+
+> Why? The hooks of all contributions run one after the other, so every awaited round trip adds directly to the time until the workbench is shown, which is what the user waits for.
+
+```ts
+// bad - the start-up waits for the round trip
+async configure(): Promise<void> {
+    const configDirUri = await this.environments.getConfigDirUri();
+    this.encodingRegistry.registerOverride({ encoding: UTF8, parent: new URI(configDirUri) });
+}
+
+// good - the override is registered when the answer arrives
+configure(): void {
+    this.environments.getConfigDirUri()
+        .then(configDirUri => this.encodingRegistry.registerOverride({ encoding: UTF8, parent: new URI(configDirUri) }))
+        .catch(error => this.logger.error('Could not register the encoding override.', error));
+}
+```
+
+<a name="startup-needed-request"></a>
+
+* [1.1](#startup-needed-request) A result that the workbench cannot be shown without should be requested once, as early as possible, and cached where it is stable across sessions, so that the start-up uses the cached value and only refreshes it in the background. See `CachedElectronKeyboardLayoutProvider` for the native keyboard layout.
+
+<a name="startup-no-serial-requests"></a>
+
+* [2.](#startup-no-serial-requests) A service that the layout restore waits for, such as the workspace roots or the preferences, must not await a request whose result nothing waits for, e.g. recording the most recently used workspace, and should initialize independent parts concurrently rather than one after the other, as `PreferenceServiceImpl.initializeProviders` does for the scope providers.
+
 ## Workspace Trust
 
 Theia supports [Workspace Trust](https://theia-ide.org/docs/workspace_trust/) to protect users from potentially harmful code in untrusted repositories. Features that execute code or load external content from the workspace must be gated behind workspace trust.

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, CommandContribution, CommandRegistry, ContributionProvider, nls, QuickInputService, QuickPickInput } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, ContributionProvider, ILogger, nls, QuickInputService, QuickPickInput } from '@theia/core';
 import { FrontendApplicationContribution, StatusBar, StatusBarAlignment, StatusBarEntry } from '@theia/core/lib/browser';
 import { inject, injectable, named, optional } from '@theia/core/shared/inversify';
 import { RemoteStatus, RemoteStatusService } from '../electron-common/remote-status-service';
@@ -57,15 +57,20 @@ export class RemoteFrontendContribution implements CommandContribution, Frontend
     @inject(ContributionProvider) @named(RemoteRegistryContribution)
     protected readonly remoteRegistryContributions: ContributionProvider<RemoteRegistryContribution>;
 
+    @inject(ILogger) @named('remote:RemoteFrontendContribution')
+    protected readonly logger: ILogger;
+
     protected remoteRegistry = new RemoteRegistry();
 
-    async configure(): Promise<void> {
+    configure(): void {
         const port = getCurrentPort();
         if (port) {
-            const status = await this.remoteStatusService.getStatus(Number(port));
-            await this.setStatusBar(status);
+            // Not awaited: the status bar shows the status when it arrives; the start-up does not wait for the round trip.
+            this.remoteStatusService.getStatus(Number(port))
+                .then(status => this.setStatusBar(status))
+                .catch(error => this.logger.warn('Could not get the remote connection status.', error));
         } else {
-            await this.setStatusBar({
+            this.setStatusBar({
                 alive: false
             });
         }

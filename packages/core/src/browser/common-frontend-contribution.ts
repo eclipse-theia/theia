@@ -17,7 +17,8 @@
 /* eslint-disable max-len, @stylistic/indent */
 
 import debounce = require('lodash.debounce');
-import { injectable, inject, optional } from 'inversify';
+import { injectable, inject, optional, named } from 'inversify';
+import { ILogger } from '../common/logger';
 import { MAIN_MENU_BAR, MANAGE_MENU, MenuContribution, MenuModelRegistry, ACCOUNTS_MENU, CompoundMenuNode, CommandMenu, Group, Submenu } from '../common/menu';
 import { CommonMenus } from './common-menus';
 export { CommonMenus };
@@ -115,6 +116,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         @inject(SaveableService) protected readonly saveResourceService: SaveableService,
     ) { }
 
+    @inject(ILogger) @named('core:CommonFrontendContribution')
+    protected readonly logger: ILogger;
+
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
@@ -184,13 +188,14 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     protected pinnedKey: ContextKey<boolean>;
 
     async configure(app: FrontendApplication): Promise<void> {
-        // FIXME: This request blocks valuable startup time (~200ms).
-        const configDirUri = await this.environments.getConfigDirUri();
-        // Global settings
-        this.encodingRegistry.registerOverride({
-            encoding: UTF8,
-            parent: new URI(configDirUri)
-        });
+        // The configuration directory is only needed for the encoding override of the global settings: the round
+        // trip must not hold up the start-up (see the start-up section of the coding guidelines).
+        this.environments.getConfigDirUri()
+            .then(configDirUri => this.encodingRegistry.registerOverride({
+                encoding: UTF8,
+                parent: new URI(configDirUri)
+            }))
+            .catch(error => this.logger.error('Could not register the encoding override of the configuration directory.', error));
 
         this.contextKeyService.createKey<boolean>('isLinux', OS.type() === OS.Type.Linux);
         this.contextKeyService.createKey<boolean>('isMac', OS.type() === OS.Type.OSX);

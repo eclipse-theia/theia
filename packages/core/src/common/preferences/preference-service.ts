@@ -304,22 +304,40 @@ export class PreferenceServiceImpl implements PreferenceService {
 
     protected async initializeProviders(): Promise<void> {
         try {
-            for (const scope of this.schemaService.validScopes) {
-                const provider = this.providerProvider(scope);
-                if (provider) {
-                    this.preferenceProviders.set(scope, provider);
-                    this.toDispose.push(provider.onDidPreferencesChanged(changes =>
-                        this.reconcilePreferences(changes)
-                    ));
-                    await provider.ready;
-                } else {
-                    this.logger.warn(`No preference provider bound for ${PreferenceScope[scope]}`);
+            // The Default provider is registered at once, as it does not resolve this service, so that the schema defaults
+            // are available to a `get()` in the same resolution pass, e.g. from another service's `postConstruct`.
+            const ready: Promise<void>[] = [];
+            const scopes = this.schemaService.validScopes;
+            if (scopes.includes(PreferenceScope.Default)) {
+                this.addProvider(PreferenceScope.Default, ready);
+            }
+            // Let Inversify cache this singleton before the other providers resolve it recursively.
+            await Promise.resolve();
+            // The providers initialize independently of each other: create them all, then wait for all of them,
+            // so that their requests to the backend overlap instead of adding up.
+            for (const scope of scopes) {
+                if (scope !== PreferenceScope.Default) {
+                    this.addProvider(scope, ready);
                 }
             }
+            await Promise.all(ready);
             this._ready.resolve();
             this._isReady = true;
         } catch (e) {
             this._ready.reject(e);
+        }
+    }
+
+    protected addProvider(scope: PreferenceScope, ready: Promise<void>[]): void {
+        const provider = this.providerProvider(scope);
+        if (provider) {
+            this.preferenceProviders.set(scope, provider);
+            this.toDispose.push(provider.onDidPreferencesChanged(changes =>
+                this.reconcilePreferences(changes)
+            ));
+            ready.push(provider.ready);
+        } else {
+            this.logger.warn(`No preference provider bound for ${PreferenceScope[scope]}`);
         }
     }
 

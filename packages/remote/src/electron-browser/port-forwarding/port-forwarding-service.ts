@@ -41,9 +41,18 @@ export class PortForwardingService {
     @postConstruct()
     init(): void {
         this.provider.getForwardedPorts().then(ports => {
-            this.forwardedPorts.push(...ports.map(p => ({ address: p.address, localPort: p.port, label: p.label, editing: false })));
-            this.onDidChangePortsEmitter.fire();
+            this.addForwardedPorts(ports.map(p => ({ address: p.address, localPort: p.port, label: p.label, editing: false })));
         });
+    }
+
+    /**
+     * Adds ports that are already forwarded, e.g. those of a container, and notifies the change.
+     */
+    addForwardedPorts(ports: ForwardedPort[]): void {
+        if (ports.length) {
+            this.forwardedPorts.push(...ports);
+            this.onDidChangePortsEmitter.fire();
+        }
     }
 
     forwardNewPort(origin?: string): ForwardedPort {
