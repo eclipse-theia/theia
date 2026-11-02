@@ -31,6 +31,7 @@ export class OpenEditorsHintContribution implements FrontendApplicationContribut
             template: `## Open Editors
 The following files are currently open in the user's editor. This is provided as contextual information only \
 — these files may or may not be relevant to the current request. Do not assume they are related unless the user explicitly refers to them.
+An editor marked \`active\` is the one the user focused last. An editor marked \`unsaved changes\` shows content that differs from the file on disk.
 
 {{openEditors}}`
         });
