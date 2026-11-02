@@ -31,6 +31,7 @@ import { ElectronMessagingContribution } from './messaging/electron-messaging-co
 import { ElectronSecurityTokenService } from './electron-security-token-service';
 import { ElectronMessagingService } from './messaging/electron-messaging-service';
 import { ElectronConnectionHandler } from './messaging/electron-connection-handler';
+import { ElectronAppSchemeService, ElectronAppSchemeServiceImpl } from './electron-app-scheme-service';
 
 const electronSecurityToken: ElectronSecurityToken = { value: generateUuid() };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -40,6 +41,8 @@ export default new ContainerModule(bind => {
     bind(Stopwatch).toConstantValue(new SimpleStopwatch('electron main', () => performance.now()));
     bind(LaunchArgsStore).toSelf().inSingletonScope();
     bind(ElectronMainApplication).toSelf().inSingletonScope();
+    bind(ElectronAppSchemeServiceImpl).toSelf().inSingletonScope();
+    bind(ElectronAppSchemeService).toService(ElectronAppSchemeServiceImpl);
     bind(ElectronMessagingContribution).toSelf().inSingletonScope();
     bind(ElectronMainApplicationContribution).toService(ElectronMessagingContribution);
     bind(ElectronSecurityToken).toConstantValue(electronSecurityToken);

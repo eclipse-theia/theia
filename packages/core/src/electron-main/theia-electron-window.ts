@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import * as path from 'path';
 import { FrontendApplicationConfig } from '@theia/application-package';
 import { FrontendApplicationState, StopReason } from '../common/frontend-application-state';
 import { BrowserWindow, BrowserWindowConstructorOptions } from '../../electron-shared/electron';
@@ -21,10 +22,9 @@ import { inject, injectable, postConstruct } from '../../shared/inversify';
 import { ElectronMainApplicationGlobals } from './electron-main-constants';
 import { DisposableCollection, Emitter, Event } from '../common';
 import { createDisposableListener } from './event-utils';
-import { URI } from '../common/uri';
-import { FileUri } from '../common/file-uri';
 import { TheiaRendererAPI } from './electron-api-main';
 import { LaunchArgsStore } from './launch-args-store';
+import { ElectronAppSchemeService } from './electron-app-scheme-service';
 
 /**
  * Theia tracks the maximized state of Electron Browser Windows.
@@ -64,6 +64,7 @@ export class TheiaElectronWindow {
     @inject(WindowApplicationConfig) protected readonly config: WindowApplicationConfig;
     @inject(ElectronMainApplicationGlobals) protected readonly globals: ElectronMainApplicationGlobals;
     @inject(LaunchArgsStore) protected readonly launchArgsStore: LaunchArgsStore;
+    @inject(ElectronAppSchemeService) protected readonly appSchemeService: ElectronAppSchemeService;
 
     protected onDidCloseEmitter = new Emitter<void>();
 
@@ -172,16 +173,9 @@ export class TheiaElectronWindow {
     }
 
     protected async handleStopRequest(onSafeCallback: () => Promise<unknown>, reason: StopReason): Promise<boolean> {
-        // Only confirm close to windows that have loaded our frontend.
-        // Both the windows's URL and the FS path of the `index.html` should be converted to the "same" format to be able to compare them. (#11226)
-        // Notes:
-        //  - Windows: file:///C:/path/to/somewhere vs file:///c%3A/path/to/somewhere
-        //  - macOS: file:///Applications/App%20Name.app/Contents vs /Applications/App Name.app/Contents
-        // This URL string comes from electron, we can expect that this is properly encoded URL. For example, a space is `%20`
-        const currentUrl = new URI(this.window.webContents.getURL()).toString();
-        // THEIA_FRONTEND_HTML_PATH is an FS path, we have to covert to an encoded URI string.
-        const frontendUri = FileUri.create(this.globals.THEIA_FRONTEND_HTML_PATH).toString();
-        const safeToClose = !currentUrl.includes(frontendUri) || await this.checkSafeToStop(reason);
+        // Only confirm close to windows that have loaded our frontend, i.e. the frontend page under the application scheme.
+        const isFrontend = this.appSchemeService.isFrontendUrl(this.window.webContents.getURL(), path.basename(this.globals.THEIA_FRONTEND_HTML_PATH));
+        const safeToClose = !isFrontend || await this.checkSafeToStop(reason);
         if (safeToClose) {
             try {
                 await onSafeCallback();

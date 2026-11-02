@@ -21,6 +21,15 @@ const expect = chai.expect;
 
 describe('Endpoint', () => {
 
+    describe('00 #isServedByBackend', () => {
+        it('is served by the backend over HTTP and HTTPS only', () => {
+            expect(Endpoint.isServedByBackend({ protocol: 'http:' })).to.be.true;
+            expect(Endpoint.isServedByBackend({ protocol: 'https:' })).to.be.true;
+            expect(Endpoint.isServedByBackend({ protocol: 'file:' })).to.be.false;
+            expect(Endpoint.isServedByBackend({ protocol: 'theia-app:' })).to.be.false;
+        });
+    });
+
     describe('01 #getWebSocketUrl', () => {
 
         it('Should correctly join root pathname', () => {
@@ -33,7 +42,7 @@ describe('Endpoint', () => {
                     host: 'example.org',
                     pathname: '/',
                     search: '',
-                    protocol: ''
+                    protocol: 'http:'
                 }, 'ws://example.org/miau/');
         });
 
@@ -47,7 +56,7 @@ describe('Endpoint', () => {
                     host: 'example.org',
                     pathname: '/mainresource',
                     search: '',
-                    protocol: ''
+                    protocol: 'http:'
                 }, 'ws://example.org/mainresource/miau/');
         });
 
@@ -61,8 +70,29 @@ describe('Endpoint', () => {
                     host: 'example.org',
                     pathname: '/mainresource/',
                     search: '',
-                    protocol: ''
+                    protocol: 'http:'
                 }, 'ws://example.org/mainresource/miau/');
+        });
+
+        it('uses the backend port for a privileged application scheme', () => {
+            expectWsUri(
+                { path: '/services' },
+                { host: 'theia', pathname: '/index.html', search: '?port=3001', protocol: 'theia-app:' },
+                'ws://localhost:3001/services');
+        });
+
+        it('uses the backend port for a file origin', () => {
+            expectWsUri(
+                { path: '/services' },
+                { host: '', pathname: '/Users/x/lib/frontend/index.html', search: '?port=3002', protocol: 'file:' },
+                'ws://localhost:3002/services');
+        });
+
+        it('keeps an explicit host for the local connection source', () => {
+            expectWsUri(
+                { path: '/services', host: 'localhost:4000' },
+                { host: 'theia', pathname: '/index.html', search: '', protocol: 'theia-app:' },
+                'ws://localhost:4000/services');
         });
 
         it('Should correctly join pathname and path, without trailing slash', () => {
@@ -75,7 +105,7 @@ describe('Endpoint', () => {
                     host: 'example.org',
                     pathname: '/mainresource',
                     search: '',
-                    protocol: ''
+                    protocol: 'http:'
                 }, 'ws://example.org/mainresource/miau');
         });
     });

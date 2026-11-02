@@ -16,6 +16,7 @@
 
 import * as http from 'http';
 import { inject, injectable } from 'inversify';
+import { APP_ORIGIN } from '../../electron-common/app-scheme';
 import { BackendRemoteService } from '../../node/remote/backend-remote-service';
 import { WsRequestValidatorContribution } from '../../node/ws-request-validators';
 
@@ -31,10 +32,9 @@ export class ElectronWsOriginValidator implements WsRequestValidatorContribution
             return true;
         }
         const origin = request.headers.origin;
-        // On Electron the main page is served from the `file` protocol.
-        // Chromium may send "file://" or "null" (opaque origin) or omit the
-        // header entirely depending on the request type (WebSocket upgrade vs
-        // HTTP polling). All three are expected for same-origin Electron requests.
-        return !origin || origin === 'file://' || origin === 'null';
+        // The frontend is loaded through the application scheme, whose origin the renderer sends as-is.
+        // A page loaded from a `file:` URL sends "file://" or "null" (opaque origin), and Chromium omits
+        // the header entirely for some request types (WebSocket upgrade vs HTTP polling).
+        return !origin || origin === APP_ORIGIN || origin === 'file://' || origin === 'null';
     }
 }
