@@ -80,6 +80,7 @@ import {
     InformationalChatResponseContent,
     ResponseTokenUsage,
     ThinkingChatResponseContent,
+    ToolCallChatResponseContent,
 } from './chat-model';
 import { ChatToolRequestService } from './chat-tool-request-service';
 import { parseContents } from './parse-contents';
@@ -517,6 +518,11 @@ export abstract class AbstractChatAgent implements ChatAgent {
                         // signature_delta never arrived). Some LLMs (e.g. Anthropic) reject thinking
                         // blocks without a signature.
                         if (ThinkingChatResponseContent.is(c) && !c.signature) {
+                            return false;
+                        }
+                        // skip tool calls without an ID or name, e.g. from a provider stream that never delivered them.
+                        // LLMs reject such tool uses, which would break every later request of the session.
+                        if (ToolCallChatResponseContent.is(c) && (!c.id || !c.name)) {
                             return false;
                         }
                         // content even has an own converter, definitely include it

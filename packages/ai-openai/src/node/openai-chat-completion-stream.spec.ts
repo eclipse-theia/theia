@@ -281,6 +281,74 @@ describe('ChatCompletionStreamingAsyncIterator', () => {
         expect(opens[0].function?.name).to.equal('a');
     });
 
+    it('keeps the name and ID of a tool call that a provider streams with empty content and rewritten or missing IDs', async () => {
+        const request: UserRequest = {
+            sessionId: 'session',
+            requestId: 'request',
+            messages: [{ actor: 'user', type: 'text', text: 'hi' }],
+            tools: [toolRequest('isBrowserRunning', async () => 'yes')]
+        };
+        // Shaped like the stream of the OpenAI-compatible proxy from #17985: the opening fragment comes with `content: ''`,
+        // later argument fragments rewrite or omit the ID and carry no name.
+        const openai = fakeOpenAi([
+            new FakeStream([
+                {
+                    choices: [{
+                        delta: {
+                            role: 'assistant', content: '',
+                            tool_calls: [{ index: 0, id: 'call_1', type: 'function', function: { name: 'isBrowserRunning', arguments: '' } }]
+                        }
+                    }]
+                },
+                { choices: [{ delta: { tool_calls: [{ index: 0, id: 'call_rewritten', function: { arguments: '{"a"' } }] } }] },
+                { choices: [{ delta: { tool_calls: [{ index: 0, function: { arguments: ':1}' } }] } }] },
+                { choices: [{ delta: {}, finish_reason: 'tool_calls' }] }
+            ]),
+            new FakeStream([textChunk('done')])
+        ]);
+
+        const parts = await drain(makeIterator(openai, { request }));
+        const toolCalls = parts.filter(isToolCallResponsePart).flatMap(p => p.tool_calls);
+
+        expect(parts.filter(isTextResponsePart).map(p => p.content)).to.deep.equal(['done']);
+        expect(toolCalls.every(c => c.id === 'call_1')).to.be.true;
+        expect(toolCalls.filter(c => !c.argumentsDelta).every(c => c.function?.name === 'isBrowserRunning')).to.be.true;
+        expect(toolCalls.filter(c => c.argumentsDelta).map(c => c.function?.arguments).join('')).to.equal('{"a":1}');
+        const secondTurnMessages = openai.calls[1].messages;
+        expect(secondTurnMessages[secondTurnMessages.length - 2].tool_calls[0]).to.include({ id: 'call_1' });
+        expect(secondTurnMessages[secondTurnMessages.length - 1]).to.include({ role: 'tool', tool_call_id: 'call_1', content: 'yes' });
+    });
+
+    it('assigns distinct IDs to tool calls that the provider streams without an ID', async () => {
+        const request: UserRequest = {
+            sessionId: 'session',
+            requestId: 'request',
+            messages: [{ actor: 'user', type: 'text', text: 'hi' }],
+            tools: [toolRequest('a', async () => 'a-result'), toolRequest('b', async () => 'b-result')]
+        };
+        const openai = fakeOpenAi([
+            new FakeStream([
+                { choices: [{ delta: { tool_calls: [{ index: 0, type: 'function', function: { name: 'a', arguments: '{}' } }] } }] },
+                { choices: [{ delta: { tool_calls: [{ index: 1, type: 'function', function: { name: 'b', arguments: '{}' } }] } }] }
+            ]),
+            new FakeStream([textChunk('done')])
+        ]);
+
+        const parts = await drain(makeIterator(openai, { request }));
+        const toolCalls = parts.filter(isToolCallResponsePart).flatMap(p => p.tool_calls);
+
+        const opened = toolCalls.filter(c => c.finished === false);
+        expect(opened.map(c => c.function?.name)).to.deep.equal(['a', 'b']);
+        const [idA, idB] = opened.map(c => c.id);
+        expect(idA).to.be.a('string').and.not.empty;
+        expect(idB).to.be.a('string').and.not.empty;
+        expect(idA).to.not.equal(idB);
+        const finished = toolCalls.filter(c => c.finished);
+        expect(finished.map(c => [c.id, c.result])).to.have.deep.members([[idA, 'a-result'], [idB, 'b-result']]);
+        const secondTurnMessages = openai.calls[1].messages;
+        expect(secondTurnMessages.filter((m: any) => m.role === 'tool').map((m: any) => m.tool_call_id)).to.have.members([idA, idB]);
+    });
+
     it('threads the assistant tool_calls and a matching tool message into the next turn', async () => {
         const request: UserRequest = {
             sessionId: 'session',
