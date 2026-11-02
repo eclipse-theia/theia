@@ -13,10 +13,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { DocumentsMain, MAIN_RPC_CONTEXT, DocumentsExt } from '../../common/plugin-api-rpc';
+import { DocumentsMain, MAIN_RPC_CONTEXT, DocumentsExt, SingleEditOperation } from '../../common/plugin-api-rpc';
 import { UriComponents } from '../../common/uri-components';
 import { EditorsAndDocumentsMain } from './editors-and-documents-main';
 import { DisposableCollection, Disposable, UntitledResourceResolver } from '@theia/core';
+import { timeoutReject } from '@theia/core/lib/common/promise-util';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { EditorModelService } from './text-editor-model-service';
@@ -115,7 +116,18 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
 
             const saveReason = e.options?.saveReason ?? SaveReason.Manual;
 
-            const edits = await this.proxy.$acceptModelWillSave(new URI(e.model.uri).toComponents(), saveReason.valueOf(), this.saveTimeout);
+            let edits: SingleEditOperation[];
+            try {
+                // Like VS Code, do not let the save wait for the plugin host longer than `saveTimeout`,
+                // e.g. when a plugin's will-save work never finishes, as the save would otherwise never complete.
+                edits = await Promise.race([
+                    this.proxy.$acceptModelWillSave(new URI(e.model.uri).toComponents(), saveReason.valueOf(), this.saveTimeout),
+                    timeoutReject<SingleEditOperation[]>(this.saveTimeout, `Aborted onWillSaveTextDocument-event after ${this.saveTimeout}ms`)
+                ]);
+            } catch (error) {
+                console.warn(`Saving '${e.model.uri}' without the edits of plugins:`, error);
+                return;
+            }
             const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
             for (const edit of edits) {
                 const { range, text } = edit;

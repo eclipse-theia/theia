@@ -30,6 +30,7 @@ import { DocumentDataExt, setWordDefinitionFor } from './document-data';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import * as Converter from './type-converters';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { timeoutReject } from '@theia/core/lib/common/promise-util';
 import { Range, TextDocumentShowOptions } from '../common/plugin-api-rpc-model';
 
 export class DocumentsExtImpl implements DocumentsExt {
@@ -91,42 +92,40 @@ export class DocumentsExtImpl implements DocumentsExt {
     async $acceptModelWillSave(strUrl: UriComponents, reason: theia.TextDocumentSaveReason, saveTimeout: number): Promise<SingleEditOperation[]> {
         const uri = URI.revive(strUrl).toString();
         const operations: SingleEditOperation[] = [];
-        let didTimeout = false;
         // try to timeout early to squeeze edits at least from some save participants
-        const didTimeoutHandle = setTimeout(() => didTimeout = true, saveTimeout - 250);
-        try {
-            await this._onWillSaveTextDocument.sequence(async fireEvent => {
-                if (didTimeout) {
-                    return false;
+        const deadline = Date.now() + saveTimeout - 250;
+        await this._onWillSaveTextDocument.sequence(async fireEvent => {
+            if (Date.now() >= deadline) {
+                return false;
+            }
+            try {
+                const documentData = this.editorsAndDocuments.getDocument(uri);
+                if (documentData) {
+                    const { document } = documentData;
+                    await this.fireTextDocumentWillSaveEvent({
+                        document, reason, fireEvent,
+                        accept: operation => operations.push(operation),
+                        deadline
+                    });
                 }
-                try {
-                    const documentData = this.editorsAndDocuments.getDocument(uri);
-                    if (documentData) {
-                        const { document } = documentData;
-                        await this.fireTextDocumentWillSaveEvent({
-                            document, reason, fireEvent,
-                            accept: operation => operations.push(operation)
-                        });
-                    }
-                } catch (e) {
-                    console.error(e);
-                }
-                return !didTimeout;
-            });
-        } finally {
-            clearTimeout(didTimeoutHandle);
-        }
+            } catch (e) {
+                console.error(e);
+            }
+            return Date.now() < deadline;
+        });
         return operations;
     }
 
     /* eslint-disable @typescript-eslint/no-explicit-any */
     protected async fireTextDocumentWillSaveEvent({
-        document, reason, fireEvent, accept
+        document, reason, fireEvent, accept, deadline
     }: {
         document: theia.TextDocument,
         reason: theia.TextDocumentSaveReason,
         fireEvent: (e: theia.TextDocumentWillSaveEvent) => any,
-        accept: (operation: SingleEditOperation) => void
+        accept: (operation: SingleEditOperation) => void,
+        /** The time, as returned by `Date.now()`, until which to wait for the promises of the listener, after which its edits are dropped. */
+        deadline: number
     }): Promise<void> {
 
         const promises: PromiseLike<TextEdit[] | any>[] = [];
@@ -141,7 +140,12 @@ export class DocumentsExtImpl implements DocumentsExt {
         }));
         Object.freeze(promises);
 
-        await Promise.all(promises).then(allEdits => allEdits.forEach(edits => {
+        // Like VS Code, do not wait for a listener whose promises never settle, as the save would wait for it as well.
+        // The time left is computed only after the listener ran, so that its synchronous work counts as well.
+        await Promise.race([
+            Promise.all(promises),
+            timeoutReject<(TextEdit[] | any)[]>(Math.max(deadline - Date.now(), 0), 'Aborted onWillSaveTextDocument-listener after timeout')
+        ]).then(allEdits => allEdits.forEach(edits => {
             if (Array.isArray(edits)) {
                 edits.forEach(edit => {
                     if (TextEdit.isTextEdit(edit)) {
