@@ -22,7 +22,7 @@ import { injectable } from 'inversify';
 import { LogLevel } from '../common/logger';
 import { CliContribution } from './cli';
 import * as fs from 'fs-extra';
-import { AsyncSubscription, subscribe } from '@parcel/watcher';
+import debounce = require('lodash.debounce');
 import { Event, Emitter } from '../common/event';
 import * as path from 'path';
 import { Disposable, DisposableCollection } from '../common';
@@ -43,7 +43,6 @@ export class LogLevelCliContribution implements CliContribution, Disposable {
 
     protected _logLevels: LogLevels = {};
     protected wildcardRegexCache = new Map<string, RegExp>();
-    protected asyncSubscriptions: AsyncSubscription[] = [];
     protected toDispose = new DisposableCollection();
 
     /**
@@ -139,36 +138,56 @@ export class LogLevelCliContribution implements CliContribution, Disposable {
         }
     }
 
+    /**
+     * Watches the directory of the log config file rather than the file, so that it is still watched after an editor replaced the file.
+     *
+     * This uses `fs.watch` rather than `@parcel/watcher`: when no inotify instance is left on Linux, `fs.watch` throws,
+     * while `@parcel/watcher` blocks the whole process, see https://github.com/parcel-bundler/watcher/pull/246.
+     */
     protected async watchLogConfigFile(filename: string): Promise<void> {
-        const dir = path.dirname(filename);
-        const subscription = await subscribe(dir, async (err, events) => {
-            if (err) {
-                console.log(`Error during log file watching ${filename}: ${err}`);
+        const basename = path.basename(filename);
+        // a save usually emits several events
+        const reload = debounce(() => this.reloadLogConfigFile(filename), 100);
+        let watcher: fs.FSWatcher;
+        try {
+            watcher = this.watchDirectory(path.dirname(filename), changed => {
+                if (changed === basename) {
+                    reload();
+                }
+            });
+        } catch (e) {
+            console.error(`Unable to watch the log config file ${filename}: ${e}`);
+            return;
+        }
+        watcher.on('error', e => console.error(`Error during log file watching ${filename}: ${e}`));
+        this.toDispose.push(Disposable.create(() => {
+            reload.cancel();
+            watcher.close();
+        }));
+    }
+
+    /**
+     * Watches the entries of the given directory, without its subdirectories.
+     * @param onDidChange called with the name of the entry that changed, if known
+     */
+    protected watchDirectory(directory: string, onDidChange: (changed: string | null) => void): fs.FSWatcher {
+        return fs.watch(directory, (_, changed) => onDidChange(changed));
+    }
+
+    protected async reloadLogConfigFile(filename: string): Promise<void> {
+        try {
+            // the file was deleted
+            if (!await fs.pathExists(filename)) {
                 return;
             }
-            try {
-                for (const event of events) {
-                    if (event.path === filename) {
-                        switch (event.type) {
-                            case 'create':
-                            case 'update':
-                                await this.slurpLogConfigFile(filename);
-                                this.logConfigChangedEvent.fire(undefined);
-                                break;
-                        }
-                    }
-                }
-            } catch (e) {
-                console.error(`Error reading log config file ${filename}: ${e}`);
-            }
-        });
-        this.asyncSubscriptions.push(subscription);
+            await this.slurpLogConfigFile(filename);
+            this.logConfigChangedEvent.fire(undefined);
+        } catch (e) {
+            console.error(`Error reading log config file ${filename}: ${e}`);
+        }
     }
 
     async dispose(): Promise<void> {
-        for (const sub of this.asyncSubscriptions) {
-            sub.unsubscribe();
-        }
         this.toDispose.dispose();
     }
 

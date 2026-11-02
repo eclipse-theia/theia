@@ -155,12 +155,7 @@ describe('log-level-cli-contribution', () => {
         sinon.assert.calledWithMatch(consoleErrorSpy, 'Error reading log config file');
     });
 
-    // Skip this test because it is flaky, sometimes we don't receive the event.
-    // If trying to fix it, make sure that you can run a few of theses (I used
-    // 4) in parallel for a few minutes without failure:
-    //
-    //  $ while ./node_modules/.bin/mocha --opts configs/mocha.opts packages/core/lib/node/logger-cli-contribution.spec.js  --grep watch; do true; done
-    it.skip('should watch the config file', async () => {
+    it('should watch the config file', async () => {
         let filename: string;
         {
             const file = track.openSync();
@@ -209,6 +204,24 @@ describe('log-level-cli-contribution', () => {
             bonjour: LogLevel.DEBUG,
             world: LogLevel.TRACE,
         });
+    });
+
+    it('should read the config file even if it cannot be watched', async () => {
+        const file = track.openSync();
+        fs.writeFileSync(file.fd, JSON.stringify({ defaultLevel: 'debug' }));
+        fs.closeSync(file.fd);
+        // as when no inotify instance is left on Linux
+        const watchStub = sinon.stub(cli as unknown as { watchDirectory(): void }, 'watchDirectory')
+            .throws(Object.assign(new Error('EMFILE: too many open files, watch'), { code: 'EMFILE' }));
+        try {
+            const args: yargs.Arguments = await yargs.parse(['--log-config', file.path]);
+            await cli.setArguments(args);
+        } finally {
+            watchStub.restore();
+        }
+
+        expect(cli.defaultLogLevel).eq(LogLevel.DEBUG);
+        sinon.assert.calledWithMatch(consoleErrorSpy, 'Unable to watch the log config file');
     });
 
     it('should keep original levels when changing the log levels file with a broken one', async function (): Promise<void> {
