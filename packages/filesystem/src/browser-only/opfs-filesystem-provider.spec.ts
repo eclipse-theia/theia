@@ -17,8 +17,7 @@
 import { expect } from 'chai';
 import { locks } from 'worker_threads';
 import { Container, injectable } from '@theia/core/shared/inversify';
-import { CancellationToken, ILogger, URI } from '@theia/core';
-import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { CancellationToken, URI } from '@theia/core';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { OPFSFacade, OPFSSync, type OPFSOptions } from 'opfs-worker';
@@ -131,19 +130,8 @@ class FakeDirectoryHandle {
     }
 }
 
-class WarningsLogger extends MockLogger {
-    readonly warnings: string[] = [];
-
-    override warn(message: string): Promise<void> {
-        this.warnings.push(message);
-        return super.warn(message);
-    }
-}
-
 @injectable()
 class TestOPFSFileSystemProvider extends OPFSFileSystemProvider {
-    protected override readonly fileLockTimeout = 200;
-
     protected override createFileSystem(options: OPFSOptions): OPFSFacade {
         // In a worker, opfs-worker receives the channel by name.
         const channel = options.broadcastChannel instanceof BroadcastChannel ? options.broadcastChannel.name : options.broadcastChannel;
@@ -163,7 +151,6 @@ const decode = (data: Uint8Array) => new TextDecoder().decode(data);
 describe('OPFSFileSystemProvider', () => {
 
     let provider: TestOPFSFileSystemProvider;
-    let logger: WarningsLogger;
     let channel: BroadcastChannel;
     let originalNavigator: PropertyDescriptor | undefined;
 
@@ -192,8 +179,6 @@ describe('OPFSFileSystemProvider', () => {
         const container = new Container();
         container.bind(OPFSInitialization).toConstantValue(initialization);
         container.bind(EncodingService).toSelf().inSingletonScope();
-        logger = new WarningsLogger();
-        container.bind(ILogger).toConstantValue(logger);
         container.bind(TestOPFSFileSystemProvider).toSelf().inSingletonScope();
         provider = container.get(TestOPFSFileSystemProvider);
         await provider.writeFile(FILE, encode('old'), OVERWRITE);
@@ -278,6 +263,48 @@ describe('OPFSFileSystemProvider', () => {
         expect(decode(await provider.readFile(FILE))).to.equal('new');
     });
 
+    it('should open a file twice at once', async () => {
+        const fds = await Promise.all([provider.open(FILE, { create: false }), provider.open(FILE, { create: false })]);
+
+        const contents = await Promise.all(fds.map(async fd => {
+            const data = new Uint8Array(3);
+            const bytesRead = await provider.read(fd, 0, data, 0, 3);
+            await provider.close(fd);
+            return decode(data.subarray(0, bytesRead));
+        }));
+        expect(contents).to.deep.equal(['old', 'old']);
+    });
+
+    it('should not truncate a file while another descriptor reads it', async () => {
+        const reader = await provider.open(FILE, { create: false });
+        const writing = (async () => {
+            const fd = await provider.open(FILE, { create: true });
+            await provider.write(fd, 0, encode('new'), 0, 3);
+            await provider.close(fd);
+        })();
+        await delay(50);
+
+        const data = new Uint8Array(3);
+        const bytesRead = await provider.read(reader, 0, data, 0, 3);
+        await provider.close(reader);
+        await writing;
+
+        expect(decode(data.subarray(0, bytesRead))).to.equal('old');
+        expect(decode(await provider.readFile(FILE))).to.equal('new');
+    });
+
+    it('should not stream a file while a descriptor writes it', async () => {
+        const fd = await provider.open(FILE, { create: true });
+        await provider.write(fd, 0, encode('ne'), 0, 2);
+        const reading = readStream(FILE);
+        await delay(50);
+
+        await provider.write(fd, 2, encode('w'), 0, 1);
+        await provider.close(fd);
+
+        expect(await reading).to.equal('new');
+    });
+
     it('should keep a third access waiting until the second is done', async () => {
         const fd = await provider.open(FILE, { create: false });
         const second = provider.writeFile(FILE, encode('second'), OVERWRITE);
@@ -293,7 +320,6 @@ describe('OPFSFileSystemProvider', () => {
         const fd = await provider.open(FILE, { create: false });
 
         expect(decode(await provider.readFile(OTHER_FILE))).to.equal('other');
-        expect(logger.warnings).to.be.empty;
         await provider.close(fd);
     });
 
@@ -302,30 +328,12 @@ describe('OPFSFileSystemProvider', () => {
         expect(toFileSystemProviderErrorCode(await opening.catch(error => error))).to.equal(FileSystemProviderErrorCode.FileNotFound);
 
         await provider.writeFile(MISSING_FILE, encode('created'), OVERWRITE);
-        expect(logger.warnings).to.be.empty;
     });
 
     it('should let the next access in after a failed read', async () => {
         expect(toFileSystemProviderErrorCode(await provider.readFile(MISSING_FILE).catch(error => error))).to.equal(FileSystemProviderErrorCode.FileNotFound);
 
         await provider.writeFile(MISSING_FILE, encode('created'), OVERWRITE);
-        expect(logger.warnings).to.be.empty;
-    });
-
-    it('should go ahead after the lock timeout when a file is never closed', async () => {
-        await provider.open(FILE, { create: false });
-
-        expect(decode(await provider.readFile(FILE))).to.equal('old');
-        expect(logger.warnings).to.have.lengthOf(1);
-    });
-
-    it('should let one waiting access at a time go ahead when a file is never closed', async () => {
-        await provider.open(FILE, { create: false });
-
-        const contents = await Promise.all([provider.readFile(FILE).then(decode), readStream(FILE), provider.readFile(FILE).then(decode)]);
-
-        expect(contents).to.deep.equal(['old', 'old', 'old']);
-        expect(logger.warnings).to.have.lengthOf(1);
     });
 
     it('should keep reads and writes in any order apart', async () => {
