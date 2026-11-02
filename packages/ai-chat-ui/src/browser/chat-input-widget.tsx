@@ -78,7 +78,7 @@ import {
 import { AI_CHAT_HOME, ChatCommands } from './chat-view-commands';
 
 type Query = (query: string, mode?: string, capabilityOverrides?: Record<string, boolean>, genericCapabilitySelections?: GenericCapabilitySelections,
-    serverToolSelections?: Record<string, string[]>) => Promise<void>;
+    serverToolSelections?: Record<string, string[]>, reasoning?: ReasoningSettings) => Promise<void>;
 type Unpin = () => void;
 type Cancel = (requestModel: ChatRequestModel) => void;
 type DeleteChangeSet = (requestModel: ChatRequestModel) => void;
@@ -292,7 +292,7 @@ export class AIChatInputWidget extends ReactWidget {
     /** Vendor of the receiving agent's primary model; used to key server tool selections. */
     protected currentModelVendor?: string;
 
-    protected handleReasoningChange = async (level: ReasoningLevel): Promise<void> => {
+    protected handleReasoningChange = (level: ReasoningLevel): void => {
         const session = this.chatService.getSessions().find(s => s.model.id === this._chatModel?.id);
         if (!session) {
             return;
@@ -307,19 +307,9 @@ export class AIChatInputWidget extends ReactWidget {
         };
         (session.model as MutableChatModel).setSettings(newSettings);
 
-        // Auto-persist the reasoning selection per-agent so it is restored on the next session
-        // and the capabilities indicator does not light up for an unrelated configuration concern.
-        if (this.receivingAgent) {
-            try {
-                await this.aiSettingsService.updateAgentSettings(this.receivingAgent.agentId, {
-                    reasoning: { level }
-                });
-                this.savedReasoning = { level };
-            } catch (error) {
-                this.logger.error('Failed to persist reasoning selection:', error);
-            }
-        }
-
+        // The selection is not written back to the agent settings: the level travels with each
+        // request (see `ChatRequest.reasoning`), so the session is the source of truth and the
+        // persisted per-agent value only seeds sessions that have no requests yet.
         this.update();
     };
 
@@ -485,8 +475,12 @@ export class AIChatInputWidget extends ReactWidget {
             this.genericCapabilitySelections = savedGenericSelections ?? {};
             this.serverToolSelections = savedServerToolSelections ? { ...savedServerToolSelections } : {};
             // Mirror the saved per-agent reasoning into the chat session so the selector reflects it
-            // immediately on session/agent switch.
-            this.applyReasoningToSession(savedReasoning);
+            // immediately on session/agent switch. A level recorded on the session's last request wins:
+            // the request carries the level it ran with, the agent setting is only the default for a
+            // session that has not sent one yet.
+            if (!this.getLastReasoningFromModel(this._chatModel)) {
+                this.applyReasoningToSession(savedReasoning);
+            }
         }
 
         // Update disabled generic capabilities (already used in agent prompt)
@@ -740,6 +734,30 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     /**
+     * Extracts the reasoning configuration from the last request in the chat model.
+     * Used to restore the user's reasoning level when switching sessions or on reload.
+     */
+    protected getLastReasoningFromModel(chatModel: ChatModel): ReasoningSettings | undefined {
+        const requests = chatModel.getRequests();
+        if (requests.length === 0) {
+            return undefined;
+        }
+        return requests[requests.length - 1].request.reasoning;
+    }
+
+    /**
+     * Mirrors the reasoning level of the session's last request into the session settings, so switching
+     * back to a session shows the level it last ran with. Sessions without a recorded level are left
+     * alone, so they keep falling back to the persisted per-agent default.
+     */
+    protected restoreReasoningFromModel(chatModel: ChatModel): void {
+        const reasoning = this.getLastReasoningFromModel(chatModel);
+        if (reasoning) {
+            this.applyReasoningToSession(reasoning);
+        }
+    }
+
+    /**
      * Extracts generic capability selections from the last request in the chat model.
      * Used to restore user's selections when switching sessions or on reload.
      */
@@ -875,7 +893,7 @@ export class AIChatInputWidget extends ReactWidget {
 
     /**
      * Checks if there are any unsaved changes (capability overrides, generic selections, or server tools).
-     * Reasoning is auto-persisted in {@link handleReasoningChange} and is intentionally excluded.
+     * Reasoning is recorded per request instead of being saved here, so it is intentionally excluded.
      */
     public hasAnyChangesFromSaved(): boolean {
         if (this.receivingAgent === undefined) {
@@ -888,7 +906,7 @@ export class AIChatInputWidget extends ReactWidget {
 
     /**
      * Saves current capability selections to settings.
-     * Reasoning is auto-persisted via {@link handleReasoningChange} and is not part of this flow.
+     * Reasoning travels with each request instead and is not part of this flow.
      */
     public async saveCurrentSelectionsToSettings(): Promise<void> {
         if (!this.receivingAgent) {
@@ -1006,14 +1024,15 @@ export class AIChatInputWidget extends ReactWidget {
     protected queryInFlight = false;
     set onQuery(query: Query) {
         this._onQuery = async (prompt: string, mode?: string, capabilityOverrides?: Record<string, boolean>,
-            genericCapabilitySelections?: GenericCapabilitySelections, serverToolSelections?: Record<string, string[]>) => {
+            genericCapabilitySelections?: GenericCapabilitySelections, serverToolSelections?: Record<string, string[]>,
+            reasoning?: ReasoningSettings) => {
             if (this.configuration?.enablePromptHistory !== false && prompt.trim()) {
                 this.historyService.addToHistory(prompt);
                 this.navigationState.stopNavigation();
             }
             this.queryInFlight = true;
             try {
-                await query(prompt, mode, capabilityOverrides, genericCapabilitySelections, serverToolSelections);
+                await query(prompt, mode, capabilityOverrides, genericCapabilitySelections, serverToolSelections, reasoning);
             } finally {
                 this.queryInFlight = false;
             }
@@ -1094,6 +1113,10 @@ export class AIChatInputWidget extends ReactWidget {
             }
         }));
         this._chatModel = chatModel;
+        // Restore the reasoning level from the last request of this session. Assigned after `_chatModel`
+        // because the session lookup keys off it. Sessions without a recorded level keep the persisted
+        // per-agent default, which `updateCapabilitiesForAgent` applies.
+        this.restoreReasoningFromModel(chatModel);
         // Evaluate the warning on attach. `notifiedSessions` lives on this widget
         // instance, so the warning fires at most once per (widget lifetime × session):
         // - Within the same widget, switching between sessions that have already been
@@ -1441,9 +1464,13 @@ export class AIChatInputWidget extends ReactWidget {
             const modes = agent.modes ?? [];
             const defaultMode = modes.find(m => m.isDefault);
             const hasPreviousRequests = this._chatModel.getRequests().length > 0;
-            const restoredModeId = needsRefresh && hasPreviousRequests
-                ? this.getLastModeIdFromModel(this._chatModel)
-                : undefined;
+            // Restore the mode recorded on the last request whenever the session has one, not only on a
+            // forced refresh: the refresh flag is consumed by the first update after a session switch,
+            // which can run before an agent resolves, and the mode then fell back to the default.
+            const lastModeId = hasPreviousRequests ? this.getLastModeIdFromModel(this._chatModel) : undefined;
+            // Only adopt a mode the resolved agent actually offers, so mentioning another agent in an
+            // existing session does not carry over a mode that agent does not have.
+            const restoredModeId = modes.some(mode => mode.id === lastModeId) ? lastModeId : undefined;
             const initialModeId = restoredModeId ?? defaultMode?.id;
             this.receivingAgent = {
                 agentId: agentId,
@@ -1936,7 +1963,7 @@ interface ChatInputProperties {
     branch?: ChatHierarchyBranch;
     onCancel: (requestModel: ChatRequestModel) => void;
     onQuery: (query: string, mode?: string, capabilityOverrides?: Record<string, boolean>, genericCapabilitySelections?: GenericCapabilitySelections,
-        serverToolSelections?: Record<string, string[]>) => void;
+        serverToolSelections?: Record<string, string[]>, reasoning?: ReasoningSettings) => void;
     onUnpin: () => void;
     onDragOver: (event: React.DragEvent) => void;
     onDrop: (event: React.DragEvent) => void;
@@ -2319,14 +2346,17 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         const capabilityOverrides = getCapabilityOverridesRecord();
         const genericCapabilitySelections = getGenericCapabilitySelections();
         const serverToolSelections = getServerToolSelections();
-        props.onQuery(effectiveValue, props.modeSelectorProps.currentMode, capabilityOverrides, genericCapabilitySelections, serverToolSelections);
+        // Record the level the request actually runs with, so the selection is restored per session.
+        const currentLevel = props.reasoningSelectorProps.currentLevel;
+        const reasoning = currentLevel ? { level: currentLevel } : undefined;
+        props.onQuery(effectiveValue, props.modeSelectorProps.currentMode, capabilityOverrides, genericCapabilitySelections, serverToolSelections, reasoning);
         setValue('');
         if (editorRef.current && !editorRef.current.document.textEditorModel.isDisposed()) {
             editorRef.current.document.textEditorModel.setValue('');
             editorRef.current.focus();
         }
     }, [
-        props.context, props.onQuery, props.modeSelectorProps.currentMode, setValue,
+        props.context, props.onQuery, props.modeSelectorProps.currentMode, props.reasoningSelectorProps.currentLevel, setValue,
         shouldUseTaskPlaceholder, taskPlaceholder, getCapabilityOverridesRecord, getGenericCapabilitySelections, getServerToolSelections
     ]);
 

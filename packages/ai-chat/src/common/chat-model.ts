@@ -417,6 +417,13 @@ export interface ChatRequest {
     readonly capabilityOverrides?: Record<string, boolean>;
 
     /**
+     * Reasoning configuration this request was sent with. Recorded per request so the selection
+     * can be restored when switching back to this session, and so the level a request actually ran
+     * with stays visible in the chat history.
+     */
+    readonly reasoning?: ReasoningSettings;
+
+    /**
      * Generic capability selections for this request.
      * Contains user-selected skills, functions, MCP tools, etc.
      * from the capabilities panel dropdowns.
@@ -2011,7 +2018,9 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         this._id = reqData.id;
         this._request = {
             text: reqData.text,
+            modeId: reqData.modeId,
             capabilityOverrides: reqData.capabilityOverrides,
+            reasoning: reqData.reasoning,
             genericCapabilitySelections: reqData.genericCapabilitySelections,
             serverToolSelections: reqData.serverToolSelections
         };
@@ -2262,7 +2271,9 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
                 elements: this._changeSet.getElements().map(elem => elem.toSerializable?.()).filter((elem): elem is SerializableChangeSetElement => elem !== undefined)
             } : undefined,
             parsedRequest: this.message ? ParsedChatRequest.toSerializable(this.message) : undefined,
+            modeId: this.request.modeId,
             capabilityOverrides: this.request.capabilityOverrides,
+            reasoning: this.request.reasoning,
             genericCapabilitySelections: this.request.genericCapabilitySelections,
             serverToolSelections: this.request.serverToolSelections
         };

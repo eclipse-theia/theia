@@ -609,7 +609,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 deferredToolIds,
                 serverTools: enabledServerTools.length > 0 ? enabledServerTools : undefined,
                 settings,
-                reasoning: commonSettings?.reasoning,
+                reasoning: request.request.reasoning ?? commonSettings?.reasoning,
                 compaction: commonSettings?.compaction,
                 agentId: this.id,
                 sessionId: request.session.id,

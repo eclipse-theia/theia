@@ -294,6 +294,41 @@ describe('ChatModel Serialization and Restoration', () => {
         });
     });
 
+    describe('Per-request reasoning selection', () => {
+        it('should serialize and restore the reasoning level and mode recorded on a request', () => {
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
+            const parsedRequest: ParsedChatRequest = {
+                request: {
+                    text: 'Think hard',
+                    modeId: 'edit',
+                    reasoning: { level: 'high' }
+                },
+                parts: [new ParsedChatRequestTextPart({ start: 0, endExclusive: 10 }, 'Think hard')],
+                toolRequests: new Map(),
+                variables: []
+            };
+            model.addRequest(parsedRequest);
+
+            const serialized = model.toSerializable();
+            expect(serialized.requests[0].reasoning).to.deep.equal({ level: 'high' });
+            expect(serialized.requests[0].modeId).to.equal('edit');
+
+            const restored = new MutableChatModel(serialized);
+            const restoredRequest = restored.getRequests()[0];
+            expect(restoredRequest.request.reasoning).to.deep.equal({ level: 'high' });
+            expect(restoredRequest.request.modeId).to.equal('edit');
+        });
+
+        it('should leave the reasoning level unset when a request records none', () => {
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
+            model.addRequest(createParsedRequest('No reasoning here'));
+
+            const restored = new MutableChatModel(model.toSerializable());
+
+            expect(restored.getRequests()[0].request.reasoning).to.equal(undefined);
+        });
+    });
+
     describe('Complete round-trip with complex tree', () => {
         it('should serialize and restore a complex tree structure', () => {
             // Create a complex chat with multiple edits

@@ -18,7 +18,7 @@ import {
     ChatRequest, ChatRequestModel, ChatService, ChatSession, ChatSessionSettings,
     formatProviderError, formattedProviderErrorToShortString, isActiveSessionChangedEvent, MutableChatModel
 } from '@theia/ai-chat';
-import { GenericCapabilitySelections, AIVariableResolutionRequest } from '@theia/ai-core';
+import { GenericCapabilitySelections, AIVariableResolutionRequest, ReasoningSettings } from '@theia/ai-core';
 import { ApplicationShell, BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
@@ -244,19 +244,21 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         modeId?: string,
         capabilityOverrides?: Record<string, boolean>,
         genericCapabilitySelections?: GenericCapabilitySelections,
-        serverToolSelections?: Record<string, string[]>
+        serverToolSelections?: Record<string, string[]>,
+        reasoning?: ReasoningSettings
     ): Promise<void> {
         const chatRequest: ChatRequest = !query
             ? { text: '' }
             : typeof query === 'string'
-                ? { text: query, modeId, capabilityOverrides, genericCapabilitySelections, serverToolSelections }
+                ? { text: query, modeId, capabilityOverrides, genericCapabilitySelections, serverToolSelections, reasoning }
                 // For an already-built request (e.g. an edited+resent message), keep its own selections
                 // instead of overwriting them with the (undefined) explicit arguments.
                 : {
                     ...query,
                     capabilityOverrides: capabilityOverrides ?? query.capabilityOverrides,
                     genericCapabilitySelections: genericCapabilitySelections ?? query.genericCapabilitySelections,
-                    serverToolSelections: serverToolSelections ?? query.serverToolSelections
+                    serverToolSelections: serverToolSelections ?? query.serverToolSelections,
+                    reasoning: reasoning ?? query.reasoning
                 };
         if (chatRequest.text.length === 0) { return; }
 
