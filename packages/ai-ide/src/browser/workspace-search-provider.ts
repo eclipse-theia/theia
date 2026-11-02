@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
-import { CancellationToken } from '@theia/core';
+import { CancellationToken, Disposable } from '@theia/core';
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -113,6 +113,7 @@ export class WorkspaceSearchProvider implements ToolProvider {
     }
 
     private async handleSearch(argString: string, cancellationToken?: CancellationToken): Promise<string> {
+        let cancellationListener: Disposable | undefined;
         try {
             const args: { query: string, useRegExp: boolean, fileExtensions?: string[] | string, subDirectoryPath?: string } = JSON.parse(argString);
 
@@ -124,20 +125,22 @@ export class WorkspaceSearchProvider implements ToolProvider {
             let expectedSearchId: number | undefined;
             let searchCompleted = false;
 
-            cancellationToken?.onCancellationRequested(() => {
+            cancellationListener = cancellationToken?.onCancellationRequested(() => {
                 if (expectedSearchId !== undefined && !searchCompleted) {
                     this.searchService.cancel(expectedSearchId);
                     searchCompleted = true;
                 }
             });
 
-            // Use one more than our actual maximum. this way we can determine if we have more results than our maximum and warn the user
-            const maxResultsForTheiaAPI = this.preferenceService.get<number>(SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF, 30) + 1;
+            const maxResults = this.preferenceService.get<number>(SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF, 30);
+            // Count the matches up to the limit of the Search view, or up to our maximum if it is higher, to tell how many there are.
+            const maxCountedResults = Math.max(maxResults, 2000);
             const options: SearchInWorkspaceOptions = {
                 useRegExp: args.useRegExp,
                 matchCase: false,
                 matchWholeWord: false,
-                maxResults: maxResultsForTheiaAPI,
+                // Request one more match than we count, so that we can tell whether there are even more.
+                maxResults: maxCountedResults + 1,
             };
 
             // The model may supply fileExtensions as a single string instead of an array; normalize to an array so that `.map` never throws.
@@ -196,40 +199,62 @@ export class WorkspaceSearchProvider implements ToolProvider {
                     });
             });
 
-            const timeoutPromise = new Promise<SearchInWorkspaceResult[]>((_, reject) => {
+            let searchTimedOut = false;
+            const timeoutPromise = new Promise<SearchInWorkspaceResult[]>(resolve => {
                 setTimeout(() => {
                     if (!searchCompleted) {
                         if (expectedSearchId !== undefined) {
                             this.searchService.cancel(expectedSearchId);
                         }
                         searchCompleted = true;
-                        reject(new Error('Search timed out after 30 seconds'));
+                        searchTimedOut = true;
+                        resolve(results);
                     }
                 }, 30000);
             });
 
             const finalResults = await Promise.race([searchPromise, timeoutPromise]);
-            const maxResults = this.preferenceService.get<number>(SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF, 30);
-
-            const formattedResults = optimizeSearchResults(finalResults, this.workspaceScope);
 
             let numberOfMatchesInFinalResults = 0;
             for (const result of finalResults) {
                 numberOfMatchesInFinalResults += result.matches.length;
             }
+            // Counting the matches can take a long time, so a timed out search returns the matches found so far if they exceed our maximum.
+            if (searchTimedOut && numberOfMatchesInFinalResults <= maxResults) {
+                return JSON.stringify({ error: 'Search timed out after 30 seconds' });
+            }
             if (numberOfMatchesInFinalResults > maxResults) {
+                // Only return the first matches up to our maximum.
+                const truncatedResults: SearchInWorkspaceResult[] = [];
+                let remainingMatches = maxResults;
+                for (const result of finalResults) {
+                    if (remainingMatches <= 0) {
+                        break;
+                    }
+                    const matches = result.matches.slice(0, remainingMatches);
+                    if (matches.length > 0) {
+                        truncatedResults.push({ ...result, matches });
+                        remainingMatches -= matches.length;
+                    }
+                }
+                const foundMatches = searchTimedOut ? 'at least ' + numberOfMatchesInFinalResults
+                    : numberOfMatchesInFinalResults > maxCountedResults ? 'more than ' + maxCountedResults
+                        : String(numberOfMatchesInFinalResults);
                 return JSON.stringify({
-                    info: 'Search limit exceeded: Found ' + maxResults + '+ results. ' +
+                    info: 'Search limit exceeded: Found ' + foundMatches + ' results, showing the first ' + maxResults + '. ' +
                         'Please refine your search with more specific terms or use file extension filters. ' +
                         'You can increase the limit in preferences under \'ai-features.workspaceFunctions.searchMaxResults\'.',
-                    incompleteResults: formattedResults
+                    incompleteResults: optimizeSearchResults(truncatedResults, this.workspaceScope)
                 });
             }
 
-            return JSON.stringify(formattedResults);
+            return JSON.stringify(optimizeSearchResults(finalResults, this.workspaceScope));
 
         } catch (error) {
             return JSON.stringify({ error: error.message || 'Failed to execute search' });
+        } finally {
+            // The cancellation token outlives this call, and the listener would keep the search results in memory.
+            cancellationListener?.dispose();
         }
     }
 }
