@@ -206,4 +206,22 @@ describe('PluginVscodeCommandsContribution', () => {
             expect(calls[0][2]).to.deep.equal({ version: '1.2.3', ignoreOtherVersions: true });
         });
     });
+
+    describe('ignoreDuplicate', () => {
+        const instance = new PluginVscodeCommandsContribution();
+
+        it('resolves for an extension that is already installed', async () => {
+            await instance['ignoreDuplicate'](Promise.reject(DuplicateExtensionError.create('Extension a.b is already installed.')));
+        });
+
+        it('rethrows other installation errors', async () => {
+            let error: unknown;
+            try {
+                await instance['ignoreDuplicate'](Promise.reject(new Error('Deployment failed.')));
+            } catch (e) {
+                error = e;
+            }
+            expect(error).to.be.instanceOf(Error).with.property('message', 'Deployment failed.');
+        });
+    });
 });

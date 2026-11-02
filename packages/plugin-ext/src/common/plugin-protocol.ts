@@ -23,6 +23,7 @@ import { ProblemMatcherContribution, ProblemPatternContribution, TaskDefinition 
 import { ColorDefinition } from '@theia/core/lib/common/color';
 import { ResourceLabelFormatter } from '@theia/core/lib/common/label-protocol';
 import { PreferenceSchema } from '@theia/core';
+import { ResponseError } from '@theia/core/lib/common/message-rpc/rpc-message-encoder';
 import { PluginIdentifiers } from './plugin-identifiers';
 import {
     getPluginId,
@@ -630,26 +631,48 @@ export type GlobalStorageKind = undefined;
 export type PluginStorageKind = GlobalStorageKind | WorkspaceStorageKind;
 
 export interface PluginDeployOptions {
-    version: string;
+    version?: string;
     /** Instructs the deployer to ignore any existing plugins with different versions */
     ignoreOtherVersions?: boolean;
+    /**
+     * What a resolver of a local extension file does if the extension is already installed in any version:
+     * - `fail`: throw a {@link DuplicateExtensionError} with the {@link DuplicateExtensionError.Details details} of the installed extension.
+     * - `replace`: replace the installed extension.
+     *
+     * If not set, the resolver only throws for the same version, and a different version replaces the installed one.
+     */
+    ifInstalled?: 'fail' | 'replace';
 }
 
 /**
  * Thrown by a {@link PluginDeployerResolver} when the plugin it resolves is already installed.
- * Identified by its `name`, which survives the RPC boundary.
+ * Identified by its `name`, which survives the RPC boundary. It is a {@link ResponseError} because only
+ * that type also keeps its `data` over RPC.
  */
 export namespace DuplicateExtensionError {
     export const NAME = 'DuplicateExtensionError';
+    export const CODE = -32000;
 
-    export function create(message: string): Error {
-        const error = new Error(message);
+    export interface Details {
+        id: PluginIdentifiers.UnversionedId;
+        /** The version that is installed at the moment. */
+        installedVersion: string;
+        /** The version that the caller tried to install. */
+        version: string;
+    }
+
+    export function create(message: string, details?: Details): Error {
+        const error = new ResponseError(CODE, message, details);
         error.name = NAME;
         return error;
     }
 
     export function is(error: unknown): error is Error {
         return error instanceof Error && error.name === NAME;
+    }
+
+    export function getDetails(error: unknown): Details | undefined {
+        return is(error) && error instanceof ResponseError ? error.data : undefined;
     }
 }
 

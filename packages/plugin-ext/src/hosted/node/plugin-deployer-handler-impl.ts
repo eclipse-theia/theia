@@ -245,6 +245,7 @@ export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
     async undeployPlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean> {
         this.deployedBackendPlugins.delete(pluginId);
         this.deployedFrontendPlugins.delete(pluginId);
+        this.localizationService.undeployLocalizations(pluginId);
         const deployedLocations = this.deployedLocations.get(pluginId);
         if (!deployedLocations) {
             return false;

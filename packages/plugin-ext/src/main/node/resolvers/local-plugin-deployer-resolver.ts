@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { PluginDeployerResolver, PluginDeployerResolverContext } from '../../../common/plugin-protocol';
+import { PluginDeployerResolver, PluginDeployerResolverContext, PluginDeployOptions } from '../../../common/plugin-protocol';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
 import { FileUri } from '@theia/core/lib/node';
@@ -28,10 +28,10 @@ export abstract class LocalPluginDeployerResolver implements PluginDeployerResol
     @inject(ILogger) @named('plugin-ext:LocalPluginDeployerResolver')
     protected readonly logger: ILogger;
 
-    async resolve(pluginResolverContext: PluginDeployerResolverContext): Promise<void> {
+    async resolve(pluginResolverContext: PluginDeployerResolverContext, options?: PluginDeployOptions): Promise<void> {
         const localPath = await this.resolveLocalPluginPath(pluginResolverContext, this.supportedScheme);
         if (localPath) {
-            await this.resolveFromLocalPath(pluginResolverContext, localPath);
+            await this.resolveFromLocalPath(pluginResolverContext, localPath, options);
         }
     }
 
@@ -41,7 +41,7 @@ export abstract class LocalPluginDeployerResolver implements PluginDeployerResol
 
     protected abstract get supportedScheme(): string;
 
-    protected abstract resolveFromLocalPath(pluginResolverContext: PluginDeployerResolverContext, localPath: string): Promise<void>;
+    protected abstract resolveFromLocalPath(pluginResolverContext: PluginDeployerResolverContext, localPath: string, options?: PluginDeployOptions): Promise<void>;
 
     private async resolveLocalPluginPath(pluginResolverContext: PluginDeployerResolverContext, expectedScheme: string): Promise<string | null> {
         const localUri = new URI(pluginResolverContext.getOriginId());

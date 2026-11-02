@@ -15,13 +15,14 @@
 // *****************************************************************************
 
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
-import { CommonMenus, LabelProvider, QuickInputService, QuickPickItem } from '@theia/core/lib/browser';
+import { CommonMenus, ConfirmDialog, LabelProvider, QuickInputService, QuickPickItem } from '@theia/core/lib/browser';
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { FrontendApplication } from '@theia/core/lib/browser/frontend-application';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
+import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { MenuModelRegistry, MessageService, SelectionService, nls } from '@theia/core/lib/common';
 import { Color } from '@theia/core/lib/common/color';
@@ -30,10 +31,10 @@ import URI from '@theia/core/lib/common/uri';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { FileDialogService, OpenFileDialogProps } from '@theia/filesystem/lib/browser';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { VSXExtensionRaw } from '@theia/ovsx-client';
-import { VscodeCommands } from '@theia/plugin-ext-vscode/lib/browser/plugin-vscode-commands-contribution';
-import { DuplicateExtensionError } from '@theia/plugin-ext/lib/common/plugin-protocol';
+import { DuplicateExtensionError, PluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { DateTime } from 'luxon';
 import { VSXRegistryService } from '../common/vsx-registry-service';
 import { IGNORE_RECOMMENDATIONS_ID } from '../common/recommended-extensions-preference-contribution';
@@ -58,6 +59,9 @@ export namespace VSXCommands {
 export class VSXExtensionsContribution extends AbstractViewContribution<VSXExtensionsViewContainer> implements ColorContribution, FrontendApplicationContribution {
 
     @inject(VSXExtensionsModel) protected model: VSXExtensionsModel;
+    @inject(PluginServer) protected pluginServer: PluginServer;
+    @inject(FileService) protected fileService: FileService;
+    @inject(WindowService) protected windowService: WindowService;
     @inject(CommandRegistry) protected commandRegistry: CommandRegistry;
     @inject(FileDialogService) protected fileDialogService: FileDialogService;
     @inject(MessageService) protected messageService: MessageService;
@@ -286,24 +290,55 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
      * The implementation doesn't check if the file is a valid VSIX file, or the URI has a *.vsix extension.
      * The caller should ensure the file is a valid VSIX file.
      *
+     * If the extension is already installed, asks the user whether to replace it.
+     *
+     * This calls the plugin server and not `workbench.extensions.installExtension`, because that command ignores duplicates.
+     *
      * @param fileURI the URI of the file to install.
      */
     protected async installVsixFile(fileURI: URI): Promise<void> {
         const extensionName = this.labelProvider.getName(fileURI);
         try {
-            await this.commandRegistry.executeCommand(VscodeCommands.INSTALL_EXTENSION_FROM_ID_OR_URI.id, fileURI);
-            this.messageService.info(nls.localizeByDefault('Completed installing extension.', extensionName));
-        } catch (e) {
-            if (DuplicateExtensionError.is(e)) {
-                this.messageService.error(
-                    nls.localize('theia/vsx-registry/duplicateVSIX',
-                        'Failed to install {0} from VSIX. The extension is already installed. Uninstall the existing extension before installing a new version from VSIX.',
-                        extensionName)
-                );
-            } else {
-                this.messageService.error(nls.localize('theia/vsx-registry/failedInstallingVSIX', 'Failed to install {0} from VSIX.', extensionName));
+            const pluginEntry = `local-file:${await this.fileService.fsPath(fileURI)}`;
+            try {
+                await this.pluginServer.install(pluginEntry, undefined, { ifInstalled: 'fail' });
+                this.messageService.info(nls.localizeByDefault('Completed installing extension.', extensionName));
+            } catch (e) {
+                const details = DuplicateExtensionError.getDetails(e);
+                if (!details) {
+                    throw e;
+                }
+                if (await this.confirmReplaceExtension(details)) {
+                    await this.pluginServer.install(pluginEntry, undefined, { ifInstalled: 'replace' });
+                    await this.promptReloadAfterReplace(details);
+                }
             }
+        } catch (e) {
+            this.messageService.error(nls.localize('theia/vsx-registry/failedInstallingVSIX', 'Failed to install {0} from VSIX.', extensionName));
             this.logger.warn(e);
+        }
+    }
+
+    protected confirmReplaceExtension({ id, installedVersion, version }: DuplicateExtensionError.Details): Promise<boolean | undefined> {
+        return new ConfirmDialog({
+            title: nls.localize('theia/vsx-registry/replaceVSIXTitle', 'Extension Already Installed'),
+            msg: nls.localize('theia/vsx-registry/replaceVSIXMessage',
+                'Version {1} of the extension \'{0}\' is already installed. Do you want to replace it with version {2} from this VSIX file?', id, installedVersion, version),
+            ok: nls.localizeByDefault('Replace')
+        }).open();
+    }
+
+    /**
+     * The running plugin host keeps the old extension until the next reload.
+     */
+    protected async promptReloadAfterReplace({ id, version }: DuplicateExtensionError.Details): Promise<void> {
+        const reload = nls.localizeByDefault('Reload Window');
+        const choice = await this.messageService.info(
+            nls.localize('theia/vsx-registry/replacedVSIX', 'Replaced the extension \'{0}\' with version {1}. Reload the window to use it.', id, version),
+            reload
+        );
+        if (choice === reload) {
+            this.windowService.reload();
         }
     }
 

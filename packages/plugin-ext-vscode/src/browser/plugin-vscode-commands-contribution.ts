@@ -600,7 +600,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 if (typeof vsixUriOrExtensionId === 'string') {
                     await this.installExtensionFromId(vsixUriOrExtensionId);
                 } else {
-                    await this.deployPlugin(vsixUriOrExtensionId);
+                    await this.ignoreDuplicate(this.deployPlugin(vsixUriOrExtensionId));
                 }
             }
         });
@@ -1382,8 +1382,15 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             extensionId = versionedId.id;
             opts = { version: versionedId.version, ignoreOtherVersions: true };
         }
+        await this.ignoreDuplicate(this.pluginServer.install(VSCodeExtensionUri.fromId(extensionId).toString(), undefined, opts));
+    }
+
+    /**
+     * Installing an extension that is already installed is a noop for callers of the `workbench.extensions.installExtension` command.
+     */
+    private async ignoreDuplicate(install: Promise<void>): Promise<void> {
         try {
-            await this.pluginServer.install(VSCodeExtensionUri.fromId(extensionId).toString(), undefined, opts);
+            await install;
         } catch (e) {
             if (!DuplicateExtensionError.is(e)) {
                 throw e;

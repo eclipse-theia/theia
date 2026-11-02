@@ -95,6 +95,31 @@ export async function unpackToDeploymentDir(env: PluginVSCodeEnvironment, source
         return extensionDeploymentDir;
     }
 
+    const tempDir = await unpackToTempDir(env, sourcePath, extensionId);
+    return moveToDeploymentDir(tempDir, extensionDeploymentDir, extensionId);
+}
+
+/**
+ * Replaces the deployment directory of an extension with the content of `sourcePath`.
+ * The source is unpacked first, so a source that cannot be unpacked leaves the existing directory in place.
+ *
+ * @param beforeRemove called after the source is unpacked and before the existing directory is removed.
+ */
+export async function replaceInDeploymentDir(env: PluginVSCodeEnvironment, sourcePath: string, extensionId: string, beforeRemove: () => Promise<unknown>): Promise<string> {
+    const extensionDeploymentDir = await getExtensionDeploymentDir(env, extensionId);
+    const tempDir = await unpackToTempDir(env, sourcePath, extensionId);
+    try {
+        await beforeRemove();
+        await fs.remove(extensionDeploymentDir);
+    } catch (e) {
+        await fs.remove(tempDir);
+        console.error(`[${extensionId}]: error while removing "${extensionDeploymentDir}"`, e);
+        throw e;
+    }
+    return moveToDeploymentDir(tempDir, extensionDeploymentDir, extensionId);
+}
+
+async function unpackToTempDir(env: PluginVSCodeEnvironment, sourcePath: string, extensionId: string): Promise<string> {
     const tempDir = await getTempDir(env, TMP_DIR_PREFIX);
     try {
         console.log(`[${extensionId}]: trying to decompress "${sourcePath}" into "${tempDir}"...`);
@@ -111,7 +136,10 @@ export async function unpackToDeploymentDir(env: PluginVSCodeEnvironment, source
         throw e;
     }
     console.log(`[${extensionId}]: decompressed to temp dir "${tempDir}"`);
+    return tempDir;
+}
 
+async function moveToDeploymentDir(tempDir: string, extensionDeploymentDir: string, extensionId: string): Promise<string> {
     try {
         console.log(`[${extensionId}]: renaming to extension dir "${extensionDeploymentDir}"...`);
         await fs.rename(tempDir, extensionDeploymentDir);
