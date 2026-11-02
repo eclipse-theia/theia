@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import {
     FileChange, FileChangeType, FileDeleteOptions,
     FileOverwriteOptions, FileSystemProviderCapabilities,
@@ -27,10 +27,9 @@ import {
     FileOpenOptions, FileUpdateOptions, FileUpdateResult,
     type FileReadStreamOptions
 } from '../common/files.js';
-import { Emitter, Event, URI, Disposable, DisposableCollection, ILogger, type CancellationToken } from '@theia/core';
+import { Emitter, Event, URI, Disposable, DisposableCollection, type CancellationToken } from '@theia/core';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { createOPFS, WatchEventType, type FileStat, type OPFSError, type OPFSFacade, type OPFSOptions, type WatchEvent } from 'opfs-worker';
@@ -66,16 +65,10 @@ export class OPFSFileSystemProvider implements Disposable,
     @inject(EncodingService)
     protected readonly encodingService: EncodingService;
 
-    @inject(ILogger) @named('filesystem:OPFSFileSystemProvider')
-    protected readonly logger: ILogger;
-
-    protected readonly fileLockTimeout: number = 10_000;
-
     private fs!: OPFSFacade;
     private initialized: Promise<true>;
-    private readonly fileLocks = new Map<string, { acquired: Promise<void>, released: Promise<void> }>();
-    private readonly openFileLocks = new Map<number, Disposable>();
-    private lastWatchEvent: WatchEvent | undefined;
+    /** The listener of every watch, so that opfs-worker reports a change once when several watches match it. */
+    private readonly watchListener = (event: WatchEvent) => this.handleFileSystemChange(event);
 
     protected readonly toDispose = new DisposableCollection(
         this.onDidChangeFileEmitter
@@ -92,9 +85,6 @@ export class OPFSFileSystemProvider implements Disposable,
             this.fs = this.createFileSystem({
                 root,
                 broadcastChannel: this.initialization.getBroadcastChannel(),
-                // opfs-worker's worker and facade derive different default namespaces for a root without a
-                // leading slash, and the facade then drops every change event.
-                namespace: `opfs-worker:${root}`,
                 hashAlgorithm: false,
             });
 
@@ -127,7 +117,7 @@ export class OPFSFileSystemProvider implements Disposable,
         const unwatch = this.fs.watch(formatPath(resource), {
             recursive: opts.recursive,
             exclude: opts.excludes,
-        }, event => this.handleFileSystemChange(event));
+        }, this.watchListener);
 
         return Disposable.create(unwatch);
     }
@@ -323,14 +313,10 @@ export class OPFSFileSystemProvider implements Disposable,
 
         await this.initialized;
 
-        const path = formatPath(resource);
-        const lock = await this.lockFile(path);
         try {
-            return await this.fs.readFile(path, 'binary');
+            return await this.fs.readFile(formatPath(resource), 'binary');
         } catch (error) {
             throw toFileSystemProviderError(error as Error | OPFSError);
-        } finally {
-            lock.dispose();
         }
     }
 
@@ -362,9 +348,9 @@ export class OPFSFileSystemProvider implements Disposable,
             throw createFileSystemProviderError('Invalid content: must be Uint8Array', FileSystemProviderErrorCode.Unknown);
         }
 
-        const path = formatPath(resource);
-        const lock = await this.lockFile(path);
         try {
+            const path = formatPath(resource);
+
             if (!opts.create || !opts.overwrite) {
                 const fileExists = await this.fs.exists(path);
 
@@ -380,8 +366,6 @@ export class OPFSFileSystemProvider implements Disposable,
             await this.fs.writeFile(path, content);
         } catch (error) {
             throw toFileSystemProviderError(error as Error | OPFSError);
-        } finally {
-            lock.dispose();
         }
     }
 
@@ -397,9 +381,8 @@ export class OPFSFileSystemProvider implements Disposable,
             throw createFileSystemProviderError('Invalid resource URI', FileSystemProviderErrorCode.FileNotFound);
         }
 
-        const path = formatPath(resource);
-        const lock = await this.lockFile(path);
         try {
+            const path = formatPath(resource);
             const fileExists = await this.fs.exists(path);
 
             if (!opts.create && !fileExists) {
@@ -410,11 +393,9 @@ export class OPFSFileSystemProvider implements Disposable,
                 create: opts.create,
                 truncate: opts.create
             });
-            this.openFileLocks.set(fd, lock);
 
             return fd;
         } catch (error) {
-            lock.dispose();
             throw toFileSystemProviderError(error as Error | OPFSError);
         }
     }
@@ -427,9 +408,6 @@ export class OPFSFileSystemProvider implements Disposable,
             await this.fs.close(fd);
         } catch (error) {
             throw toFileSystemProviderError(error as Error | OPFSError);
-        } finally {
-            this.openFileLocks.get(fd)?.dispose();
-            this.openFileLocks.delete(fd);
         }
     }
 
@@ -498,50 +476,9 @@ export class OPFSFileSystemProvider implements Disposable,
     // #endregion
 
     /**
-     * Waits for earlier accesses to the file to finish, since OPFS allows one sync access handle per file.
-     * The wait is bounded by `fileLockTimeout` so that a descriptor that is never closed does not block the file for good.
-     */
-    protected async lockFile(path: string): Promise<Disposable> {
-        const previous = this.fileLocks.get(path);
-        const acquired = new Deferred();
-        const released = new Deferred();
-        const current = { acquired: acquired.promise, released: released.promise };
-        this.fileLocks.set(path, current);
-
-        if (previous) {
-            // Start the timeout only once the previous access is in, so that waiters queued behind
-            // an access that never finishes go ahead one at a time rather than all together.
-            await previous.acquired;
-            let timer: ReturnType<typeof setTimeout> | undefined;
-            const done = await Promise.race([
-                previous.released.then(() => true),
-                new Promise<false>(resolve => timer = setTimeout(() => resolve(false), this.fileLockTimeout))
-            ]);
-            clearTimeout(timer);
-            if (!done) {
-                this.logger.warn(`Gave up waiting for an earlier access to ${path} after ${this.fileLockTimeout} ms.`);
-            }
-        }
-        acquired.resolve();
-
-        return Disposable.create(() => {
-            released.resolve();
-            if (this.fileLocks.get(path) === current) {
-                this.fileLocks.delete(path);
-            }
-        });
-    }
-
-    /**
      * Handles file system change events from opfs-worker
      */
     private handleFileSystemChange(event: WatchEvent): void {
-        // opfs-worker calls the listener of every matching watch with the same event object.
-        if (event === this.lastWatchEvent) {
-            return;
-        }
-        this.lastWatchEvent = event;
-
         const resource = new URI('file://' + event.path);
         let changeType: FileChangeType;
 
