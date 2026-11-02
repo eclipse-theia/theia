@@ -14,13 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ChatAgentService, ChatService, ChatSessionMetadata } from '@theia/ai-chat';
-import { AI_CHAT_OPEN_SESSION } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
-import { formatTimeAgo } from '@theia/ai-chat-ui/lib/browser/chat-date-utils';
-import { ChatSessionItemAction, ChatSessionItemActionContribution } from './chat-session-item-action-contribution';
+import { ChatAgentService, ChatService } from '@theia/ai-chat';
+import { ChatSessionItemActionContribution } from './chat-session-item-action-contribution';
 import { ChatSessionListService } from './chat-session-list-service';
-import { SessionRow, SessionsList } from './chat-session-list-components';
-import { ChatSessionItem } from './chat-session-item';
+import { createSessionRowRenderer, SessionsList } from './chat-session-list-components';
 import { CommandRegistry, ContributionProvider, nls } from '@theia/core';
 import { codicon, HoverService, ReactWidget } from '@theia/core/lib/browser';
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
@@ -94,58 +91,23 @@ export class AISessionsWidget extends ReactWidget {
 
         const rows = this.sessionListService.buildRows(sections);
 
+        const renderRow = createSessionRowRenderer({
+            chatService: this.chatService,
+            chatAgentService: this.chatAgentService,
+            hoverService: this.hoverService,
+            markdownRenderer: this.markdownRenderer,
+            sessionListService: this.sessionListService,
+            commandRegistry: this.commandRegistry,
+            chatSessionItemActionContributions: this.chatSessionItemActionContributions
+        });
+
         return (
             <div className="ai-sessions-view-content">
                 <SessionsList
                     rows={rows}
-                    renderRow={this.renderSessionRow}
+                    renderRow={renderRow}
                 />
             </div>
-        );
-    }
-
-    protected getSessionActions(session: ChatSessionMetadata): ChatSessionItemAction[] {
-        return this.chatSessionItemActionContributions
-            .getContributions()
-            .flatMap(c => c.getActions(session))
-            .filter(action => this.commandRegistry.isEnabled(action.commandId, session))
-            .sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
-    }
-
-    protected renderSessionRow = (row: SessionRow): React.ReactNode => this.renderSessionRowAtDepth(row, 0);
-
-    protected renderSessionRowAtDepth(row: SessionRow, depth: number): React.ReactNode {
-        const hasChildSessions = row.childSessions.length > 0;
-        const isExpanded = hasChildSessions && this.sessionListService.isExpanded(row.session.sessionId);
-        const descendantNeedsAttention = this.sessionListService.descendantRequiresAction(row);
-
-        return (
-            <React.Fragment key={row.session.sessionId}>
-                <ChatSessionItem
-                    session={row.session}
-                    isRestored={row.isRestored}
-                    chatService={this.chatService}
-                    chatAgentService={this.chatAgentService}
-                    hoverService={this.hoverService}
-                    markdownRenderer={this.markdownRenderer}
-                    unreadState={this.sessionListService}
-                    onClick={async () => {
-                        await this.commandRegistry.executeCommand(AI_CHAT_OPEN_SESSION.id, row.session.sessionId);
-                    }}
-                    actions={this.getSessionActions(row.session)}
-                    onAction={(action: ChatSessionItemAction, s: ChatSessionMetadata) => {
-                        this.commandRegistry.executeCommand(action.commandId, s);
-                    }}
-                    formatTimeAgo={date => formatTimeAgo(date)}
-                    hasChildSessions={hasChildSessions}
-                    isChildSession={depth > 0}
-                    depth={depth}
-                    isExpanded={isExpanded}
-                    descendantNeedsAttention={descendantNeedsAttention}
-                    onToggleExpand={hasChildSessions ? () => this.sessionListService.toggleExpand(row.session.sessionId) : undefined}
-                />
-                {isExpanded && row.childSessions.map(child => this.renderSessionRowAtDepth(child, depth + 1))}
-            </React.Fragment>
         );
     }
 }
