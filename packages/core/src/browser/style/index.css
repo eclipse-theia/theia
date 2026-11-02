@@ -229,6 +229,12 @@ blockquote {
     opacity: 0;
 }
 
+/* The generated page provides its own indicator or skeleton when no preload template is configured;
+   their rules are inlined in `index.html` so that they apply before this stylesheet has loaded. */
+.theia-preload.theia-preload-default::after {
+    content: none;
+}
+
 .theia-icon {
     width: 32px;
     height: 18px;

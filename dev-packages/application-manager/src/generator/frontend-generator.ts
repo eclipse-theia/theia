@@ -16,6 +16,7 @@
 
 /* eslint-disable @stylistic/indent */
 
+import { DefaultTheme } from '@theia/application-package/lib/application-props';
 import { EOL } from 'os';
 import { AbstractGenerator, GeneratorOptions } from './abstract-generator';
 import { existsSync, readFileSync } from 'fs';
@@ -47,6 +48,11 @@ export class FrontendGenerator extends AbstractGenerator {
     }
 
     protected async compileIndexHtml(frontendModules: Map<string, string>): Promise<string> {
+        const template = this.compileIndexPreload(frontendModules);
+        const preload = template
+            ? `<div class="theia-preload">${template}</div>`
+            : `<div class="theia-preload theia-preload-default">${this.compileIndexSpinner()}</div>
+    <script type="text/javascript">${this.compileIndexSkeletonScript()}</script>`;
         return `<!DOCTYPE html>
 <html lang="en">
 
@@ -54,7 +60,7 @@ export class FrontendGenerator extends AbstractGenerator {
 </head>
 
 <body>
-    <div class="theia-preload">${this.compileIndexPreload(frontendModules)}</div>
+    ${preload}
     <script type="text/javascript" src="./bundle.js" charset="utf-8"></script>
 </body>
 
@@ -66,8 +72,98 @@ export class FrontendGenerator extends AbstractGenerator {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <link rel="stylesheet" href="./bundle.css">
+  <style>${this.compileIndexCriticalCss()}</style>
+  <link rel="preload" as="style" href="./bundle.css" data-theia-stylesheet onload="this.onload=null;this.rel='stylesheet'">
   <title>${this.pck.props.frontend.config.applicationName}</title>`;
+    }
+
+    /**
+     * The styles the page needs before `bundle.css` has loaded: the page background and the loading
+     * indicator. The stylesheet, which carries the icon font, is preloaded rather than linked, so that
+     * neither the first paint nor the inline skeleton script waits for it; the generated `index.js`
+     * waits for it before the application starts. The `.theia-preload` rules match those of `@theia/core`.
+     */
+    protected compileIndexCriticalCss(): string {
+        return `
+    html, body { margin: 0; height: 100%; background: var(--theia-editor-background, ${DefaultTheme.defaultBackgroundColor(true)}); }
+    @media (prefers-color-scheme: light) { html, body { background: var(--theia-editor-background, ${DefaultTheme.defaultBackgroundColor(false)}); } }
+    .theia-preload { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 50000; background: var(--theia-editor-background); }
+    .theia-preload { display: flex; justify-content: center; align-items: center; transition: opacity 0.8s; }
+    .theia-preload.theia-hidden { opacity: 0; }
+    .theia-preload-spinner { width: 72px; height: 72px; color: #777; animation: theia-preload-rotate 1s linear infinite; }
+    @keyframes theia-preload-rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .theia-preload-skeleton { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+    .theia-preload-skeleton > div { position: absolute; }
+  `;
+    }
+
+    /**
+     * The default loading indicator: an inline SVG that does not depend on the icon font.
+     */
+    protected compileIndexSpinner(): string {
+        return '<svg class="theia-preload-spinner" viewBox="0 0 16 16" aria-hidden="true">'
+            + '<path fill="currentColor" d="M13.917 7A6.002 6.002 0 0 0 2.083 7H1.071a7.002 7.002 0 0 1 13.858 0h-1.012z"/></svg>';
+    }
+
+    /**
+     * Draws the workbench skeleton of the last session, stored by `StartupSkeletonContribution` of `@theia/core`
+     * under the `theia.startupSkeleton` key, suffixed with the workspace hash of the URL where there is one,
+     * in place of the spinner, and applies the last background colour (`theme.background`, as the theme
+     * preload contribution does later) before the bundle runs.
+     */
+    protected compileIndexSkeletonScript(): string {
+        return `
+    (function () {
+        try {
+            var storage = window.localStorage;
+            var key = 'theia.startupSkeleton';
+            var record = JSON.parse((location.hash && storage.getItem(key + ':' + location.hash)) || storage.getItem(key) || 'null');
+            var colors = record && record.version === 1 && record.colors || {};
+            var layout = record && record.version === 1 && record.layout;
+            var background = storage.getItem('theme.background')
+                || (window.matchMedia('(prefers-color-scheme: dark)').matches
+                    ? '${DefaultTheme.defaultBackgroundColor(true)}' : '${DefaultTheme.defaultBackgroundColor(false)}');
+            document.documentElement.style.setProperty('--theia-editor-background', background);
+            var preload = document.querySelector('.theia-preload.theia-preload-default');
+            if (!preload || !layout) {
+                return;
+            }
+            var skeleton = document.createElement('div');
+            skeleton.className = 'theia-preload-skeleton';
+            function part(color, style) {
+                if (typeof color === 'string') {
+                    var div = document.createElement('div');
+                    div.setAttribute('style', style + 'background:' + color + ';');
+                    skeleton.appendChild(div);
+                }
+            }
+            var top = layout.top || 0, status = layout.statusBar || 0;
+            var leftBar = layout.leftBar || 0, left = layout.left || 0, rightBar = layout.rightBar || 0, right = layout.right || 0;
+            var middle = 'top:' + top + 'px;bottom:' + status + 'px;';
+            if (top) { part(colors.titleBar, 'top:0;left:0;right:0;height:' + top + 'px;'); }
+            if (status) { part(colors.statusBar, 'bottom:0;left:0;right:0;height:' + status + 'px;'); }
+            if (leftBar) { part(colors.activityBar, middle + 'left:0;width:' + leftBar + 'px;'); }
+            if (left) { part(colors.sideBar, middle + 'left:' + leftBar + 'px;width:' + left + 'px;'); }
+            if (rightBar) { part(colors.activityBar, middle + 'right:0;width:' + rightBar + 'px;'); }
+            if (right) { part(colors.sideBar, middle + 'right:' + rightBar + 'px;width:' + right + 'px;'); }
+            if (layout.bottom) {
+                part(colors.panel, 'bottom:' + status + 'px;left:' + (leftBar + left) + 'px;right:' + (rightBar + right) + 'px;height:' + layout.bottom + 'px;');
+            }
+            // Keep the spinner, centered in the editor area of the skeleton.
+            var editorArea = document.createElement('div');
+            editorArea.setAttribute('style', 'top:' + top + 'px;bottom:' + (status + (layout.bottom || 0)) + 'px;'
+                + 'left:' + (leftBar + left) + 'px;right:' + (rightBar + right) + 'px;display:flex;align-items:center;justify-content:center;');
+            var spinner = preload.querySelector('.theia-preload-spinner');
+            if (spinner) {
+                editorArea.appendChild(spinner);
+            }
+            skeleton.appendChild(editorArea);
+            preload.replaceChildren(skeleton);
+        } catch (error) {
+            // No skeleton: the spinner stays.
+        }
+    })();
+  `;
     }
 
     /**
@@ -98,6 +194,33 @@ self.MonacoEnvironment = {
 function load(container, jsModule) {
     return Promise.resolve(jsModule)
         .then(containerModule => container.load(containerModule.default));
+}
+
+/**
+ * The page preloads its stylesheet instead of linking it, so that it paints its loading indicator or skeleton
+ * without waiting for it. The application must not start before the stylesheet applies, though.
+ */
+function stylesheetLoaded() {
+    const link = document.querySelector('link[data-theia-stylesheet]');
+    if (!link) {
+        return Promise.resolve();
+    }
+    if (link.rel !== 'stylesheet') {
+        // Not applied yet (or preloading is unsupported): apply it now, the preload is reused if there is one.
+        link.rel = 'stylesheet';
+    }
+    return new Promise(resolve => {
+        const settle = () => {
+            if (link.sheet || link.rel !== 'stylesheet') {
+                resolve();
+            } else {
+                // The preload finished but the stylesheet is not applied yet; its own load event follows.
+                link.addEventListener('load', settle, { once: true });
+            }
+        };
+        link.addEventListener('error', () => resolve(), { once: true });
+        settle();
+    });
 }
 
 async function preload(container) {
@@ -154,6 +277,8 @@ ${Array.from(frontendModules.values(), jsModulePath => `\
         MonacoInit.init(container);
         `)};
         ${this.emitStartupLog('modules loaded')}
+        await stylesheetLoaded();
+        ${this.emitStartupLog('stylesheet loaded')}
         await start();
     } catch (reason) {
         console.error('Failed to start the frontend application.');
