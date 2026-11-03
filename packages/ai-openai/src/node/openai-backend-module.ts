@@ -28,6 +28,7 @@ import {
 } from './openai-chat-completion-stream';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
 import { OpenAiPreferencesSchema } from '../common/openai-preferences';
+import { OpenAiStreamingRetry } from './openai-streaming-retry';
 
 // We use a connection module to handle AI services separately for each frontend.
 const openAiConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
@@ -51,6 +52,7 @@ export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: OpenAiPreferencesSchema });
     bind(OpenAiModelUtils).toSelf().inSingletonScope();
     bind(OpenAiResponseApiUtils).toSelf().inSingletonScope();
+    bind(OpenAiStreamingRetry).toSelf().inSingletonScope();
     bind(ChatCompletionStreamingAsyncIterator).toSelf().inTransientScope();
     bind(ChatCompletionStreamingAsyncIteratorFactory).toFactory<ChatCompletionStreamingAsyncIterator, [ChatCompletionToolLoopOptions]>(
         ({ container }) => options => {
