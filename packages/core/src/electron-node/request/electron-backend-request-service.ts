@@ -21,11 +21,33 @@ import { ILogger } from '../../common';
 
 decorate(injectable(), NodeRequestService);
 
+type ProxyResponseHandler = (result: string | undefined) => void;
+
 @injectable()
 export class ElectronBackendRequestService extends NodeRequestService {
 
     @inject(ILogger) @named('core:ElectronBackendRequestService')
     protected readonly logger: ILogger;
+
+    private static readonly pendingProxyRequests = new Map<string, ProxyResponseHandler>();
+    private static proxyResponseListenerAttached = false;
+
+    private static attachProxyResponseListener(): void {
+        if (this.proxyResponseListenerAttached || !process.send) {
+            return;
+        }
+        this.proxyResponseListenerAttached = true;
+        process.on('message', (msg: unknown) => {
+            const response = msg as { type: string, id: string, result: string };
+            if (response?.type === 'resolve-proxy-response' && response.id) {
+                const handler = this.pendingProxyRequests.get(response.id);
+                if (handler) {
+                    this.pendingProxyRequests.delete(response.id);
+                    handler(response.result);
+                }
+            }
+        });
+    }
 
     override async getProxyUrl(url: string): Promise<string | undefined> {
         if (this.proxyUrl) {
@@ -59,19 +81,15 @@ export class ElectronBackendRequestService extends NodeRequestService {
         // Running as a forked child process: ask the main process via Node IPC.
         return new Promise<string | undefined>(resolve => {
             const id = Math.random().toString(36).slice(2);
+            ElectronBackendRequestService.attachProxyResponseListener();
             const timer = setTimeout(() => {
-                process.off('message', handler);
+                ElectronBackendRequestService.pendingProxyRequests.delete(id);
                 resolve(undefined);
             }, 5000);
-            const handler = (msg: unknown) => {
-                const response = msg as { type: string, id: string, result: string };
-                if (response?.type === 'resolve-proxy-response' && response.id === id) {
-                    clearTimeout(timer);
-                    process.off('message', handler);
-                    resolve(response.result);
-                }
-            };
-            process.on('message', handler);
+            ElectronBackendRequestService.pendingProxyRequests.set(id, (result: string | undefined) => {
+                clearTimeout(timer);
+                resolve(result);
+            });
             process.send!({ type: 'resolve-proxy', id, url });
         });
     }
