@@ -29,6 +29,7 @@ import { OpenAI } from 'openai';
 import type { ResponseStreamEvent } from 'openai/resources/responses/responses';
 import { OPENAI_FUNCTION_CALL_REASONING_DATA_KEY, OpenAiResponseApiUtils } from './openai-response-api-utils';
 import { OPENAI_WEB_SEARCH, OPENAI_WEB_SEARCH_REPLAY_DATA_KEY } from './openai-server-tools';
+import { OpenAiStreamingRetry } from './openai-streaming-retry';
 
 async function* toStream(events: unknown[]): AsyncIterable<unknown> {
     for (const event of events) {
@@ -46,9 +47,10 @@ function outputItemEvents(item: Record<string, unknown>, outputIndex: number): u
     ];
 }
 
-function createTestUtils(): OpenAiResponseApiUtils {
+function createTestUtils(logger: ILogger = new MockLogger()): OpenAiResponseApiUtils {
     const container = new Container();
-    container.bind(ILogger).to(MockLogger);
+    container.bind(ILogger).toConstantValue(logger);
+    container.bind(OpenAiStreamingRetry).toSelf();
     container.bind(ToolCallExecutor).to(ToolCallExecutorImpl).inSingletonScope();
     container.bind(OpenAiResponseApiUtils).toSelf();
     return container.get(OpenAiResponseApiUtils);
@@ -663,10 +665,16 @@ describe('OpenAiResponseApiUtils', () => {
 
     describe('transient stream failures', () => {
         let clock: sinon.SinonFakeTimers;
+        let logError: sinon.SinonSpy;
         const busy = { type: 'response.failed', response: { error: { code: 'server_error', message: 'The server is too busy.' } } };
         const request: UserRequest = { sessionId: 's', requestId: 'r', messages: [{ actor: 'user', type: 'text', text: 'hello' }] };
 
-        beforeEach(() => { clock = sinon.useFakeTimers(); });
+        beforeEach(() => {
+            clock = sinon.useFakeTimers();
+            const logger = new MockLogger();
+            logError = sinon.spy(logger, 'error');
+            utils = createTestUtils(logger);
+        });
         afterEach(() => sinon.restore());
 
         for (const withTools of [false, true]) {
@@ -698,7 +706,28 @@ describe('OpenAiResponseApiUtils', () => {
                 expect(parts).to.deep.equal([{ content: 'done' }]);
                 expect(payloads).to.have.length(2);
                 expect(payloads[1]).to.deep.equal(payloads[0]);
+                expect(logError.called).to.equal(false);
             });
+
+            for (const event of [busy, { type: 'error', code: 'server_error', message: 'Stream failed' }]) {
+                it(`logs the terminal ${event.type} once after exhausting retries ${withTools ? 'with tools' : 'without tools'}`, async () => {
+                    const create = sinon.stub().callsFake(async () => toStream([event]));
+                    const response = await utils.handleRequest({ maxRetries: 1, responses: { create } } as never, {
+                        ...request,
+                        tools: withTools ? [{ id: 'lookup', name: 'lookup', parameters: { type: 'object', properties: {} }, handler: async () => 'result' }] : undefined
+                    }, {}, 'gpt-5', new OpenAiModelUtils(), 'developer', 'openai/gpt-5', true);
+                    const consume = (async () => {
+                        if ('stream' in response) {
+                            for await (const part of response.stream) { expect.fail(`Unexpected output ${JSON.stringify(part)}`); }
+                        }
+                    })().then(() => undefined, caught => caught);
+                    await clock.runAllAsync();
+                    const error = await consume;
+                    expect(error).to.be.instanceOf(Error).with.property('code', 'server_error');
+                    expect(create.callCount).to.equal(2);
+                    expect(logError.calledOnceWithExactly('Response API error:', error)).to.equal(true);
+                });
+            }
 
             it(`cancels during backoff ${withTools ? 'with tools' : 'without tools'}`, async () => {
                 const source = new CancellationTokenSource();
@@ -723,6 +752,7 @@ describe('OpenAiResponseApiUtils', () => {
                 await clock.runAllAsync();
                 expect(create.callCount).to.equal(1);
                 expect(create.firstCall.args[1].signal.aborted).to.equal(true);
+                expect(logError.called).to.equal(false);
                 source.dispose();
             });
         }

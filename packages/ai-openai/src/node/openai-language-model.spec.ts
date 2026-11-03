@@ -23,6 +23,7 @@ import { AzureOpenAI, OpenAI } from 'openai';
 import { createOpenAiClient, MistralFixedOpenAI, OpenAiModel, OpenAiModelParams } from './openai-language-model';
 import { OpenAiModelUtils } from './openai-model-utils';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
+import { OpenAiStreamingRetry } from './openai-streaming-retry';
 import { ChatCompletionStreamingAsyncIteratorFactory } from './openai-chat-completion-stream';
 import { getOpenAiModelDefaults } from './openai-model-defaults';
 import { OPENAI_WEB_SEARCH } from './openai-server-tools';
@@ -70,6 +71,7 @@ function buildModel<T extends OpenAiModel>(
 ): T {
     const parent = new Container();
     parent.bind(OpenAiModelUtils).toSelf();
+    parent.bind(OpenAiStreamingRetry).toSelf();
     if (responseApiUtils) {
         parent.bind(OpenAiResponseApiUtils).toConstantValue(responseApiUtils);
     } else {

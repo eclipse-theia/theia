@@ -17,7 +17,8 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { CancellationError, CancellationToken, CancellationTokenSource } from '@theia/core';
-import { retryOpenAiStream } from './openai-streaming-retry';
+import { Container, injectable } from '@theia/core/shared/inversify';
+import { OpenAiStreamingRetry } from './openai-streaming-retry';
 
 async function* events(...values: unknown[]): AsyncIterable<unknown> {
     yield* values;
@@ -39,11 +40,13 @@ const busy = { type: 'response.failed', response: { error: { code: 'server_error
 const lifecycle = { type: 'response.created' };
 const output = { type: 'response.output_text.delta', delta: 'answer' };
 
-describe('retryOpenAiStream', () => {
+describe('OpenAiStreamingRetry', () => {
     let clock: sinon.SinonFakeTimers;
+    let retry: OpenAiStreamingRetry;
 
     beforeEach(() => {
         clock = sinon.useFakeTimers();
+        retry = new OpenAiStreamingRetry();
     });
     afterEach(() => sinon.restore());
 
@@ -51,7 +54,7 @@ describe('retryOpenAiStream', () => {
         const open = sinon.stub();
         open.onFirstCall().resolves(events(lifecycle, busy));
         open.onSecondCall().resolves(events(lifecycle, output));
-        const result = collect(retryOpenAiStream(open, 3, event => event === lifecycle));
+        const result = collect(retry.retry(open, 3, event => event === lifecycle));
         await clock.tickAsync(374);
         expect(open.callCount).to.equal(1);
         await clock.tickAsync(126);
@@ -62,7 +65,7 @@ describe('retryOpenAiStream', () => {
     for (const maxRetries of [0, 1, 3]) {
         it(`stops after ${maxRetries} retries and preserves the provider error`, async () => {
             const open = sinon.stub().callsFake(async () => events(busy));
-            const result = collect(retryOpenAiStream(open, maxRetries, () => true));
+            const result = collect(retry.retry(open, maxRetries, () => true));
             await clock.runAllAsync();
             const { error, values } = await result;
             expect(values).to.be.empty;
@@ -77,7 +80,7 @@ describe('retryOpenAiStream', () => {
         { type: 'response.output_item.added', item: { type: 'web_search_call' } }]) {
         it(`does not replay a response after ${JSON.stringify(event)}`, async () => {
             const open = sinon.stub().callsFake(async () => events(lifecycle, event, busy));
-            const result = await collect(retryOpenAiStream(open, 3, value => value === lifecycle));
+            const result = await collect(retry.retry(open, 3, value => value === lifecycle));
             expect(result.values).to.deep.equal([lifecycle, event]);
             expect(result.error).to.have.property('code', 'server_error');
             expect(open.callCount).to.equal(1);
@@ -97,7 +100,7 @@ describe('retryOpenAiStream', () => {
                 open.onFirstCall().callsFake(async () => (async function* (): AsyncIterable<unknown> { throw Object.assign(new Error(error.message), error); })());
             }
             open.onSecondCall().resolves(events(output));
-            const result = collect(retryOpenAiStream(open, 1, () => true));
+            const result = collect(retry.retry(open, 1, () => true));
             await clock.runAllAsync();
             expect(await result).to.deep.equal({ values: [output] });
             expect(open.callCount).to.equal(2);
@@ -107,22 +110,41 @@ describe('retryOpenAiStream', () => {
     for (const code of ['insufficient_quota', 'billing_hard_limit_reached', 'invalid_api_key', 'invalid_request_error']) {
         it(`does not retry ${code}`, async () => {
             const open = sinon.stub().callsFake(async () => events({ type: 'error', code, message: 'Too busy' }));
-            const result = await collect(retryOpenAiStream(open, 3, () => true));
+            const result = await collect(retry.retry(open, 3, () => true));
             expect(result.error).to.have.property('code', code);
             expect(open.callCount).to.equal(1);
         });
     }
 
+    it('allows adopters to rebind the retry service with gateway-specific overload codes', async () => {
+        @injectable()
+        class GatewayStreamingRetry extends OpenAiStreamingRetry {
+            protected override isTransientStreamError(error: unknown): boolean {
+                return (error as { code?: string }).code === 'gateway_overloaded' || super.isTransientStreamError(error);
+            }
+        }
+        const container = new Container();
+        container.bind(OpenAiStreamingRetry).toSelf();
+        container.rebind(OpenAiStreamingRetry).to(GatewayStreamingRetry);
+        const open = sinon.stub();
+        open.onFirstCall().resolves(events({ type: 'error', code: 'gateway_overloaded', message: 'Try again' }));
+        open.onSecondCall().resolves(events(output));
+        const result = collect(container.get(OpenAiStreamingRetry).retry(open, 1, () => true));
+        await clock.runAllAsync();
+        expect(await result).to.deep.equal({ values: [output] });
+        expect(open.callCount).to.equal(2);
+    });
+
     it('does not add retries to an opening failure already handled by the SDK', async () => {
         const error = Object.assign(new Error('Service unavailable'), { status: 503 });
         const open = sinon.stub().rejects(error);
-        expect((await collect(retryOpenAiStream(open, 3, () => true))).error).to.equal(error);
+        expect((await collect(retry.retry(open, 3, () => true))).error).to.equal(error);
         expect(open.callCount).to.equal(1);
     });
 
     it('reports a failed response with no error details instead of silently ending', async () => {
         const open = sinon.stub().resolves(events({ type: 'response.failed', response: {} }));
-        const result = await collect(retryOpenAiStream(open, 3, () => true));
+        const result = await collect(retry.retry(open, 3, () => true));
         expect(result.error).to.be.instanceOf(Error).with.property('message', 'OpenAI response failed.');
         expect(open.callCount).to.equal(1);
     });
@@ -130,7 +152,7 @@ describe('retryOpenAiStream', () => {
     it('cancels during backoff without sending again', async () => {
         const source = new CancellationTokenSource();
         const open = sinon.stub().callsFake(async () => events(busy));
-        const result = collect(retryOpenAiStream(open, 3, () => true, source.token));
+        const result = collect(retry.retry(open, 3, () => true, source.token));
         await clock.tickAsync(0);
         source.cancel();
         expect((await result).error).to.be.instanceOf(CancellationError);
@@ -146,7 +168,7 @@ describe('retryOpenAiStream', () => {
             yield lifecycle;
             await new Promise<void>(resolve => signal.addEventListener('abort', () => resolve(), { once: true }));
         })());
-        const result = collect(retryOpenAiStream(open, 3, () => true, source.token));
+        const result = collect(retry.retry(open, 3, () => true, source.token));
         await clock.tickAsync(0);
         source.cancel();
         expect((await result).error).to.be.instanceOf(CancellationError);
@@ -156,14 +178,14 @@ describe('retryOpenAiStream', () => {
 
     it('does not open a cancelled request', async () => {
         const open = sinon.stub();
-        const result = await collect(retryOpenAiStream(open, 3, () => true, CancellationToken.Cancelled));
+        const result = await collect(retry.retry(open, 3, () => true, CancellationToken.Cancelled));
         expect(result.error).to.be.instanceOf(CancellationError);
         expect(open.called).to.equal(false);
     });
 
     it('aborts the upstream request when the consumer stops reading', async () => {
         const open = sinon.stub().resolves(events(lifecycle, output));
-        for await (const event of retryOpenAiStream(open, 3, () => true)) {
+        for await (const event of retry.retry(open, 3, () => true)) {
             expect(event).to.equal(lifecycle);
             break;
         }

@@ -21,6 +21,7 @@ import {
     ToolCallExecutor, ToolCallExecutorImpl, UserRequest
 } from '@theia/ai-core';
 import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-model-utils';
+import { OpenAiStreamingRetry } from '@theia/ai-openai/lib/node/openai-streaming-retry';
 import { OPENAI_WEB_SEARCH } from '@theia/ai-openai/lib/node/openai-server-tools';
 import { OpenAI } from 'openai';
 import { ILogger } from '@theia/core';
@@ -230,6 +231,7 @@ describe('ChatGptResponseApiUtils', () => {
                 const container = new Container();
                 container.bind(ILogger).to(MockLogger);
                 container.bind(ToolCallExecutor).to(ToolCallExecutorImpl).inSingletonScope();
+                container.bind(OpenAiStreamingRetry).toSelf();
                 container.bind(ChatGptResponseApiUtils).toSelf();
                 const responseUtils = container.get(ChatGptResponseApiUtils);
                 let create: sinon.SinonStub;
@@ -282,6 +284,7 @@ describe('ChatGptResponseApiUtils', () => {
             const container = new Container();
             container.bind(ILogger).to(MockLogger);
             container.bind(ToolCallExecutor).to(ToolCallExecutorImpl).inSingletonScope();
+            container.bind(OpenAiStreamingRetry).toSelf();
             container.bind(ChatGptResponseApiUtils).toSelf();
             const responseUtils = container.get(ChatGptResponseApiUtils);
             const events = [
@@ -315,6 +318,7 @@ describe('ChatGptResponseApiUtils', () => {
             const container = new Container();
             container.bind(ILogger).to(MockLogger);
             container.bind(ToolCallExecutor).to(ToolCallExecutorImpl).inSingletonScope();
+            container.bind(OpenAiStreamingRetry).toSelf();
             container.bind(ChatGptResponseApiUtils).toSelf();
             const responseUtils = container.get(ChatGptResponseApiUtils);
             const event = { type: 'response.failed', response: { error: { message: 'Upstream failure' } } };
@@ -342,6 +346,7 @@ describe('ChatGptResponseApiUtils', () => {
             const container = new Container();
             container.bind(ILogger).to(MockLogger);
             container.bind(ToolCallExecutor).to(ToolCallExecutorImpl).inSingletonScope();
+            container.bind(OpenAiStreamingRetry).toSelf();
             container.bind(ChatGptResponseApiUtils).toSelf();
             const responseUtils = container.get(ChatGptResponseApiUtils);
             const payloads: Record<string, unknown>[] = [];

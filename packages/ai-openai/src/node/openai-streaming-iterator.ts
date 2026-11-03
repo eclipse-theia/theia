@@ -20,6 +20,7 @@ import { ChatCompletionStream, ChatCompletionStreamEvents } from 'openai/lib/Cha
 import { ChatCompletionContentPartText } from 'openai/resources';
 import { AbstractStreamingResponseIterator } from './streaming-response-iterator';
 
+/** @deprecated Use `ChatCompletionStreamingAsyncIterator` from './openai-chat-completion-stream' instead. */
 export class StreamingAsyncIterator extends AbstractStreamingResponseIterator {
 
     constructor(

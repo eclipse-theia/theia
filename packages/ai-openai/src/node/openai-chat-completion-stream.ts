@@ -19,7 +19,7 @@ import { CancellationError, CancellationToken, CancellationTokenSource, ILogger 
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
 import { AbstractStreamingResponseIterator } from './streaming-response-iterator';
-import { retryOpenAiStream } from './openai-streaming-retry';
+import { OpenAiStreamingRetry } from './openai-streaming-retry';
 import {
     ChatCompletionAssistantMessageParam,
     ChatCompletionChunk,
@@ -78,6 +78,9 @@ export class ChatCompletionStreamingAsyncIterator extends AbstractStreamingRespo
 
     @inject(ToolCallExecutor)
     protected readonly toolCallExecutor: ToolCallExecutor;
+
+    @inject(OpenAiStreamingRetry)
+    protected readonly streamingRetry: OpenAiStreamingRetry;
 
     @inject(ILogger) @named('ai-openai:ChatCompletionStreamingAsyncIterator')
     protected readonly logger: ILogger;
@@ -158,14 +161,14 @@ export class ChatCompletionStreamingAsyncIterator extends AbstractStreamingRespo
             tool_choice: this.options.tools?.length ? 'auto' : undefined,
             ...this.options.settings
         } as ChatCompletionCreateParamsStreaming;
-        const stream = retryOpenAiStream(
+        const stream = this.streamingRetry.retry(
             async signal => await this.options.openai.chat.completions.create(body, {
                 maxRetries: this.options.maxRetries,
                 signal
             }) as unknown as ChatCompletionChunkStream,
             this.options.maxRetries,
             chunk => !chunk.usage && chunk.choices.every(choice => !choice.finish_reason
-                && Object.keys(choice.delta ?? {}).every(key => key === 'role')),
+                && Object.entries(choice.delta ?? {}).every(([key, value]) => key === 'role' || (value ?? '') === '')),
             this.streamCancellation.token
         );
 

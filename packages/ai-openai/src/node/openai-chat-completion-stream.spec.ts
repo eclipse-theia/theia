@@ -36,6 +36,7 @@ import {
     UserRequest
 } from '@theia/ai-core';
 import { ChatCompletionStreamingAsyncIterator, ChatCompletionToolLoopOptions } from './openai-chat-completion-stream';
+import { OpenAiStreamingRetry } from './openai-streaming-retry';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -147,6 +148,7 @@ function makeIterator(
     container.bind(ILogger).to(MockLogger);
     container.bind(ToolCallExecutor).toConstantValue(toolCallExecutor);
     container.bind(ChatCompletionToolLoopOptions).toConstantValue(options);
+    container.bind(OpenAiStreamingRetry).toSelf();
     container.bind(ChatCompletionStreamingAsyncIterator).toSelf();
     return container.get(ChatCompletionStreamingAsyncIterator);
 }
@@ -205,12 +207,12 @@ describe('ChatCompletionStreamingAsyncIterator', () => {
     });
 
     for (const withTools of [false, true]) {
-        it(`quietly retries a busy stream after a role-only chunk ${withTools ? 'with tools' : 'without tools'}`, async () => {
+        it(`quietly retries a busy stream after an empty initial chunk ${withTools ? 'with tools' : 'without tools'}`, async () => {
             const clock = sinon.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
             try {
                 const busy = Object.assign(new Error('Model too busy'), { code: 'server_error' });
                 const openai = fakeOpenAi([
-                    new FakeStream([{ choices: [{ delta: { role: 'assistant' } }] }], undefined, busy),
+                    new FakeStream([{ choices: [{ delta: JSON.parse('{"role":"assistant","content":"","refusal":null}') }] }], undefined, busy),
                     new FakeStream([textChunk('success')])
                 ]);
                 const settled = collectUntilSettled(makeIterator(openai, {
@@ -238,6 +240,7 @@ describe('ChatCompletionStreamingAsyncIterator', () => {
     for (const [name, chunk] of [
         ['text', textChunk('partial')],
         ['reasoning', { choices: [{ delta: { reasoning_content: 'thinking' } }] }],
+        ['refusal', { choices: [{ delta: { refusal: 'Cannot comply' } }] }],
         ['tool ID', toolIdOnlyChunk(0, 'call-a')],
         ['tool arguments', toolChunk(0, 'call-a', 'a', '{')]
     ] as const) {
@@ -265,7 +268,7 @@ describe('ChatCompletionStreamingAsyncIterator', () => {
             const busy = Object.assign(new Error('Model too busy'), { code: 'server_error' });
             const openai = fakeOpenAi([
                 new FakeStream([toolChunk(0, 'call-a', 'a', '{}')]),
-                new FakeStream([{ choices: [{ delta: { role: 'assistant' } }] }], undefined, busy),
+                new FakeStream([{ choices: [{ delta: JSON.parse('{"role":"assistant","content":"","refusal":null}') }] }], undefined, busy),
                 new FakeStream([textChunk('done')])
             ]);
             const settled = collectUntilSettled(makeIterator(openai, { request, maxRetries: 1 }));
