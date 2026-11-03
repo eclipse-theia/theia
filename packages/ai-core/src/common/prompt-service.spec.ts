@@ -500,6 +500,26 @@ describe('PromptService', () => {
             expect(commands[0].id).to.equal('cmd-all');
         });
 
+        it('getCommands(agentId) prefers a command for the agent over a command with the same name for all agents', () => {
+            promptService.addBuiltInPromptFragment({
+                id: 'cmd-all',
+                template: 'For all',
+                isCommand: true,
+                commandName: 'same'
+            });
+            promptService.addBuiltInPromptFragment({
+                id: 'cmd-specific',
+                template: 'For one',
+                isCommand: true,
+                commandName: 'same',
+                commandAgents: ['SpecificAgent']
+            });
+
+            expect(promptService.getCommands('SpecificAgent').map(command => command.id)).to.deep.equal(['cmd-specific']);
+            expect(promptService.getCommands('OtherAgent').map(command => command.id)).to.deep.equal(['cmd-all']);
+            expect(promptService.getCommands().map(command => command.id)).to.have.members(['cmd-all', 'cmd-specific']);
+        });
+
         it('getCommands() returns empty array when no commands registered', () => {
             promptService.addBuiltInPromptFragment({
                 id: 'normal1',

@@ -25,6 +25,7 @@ import {
     ChatRequestParser,
     ChatRequestParserImpl,
     ChatService,
+    ChatSessionCompactionService,
     ToolCallChatResponseContentFactory,
     ServerToolCallResponseContentFactory,
     PinChatAgent,
@@ -55,6 +56,8 @@ import { ChangeSetDecorator, ChangeSetDecoratorService } from './change-set-deco
 import { ChatSessionSummaryAgent } from '../common/chat-session-summary-agent';
 import { TaskContextVariableContribution } from './task-context-variable-contribution';
 import { TaskContextVariableLabelProvider } from './task-context-variable-label-provider';
+import { ChatSessionCompactionServiceImpl } from './chat-session-compaction-service';
+import { ChatSessionSummarizer } from './chat-session-summarizer';
 import { TaskContextService, TaskContextStorageService } from './task-context-service';
 import { InMemoryTaskContextStorage } from './task-context-storage-service';
 import { AIChatFrontendContribution } from './ai-chat-frontend-contribution';
@@ -206,6 +209,10 @@ export default new ContainerModule(bind => {
 
     bind(DefaultPendingImageRegistry).toSelf().inSingletonScope();
     bind(PendingImageRegistry).toService(DefaultPendingImageRegistry);
+
+    bind(ChatSessionSummarizer).toSelf().inSingletonScope();
+    bind(ChatSessionCompactionServiceImpl).toSelf().inSingletonScope();
+    bind(ChatSessionCompactionService).toService(ChatSessionCompactionServiceImpl);
 
     bind(TaskContextService).toSelf().inSingletonScope();
     bind(InMemoryTaskContextStorage).toSelf().inSingletonScope();

@@ -21,7 +21,6 @@
 
 import {
     AIVariableResolutionRequest,
-    CompactionMessage,
     CompactionSettings,
     GenericCapabilitySelections,
     LanguageModelMessage,
@@ -443,6 +442,11 @@ export interface ChatRequestModel {
     readonly context: ChatContext;
     readonly agentId?: string;
     readonly data?: { [key: string]: unknown };
+    /**
+     * `true` if this request asked for a compaction of its session (`/compact`).
+     * The text of such a request never goes to a language model as a user message.
+     */
+    readonly isCompactionRequest?: boolean;
     toSerializable(): SerializableChatRequestData;
 }
 
@@ -1005,6 +1009,14 @@ export namespace ThinkingChatResponseContent {
     }
 }
 
+/**
+ * The value of {@link CompactionChatResponseContent.provider} for a compaction that Theia did itself.
+ * The summary of such a marker is plain text, so it works with all language models.
+ */
+export const SESSION_COMPACTION_PROVIDER = 'theia-session';
+
+const SESSION_COMPACTION_PROMPT_PREFIX = 'The earlier part of this conversation was compacted. This is its summary:';
+
 export interface CompactionChatResponseContent extends ChatResponseContent {
     kind: 'compaction';
     provider: string;
@@ -1014,6 +1026,48 @@ export interface CompactionChatResponseContent extends ChatResponseContent {
 export namespace CompactionChatResponseContent {
     export function is(obj: unknown): obj is CompactionChatResponseContent {
         return ChatResponseContent.is(obj) && obj.kind === 'compaction';
+    }
+    /**
+     * `true` for a marker that Theia created by summarizing the session itself (`/compact`).
+     * `false` for a marker from a provider (server-side compaction), which only the provider can interpret.
+     */
+    export function isSessionCompaction(obj: unknown): obj is CompactionChatResponseContent {
+        return is(obj) && obj.provider === SESSION_COMPACTION_PROVIDER;
+    }
+}
+
+/**
+ * Compaction of a chat session by Theia itself (`/compact`).
+ *
+ * The session keeps all its requests. The latest request on the active branch with a session compaction
+ * marker in its response is the compaction boundary: all requests before the boundary are stale.
+ * Staleness comes from the position of the requests and is not stored. Thus it follows the active branch:
+ * if the user edits a stale request, the new branch has no boundary and its requests are not stale.
+ */
+export namespace ChatSessionCompaction {
+    export function isBoundary(request: ChatRequestModel): boolean {
+        return request.response.response.content.some(CompactionChatResponseContent.isSessionCompaction);
+    }
+
+    function getBoundaryIndex(requests: ChatRequestModel[]): number {
+        for (let index = requests.length - 1; index >= 0; index--) {
+            if (isBoundary(requests[index])) {
+                return index;
+            }
+        }
+        return -1;
+    }
+
+    /** The requests of the active branch that are no longer part of the prompt. */
+    export function getStaleRequests(model: ChatModel): ChatRequestModel[] {
+        const requests = model.getRequests();
+        return requests.slice(0, Math.max(getBoundaryIndex(requests), 0));
+    }
+
+    /** The requests of the active branch that agents use to make a prompt. The first one can be the boundary, which supplies the summary. */
+    export function getPromptRequests(model: ChatModel): ChatRequestModel[] {
+        const requests = model.getRequests();
+        return requests.slice(Math.max(getBoundaryIndex(requests), 0));
     }
 }
 
@@ -1950,6 +2004,7 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
     protected _data: { [key: string]: unknown };
     protected _isEditing = false;
     protected _message: ParsedChatRequest;
+    protected _isCompactionRequest = false;
 
     protected readonly toDispose = new DisposableCollection();
     readonly editContextManager: ChatContextManagerImpl;
@@ -2018,6 +2073,7 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         this._agentId = reqData.agentId;
         this._data = {};
         this._context = { variables: [] };
+        this._isCompactionRequest = reqData.isCompactionRequest ?? false;
 
         if (reqData.parsedRequest) {
             this._message = this.deserializeParsedRequest(
@@ -2252,6 +2308,14 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         this.response.cancel();
     }
 
+    get isCompactionRequest(): boolean {
+        return this._isCompactionRequest;
+    }
+
+    markAsCompactionRequest(): void {
+        this._isCompactionRequest = true;
+    }
+
     toSerializable(): SerializableChatRequestData {
         return {
             id: this.id,
@@ -2264,7 +2328,8 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
             parsedRequest: this.message ? ParsedChatRequest.toSerializable(this.message) : undefined,
             capabilityOverrides: this.request.capabilityOverrides,
             genericCapabilitySelections: this.request.genericCapabilitySelections,
-            serverToolSelections: this.request.serverToolSelections
+            serverToolSelections: this.request.serverToolSelections,
+            isCompactionRequest: this._isCompactionRequest || undefined
         };
     }
 
@@ -2466,7 +2531,15 @@ export class CompactionChatResponseContentImpl implements CompactionChatResponse
         return this._summary;
     }
 
-    toLanguageModelMessage(): CompactionMessage {
+    toLanguageModelMessage(): LanguageModelMessage {
+        if (this._provider === SESSION_COMPACTION_PROVIDER) {
+            // A user message, because the summary is the first message of the prompt and some providers require a user message there.
+            return {
+                actor: 'user',
+                type: 'text',
+                text: `${SESSION_COMPACTION_PROMPT_PREFIX}\n\n${this._summary ?? ''}`
+            };
+        }
         return {
             actor: 'ai',
             type: 'compaction',

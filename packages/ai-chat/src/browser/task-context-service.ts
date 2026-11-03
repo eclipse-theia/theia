@@ -16,12 +16,10 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MaybePromise, ProgressService, URI, generateUuid, Event, nls } from '@theia/core';
-import { ChatAgent, ChatAgentLocation, ChatService, ChatSession, MutableChatModel, MutableChatRequestModel, ParsedChatRequestTextPart } from '../common';
+import { ChatAgent, ChatService, ChatSession } from '../common';
 
-import { ChatSessionSummaryAgent } from '../common/chat-session-summary-agent';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { AgentService, PromptService, ResolvedPromptFragment } from '@theia/ai-core';
-import { CHAT_SESSION_SUMMARY_PROMPT } from '../common/chat-session-summary-agent-prompt';
+import { ChatSessionSummarizer } from './chat-session-summarizer';
 
 export interface SummaryMetadata {
     id?: string;
@@ -51,8 +49,7 @@ export class TaskContextService {
     protected pendingSummaries = new Map<string, Promise<Summary>>();
 
     @inject(ChatService) protected readonly chatService: ChatService;
-    @inject(AgentService) protected readonly agentService: AgentService;
-    @inject(PromptService) protected readonly promptService: PromptService;
+    @inject(ChatSessionSummarizer) protected readonly summarizer: ChatSessionSummarizer;
     @inject(TaskContextStorageService) protected readonly storageService: TaskContextStorageService;
     @inject(ProgressService) protected readonly progressService: ProgressService;
 
@@ -92,9 +89,9 @@ export class TaskContextService {
         });
         this.pendingSummaries.set(session.id, summaryDeferred.promise);
         try {
-            const prompt = await this.getSystemPrompt(session, promptId);
+            const { summary } = await this.summarizer.summarize(session.model, { promptId, agent });
             const newSummary: Summary = {
-                summary: await this.getLlmSummary(session, prompt, agent),
+                summary,
                 label: session.title || session.id,
                 sessionId: session.id,
                 id: summaryId
@@ -115,33 +112,6 @@ export class TaskContextService {
             progress.cancel();
             this.pendingSummaries.delete(session.id);
         }
-    }
-
-    protected async getLlmSummary(session: ChatSession, prompt: ResolvedPromptFragment | undefined, agent?: ChatAgent): Promise<string> {
-        if (!prompt) { return ''; }
-        agent = agent || this.agentService.getAgents().find<ChatAgent>((candidate): candidate is ChatAgent =>
-            'invoke' in candidate
-            && typeof candidate.invoke === 'function'
-            && candidate.id === ChatSessionSummaryAgent.ID
-        );
-        if (!agent) { throw new Error('Unable to identify agent for summary.'); }
-        const model = new MutableChatModel(ChatAgentLocation.Panel);
-
-        const messages = session.model.getRequests().filter((candidate): candidate is MutableChatRequestModel => candidate instanceof MutableChatRequestModel);
-        messages.forEach(message => model['_hierarchy'].append(message));
-        const summaryRequest = model.addRequest({
-            variables: prompt.variables ?? [],
-            request: { text: prompt.text },
-            parts: [new ParsedChatRequestTextPart({ start: 0, endExclusive: prompt.text.length }, prompt.text)],
-            toolRequests: prompt.functionDescriptions ?? new Map()
-        }, agent.id);
-        await agent.invoke(summaryRequest);
-        return summaryRequest.response.response.asDisplayString();
-    }
-
-    protected async getSystemPrompt(session: ChatSession, promptId: string = CHAT_SESSION_SUMMARY_PROMPT.id): Promise<ResolvedPromptFragment | undefined> {
-        const prompt = await this.promptService.getResolvedPromptFragment(promptId || CHAT_SESSION_SUMMARY_PROMPT.id, undefined, { model: session.model });
-        return prompt;
     }
 
     hasSummary(chatSession: ChatSession): boolean {

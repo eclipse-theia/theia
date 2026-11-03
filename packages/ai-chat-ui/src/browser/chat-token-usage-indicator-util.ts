@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ChatModel, ResponseTokenUsage } from '@theia/ai-chat';
+import { ChatModel, ChatSessionCompaction, ResponseTokenUsage } from '@theia/ai-chat';
 import { nls } from '@theia/core/lib/common/nls';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
@@ -89,14 +89,8 @@ export function computeSessionTokenUsage(chatModel?: ChatModel): number {
     if (!chatModel) {
         return 0;
     }
-    const requests = chatModel.getRequests();
-    for (let i = requests.length - 1; i >= 0; i--) {
-        const usage: ResponseTokenUsage | undefined = requests[i].response.tokenUsage;
-        if (usage) {
-            return sumUsageTokens(usage);
-        }
-    }
-    return 0;
+    const usage = getLatestTokenUsage(chatModel);
+    return usage ? sumUsageTokens(usage) : 0;
 }
 
 /** Sum of input + output (+ cache) tokens across every response in the session. Represents cumulative billed usage. */
@@ -115,7 +109,7 @@ export function computeCumulativeTokenUsage(chatModel?: ChatModel): number {
 }
 
 /**
- * Number of provider compaction events recorded across the session.
+ * Number of compaction events recorded across the session, from a provider or from `/compact`.
  * Counts every `compaction` content part; a single response may contain more than one.
  */
 export function countCompactions(chatModel?: ChatModel): number {
@@ -133,6 +127,11 @@ export function countCompactions(chatModel?: ChatModel): number {
     return count;
 }
 
+/**
+ * The token usage that shows the current size of the session.
+ * Usage before the latest `/compact` is not relevant, because that history is no longer sent. At that point the session
+ * has only the summary, so of the usage of the summary request only its output counts: its input was the old history.
+ */
 export function getLatestTokenUsage(chatModel?: ChatModel): ResponseTokenUsage | undefined {
     if (!chatModel) {
         return undefined;
@@ -140,6 +139,9 @@ export function getLatestTokenUsage(chatModel?: ChatModel): ResponseTokenUsage |
     const requests = chatModel.getRequests();
     for (let i = requests.length - 1; i >= 0; i--) {
         const usage = requests[i].response.tokenUsage;
+        if (ChatSessionCompaction.isBoundary(requests[i])) {
+            return usage && { inputTokens: 0, outputTokens: usage.outputTokens };
+        }
         if (usage) {
             return usage;
         }

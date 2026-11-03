@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import { Emitter, Event } from '@theia/core';
-import { ChatModel, ChatRequestModel, ResponseTokenUsage } from '@theia/ai-chat';
+import { ChatModel, ChatRequestModel, ChatResponseContent, CompactionChatResponseContentImpl, ResponseTokenUsage, SESSION_COMPACTION_PROVIDER } from '@theia/ai-chat';
 import {
     buildBarTooltip,
     computeCumulativeTokenUsage,
@@ -24,6 +24,7 @@ import {
     countCompactions,
     decideTokenUsageWarning,
     formatTokenCount,
+    getLatestTokenUsage,
     getUsageColorClass,
     isAboveTokenUsageWarningThreshold
 } from './chat-token-usage-indicator-util';
@@ -312,6 +313,54 @@ describe('ChatTokenUsageIndicator', () => {
                 createMockRequest({ inputTokens: 100, outputTokens: 50 })
             ]);
             expect(computeCumulativeTokenUsage(model)).to.equal(150);
+        });
+    });
+
+    describe('usage after /compact', () => {
+        function createRequestWithContent(tokenUsage: ResponseTokenUsage | undefined, content: ChatResponseContent): Partial<ChatRequestModel> {
+            return { response: { tokenUsage, isComplete: true, response: { content: [content] } } } as unknown as Partial<ChatRequestModel>;
+        }
+        const history = createMockRequest({ inputTokens: 90_000, outputTokens: 1_000 });
+        const summaryUsage = { inputTokens: 91_000, outputTokens: 500 };
+        const marker = new CompactionChatResponseContentImpl(SESSION_COMPACTION_PROVIDER, undefined, 'summary');
+
+        it('counts only the summary for the session size', () => {
+            const model = createMockChatModel([history, createRequestWithContent(summaryUsage, marker)]);
+            expect(computeSessionTokenUsage(model)).to.equal(500);
+            expect(getLatestTokenUsage(model)).to.deep.equal({ inputTokens: 0, outputTokens: 500 });
+        });
+
+        it('does not use the usage from before the compaction if the summary request reported none', () => {
+            const model = createMockChatModel([history, createRequestWithContent(undefined, marker)]);
+            expect(computeSessionTokenUsage(model)).to.equal(0);
+            expect(getLatestTokenUsage(model)).to.equal(undefined);
+        });
+
+        it('uses the usage of later requests', () => {
+            const model = createMockChatModel([
+                history,
+                createRequestWithContent(summaryUsage, marker),
+                createMockRequest({ inputTokens: 800, outputTokens: 50 })
+            ]);
+            expect(computeSessionTokenUsage(model)).to.equal(850);
+        });
+
+        it('keeps the billed tokens of the summary request in the cumulative usage', () => {
+            const model = createMockChatModel([history, createRequestWithContent(summaryUsage, marker)]);
+            expect(computeCumulativeTokenUsage(model)).to.equal(91_000 + 91_500);
+        });
+
+        it('does not change the session size for a server-side marker', () => {
+            const model = createMockChatModel([
+                history,
+                createRequestWithContent({ inputTokens: 5_000, outputTokens: 100 }, new CompactionChatResponseContentImpl('anthropic', {}, 'summary'))
+            ]);
+            expect(computeSessionTokenUsage(model)).to.equal(5_100);
+        });
+
+        it('counts the compaction', () => {
+            const model = createMockChatModel([history, createRequestWithContent(summaryUsage, marker)]);
+            expect(countCompactions(model)).to.equal(1);
         });
     });
 

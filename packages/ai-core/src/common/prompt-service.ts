@@ -1194,11 +1194,11 @@ export class PromptServiceImpl implements PromptService {
             const commandName = promptFragment.commandName;
             const duplicates = this._builtInFragments.filter(
                 f => f.isCommand && f.commandName === commandName && (
-                    // undefined commandAgents means applicable to all agents
-                    f.commandAgents === undefined ||
-                    promptFragment.commandAgents === undefined ||
-                    // Check for overlapping command agents
-                    f.commandAgents.some(agent => promptFragment.commandAgents!.includes(agent))
+                    // undefined commandAgents means applicable to all agents; an agent-specific command takes precedence over such a command (see getCommands)
+                    f.commandAgents === undefined || promptFragment.commandAgents === undefined
+                        ? f.commandAgents === promptFragment.commandAgents
+                        // Check for overlapping command agents
+                        : f.commandAgents.some(agent => promptFragment.commandAgents!.includes(agent))
                 )
             );
             if (duplicates.length > 0) {
@@ -1363,6 +1363,9 @@ export class PromptServiceImpl implements PromptService {
             return allCommands;
         }
 
-        return allCommands.filter(fragment => !fragment.commandAgents || fragment.commandAgents.includes(agentId));
+        const agentCommands = allCommands.filter(fragment => !fragment.commandAgents || fragment.commandAgents.includes(agentId));
+        // A command for this agent takes precedence over a command with the same name for all agents
+        const agentSpecificNames = new Set(agentCommands.filter(fragment => fragment.commandAgents).map(fragment => fragment.commandName));
+        return agentCommands.filter(fragment => fragment.commandAgents || !agentSpecificNames.has(fragment.commandName));
     }
 }

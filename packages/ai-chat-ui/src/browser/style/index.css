@@ -2448,6 +2448,11 @@ details.theia-tool-confirmation-args>summary::marker {
   background: var(--theia-editor-background);
 }
 
+/* Requests and responses that a compaction excludes from future prompts. */
+.theia-ChatNode-stale {
+  opacity: 0.6;
+}
+
 .theia-ChatCompactionMarker {
   width: 100%;
   margin: 6px 0;

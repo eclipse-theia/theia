@@ -119,6 +119,11 @@ export interface SerializableChatRequestData {
      * Server tool selections for this request, keyed by model vendor.
      */
     serverToolSelections?: Record<string, string[]>;
+    /**
+     * True if this request asked for a compaction of its session (`/compact`).
+     * Absent in other requests and in sessions from earlier versions.
+     */
+    isCompactionRequest?: boolean;
 }
 
 export interface SerializableChatResponseContentData<T = unknown> {

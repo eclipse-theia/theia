@@ -38,6 +38,7 @@ import {
     MutableChatRequestModel,
 } from './chat-model';
 import { ChatRequestParser } from './chat-request-parser';
+import { ChatSessionCompactionService } from './chat-session-compaction';
 import { ChatSessionNamingService } from './chat-session-naming-service';
 import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-request';
 import { ChatSessionIndex, ChatSessionStore } from './chat-session-store';
@@ -193,6 +194,9 @@ export class ChatServiceImpl implements ChatService {
 
     @inject(ChatSessionNamingService) @optional()
     protected chatSessionNamingService: ChatSessionNamingService | undefined;
+
+    @inject(ChatSessionCompactionService) @optional()
+    protected compactionService: ChatSessionCompactionService | undefined;
 
     @inject(PinChatAgent) @optional()
     protected pinChatAgent: boolean | undefined;
@@ -396,7 +400,10 @@ export class ChatServiceImpl implements ChatService {
             }
         });
 
-        agent.invoke(requestModel).catch(error => requestModel.response.error(error));
+        const execution = this.compactionService?.isCompactionCommand(requestModel, agent)
+            ? this.compactionService.compact(requestModel)
+            : agent.invoke(requestModel);
+        execution.catch(error => requestModel.response.error(error));
 
         return invocation;
     }

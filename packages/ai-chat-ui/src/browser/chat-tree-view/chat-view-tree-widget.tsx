@@ -22,6 +22,7 @@ import {
     ChatResponseModel,
     ChatService,
     EditableChatRequestModel,
+    ChatSessionCompaction,
     ParsedChatRequestAgentPart,
     ParsedChatRequestFunctionPart,
     ParsedChatRequestVariablePart,
@@ -78,7 +79,9 @@ import { ModelBadge } from './model-badge';
 export interface RequestNode extends TreeNode {
     request: ChatRequestModel,
     branch: ChatHierarchyBranch,
-    sessionId: string
+    sessionId: string,
+    /** `true` if a compaction of the session excludes this request from future prompts. */
+    isStale?: boolean
 }
 export const isRequestNode = (node: TreeNode): node is RequestNode => 'request' in node;
 
@@ -90,7 +93,9 @@ export const isEditableRequestNode = (node: TreeNode): node is EditableRequestNo
 // TODO Instead of directly operating on the ChatResponseModel we could use an intermediate view model
 export interface ResponseNode extends TreeNode {
     response: ChatResponseModel,
-    sessionId: string
+    sessionId: string,
+    /** `true` if a compaction of the session excludes this response from future prompts. */
+    isStale?: boolean
 }
 export const isResponseNode = (node: TreeNode): node is ResponseNode => 'response' in node;
 
@@ -606,10 +611,12 @@ export class ChatViewTreeWidget extends TreeWidget {
         if (CompositeTreeNode.is(this.model.root)) {
             const nodes: TreeNode[] = [];
             this.chatModelId = chatModel.id;
+            const staleRequests = new Set(ChatSessionCompaction.getStaleRequests(chatModel));
             chatModel.getBranches().forEach(branch => {
                 const request = branch.get();
-                nodes.push(this.mapRequestToNode(branch));
-                nodes.push(this.mapResponseToNode(request.response));
+                const isStale = staleRequests.has(request);
+                nodes.push(Object.assign(this.mapRequestToNode(branch), { isStale }));
+                nodes.push(Object.assign(this.mapResponseToNode(request.response), { isStale }));
             });
             this.model.root.children = nodes;
             this.model.refresh();
@@ -631,7 +638,7 @@ export class ChatViewTreeWidget extends TreeWidget {
             : nls.localize('theia/ai/chat-ui/responseFrom', 'Response from {0}', this.getAgentLabel(node));
         return <React.Fragment key={node.id}>
             <div
-                className='theia-ChatNode'
+                className={`theia-ChatNode${node.isStale ? ' theia-ChatNode-stale' : ''}`}
                 data-node-id={node.id}
                 role='article'
                 aria-label={ariaLabel}

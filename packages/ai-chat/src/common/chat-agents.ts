@@ -67,6 +67,8 @@ import {
     ChatModel,
     ChatRequestModel,
     ChatResponseContent,
+    ChatSessionCompaction,
+    CompactionChatResponseContent,
     CommonChatSessionSettings,
     CompactionChatResponseContentImpl,
     ErrorChatResponseContentImpl,
@@ -469,7 +471,13 @@ export abstract class AbstractChatAgent implements ChatAgent {
     protected async getMessages(
         model: ChatModel, includeResponseInProgress = false
     ): Promise<LanguageModelMessage[]> {
-        const requestMessages = model.getRequests().flatMap(request => {
+        const requestMessages = ChatSessionCompaction.getPromptRequests(model).flatMap(request => {
+            if (request.isCompactionRequest) {
+                // Only the summary goes to the model: not the command text, and not the output of a failed attempt.
+                return request.response.response.content
+                    .filter(CompactionChatResponseContent.isSessionCompaction)
+                    .flatMap(content => content.toLanguageModelMessage?.() ?? []);
+            }
             const messages: LanguageModelMessage[] = [];
             const text = request.message.parts.map(part => part.promptText).join('');
             if (text.length > 0) {

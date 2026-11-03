@@ -22,6 +22,7 @@ export * from './chat-content-deserializer';
 export * from './chat-model-util';
 export * from './chat-request-parser';
 export * from './chat-service';
+export * from './chat-session-compaction';
 export * from './chat-session-store';
 export * from './custom-chat-agent';
 export * from './parsed-chat-request';
