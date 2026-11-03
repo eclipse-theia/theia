@@ -83,6 +83,7 @@ import {
     ResponseTokenUsage,
     ThinkingChatResponseContent,
 } from './chat-model';
+import { ChatSessionCompactionService } from './chat-session-compaction';
 import { ChatToolRequestService } from './chat-tool-request-service';
 import { parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
@@ -181,6 +182,13 @@ export interface ChatAgent extends Agent {
     iconClass?: string;
     modes?: ChatMode[];
     invoke(request: MutableChatRequestModel, chatAgentService?: ChatAgentService): Promise<void>;
+    /**
+     * Lets the agent handle a built-in command, such as `/compact`, in place of {@link invoke}.
+     * The chat service calls it before `invoke`, so it runs before the preparation that an agent does in `invoke`,
+     * for example a confirmation or a check of the MCP servers.
+     * @returns `true` if the agent handled the request. Then the chat service does not call `invoke`.
+     */
+    handleCommand?(request: MutableChatRequestModel): Promise<boolean>;
 }
 
 export function isChatAgent(agent: Agent): agent is ChatAgent {
@@ -208,6 +216,8 @@ export abstract class AbstractChatAgent implements ChatAgent {
 
     @inject(FileReadTracker) @optional() protected fileReadTracker: FileReadTracker | undefined;
 
+    @inject(ChatSessionCompactionService) @optional() protected compactionService: ChatSessionCompactionService | undefined;
+
     readonly abstract id: string;
     readonly abstract name: string;
     readonly abstract languageModelRequirements: LanguageModelRequirement[];
@@ -232,6 +242,19 @@ export abstract class AbstractChatAgent implements ChatAgent {
     protected initializeContentMatchers(): void {
         const contributedContentMatchers = this.contentMatcherProviders.getContributions().flatMap(provider => provider.matchers);
         this.contentMatchers.push(...contributedContentMatchers);
+    }
+
+    /**
+     * Handles `/compact` with the {@link ChatSessionCompactionService}. This agent builds its prompts from the chat model
+     * (see {@link getMessages}), so a compaction in the chat model applies to it. An agent that keeps its own history,
+     * or has its own `/compact`, can override this method.
+     */
+    async handleCommand(request: MutableChatRequestModel): Promise<boolean> {
+        if (!this.compactionService?.isCompactionCommand(request, this)) {
+            return false;
+        }
+        await this.compactionService.compact(request);
+        return true;
     }
 
     async invoke(request: MutableChatRequestModel): Promise<void> {

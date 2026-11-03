@@ -19,14 +19,14 @@ import { MutableChatRequestModel } from './chat-model';
 
 export const ChatSessionCompactionService = Symbol('ChatSessionCompactionService');
 /**
- * Handles the `/compact` command. The chat service calls it in place of the agent that received the request.
- * See `ChatSessionCompaction` for how the chat model represents a compacted session.
+ * Handles the `/compact` command. An agent that builds its prompts from the chat model delegates to it from
+ * `ChatAgent.handleCommand`, as `AbstractChatAgent` does. See `ChatSessionCompaction` for how the chat model
+ * represents a compacted session.
  */
 export interface ChatSessionCompactionService {
     /**
-     * Returns `true` if the request is the `/compact` command and the compaction applies to the agent. If it returns
-     * `false`, the agent must get the request. That is the case for an agent that keeps its own history, which
-     * a compaction in the chat model cannot change.
+     * Returns `true` if the request is the `/compact` command of this service for the agent. If another command
+     * with this name applies to the agent, for example a custom command of the user, it returns `false`.
      */
     isCompactionCommand(request: MutableChatRequestModel, agent: ChatAgent): boolean;
     /**

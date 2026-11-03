@@ -22,6 +22,7 @@ import {
     AIVariableService,
     AIVariableResolutionRequest,
     AIVariableContext,
+    AgentScopedVariableContext,
     ResolvedAIVariable,
     AIVariableResolverWithVariableDependencies,
     AIVariableArg
@@ -82,7 +83,8 @@ export class PromptVariableContribution implements AIVariableContribution, AIVar
                 // arguments would otherwise not resolve even though `/deploy prod` does. It also keeps
                 // this lookup aligned with `PromptService.isKnownCommand`, which the chat request
                 // parser uses to decide whether `/deploy` is a command at all.
-                let fragment = this.promptService.getPromptFragmentByCommandName(promptIdOrCommandName);
+                // With an agent in the context, the lookup selects the command for that agent, as the completion does.
+                let fragment = this.promptService.getPromptFragmentByCommandName(promptIdOrCommandName, AgentScopedVariableContext.getAgentId(context));
 
                 // Fall back to looking up by fragment ID if not found by command name
                 if (!fragment) {

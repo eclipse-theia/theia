@@ -520,6 +520,18 @@ describe('PromptService', () => {
             expect(promptService.getCommands().map(command => command.id)).to.have.members(['cmd-all', 'cmd-specific']);
         });
 
+        it('getPromptFragmentByCommandName(name, agentId) uses the same rule as getCommands(agentId)', () => {
+            promptService.addBuiltInPromptFragment({ id: 'cmd-all', template: 'For all', isCommand: true, commandName: 'same' });
+            promptService.addBuiltInPromptFragment({ id: 'cmd-specific', template: 'For one', isCommand: true, commandName: 'same', commandAgents: ['SpecificAgent'] });
+            promptService.addBuiltInPromptFragment({ id: 'cmd-other', template: 'For other', isCommand: true, commandName: 'only-other', commandAgents: ['OtherAgent'] });
+
+            expect(promptService.getPromptFragmentByCommandName('same', 'SpecificAgent')?.id).to.equal('cmd-specific');
+            expect(promptService.getPromptFragmentByCommandName('same', 'OtherAgent')?.id).to.equal('cmd-all');
+            expect(promptService.getPromptFragmentByCommandName('only-other', 'SpecificAgent')).to.equal(undefined);
+            // Without an agent, the lookup does not change: the first match
+            expect(promptService.getPromptFragmentByCommandName('same')?.id).to.equal('cmd-all');
+        });
+
         it('getCommands() returns empty array when no commands registered', () => {
             promptService.addBuiltInPromptFragment({
                 id: 'normal1',

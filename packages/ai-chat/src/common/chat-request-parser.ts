@@ -37,7 +37,8 @@ import {
     ParsedChatRequestPart,
 } from './parsed-chat-request';
 import {
-    AIVariable, AIVariableService, createAIResolveVariableCache, getAllResolvedAIVariables, parseFunctionReference, PromptService, ToolInvocationRegistry, ToolRequest
+    AgentScopedVariableContext, AIVariable, AIVariableService, createAIResolveVariableCache, getAllResolvedAIVariables, parseFunctionReference, PromptService,
+    ToolInvocationRegistry, ToolRequest
 } from '@theia/ai-core';
 import { ILogger } from '@theia/core';
 
@@ -56,8 +57,17 @@ const commandReg = /^\/([\w_\-.:]+)(?=\s|$)/;
 const nextCommandReg = /\s+\/([\w_\-.:]+)(?=\s|$)/g;
 
 export const ChatRequestParser = Symbol('ChatRequestParser');
+export interface ChatRequestParseOptions {
+    /**
+     * Selects the agent that gets the request. The parser calls it with the request before it resolves the variables,
+     * so that a slash command resolves to the command for this agent, as in the completion of the chat input.
+     * The default is the agent that the {@link ChatAgentService} resolves for the request.
+     */
+    selectAgentId?(request: ParsedChatRequest): string | undefined;
+}
+
 export interface ChatRequestParser {
-    parseChatRequest(request: ChatRequest, location: ChatAgentLocation, context: ChatContext): Promise<ParsedChatRequest>;
+    parseChatRequest(request: ChatRequest, location: ChatAgentLocation, context: ChatContext, options?: ChatRequestParseOptions): Promise<ParsedChatRequest>;
 }
 
 function offsetRange(start: number, endExclusive: number): OffsetRange {
@@ -80,9 +90,12 @@ export class ChatRequestParserImpl implements ChatRequestParser {
         protected readonly logger: ILogger
     ) { }
 
-    async parseChatRequest(request: ChatRequest, location: ChatAgentLocation, context: ChatContext): Promise<ParsedChatRequest> {
+    async parseChatRequest(request: ChatRequest, location: ChatAgentLocation, context: ChatContext, options?: ChatRequestParseOptions): Promise<ParsedChatRequest> {
         // Parse the request into parts
         const { parts, toolRequests, deferredToolIds } = this.parseParts(request, location);
+        const unresolved: ParsedChatRequest = { request, parts, toolRequests, deferredToolIds, variables: [] };
+        const agentId = options?.selectAgentId ? options.selectAgentId(unresolved) : this.agentService.resolveAgent(unresolved)?.id;
+        const resolutionContext: ChatContext & AgentScopedVariableContext = { ...context, agentId };
 
         // Resolve all variables and add them to the variable parts.
         // Parse resolved variable texts again for tool requests.
@@ -93,7 +106,7 @@ export class ChatRequestParserImpl implements ChatRequestParser {
             if (part instanceof ParsedChatRequestVariablePart) {
                 const resolvedVariable = await this.variableService.resolveVariable(
                     { variable: part.variableName, arg: part.variableArg },
-                    context,
+                    resolutionContext,
                     variableCache
                 );
                 if (resolvedVariable) {

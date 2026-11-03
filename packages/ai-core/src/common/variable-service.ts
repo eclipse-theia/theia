@@ -132,6 +132,19 @@ export namespace AIVariableResolutionRequest {
 export interface AIVariableContext {
 }
 
+/** A variable context that names the agent that gets the resolved text. */
+export interface AgentScopedVariableContext extends AIVariableContext {
+    /** The ID of the agent. A slash command resolves to the command for this agent, as in the completion of the chat input. */
+    agentId?: string;
+}
+
+export namespace AgentScopedVariableContext {
+    export function getAgentId(context: AIVariableContext | undefined): string | undefined {
+        const agentId = (context as AgentScopedVariableContext | undefined)?.agentId;
+        return typeof agentId === 'string' ? agentId : undefined;
+    }
+}
+
 export type AIVariableArg = string | { variable: string, arg?: string } | AIVariableResolutionRequest;
 
 export type AIVariableArgPicker = (context: AIVariableContext) => MaybePromise<string | undefined>;

@@ -60,6 +60,13 @@ export class ChatSessionSummarizer {
         if (!agent) { throw new Error(nls.localize('theia/ai/chat/summarizer/noAgent', 'Unable to identify agent for summary.')); }
 
         const summaryModel = new MutableChatModel(ChatAgentLocation.Panel);
+        // The history can hold a server-side compaction marker. The provider replays it only if compaction is on for the
+        // request. Without the setting of the session, a model with compaction off by default skips the marker and
+        // sends the full history before it again, which can be more than the context limit.
+        const compaction = model.settings?.commonSettings?.compaction;
+        if (compaction) {
+            summaryModel.setSettings({ commonSettings: { compaction } });
+        }
         (options.requests ?? model.getRequests())
             .filter((candidate): candidate is MutableChatRequestModel => candidate instanceof MutableChatRequestModel)
             .forEach(request => summaryModel['_hierarchy'].append(request));

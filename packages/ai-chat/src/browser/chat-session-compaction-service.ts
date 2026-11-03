@@ -18,7 +18,7 @@ import { BasePromptFragment, PromptService } from '@theia/ai-core';
 import { ILogger, nls } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import {
-    AbstractChatAgent, ChatAgent, ChatSessionCompaction, ChatSessionCompactionService, CompactionChatResponseContentImpl, ErrorChatResponseContentImpl,
+    ChatAgent, ChatSessionCompaction, ChatSessionCompactionService, CompactionChatResponseContentImpl, ErrorChatResponseContentImpl,
     MarkdownChatResponseContentImpl, MutableChatRequestModel, ParsedChatRequestAgentPart, ParsedChatRequestTextPart, ParsedChatRequestVariablePart,
     SESSION_COMPACTION_PROVIDER
 } from '../common';
@@ -38,7 +38,7 @@ export class ChatSessionCompactionServiceImpl implements ChatSessionCompactionSe
     @postConstruct()
     protected init(): void {
         // The fragment makes the command known to the request parser and the completion in the chat input. The chat
-        // service does not send the template to a model. Only a mention inside other text resolves to it.
+        // agent does not send the template to a model. Only a mention inside other text resolves to it.
         this.promptService.addBuiltInPromptFragment({
             id: COMPACT_COMMAND_FRAGMENT_ID,
             template: `/${COMPACT_COMMAND_NAME}`,
@@ -50,9 +50,7 @@ export class ChatSessionCompactionServiceImpl implements ChatSessionCompactionSe
     }
 
     isCompactionCommand(request: MutableChatRequestModel, agent: ChatAgent): boolean {
-        // Other agents, such as Claude Code and Codex, keep their own history.
-        return agent instanceof AbstractChatAgent
-            && this.getCommandArgument(request) !== undefined
+        return this.getCommandArgument(request) !== undefined
             // Another command with this name for the agent takes precedence, for example a custom command of the user.
             && this.promptService.getCommands(agent.id)
                 .every(command => (command as BasePromptFragment).commandName !== COMPACT_COMMAND_NAME || command.id === COMPACT_COMMAND_FRAGMENT_ID);

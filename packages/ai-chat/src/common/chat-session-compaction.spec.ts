@@ -38,7 +38,6 @@ import {
 } from './chat-model';
 import { ChatRequestParser } from './chat-request-parser';
 import { ChatServiceImpl } from './chat-service';
-import { ChatSessionCompactionService } from './chat-session-compaction';
 import { ChatSessionStore } from './chat-session-store';
 import { ParsedChatRequest, ParsedChatRequestTextPart } from './parsed-chat-request';
 
@@ -243,7 +242,19 @@ describe('ChatSessionCompaction', () => {
         let invokedAgents: string[];
         let compacted: MutableChatRequestModel[];
         let isCommand: boolean;
-        const agent = { id: 'default-agent', locations: [ChatAgentLocation.Panel], invoke: async () => { invokedAgents.push('default-agent'); } } as unknown as ChatAgent;
+        const agent = {
+            id: 'default-agent',
+            locations: [ChatAgentLocation.Panel],
+            invoke: async () => { invokedAgents.push('default-agent'); },
+            // As AbstractChatAgent does it with the compaction service
+            handleCommand: async (request: MutableChatRequestModel) => {
+                if (!isCommand) {
+                    return false;
+                }
+                compacted.push(request);
+                return true;
+            }
+        } as unknown as ChatAgent;
         let stored: unknown;
 
         beforeEach(() => {
@@ -269,15 +280,11 @@ describe('ChatSessionCompaction', () => {
                 getSessionIndex: async () => ({}),
                 hasPersistedSessions: async () => false
             } as unknown as ChatSessionStore);
-            container.bind(ChatSessionCompactionService).toConstantValue({
-                isCompactionCommand: () => isCommand,
-                compact: async (request: MutableChatRequestModel) => { compacted.push(request); }
-            });
             container.bind(ChatServiceImpl).toSelf().inSingletonScope();
             chatService = container.get(ChatServiceImpl);
         });
 
-        it('sends a compaction command to the compaction service and not to the agent', async () => {
+        it('lets the agent handle a compaction command in place of invoke', async () => {
             const session = chatService.createSession(ChatAgentLocation.Panel);
 
             await chatService.sendRequest(session.id, { text: '/compact' });
@@ -288,7 +295,7 @@ describe('ChatSessionCompaction', () => {
             expect(chatService.getActiveSession()?.id).to.equal(session.id);
         });
 
-        it('sends other requests to the agent', async () => {
+        it('invokes the agent for other requests', async () => {
             isCommand = false;
             const session = chatService.createSession(ChatAgentLocation.Panel);
 

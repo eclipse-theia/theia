@@ -22,8 +22,8 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import {
-    AgentService, DefaultAIVariableService, LanguageModelMessage, LanguageModelRequirement, LanguageModelResponse, PromptFragment, PromptService, PromptServiceImpl,
-    ToolInvocationRegistryImpl
+    AgentService, DefaultAIVariableService, LanguageModel, LanguageModelMessage, LanguageModelRequirement, LanguageModelResponse, LanguageModelService, PromptFragment,
+    PromptService, PromptServiceImpl, ToolInvocationRegistryImpl, UserRequest
 } from '@theia/ai-core';
 import { PromptVariableContribution } from '@theia/ai-core/lib/browser/prompt-variable-contribution';
 import { CommandService, ILogger, Logger } from '@theia/core';
@@ -31,8 +31,9 @@ import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Container } from '@theia/core/shared/inversify';
 import {
-    AbstractChatAgent, ChatAgent, ChatAgentLocation, ChatRequest, ChatSessionCompaction, ChatResponseContent, CompactionChatResponseContent, ErrorChatResponseContent,
-    MutableChatModel, MutableChatRequestModel, ParsedChatRequest, ParsedChatRequestAgentPart, ParsedChatRequestPart, ParsedChatRequestTextPart, ParsedChatRequestVariablePart,
+    AbstractChatAgent, ChatAgent, ChatAgentLocation, ChatRequest, ChatSessionCompaction, ChatSessionCompactionService, ChatResponseContent, CompactionChatResponseContent,
+    CompactionChatResponseContentImpl, ErrorChatResponseContent, MutableChatModel, MutableChatRequestModel, ParsedChatRequest, ParsedChatRequestAgentPart, ParsedChatRequestPart,
+    ParsedChatRequestTextPart, ParsedChatRequestVariablePart,
     SESSION_COMPACTION_PROVIDER, TextChatResponseContentImpl
 } from '../common';
 import { ChatAgentServiceImpl } from '../common/chat-agent-service';
@@ -60,11 +61,16 @@ class FakeSummaryAgent extends AbstractChatAgent {
     block: Deferred<void> | undefined;
     invocations = 0;
     inner: MutableChatRequestModel | undefined;
+    /** The request to the language model, if a test sets a language model service. */
+    llmRequest: UserRequest | undefined;
 
     override async invoke(request: MutableChatRequestModel): Promise<void> {
         this.invocations++;
         this.inner = request;
         this.prompt = await this.getMessages(request.session, true);
+        if (this.languageModelService) {
+            await this.sendLlmRequest(request, this.prompt, [], undefined, { id: 'anthropic/model' } as LanguageModel);
+        }
         await this.block?.promise;
         if (request.response.isCanceled) {
             return;
@@ -84,6 +90,19 @@ class FakeSummaryAgent extends AbstractChatAgent {
 
     nextPrompt(model: MutableChatModel): Promise<LanguageModelMessage[]> {
         return this.getMessages(model);
+    }
+
+    recordLlmRequests(): void {
+        this.languageModelService = {
+            sendRequest: async (_model: LanguageModel, request: UserRequest) => {
+                this.llmRequest = request;
+                return { text: '' };
+            }
+        } as unknown as LanguageModelService;
+    }
+
+    useCompactionService(compactionService: ChatSessionCompactionService): void {
+        this.compactionService = compactionService;
     }
 }
 
@@ -174,10 +193,24 @@ describe('ChatSessionCompactionServiceImpl', () => {
             expect(service.isCompactionCommand(insideText, summaryAgent)).to.equal(false);
         });
 
-        it('rejects an agent that keeps its own history', () => {
-            const externalAgent = { id: 'external', invoke: async () => { } } as unknown as ChatAgent;
+        it('is the command that an agent based on the chat model handles in place of invoke', async () => {
+            addExchange('one', 'a');
+            summaryAgent.useCompactionService(service);
+            const command = addCommand();
 
-            expect(service.isCompactionCommand(addCommand(), externalAgent)).to.equal(false);
+            expect(await summaryAgent.handleCommand(model.addRequest(parsed('compact this')))).to.equal(false);
+            expect(summaryAgent.invocations).to.equal(0);
+
+            expect(await summaryAgent.handleCommand(command)).to.equal(true);
+            expect(command.isCompactionRequest).to.equal(true);
+            expect(command.response.isComplete).to.equal(true);
+            // Only the inner summary request invokes the agent, not the command
+            expect(summaryAgent.invocations).to.equal(1);
+            expect(summaryAgent.inner).to.not.equal(command);
+        });
+
+        it('is not handled by an agent without a compaction service', async () => {
+            expect(await summaryAgent.handleCommand(addCommand())).to.equal(false);
         });
 
         it('gives precedence to another command with the same name', () => {
@@ -190,6 +223,7 @@ describe('ChatSessionCompactionServiceImpl', () => {
     describe('with the real request parser and prompt service', () => {
         let parser: ChatRequestParserImpl;
         let promptService: PromptServiceImpl;
+        let chatAgentService: sinon.SinonStubbedInstance<ChatAgentServiceImpl>;
 
         beforeEach(() => {
             promptService = new PromptServiceImpl();
@@ -209,8 +243,9 @@ describe('ChatSessionCompactionServiceImpl', () => {
             (promptVariables as unknown as Record<string, unknown>)['logger'] = new MockLogger();
             (promptVariables as unknown as Record<string, unknown>)['commandService'] = {} as CommandService;
             promptVariables.registerVariables(variableService);
+            chatAgentService = sinon.createStubInstance(ChatAgentServiceImpl);
             parser = new ChatRequestParserImpl(
-                sinon.createStubInstance(ChatAgentServiceImpl),
+                chatAgentService,
                 variableService,
                 sinon.createStubInstance(ToolInvocationRegistryImpl),
                 sinon.createStubInstance(Logger) as ILogger
@@ -249,6 +284,50 @@ describe('ChatSessionCompactionServiceImpl', () => {
             promptService.addBuiltInPromptFragment({ id: 'own-compact', template: '/compact', isCommand: true, commandName: 'compact', commandAgents: [summaryAgent.id] });
 
             expect(await isCommand('/compact')).to.equal(false);
+        });
+
+        describe('resolves a command to the template for the agent that gets the request', () => {
+            const OWN_AGENT = 'Own';
+
+            async function promptText(text: string, agentId?: string): Promise<string> {
+                const options = agentId ? { selectAgentId: () => agentId } : undefined;
+                const message = await parser.parseChatRequest({ text }, ChatAgentLocation.Panel, { variables: [] }, options);
+                return message.parts.map(part => part.promptText).join('');
+            }
+
+            beforeEach(() => {
+                // Registered first, so a lookup by name alone finds this one
+                promptService.addBuiltInPromptFragment({ id: 'review-all', template: 'Review for all: $ARGUMENTS', isCommand: true, commandName: 'review' });
+                promptService.addBuiltInPromptFragment({
+                    id: 'review-own', template: 'Review for Own: $ARGUMENTS', isCommand: true, commandName: 'review', commandAgents: [OWN_AGENT]
+                });
+                promptService.addBuiltInPromptFragment({
+                    id: 'own-compact', template: 'Compact for Own: $ARGUMENTS', isCommand: true, commandName: 'compact', commandAgents: [OWN_AGENT]
+                });
+            });
+
+            it('uses the command for the selected agent', async () => {
+                expect(await promptText('/review focus on the tests', OWN_AGENT)).to.equal('Review for Own: focus on the tests');
+                expect(await promptText('/compact focus on the tests', OWN_AGENT)).to.equal('Compact for Own: focus on the tests');
+            });
+
+            it('uses the command for all agents for another agent', async () => {
+                expect(await promptText('/review focus on the tests', 'Other')).to.equal('Review for all: focus on the tests');
+                expect(await promptText('/compact focus on the tests', 'Other')).to.equal('/compact');
+            });
+
+            it('uses the agent that the agent service resolves if no agent is selected', async () => {
+                chatAgentService.resolveAgent.returns({ id: OWN_AGENT } as ChatAgent);
+
+                expect(await promptText('/review focus on the tests')).to.equal('Review for Own: focus on the tests');
+            });
+
+            it('agrees with the commands of the completion', async () => {
+                for (const agentId of [OWN_AGENT, 'Other']) {
+                    const completion = promptService.getCommands(agentId).find(command => command.commandName === 'review');
+                    expect(promptService.getPromptFragmentByCommandName('review', agentId)?.id).to.equal(completion?.id);
+                }
+            });
         });
 
         it('leaves the command to a custom command of the user for all agents', async () => {
@@ -298,6 +377,32 @@ describe('ChatSessionCompactionServiceImpl', () => {
             await service.compact(addCommand('compact|focus on tests'));
 
             expect(texts(summaryAgent.prompt).at(-1)).to.equal(`user: ${SUMMARY_PROMPT}\n\nAlso follow these instructions from the user: focus on tests`);
+        });
+
+        it('keeps the compaction setting of the session, so that the provider replays a server-side marker', async () => {
+            model.setSettings({ commonSettings: { compaction: { enabled: true, tokenThreshold: 50000 } }, temperature: 0.1 });
+            const one = model.addRequest(parsed('one'));
+            one.response.response.addContent(new CompactionChatResponseContentImpl('anthropic', { content: 'server summary' }, 'server summary'));
+            one.response.response.addContent(new TextChatResponseContentImpl('a'));
+            one.response.complete();
+            summaryAgent.recordLlmRequests();
+
+            await service.compact(addCommand());
+
+            expect(summaryAgent.llmRequest?.compaction).to.deep.equal({ enabled: true, tokenThreshold: 50000 });
+            // Only the compaction setting: the provider settings of the session are not for the summary agent
+            expect(summaryAgent.llmRequest?.settings).to.deep.equal({});
+            const replayed = summaryAgent.llmRequest?.messages.filter(LanguageModelMessage.isCompactionMessage);
+            expect(replayed?.map(message => message.provider)).to.deep.equal(['anthropic']);
+        });
+
+        it('sends no compaction setting if the session has none', async () => {
+            addExchange('one', 'a');
+            summaryAgent.recordLlmRequests();
+
+            await service.compact(addCommand());
+
+            expect(summaryAgent.llmRequest?.compaction).to.equal(undefined);
         });
 
         it('records the usage of the summary request', async () => {

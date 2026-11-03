@@ -29,7 +29,10 @@ import { ChatContentDeserializerRegistry } from './chat-content-deserializer';
 import { ChangeSetElementDeserializerRegistry } from './change-set-element-deserializer';
 import { ToolInvocationRegistry, AIVariableService } from '@theia/ai-core';
 import { ILogger } from '@theia/core';
-import { ChatRequestParser } from './chat-request-parser';
+import { ChatRequestParseOptions, ChatRequestParser } from './chat-request-parser';
+import { ChatAgent } from './chat-agents';
+import { MutableChatRequestModel } from './chat-model';
+import { ParsedChatRequest } from './parsed-chat-request';
 
 disableJSDOM();
 
@@ -106,6 +109,66 @@ describe('ChatServiceImpl', () => {
 
     afterEach(() => {
         sandbox.restore();
+    });
+
+    describe('sendRequest', () => {
+        const parsedRequest: ParsedChatRequest = { request: { text: '/compact' }, parts: [], toolRequests: new Map(), variables: [] };
+        let calls: string[];
+
+        function createAgent(handleCommand?: (request: MutableChatRequestModel) => Promise<boolean>): ChatAgent {
+            return {
+                id: 'TestAgent', name: 'Test Agent', description: '', locations: [], tags: [], variables: [], prompts: [], languageModelRequirements: [],
+                agentSpecificVariables: [], functions: [],
+                invoke: async (request: MutableChatRequestModel) => {
+                    calls.push('invoke');
+                    request.response.complete();
+                },
+                handleCommand: handleCommand && (async (request: MutableChatRequestModel) => {
+                    calls.push('handleCommand');
+                    return handleCommand(request);
+                })
+            } as ChatAgent;
+        }
+
+        async function send(agent: ChatAgent): Promise<void> {
+            mockAgentService.resolveAgent.returns(agent);
+            mockRequestParser.parseChatRequest.resolves(parsedRequest);
+            const session = chatService.createSession();
+            const invocation = await chatService.sendRequest(session.id, { text: '/compact' });
+            await invocation?.responseCompleted;
+        }
+
+        beforeEach(() => calls = []);
+
+        it('does not call invoke if the agent handles the command', async () => {
+            await send(createAgent(async request => {
+                request.response.complete();
+                return true;
+            }));
+
+            expect(calls).to.deep.equal(['handleCommand']);
+        });
+
+        it('calls invoke if the agent does not handle the command', async () => {
+            await send(createAgent(async () => false));
+
+            expect(calls).to.deep.equal(['handleCommand', 'invoke']);
+        });
+
+        it('calls invoke for an agent without handleCommand', async () => {
+            await send(createAgent());
+
+            expect(calls).to.deep.equal(['invoke']);
+        });
+
+        it('lets the parser resolve commands for the agent that gets the request', async () => {
+            const agent = createAgent();
+
+            await send(agent);
+
+            const options = mockRequestParser.parseChatRequest.firstCall.args[3] as ChatRequestParseOptions;
+            expect(options.selectAgentId?.(parsedRequest)).to.equal(agent.id);
+        });
     });
 
     describe('deleteSession', () => {

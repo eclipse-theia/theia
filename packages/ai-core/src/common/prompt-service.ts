@@ -477,9 +477,11 @@ export interface PromptService {
     /**
      * Gets a prompt fragment by command name (for slash commands)
      * @param commandName The command name to search for
+     * @param agentId Optional agent ID. If set, the lookup uses the same rule as {@link getCommands}: only commands
+     * for this agent apply, and a command for this agent takes precedence over a command with the same name for all agents.
      * @returns The fragment with the matching command name or undefined if not found
      */
-    getPromptFragmentByCommandName(commandName: string): PromptFragment | undefined;
+    getPromptFragmentByCommandName(commandName: string, agentId?: string): PromptFragment | undefined;
 
     /**
      * Checks whether `/name` can be resolved as a slash command.
@@ -767,7 +769,13 @@ export class PromptServiceImpl implements PromptService {
         };
     }
 
-    getPromptFragmentByCommandName(commandName: string): PromptFragment | undefined {
+    getPromptFragmentByCommandName(commandName: string, agentId?: string): PromptFragment | undefined {
+        if (agentId) {
+            const matches = this.getCommands(agentId).filter(fragment => fragment.commandName === commandName);
+            // As below, a customized fragment takes precedence over a built-in fragment
+            const customizedIds = new Set(this.customizationService?.getCustomizedPromptFragmentIds() ?? []);
+            return matches.find(fragment => customizedIds.has(fragment.id)) ?? matches[0];
+        }
         // First check customized fragments
         if (this.customizationService) {
             const customizedIds = this.customizationService.getCustomizedPromptFragmentIds();

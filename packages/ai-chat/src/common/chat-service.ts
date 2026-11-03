@@ -38,7 +38,6 @@ import {
     MutableChatRequestModel,
 } from './chat-model';
 import { ChatRequestParser } from './chat-request-parser';
-import { ChatSessionCompactionService } from './chat-session-compaction';
 import { ChatSessionNamingService } from './chat-session-naming-service';
 import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-request';
 import { ChatSessionIndex, ChatSessionStore } from './chat-session-store';
@@ -194,9 +193,6 @@ export class ChatServiceImpl implements ChatService {
 
     @inject(ChatSessionNamingService) @optional()
     protected chatSessionNamingService: ChatSessionNamingService | undefined;
-
-    @inject(ChatSessionCompactionService) @optional()
-    protected compactionService: ChatSessionCompactionService | undefined;
 
     @inject(PinChatAgent) @optional()
     protected pinChatAgent: boolean | undefined;
@@ -359,7 +355,10 @@ export class ChatServiceImpl implements ChatService {
             genericCapabilitySelections: request.genericCapabilitySelections
         };
         const resolvedContext = await this.resolveChatContext(request.variables ?? session.model.context.getVariables(), resolutionContext);
-        const parsedRequest = await this.chatRequestParser.parseChatRequest(request, session.model.location, resolvedContext);
+        const parsedRequest = await this.chatRequestParser.parseChatRequest(request, session.model.location, resolvedContext, {
+            // The same agent as below, so that a slash command resolves to the command for that agent
+            selectAgentId: unresolved => this.getAgent(unresolved, session)?.id
+        });
         const agent = this.getAgent(parsedRequest, session);
         session.pinnedAgent = agent;
 
@@ -400,12 +399,16 @@ export class ChatServiceImpl implements ChatService {
             }
         });
 
-        const execution = this.compactionService?.isCompactionCommand(requestModel, agent)
-            ? this.compactionService.compact(requestModel)
-            : agent.invoke(requestModel);
-        execution.catch(error => requestModel.response.error(error));
+        this.invokeAgent(agent, requestModel).catch(error => requestModel.response.error(error));
 
         return invocation;
+    }
+
+    protected async invokeAgent(agent: ChatAgent, request: MutableChatRequestModel): Promise<void> {
+        if (await agent.handleCommand?.(request)) {
+            return;
+        }
+        await agent.invoke(request);
     }
 
     protected cancelIncompleteRequests(session: ChatSessionInternal): void {
