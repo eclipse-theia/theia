@@ -49,6 +49,11 @@ describe('BundlerGenerator', () => {
             expect(config).not.to.contain("join(__dirname, 'lib', 'webview', 'pre')");
         });
 
+        it('excludes spec files', () => {
+            const config = new TestBundlerGenerator(createPackage('browser-only', ['@theia/plugin-ext'])).browserConfig();
+            expect(config).to.contain("'webview', 'pre', '!(*.spec.ts)')");
+        });
+
         it('does not copy them without @theia/plugin-ext', () => {
             const config = new TestBundlerGenerator(createPackage('browser-only', [])).browserConfig();
             expect(config).not.to.contain('webview');
