@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from 'inversify';
-import { Widget } from './widgets';
-import { StatusBar } from './status-bar';
-import { FrontendApplicationContribution } from './frontend-application-contribution';
-import { ContributionProvider, Disposable, DisposableCollection } from '../common';
-import { FrontendApplication } from './frontend-application';
+import { Widget } from './widgets/index.js';
+import { StatusBar } from './status-bar/index.js';
+import { FrontendApplicationContribution } from './frontend-application-contribution.js';
+import { ContributionProvider, Disposable, DisposableCollection } from '../common/index.js';
+import { FrontendApplication } from './frontend-application.js';
 
 export const WidgetStatusBarContribution = Symbol('WidgetStatusBarContribution');
 

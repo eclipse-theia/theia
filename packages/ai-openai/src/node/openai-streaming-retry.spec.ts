@@ -18,7 +18,7 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { CancellationError, CancellationToken, CancellationTokenSource } from '@theia/core';
 import { Container, injectable } from '@theia/core/shared/inversify';
-import { OpenAiStreamingRetry } from './openai-streaming-retry';
+import { OpenAiStreamingRetry } from './openai-streaming-retry.js';
 
 async function* events(...values: unknown[]): AsyncIterable<unknown> {
     yield* values;

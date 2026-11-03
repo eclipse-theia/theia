@@ -2,8 +2,18 @@
   "name": "@theia/plugin-dev",
   "version": "1.76.0",
   "description": "Theia - Plugin Development Extension",
+  "type": "module",
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
+  "exports": {
+    ".": "./lib/common/index.js",
+    "./package.json": "./package.json",
+    "./lib/common": "./lib/common/index.js",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "dependencies": {
     "@theia/core": "1.76.0",
     "@theia/debug": "1.76.0",

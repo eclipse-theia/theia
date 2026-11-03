@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './workspace-protocol';
-export * from './workspace-file-service';
-export * from './untitled-workspace-service';
-export * from './workspace-preferences';
+export * from './workspace-protocol.js';
+export * from './workspace-file-service.js';
+export * from './untitled-workspace-service.js';
+export * from './workspace-preferences.js';

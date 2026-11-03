@@ -15,7 +15,7 @@
 // **
 
 import { expect } from 'chai';
-import { ContentReplacerV1Impl, Replacement } from './content-replacer';
+import { ContentReplacerV1Impl, Replacement } from './content-replacer.js';
 
 describe('ContentReplacerV1Impl', () => {
     let contentReplacer: ContentReplacerV1Impl;

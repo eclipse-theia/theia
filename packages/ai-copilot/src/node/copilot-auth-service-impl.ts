@@ -21,10 +21,10 @@ import {
     CopilotAuthServiceClient,
     CopilotAuthState,
     DeviceCodeResponse
-} from '../common/copilot-auth-service';
-import { CopilotCliAuthProvider } from './copilot-cli-auth-provider';
-import { CopilotCliLocator } from './copilot-cli-locator';
-import { CopilotCredentialStore } from './copilot-credential-store';
+} from '../common/copilot-auth-service.js';
+import { CopilotCliAuthProvider } from './copilot-cli-auth-provider.js';
+import { CopilotCliLocator } from './copilot-cli-locator.js';
+import { CopilotCredentialStore } from './copilot-credential-store.js';
 
 /**
  * Backend implementation of the GitHub Copilot authentication service.

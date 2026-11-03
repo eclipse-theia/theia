@@ -17,7 +17,7 @@
 import { expect } from 'chai';
 import { join } from 'path';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { CopilotSdkLoader } from './copilot-sdk-loader';
+import { CopilotSdkLoader } from './copilot-sdk-loader.js';
 
 /** What the loader checks for before accepting a module as the SDK. */
 const usableSdk = {

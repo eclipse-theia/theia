@@ -21,9 +21,9 @@
 
 /* eslint-disable max-len */
 
-import { CharacterClassifier } from './character-classifier';
+import { CharacterClassifier } from './character-classifier.js';
 import { CharCode } from '@theia/core/lib/common/char-code';
-import { DocumentLink as ILink } from './plugin-api-rpc-model';
+import { DocumentLink as ILink } from './plugin-api-rpc-model.js';
 
 export interface ILinkComputerTarget {
     getLineCount(): number;

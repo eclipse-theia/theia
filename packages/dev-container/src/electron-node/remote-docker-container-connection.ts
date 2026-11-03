@@ -23,8 +23,8 @@ import * as Docker from 'dockerode';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { PassThrough } from 'stream';
 import { execFile, execFileSync } from 'child_process';
-import { DevContainerConfiguration } from './devcontainer-file';
-import { resolveComposeFilePath } from './docker-compose/compose-service';
+import { DevContainerConfiguration } from './devcontainer-file.js';
+import { resolveComposeFilePath } from './docker-compose/compose-service.js';
 
 export interface RemoteContainerConnectionOptions {
     id: string;

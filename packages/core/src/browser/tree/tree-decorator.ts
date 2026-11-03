@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { injectable, unmanaged } from 'inversify';
-import { Tree, TreeNode } from './tree';
-import { Event, Emitter, Disposable, DisposableCollection, MaybePromise } from '../../common';
-import { WidgetDecoration } from '../widget-decoration';
+import { Tree, TreeNode } from './tree.js';
+import { Event, Emitter, Disposable, DisposableCollection, MaybePromise } from '../../common/index.js';
+import { WidgetDecoration } from '../widget-decoration.js';
 
 /**
  * The {@link TreeDecorator} allows adapting the look and the style of the tree items within a widget. Changes are reflected in

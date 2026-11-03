@@ -15,11 +15,15 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { overridePluginDependencies } from './plugin-require-override';
+import Module, { createRequire } from 'node:module';
+import { overridePluginDependencies } from './plugin-require-override.js';
 
 describe('overridePluginDependencies', () => {
 
-    const nodeModule = require('module');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const nodeModule: any = Module;
+    // The overrides patch `Module._load`, which every `require` function created by `createRequire` goes through.
+    const nodeRequire = createRequire(import.meta.url);
     let originalLoad: unknown;
 
     beforeEach(() => {
@@ -32,13 +36,14 @@ describe('overridePluginDependencies', () => {
 
     it('should provide the real node-pty module for an unresolvable node-pty request', () => {
         overridePluginDependencies();
-        const nodePty = require('/nonexistent/vscode/node_modules/node-pty');
-        expect(nodePty).to.equal(require('node-pty'));
+        const nodePty = nodeRequire('/nonexistent/vscode/node_modules/node-pty');
+        // The override provides the ES module namespace of node-pty, which exposes the same members as the CommonJS module.
+        expect(nodePty.spawn).to.equal(nodeRequire('node-pty').spawn);
         expect(nodePty.spawn).to.be.a('function');
     });
 
     it('should rethrow for unresolvable requests without an override', () => {
         overridePluginDependencies();
-        expect(() => require('/nonexistent/vscode/node_modules/unknown-package')).to.throw();
+        expect(() => nodeRequire('/nonexistent/vscode/node_modules/unknown-package')).to.throw();
     });
 });

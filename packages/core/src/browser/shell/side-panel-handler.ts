@@ -20,22 +20,22 @@ import { TabBar, Widget, DockPanel, Title, Panel, BoxPanel, BoxLayout, SplitPane
 import { MimeData } from '@lumino/coreutils';
 import { Drag } from '@lumino/dragdrop';
 import { AttachedProperty } from '@lumino/properties';
-import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, SideTabBar } from './tab-bars';
-import { SidebarMenuWidget, SidebarMenu, SidebarBottomMenuWidgetFactory, SidebarTopMenuWidgetFactory } from './sidebar-menu-widget';
-import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
-import { animationFrame } from '../browser';
-import { FrontendApplicationStateService } from '../frontend-application-state';
-import { TheiaDockPanel } from './theia-dock-panel';
-import { SidePanelToolbar } from './side-panel-toolbar';
-import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar } from './tab-bar-toolbar';
-import { DisposableCollection, Disposable } from '../../common/disposable';
-import { ContextMenuRenderer } from '../context-menu-renderer';
-import { CommandMenu, GroupImpl, MenuPath } from '../../common/menu';
-import { SidebarBottomMenuWidget } from './sidebar-bottom-menu-widget';
-import { SidebarTopMenuWidget } from './sidebar-top-menu-widget';
-import { PINNED_CLASS } from '../widgets';
-import { AdditionalViewsMenuWidget, AdditionalViewsMenuWidgetFactory } from './additional-views-menu-widget';
-import { SidePanelItemVisibility } from './side-panel-item-visibility';
+import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, SideTabBar } from './tab-bars.js';
+import { SidebarMenuWidget, SidebarMenu, SidebarBottomMenuWidgetFactory, SidebarTopMenuWidgetFactory } from './sidebar-menu-widget.js';
+import { SplitPositionHandler, SplitPositionOptions } from './split-panels.js';
+import { animationFrame } from '../browser.js';
+import { FrontendApplicationStateService } from '../frontend-application-state.js';
+import { TheiaDockPanel } from './theia-dock-panel.js';
+import { SidePanelToolbar } from './side-panel-toolbar.js';
+import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar } from './tab-bar-toolbar/index.js';
+import { DisposableCollection, Disposable } from '../../common/disposable.js';
+import { ContextMenuRenderer } from '../context-menu-renderer.js';
+import { CommandMenu, GroupImpl, MenuPath } from '../../common/menu/index.js';
+import { SidebarBottomMenuWidget } from './sidebar-bottom-menu-widget.js';
+import { SidebarTopMenuWidget } from './sidebar-top-menu-widget.js';
+import { PINNED_CLASS } from '../widgets/index.js';
+import { AdditionalViewsMenuWidget, AdditionalViewsMenuWidgetFactory } from './additional-views-menu-widget.js';
+import { SidePanelItemVisibility } from './side-panel-item-visibility.js';
 
 /** The class name added to the left and right area panels. */
 export const LEFT_RIGHT_AREA_CLASS = 'theia-app-sides';

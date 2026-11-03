@@ -16,13 +16,13 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { ToolRequest, AutoActionResult } from '@theia/ai-core';
-import { ShellCommandPermissionService } from './shell-command-permission-service';
-import { AbstractShellExecutionTool } from './abstract-shell-execution-tool';
+import { ShellCommandPermissionService } from './shell-command-permission-service.js';
+import { AbstractShellExecutionTool } from './abstract-shell-execution-tool.js';
 import {
     SHELL_EXECUTION_FUNCTION_ID,
     ShellExecutionToolResult,
     ShellExecutionCanceledResult
-} from '../common/shell-execution-server';
+} from '../common/shell-execution-server.js';
 import { Path, URI } from '@theia/core';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 

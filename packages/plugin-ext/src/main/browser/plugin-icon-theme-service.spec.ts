@@ -30,7 +30,7 @@ import URI from '@theia/core/lib/common/uri';
 import { Disposable, Emitter, Event } from '@theia/core/lib/common';
 import { SecondaryWindowService } from '@theia/core/lib/browser/window/secondary-window-service';
 import { PLUGINS_SCHEME } from '@theia/plugin-utils/lib/common/constants';
-import { PluginIconTheme, PluginIconThemeDefinition } from './plugin-icon-theme-service';
+import { PluginIconTheme, PluginIconThemeDefinition } from './plugin-icon-theme-service.js';
 
 disableJSDOM();
 

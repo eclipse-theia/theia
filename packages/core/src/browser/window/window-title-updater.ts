@@ -14,15 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Widget } from '../widgets';
-import { FrontendApplication } from '../frontend-application';
-import { FrontendApplicationContribution } from '../frontend-application-contribution';
-import { NavigatableWidget } from '../navigatable-types';
+import { Widget } from '../widgets/index.js';
+import { FrontendApplication } from '../frontend-application.js';
+import { FrontendApplicationContribution } from '../frontend-application-contribution.js';
+import { NavigatableWidget } from '../navigatable-types.js';
 import { inject, injectable } from 'inversify';
-import { WindowTitleService } from './window-title-service';
-import { LabelProvider } from '../label-provider';
-import { Saveable } from '../saveable';
-import { Disposable } from '../../common';
+import { WindowTitleService } from './window-title-service.js';
+import { LabelProvider } from '../label-provider.js';
+import { Saveable } from '../saveable.js';
+import { Disposable } from '../../common/index.js';
 
 @injectable()
 export class WindowTitleUpdater implements FrontendApplicationContribution {

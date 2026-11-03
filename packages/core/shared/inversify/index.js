@@ -1,1 +1,1 @@
-module.exports = require('inversify');
+export * from 'inversify';

@@ -18,8 +18,8 @@ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
-import { FileDialogTree } from './file-dialog-tree';
-import { FileDialogTreeFiltersRenderer } from './file-dialog-tree-filters-renderer';
+import { FileDialogTree } from './file-dialog-tree.js';
+import { FileDialogTreeFiltersRenderer } from './file-dialog-tree-filters-renderer.js';
 
 disableJSDOM();
 

@@ -27,9 +27,9 @@ import * as os from 'os';
 import { join } from 'path';
 import * as temp from 'temp';
 import { generateUuid } from '@theia/core/lib/common/uuid';
-import { FilePermission, FileSystemProviderCapabilities, FileSystemProviderError, FileSystemProviderErrorCode } from '../common/files';
-import { DiskFileSystemProvider } from './disk-file-system-provider';
-import { bindFileSystemWatcherServer } from './filesystem-backend-module';
+import { FilePermission, FileSystemProviderCapabilities, FileSystemProviderError, FileSystemProviderErrorCode } from '../common/files.js';
+import { DiskFileSystemProvider } from './disk-file-system-provider.js';
+import { bindFileSystemWatcherServer } from './filesystem-backend-module.js';
 
 const tracked = temp.track();
 

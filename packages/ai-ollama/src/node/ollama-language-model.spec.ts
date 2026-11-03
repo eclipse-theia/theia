@@ -20,7 +20,7 @@ import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { ToolCallExecutor, ToolCallExecutorImpl } from '@theia/ai-core';
 import { Message, Ollama } from 'ollama';
-import { OllamaModel, OllamaModelParams } from './ollama-language-model';
+import { OllamaModel, OllamaModelParams } from './ollama-language-model.js';
 
 @injectable()
 class TestableOllamaModel extends OllamaModel {

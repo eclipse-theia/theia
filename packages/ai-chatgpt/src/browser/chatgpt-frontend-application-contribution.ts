@@ -25,8 +25,8 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import {
     CHATGPT_ENABLED_PREF, CHATGPT_PROVIDER_ID, ChatGptAuthService, ChatGptLanguageModelsManager, ChatGptModelDescription, MODELS_PREF,
     SERVER_SIDE_COMPACTION_PREF, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF
-} from '../common';
-import { ChatGptCommands } from './chatgpt-command-contribution';
+} from '../common/index.js';
+import { ChatGptCommands } from './chatgpt-command-contribution.js';
 
 /**
  * The provider node of the AI Configuration view is keyed by the `ai-features.<segment>.*` preference segment,

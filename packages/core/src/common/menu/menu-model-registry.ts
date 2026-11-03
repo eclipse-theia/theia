@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from 'inversify';
-import { CommandMenu, CompoundMenuNode, Group, MAIN_MENU_BAR, MenuAction, MenuNode, MenuPath, MutableCompoundMenuNode, Submenu } from './menu-types';
+import { CommandMenu, CompoundMenuNode, Group, MAIN_MENU_BAR, MenuAction, MenuNode, MenuPath, MutableCompoundMenuNode, Submenu } from './menu-types.js';
 import { Event } from 'vscode-languageserver-protocol';
-import { ContributionProvider } from '../contribution-provider';
-import { Command, CommandRegistry } from '../command';
-import { Emitter } from '../event';
-import { Disposable } from '../disposable';
+import { ContributionProvider } from '../contribution-provider.js';
+import { Command, CommandRegistry } from '../command.js';
+import { Emitter } from '../event.js';
+import { Disposable } from '../disposable.js';
 
 export const MenuContribution = Symbol('MenuContribution');
 

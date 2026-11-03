@@ -30,14 +30,14 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TestService } from '@theia/test/lib/browser/test-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { DebugPreferences } from '../common/debug-preferences';
-import { DebugChannel } from '../common/debug-service';
-import { BreakpointManager } from './breakpoint/breakpoint-manager';
-import { DebugContribution } from './debug-contribution';
-import { DebugSession, DebugSessionData } from './debug-session';
-import { DebugSessionConnection } from './debug-session-connection';
-import { DebugSessionManager } from './debug-session-manager';
-import { DebugConfigurationSessionOptions } from './debug-session-options';
+import { DebugPreferences } from '../common/debug-preferences.js';
+import { DebugChannel } from '../common/debug-service.js';
+import { BreakpointManager } from './breakpoint/breakpoint-manager.js';
+import { DebugContribution } from './debug-contribution.js';
+import { DebugSession, DebugSessionData } from './debug-session.js';
+import { DebugSessionConnection } from './debug-session-connection.js';
+import { DebugSessionManager } from './debug-session-manager.js';
+import { DebugConfigurationSessionOptions } from './debug-session-options.js';
 
 disableJSDOM();
 

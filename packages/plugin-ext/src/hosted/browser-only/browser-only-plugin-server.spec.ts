@@ -19,9 +19,9 @@ import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Container } from '@theia/core/shared/inversify';
 import { LocalStorageService, StorageService } from '@theia/core/lib/browser/storage-service';
-import { PluginPathsService } from '../../main/common/plugin-paths-protocol';
-import { BrowserOnlyPluginServer } from './browser-only-plugin-server';
-import { installFakeLockManager as installNavigatorLocks } from './test/navigator-locks-test-util';
+import { PluginPathsService } from '../../main/common/plugin-paths-protocol.js';
+import { BrowserOnlyPluginServer } from './browser-only-plugin-server.js';
+import { installFakeLockManager as installNavigatorLocks } from './test/navigator-locks-test-util.js';
 
 class InMemoryStorageService implements StorageService {
     readonly data = new Map<string, string>();

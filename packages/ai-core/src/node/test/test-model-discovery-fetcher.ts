@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { DiscoveredModel } from '../../common/model-discovery-status';
-import { ModelDiscoveryFetcherImpl } from '../model-discovery-fetcher';
-import { ModelSnapshotStore } from '../model-snapshot-store';
+import { DiscoveredModel } from '../../common/model-discovery-status.js';
+import { ModelDiscoveryFetcherImpl } from '../model-discovery-fetcher.js';
+import { ModelSnapshotStore } from '../model-snapshot-store.js';
 
 /** Keeps what a discovery run writes in memory, so a test can seed and inspect the snapshot. */
 export class InMemoryModelSnapshotStore implements ModelSnapshotStore {

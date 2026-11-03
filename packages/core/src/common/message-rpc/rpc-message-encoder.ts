@@ -16,8 +16,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Packr as MsgPack } from 'msgpackr';
-import { ReadBuffer, WriteBuffer } from './message-buffer';
-import { MsgPackExtensionManager } from './msg-pack-extension-manager';
+import { ReadBuffer, WriteBuffer } from './message-buffer.js';
+import { MsgPackExtensionManager } from './msg-pack-extension-manager.js';
 
 /**
  * This code lets you encode rpc protocol messages (request/reply/notification/error/cancel)

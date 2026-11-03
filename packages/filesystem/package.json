@@ -2,6 +2,7 @@
   "name": "@theia/filesystem",
   "version": "1.76.0",
   "description": "Theia - FileSystem Extension",
+  "type": "module",
   "dependencies": {
     "@theia/core": "1.76.0",
     "@types/body-parser": "^1.19.6",
@@ -82,5 +83,18 @@
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "21358137e41342742707f660b8e222f940a27652",
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/browser": "./lib/browser/index.js",
+    "./lib/browser/file-dialog": "./lib/browser/file-dialog/index.js",
+    "./lib/browser/file-tree": "./lib/browser/file-tree/index.js",
+    "./lib/browser/location": "./lib/browser/location/index.js",
+    "./lib/common": "./lib/common/index.js",
+    "./lib/node/parcel-watcher": "./lib/node/parcel-watcher/index.js",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  }
 }

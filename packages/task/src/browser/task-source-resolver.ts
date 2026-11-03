@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { TaskConfiguration, TaskScope } from '../common';
-import { TaskDefinitionRegistry } from './task-definition-registry';
+import { TaskConfiguration, TaskScope } from '../common/index.js';
+import { TaskDefinitionRegistry } from './task-definition-registry.js';
 
 @injectable()
 export class TaskSourceResolver {

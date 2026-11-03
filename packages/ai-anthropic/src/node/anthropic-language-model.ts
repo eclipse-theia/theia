@@ -42,8 +42,8 @@ import { inject, injectable, named, postConstruct } from '@theia/core/shared/inv
 import { Anthropic } from '@anthropic-ai/sdk';
 import type { Base64ImageSource, ImageBlockParam, Message, MessageParam, TextBlockParam, ToolResultBlockParam } from '@anthropic-ai/sdk/resources';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
-import { anthropicReasoningFor } from './anthropic-reasoning';
-import { ANTHROPIC_TOOL_SEARCH, ANTHROPIC_TOOL_SEARCH_NATIVE, ANTHROPIC_WEB_FETCH, ANTHROPIC_WEB_SEARCH } from './anthropic-server-tools';
+import { anthropicReasoningFor } from './anthropic-reasoning.js';
+import { ANTHROPIC_TOOL_SEARCH, ANTHROPIC_TOOL_SEARCH_NATIVE, ANTHROPIC_WEB_FETCH, ANTHROPIC_WEB_SEARCH } from './anthropic-server-tools.js';
 
 export const DEFAULT_MAX_TOKENS = 4096;
 

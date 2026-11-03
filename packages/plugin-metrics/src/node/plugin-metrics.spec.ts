@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { Container, ContainerModule } from '@theia/core/shared/inversify';
-import { PluginMetricsContribution } from './plugin-metrics';
-import { PluginMetricsContributor } from './metrics-contributor';
-import { PluginMetricStringGenerator } from './metric-string-generator';
-import { METRICS_TIMEOUT } from '../common/metrics-protocol';
+import { PluginMetricsContribution } from './plugin-metrics.js';
+import { PluginMetricsContributor } from './metrics-contributor.js';
+import { PluginMetricStringGenerator } from './metric-string-generator.js';
+import { METRICS_TIMEOUT } from '../common/metrics-protocol.js';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 

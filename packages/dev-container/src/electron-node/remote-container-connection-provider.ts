@@ -19,7 +19,7 @@ import { PassThrough } from 'stream';
 import {
     AttachContainerArgs, AttachContainerOptions, ContainerConnectionOptions, ContainerConnectionResult,
     DevContainerFile, RemoteContainerConnectionProvider, RunningContainerInfo, WorkspaceCandidate
-} from '../electron-common/remote-container-connection-provider';
+} from '../electron-common/remote-container-connection-provider.js';
 import { RemoteConnectionService } from '@theia/remote/lib/electron-node/remote-connection-service';
 import { RemoteSetupService } from '@theia/remote/lib/electron-node/setup/remote-setup-service';
 import { RemoteProxyServerProvider } from '@theia/remote/lib/electron-node/remote-proxy-server-provider';
@@ -27,16 +27,16 @@ import { RemoteStatusReport } from '@theia/remote/lib/electron-node/remote-types
 import { RpcServer, ILogger, MessageService, generateUuid, URI } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import Docker from 'dockerode';
-import { DevContainerFileService } from './dev-container-file-service';
-import { DockerContainerService } from './docker-container-service';
-import { ContainerOutputProvider } from '../electron-common/container-output-provider';
-import { DevContainerCliContribution } from './dev-container-cli-contribution';
-import { RemoteDockerContainerConnection } from './remote-docker-container-connection';
+import { DevContainerFileService } from './dev-container-file-service.js';
+import { DockerContainerService } from './docker-container-service.js';
+import { ContainerOutputProvider } from '../electron-common/container-output-provider.js';
+import { DevContainerCliContribution } from './dev-container-cli-contribution.js';
+import { RemoteDockerContainerConnection } from './remote-docker-container-connection.js';
 // Re-export for backward compatibility — these types were moved to remote-docker-container-connection.ts
-export { RemoteDockerContainerConnection, RemoteContainerConnectionOptions } from './remote-docker-container-connection';
-import { DevContainerConfiguration } from './devcontainer-file';
-import { getWorkspaceMounts, inferWorkspacePath } from './devcontainer-util';
-import { VariableContext } from './devcontainer-contributions/variable-resolver-contribution';
+export { RemoteDockerContainerConnection, RemoteContainerConnectionOptions } from './remote-docker-container-connection.js';
+import { DevContainerConfiguration } from './devcontainer-file.js';
+import { getWorkspaceMounts, inferWorkspacePath } from './devcontainer-util.js';
+import { VariableContext } from './devcontainer-contributions/variable-resolver-contribution.js';
 
 @injectable()
 export class DevContainerConnectionProvider implements RemoteContainerConnectionProvider, RpcServer<ContainerOutputProvider> {

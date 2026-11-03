@@ -20,8 +20,8 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 import { nls } from '@theia/core/lib/common/nls';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { WebviewExternalEndpoint } from '../../common/webview-protocol';
-import { WebviewEnvironment } from './webview-environment';
+import { WebviewExternalEndpoint } from '../../common/webview-protocol.js';
+import { WebviewEnvironment } from './webview-environment.js';
 
 @injectable()
 export class WebviewFrontendSecurityWarnings implements FrontendApplicationContribution {

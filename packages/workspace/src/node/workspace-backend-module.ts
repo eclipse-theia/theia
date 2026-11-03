@@ -16,11 +16,11 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ConnectionHandler, RpcConnectionHandler, bindRootContributionProvider } from '@theia/core/lib/common';
-import { WorkspaceServer, workspacePath, UntitledWorkspaceService, WorkspaceFileService, bindWorkspacePreferences } from '../common';
-import { DefaultWorkspaceServer, FileWorkspaceHandlerContribution, WorkspaceCliContribution, WorkspaceHandlerContribution } from './default-workspace-server';
+import { WorkspaceServer, workspacePath, UntitledWorkspaceService, WorkspaceFileService, bindWorkspacePreferences } from '../common/index.js';
+import { DefaultWorkspaceServer, FileWorkspaceHandlerContribution, WorkspaceCliContribution, WorkspaceHandlerContribution } from './default-workspace-server.js';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import { bindWorkspaceTrustPreferences } from '../common/workspace-trust-preferences';
+import { bindWorkspaceTrustPreferences } from '../common/workspace-trust-preferences.js';
 
 export default new ContainerModule(bind => {
     bind(WorkspaceCliContribution).toSelf().inSingletonScope();

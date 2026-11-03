@@ -14,17 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from './test/jsdom';
+import { enableJSDOM } from './test/jsdom.js';
 const disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { PerspectiveServiceImpl, PerspectiveDescriptor, WidgetAreaResolverImpl } from './perspective-service';
-import { ApplicationShell } from './shell/application-shell';
-import { AbstractViewContribution, ViewContributionOptions } from './shell/view-contribution';
-import { FrontendApplicationContribution } from './frontend-application-contribution';
+import { PerspectiveServiceImpl, PerspectiveDescriptor, WidgetAreaResolverImpl } from './perspective-service.js';
+import { ApplicationShell } from './shell/application-shell.js';
+import { AbstractViewContribution, ViewContributionOptions } from './shell/view-contribution.js';
+import { FrontendApplicationContribution } from './frontend-application-contribution.js';
 import { DockLayout, Panel, Widget } from '@lumino/widgets';
-import { SidePanel } from './shell/side-panel-handler';
+import { SidePanel } from './shell/side-panel-handler.js';
 disableJSDOM();
 
 describe('PerspectiveService', () => {

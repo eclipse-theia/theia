@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PluginDeployerEntry, PluginDeployerFileHandlerContext } from '../../common/plugin-protocol';
+import { PluginDeployerEntry, PluginDeployerFileHandlerContext } from '../../common/plugin-protocol.js';
 import decompress from 'decompress';
 
 export class PluginDeployerFileHandlerContextImpl implements PluginDeployerFileHandlerContext {

@@ -14,16 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '../test/jsdom';
+import { enableJSDOM } from '../test/jsdom.js';
 let disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
 
 import { Widget } from '@lumino/widgets';
-import { PreferenceService } from '../../common';
+import { PreferenceService } from '../../common/index.js';
 // load the shell first, loading it through the secondary window handler hits a circular import
-import { ApplicationShell } from '../shell/application-shell';
-import { ExtractableWidget } from '../widgets';
-import { DefaultSecondaryWindowService } from './default-secondary-window-service';
+import { ApplicationShell } from '../shell/application-shell.js';
+import { ExtractableWidget } from '../widgets/index.js';
+import { DefaultSecondaryWindowService } from './default-secondary-window-service.js';
 
 disableJSDOM();
 

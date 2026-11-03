@@ -22,18 +22,18 @@ import {
     AcceleratorSource,
     ArrayUtils,
     PreferenceService
-} from '../../common';
-import { KeybindingRegistry } from '../keybinding';
-import { FrontendApplication } from '../frontend-application';
-import { FrontendApplicationContribution } from '../frontend-application-contribution';
-import { ContextKeyService, ContextMatcher } from '../context-key-service';
-import { ContextMenuContext } from './context-menu-context';
-import { Message, waitForRevealed } from '../widgets';
-import { ApplicationShell } from '../shell';
-import { CorePreferences } from '../../common/core-preferences';
+} from '../../common/index.js';
+import { KeybindingRegistry } from '../keybinding.js';
+import { FrontendApplication } from '../frontend-application.js';
+import { FrontendApplicationContribution } from '../frontend-application-contribution.js';
+import { ContextKeyService, ContextMatcher } from '../context-key-service.js';
+import { ContextMenuContext } from './context-menu-context.js';
+import { Message, waitForRevealed } from '../widgets/index.js';
+import { ApplicationShell } from '../shell/index.js';
+import { CorePreferences } from '../../common/core-preferences.js';
 import { ElementExt } from '@lumino/domutils';
-import { CommandMenu, CompoundMenuNode, MAIN_MENU_BAR, MenuNode, MenuPath, RenderedMenuNode, Submenu } from '../../common/menu/menu-types';
-import { MenuModelRegistry } from '../../common/menu/menu-model-registry';
+import { CommandMenu, CompoundMenuNode, MAIN_MENU_BAR, MenuNode, MenuPath, RenderedMenuNode, Submenu } from '../../common/menu/menu-types.js';
+import { MenuModelRegistry } from '../../common/menu/menu-model-registry.js';
 
 export abstract class MenuBarWidget extends MenuBar {
     abstract activateMenu(label: string, ...labels: string[]): Promise<MenuWidget>;

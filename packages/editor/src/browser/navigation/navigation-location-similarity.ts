@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { NavigationLocation } from './navigation-location';
+import { NavigationLocation } from './navigation-location.js';
 
 /**
  * Service for checking whether two navigation locations are similar or not.

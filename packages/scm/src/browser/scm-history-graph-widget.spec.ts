@@ -21,10 +21,10 @@ import { expect } from 'chai';
 import * as React from '@theia/core/shared/react';
 import { Emitter } from '@theia/core/lib/common/event';
 import { ContextKey, ContextKeyServiceDummyImpl, ContextKeyValue } from '@theia/core/lib/browser/context-key-service';
-import { ScmContextKeyService } from './scm-context-key-service';
-import { ScmHistoryGraphWidget } from './scm-history-graph-widget';
-import { GraphRow } from './scm-history-graph-lanes';
-import { ScmHistoryItemChange, ScmHistoryProvider } from './scm-provider';
+import { ScmContextKeyService } from './scm-context-key-service.js';
+import { ScmHistoryGraphWidget } from './scm-history-graph-widget.js';
+import { GraphRow } from './scm-history-graph-lanes.js';
+import { ScmHistoryItemChange, ScmHistoryProvider } from './scm-provider.js';
 
 disableJSDOM();
 

@@ -16,10 +16,10 @@
 
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { ShellCommandPermissionService } from './shell-command-permission-service';
-import { SHELL_COMMAND_ALLOWLIST_PREFERENCE, SHELL_COMMAND_DENYLIST_PREFERENCE } from '../common/shell-command-preferences';
+import { ShellCommandPermissionService } from './shell-command-permission-service.js';
+import { SHELL_COMMAND_ALLOWLIST_PREFERENCE, SHELL_COMMAND_DENYLIST_PREFERENCE } from '../common/shell-command-preferences.js';
 import { AiConfigurationService } from '@theia/ai-core';
-import { DefaultShellCommandAnalyzer, ShellCommandAnalyzer } from '../common/shell-command-analyzer';
+import { DefaultShellCommandAnalyzer, ShellCommandAnalyzer } from '../common/shell-command-analyzer.js';
 
 describe('ShellCommandPermissionService', () => {
     let service: ShellCommandPermissionService;

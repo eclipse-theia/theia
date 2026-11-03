@@ -27,14 +27,14 @@ import {
     LaunchListProvider,
     LaunchRunnerProvider,
     LaunchStopProvider,
-} from './workspace-launch-provider';
+} from './workspace-launch-provider.js';
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { DebugSessionOptions } from '@theia/debug/lib/browser/debug-session-options';
 import { DebugConfiguration } from '@theia/debug/lib/common/debug-common';
 import { DebugCompound } from '@theia/debug/lib/common/debug-compound';
 import { DebugSession } from '@theia/debug/lib/browser/debug-session';
-import { WorkspaceFunctionScope } from './workspace-functions';
+import { WorkspaceFunctionScope } from './workspace-functions.js';
 import { AiConfigurationService } from '@theia/ai-core';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { WorkspaceService } from '@theia/workspace/lib/browser';

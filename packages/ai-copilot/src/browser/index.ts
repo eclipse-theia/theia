@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './copilot-auth-dialog';
-export * from './copilot-auth-dialog-messages';
-export * from './copilot-command-contribution';
-export * from './copilot-status-bar-contribution';
-export * from './copilot-frontend-application-contribution';
+export * from './copilot-auth-dialog.js';
+export * from './copilot-auth-dialog-messages.js';
+export * from './copilot-command-contribution.js';
+export * from './copilot-status-bar-contribution.js';
+export * from './copilot-frontend-application-contribution.js';

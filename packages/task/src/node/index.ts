@@ -14,6 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './task';
-export * from './task-runner';
-export * from './task-manager';
+export * from './task.js';
+export * from './task-runner.js';
+export * from './task-manager.js';

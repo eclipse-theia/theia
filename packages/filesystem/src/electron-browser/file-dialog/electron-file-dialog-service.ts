@@ -18,9 +18,9 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { MaybeArray } from '@theia/core/lib/common/types';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { FileStat } from '../../common/files';
-import { FileAccess } from '../../common/filesystem';
-import { DefaultFileDialogService, OpenFileDialogProps, SaveFileDialogProps } from '../../browser/file-dialog';
+import { FileStat } from '../../common/files.js';
+import { FileAccess } from '../../common/filesystem.js';
+import { DefaultFileDialogService, OpenFileDialogProps, SaveFileDialogProps } from '../../browser/file-dialog/index.js';
 //
 // We are OK to use this here because the electron backend and frontend are on the same host.
 // If required, we can move this single service (and its module) to a dedicated Theia extension,
@@ -29,7 +29,7 @@ import { DefaultFileDialogService, OpenFileDialogProps, SaveFileDialogProps } fr
 //
 // eslint-disable-next-line @theia/runtime-import-check
 import { FileUri } from '@theia/core/lib/common/file-uri';
-import { OpenDialogOptions, SaveDialogOptions } from '../../electron-common/electron-api';
+import { OpenDialogOptions, SaveDialogOptions } from '../../electron-common/electron-api.js';
 
 import '@theia/core/lib/electron-common/electron-api';
 

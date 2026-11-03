@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MockLogger } from '../../common/test/mock-logger';
-import { AbstractConnectionStatusService } from '../connection-status-service';
+import { MockLogger } from '../../common/test/mock-logger.js';
+import { AbstractConnectionStatusService } from '../connection-status-service.js';
 
 export class MockConnectionStatusService extends AbstractConnectionStatusService {
 

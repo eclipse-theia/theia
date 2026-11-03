@@ -35,8 +35,8 @@ import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { DuplicateExtensionError } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { Title, Widget } from '@theia/core/lib/browser';
 import { EditorWidget } from '@theia/editor/lib/browser';
-import { VSCodeExtensionUri } from '../common/plugin-vscode-uri';
-import { EditorGroupNavigationRect, PluginVscodeCommandsContribution } from './plugin-vscode-commands-contribution';
+import { VSCodeExtensionUri } from '../common/plugin-vscode-uri.js';
+import { EditorGroupNavigationRect, PluginVscodeCommandsContribution } from './plugin-vscode-commands-contribution.js';
 
 after(() => disableJSDOM());
 

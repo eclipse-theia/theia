@@ -20,8 +20,8 @@ import { Emitter } from '@theia/core/lib/common/event';
 import { DebugAdapter } from '@theia/debug/lib/common/debug-model';
 import { DebugChannel } from '@theia/debug/lib/common/debug-service';
 import * as theia from '@theia/plugin';
-import { PluginDebugAdapterSession } from './plugin-debug-adapter-session';
-import { PluginDebugAdapterTracker } from './plugin-debug-adapter-tracker';
+import { PluginDebugAdapterSession } from './plugin-debug-adapter-session.js';
+import { PluginDebugAdapterTracker } from './plugin-debug-adapter-tracker.js';
 
 class FakeDebugAdapter implements DebugAdapter {
     readonly received: string[] = [];

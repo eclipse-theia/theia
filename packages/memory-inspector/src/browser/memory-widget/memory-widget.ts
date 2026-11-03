@@ -17,9 +17,9 @@
 import { nls } from '@theia/core';
 import { BaseWidget, PanelLayout } from '@theia/core/lib/browser';
 import { Container, inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
-import { MemoryWidgetOptions } from '../utils/memory-widget-utils';
-import { MemoryOptionsWidget } from './memory-options-widget';
-import { MemoryTableWidget } from './memory-table-widget';
+import { MemoryWidgetOptions } from '../utils/memory-widget-utils.js';
+import { MemoryOptionsWidget } from './memory-options-widget.js';
+import { MemoryTableWidget } from './memory-table-widget.js';
 
 @injectable()
 export class MemoryWidget<

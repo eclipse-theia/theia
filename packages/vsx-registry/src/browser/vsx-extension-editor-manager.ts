@@ -18,7 +18,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { WidgetOpenHandler } from '@theia/core/lib/browser';
 import { VSCodeExtensionUri } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-uri';
-import { VSXExtensionEditor } from './vsx-extension-editor';
+import { VSXExtensionEditor } from './vsx-extension-editor.js';
 
 @injectable()
 export class VSXExtensionEditorManager extends WidgetOpenHandler<VSXExtensionEditor> {

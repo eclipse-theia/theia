@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '../browser/test/jsdom';
+import { enableJSDOM } from '../browser/test/jsdom.js';
 
 let disableJSDOM = enableJSDOM();
 
-import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
+import { FrontendApplicationConfigProvider } from './frontend-application-config-provider.js';
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
@@ -27,14 +27,14 @@ import {
     ConnectionStatusOptions,
     FrontendConnectionStatusService,
     PingService
-} from './connection-status-service';
-import { MockConnectionStatusService } from './test/mock-connection-status-service';
+} from './connection-status-service.js';
+import { MockConnectionStatusService } from './test/mock-connection-status-service.js';
 
 import * as sinon from 'sinon';
 
 import { Container } from 'inversify';
-import { ILogger, Emitter, Loggable } from '../common';
-import { WebSocketConnectionSource } from './messaging/ws-connection-source';
+import { ILogger, Emitter, Loggable } from '../common/index.js';
+import { WebSocketConnectionSource } from './messaging/ws-connection-source.js';
 
 disableJSDOM();
 

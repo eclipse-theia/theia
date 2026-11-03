@@ -15,10 +15,10 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { MaybePromise } from '../../common/types';
+import { MaybePromise } from '../../common/types.js';
 import { RequestConfiguration, RequestService } from '@theia/request';
-import { Argv, Arguments } from 'yargs';
-import { CliContribution } from '../cli';
+import { Argv, Arguments } from '../../../shared/yargs/index.cjs';
+import { CliContribution } from '../cli.js';
 
 export const ProxyUrl = 'proxy-url';
 export const ProxyAuthorization = 'proxy-authorization';

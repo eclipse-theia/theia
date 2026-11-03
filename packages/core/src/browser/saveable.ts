@@ -16,13 +16,13 @@
 
 import { Widget } from '@lumino/widgets';
 import { Message } from '@lumino/messaging';
-import { Emitter, Event } from '../common/event';
-import { MaybePromise } from '../common/types';
-import { Key } from './keyboard/keys';
-import { AbstractDialog } from './dialogs';
-import { nls } from '../common/nls';
-import { Disposable, DisposableCollection, isObject, URI } from '../common';
-import { BinaryBuffer } from '../common/buffer';
+import { Emitter, Event } from '../common/event.js';
+import { MaybePromise } from '../common/types.js';
+import { Key } from './keyboard/keys.js';
+import { AbstractDialog } from './dialogs.js';
+import { nls } from '../common/nls.js';
+import { Disposable, DisposableCollection, isObject, URI } from '../common/index.js';
+import { BinaryBuffer } from '../common/buffer.js';
 
 export type AutoSaveMode = 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
 

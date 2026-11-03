@@ -23,8 +23,8 @@ import { Disposable, DisposableCollection, URI } from '@theia/core';
 import { Autorun, Observable, ObservableSignal, SettableObservable } from '@theia/core/lib/common/observable';
 import { DiffComputer, LineRange as DiffLineRange } from '@theia/core/lib/common/diff';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
-import { DetailedLineRangeMapping, RangeMapping } from './range-mapping';
-import { LineRange } from './line-range';
+import { DetailedLineRangeMapping, RangeMapping } from './range-mapping.js';
+import { LineRange } from './line-range.js';
 
 export class LiveDiff implements Disposable {
 

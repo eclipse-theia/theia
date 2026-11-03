@@ -19,7 +19,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Container, injectable } from '@theia/core/shared/inversify';
 import { CancellationToken, CancellationTokenSource, ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { OllamaModel, OllamaModelParams } from './node/ollama-language-model';
+import { OllamaModel, OllamaModelParams } from './node/ollama-language-model.js';
 import { Tool } from 'ollama';
 import { expect } from 'chai';
 import * as sinon from 'sinon';

@@ -20,13 +20,13 @@ import * as temp from 'temp';
 import * as fs from '@theia/core/shared/fs-extra';
 import { isWindows } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node';
-import { DirectoryWatcherProvider, NodeDirectoryWatcher } from './nodejs-watcher/node-directory-watcher';
-import { NO_LOGGING, TempDir, WATCHER_TIMINGS as TIMINGS } from './test/watcher-test-helper';
-import { FileSystemWatcher, WatcherProvider } from './filesystem-watcher';
+import { DirectoryWatcherProvider, NodeDirectoryWatcher } from './nodejs-watcher/node-directory-watcher.js';
+import { NO_LOGGING, TempDir, WATCHER_TIMINGS as TIMINGS } from './test/watcher-test-helper.js';
+import { FileSystemWatcher, WatcherProvider } from './filesystem-watcher.js';
 import {
     FileSystemWatcherServiceImpl, ParcelFileSystemWatcherServerOptions, ParcelFileSystemWatcherService, ParcelWatcher, RecursiveWatcherProvider
-} from './parcel-watcher/parcel-filesystem-service';
-import { WatchOptions } from '../common/filesystem-watcher-protocol';
+} from './parcel-watcher/parcel-filesystem-service.js';
+import { WatchOptions } from '../common/filesystem-watcher-protocol.js';
 
 const track = temp.track();
 

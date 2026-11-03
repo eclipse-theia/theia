@@ -15,7 +15,7 @@
 *******************************************************************************/
 
 import { injectable, inject, named } from 'inversify';
-import { Measurement, MeasurementOptions, Stopwatch, ILogger } from '../../common';
+import { Measurement, MeasurementOptions, Stopwatch, ILogger } from '../../common/index.js';
 
 @injectable()
 export class FrontendStopwatch extends Stopwatch {

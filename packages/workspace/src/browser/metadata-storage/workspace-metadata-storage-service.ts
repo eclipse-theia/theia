@@ -21,8 +21,8 @@ import { ILogger } from '@theia/core/lib/common/logger';
 import { URI } from '@theia/core/lib/common/uri';
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { WorkspaceService } from '../workspace-service';
-import { WorkspaceMetadataStore, WorkspaceMetadataStoreImpl } from './workspace-metadata-store';
+import { WorkspaceService } from '../workspace-service.js';
+import { WorkspaceMetadataStore, WorkspaceMetadataStoreImpl } from './workspace-metadata-store.js';
 
 export const WorkspaceMetadataStoreFactory = Symbol('WorkspaceMetadataStoreFactory');
 export type WorkspaceMetadataStoreFactory = () => WorkspaceMetadataStoreImpl;
@@ -154,7 +154,7 @@ export class WorkspaceMetadataStorageServiceImpl implements WorkspaceMetadataSto
             return index[workspacePath];
         }
 
-        const newUuid = generateUuid();
+        const newUuid = this.generateWorkspaceKey();
         index[workspacePath] = newUuid;
 
         await this.saveIndex(index);
@@ -240,5 +240,12 @@ export class WorkspaceMetadataStorageServiceImpl implements WorkspaceMetadataSto
 
         const workspaceUuid = await this.getOrCreateWorkspaceUUID(workspaceRoot);
         return this.getStoreLocation(workspaceUuid, mangledKey);
+    }
+
+    /**
+     * Generates the key under which the metadata of a workspace is stored.
+     */
+    protected generateWorkspaceKey(): string {
+        return generateUuid();
     }
 }

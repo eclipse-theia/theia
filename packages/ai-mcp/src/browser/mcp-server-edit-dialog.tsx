@@ -19,7 +19,7 @@ import { nls } from '@theia/core';
 import { DialogProps } from '@theia/core/lib/browser/dialogs';
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
 import { SelectComponent } from '@theia/core/lib/browser/widgets/select-component';
-import { isHttpOrHttpsUrl } from '../common/mcp-server-preference-validator';
+import { isHttpOrHttpsUrl } from '../common/mcp-server-preference-validator.js';
 
 /** Server type edited in the dialog: local stdio launch, remote URL with token authentication, or remote URL with OAuth. */
 export type MCPServerType = 'local' | 'remote' | 'remote-oauth';

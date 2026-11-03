@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { DiscoveredModels } from './model-discovery-util';
+import { DiscoveredModels } from './model-discovery-util.js';
 
 describe('DiscoveredModels.undatedId', () => {
 

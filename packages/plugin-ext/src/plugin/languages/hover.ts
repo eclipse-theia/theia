@@ -17,11 +17,11 @@
 
 import { URI } from '@theia/core/shared/vscode-uri';
 import * as theia from '@theia/plugin';
-import { DocumentsExtImpl } from '../documents';
-import { Hover, HoverContext } from '../../common/plugin-api-rpc-model';
-import * as Converter from '../type-converters';
-import { Range } from '../types-impl';
-import { HoverWithId, Position } from '../../common/plugin-api-rpc';
+import { DocumentsExtImpl } from '../documents.js';
+import { Hover, HoverContext } from '../../common/plugin-api-rpc-model.js';
+import * as Converter from '../type-converters.js';
+import { Range } from '../types-impl.js';
+import { HoverWithId, Position } from '../../common/plugin-api-rpc.js';
 
 export class HoverAdapter {
 

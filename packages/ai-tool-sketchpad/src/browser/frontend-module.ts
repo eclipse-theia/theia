@@ -18,10 +18,10 @@ import '../../src/browser/style/index.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution, WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
-import { SketchedToolService } from '../common';
-import { SketchedToolServiceImpl } from './sketched-tool-service';
-import { SketchedToolWidget } from './sketched-tool-widget';
-import { SketchedToolViewContribution } from './sketched-tool-contribution';
+import { SketchedToolService } from '../common/index.js';
+import { SketchedToolServiceImpl } from './sketched-tool-service.js';
+import { SketchedToolWidget } from './sketched-tool-widget.js';
+import { SketchedToolViewContribution } from './sketched-tool-contribution.js';
 
 export default new ContainerModule(bind => {
     // Service

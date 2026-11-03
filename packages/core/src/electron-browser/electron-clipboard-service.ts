@@ -16,8 +16,8 @@
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { injectable } from 'inversify';
-import { Emitter, Event } from '../common/event';
-import { ClipboardService } from '../browser/clipboard-service';
+import { Emitter, Event } from '../common/event.js';
+import { ClipboardService } from '../browser/clipboard-service.js';
 
 @injectable()
 export class ElectronClipboardService implements ClipboardService {

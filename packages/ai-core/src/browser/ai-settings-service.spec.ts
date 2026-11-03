@@ -19,9 +19,9 @@ import { Container } from '@theia/core/shared/inversify';
 import { Emitter, ILogger } from '@theia/core';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import { PreferenceInspection, PreferenceUtils } from '@theia/core/lib/common/preferences';
-import { AiConfigurationChange, AiConfigurationService } from '../common/ai-configuration-service';
-import { AISettings } from '../common/settings-service';
-import { AISettingsServiceImpl } from './ai-settings-service';
+import { AiConfigurationChange, AiConfigurationService } from '../common/ai-configuration-service.js';
+import { AISettings } from '../common/settings-service.js';
+import { AISettingsServiceImpl } from './ai-settings-service.js';
 
 /**
  * User and Session values of `ai-features.agentSettings`, resolved as `AiConfigurationService` resolves them in a

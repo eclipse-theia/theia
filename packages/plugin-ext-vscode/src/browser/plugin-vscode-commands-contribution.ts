@@ -78,7 +78,7 @@ import { CustomEditorOpener } from '@theia/plugin-ext/lib/main/browser/custom-ed
 import { nls } from '@theia/core/lib/common/nls';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import * as monaco from '@theia/monaco-editor-core';
-import { VSCodeExtensionUri } from '../common/plugin-vscode-uri';
+import { VSCodeExtensionUri } from '../common/plugin-vscode-uri.js';
 import { CodeEditorWidgetUtil } from '@theia/plugin-ext/lib/main/browser/menus/vscode-theia-menu-mappings';
 import { OutlineViewContribution } from '@theia/outline-view/lib/browser/outline-view-contribution';
 import { CompletionList, Range, Position as PluginPosition } from '@theia/plugin';

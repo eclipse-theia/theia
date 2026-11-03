@@ -19,7 +19,7 @@ import { codicon } from '@theia/core/lib/browser';
 import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { injectable } from '@theia/core/shared/inversify';
-import { AI_CONFIGURATION_RESOURCE_SCHEME } from './ai-configuration-resource';
+import { AI_CONFIGURATION_RESOURCE_SCHEME } from './ai-configuration-resource.js';
 
 /**
  * Labels the AI Configuration view's constant resource URI (see {@link AI_CONFIGURATION_RESOURCE_URI}).

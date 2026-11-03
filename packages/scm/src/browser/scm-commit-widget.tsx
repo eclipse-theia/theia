@@ -19,11 +19,11 @@ import { DisposableCollection } from '@theia/core';
 import { Message } from '@theia/core/shared/@lumino/messaging';
 import * as React from '@theia/core/shared/react';
 import TextareaAutosize from 'react-textarea-autosize';
-import { ScmInput, ScmInputIssueType } from './scm-input';
+import { ScmInput, ScmInputIssueType } from './scm-input.js';
 import {
     ContextMenuRenderer, ReactWidget, KeybindingRegistry, StatefulWidget
 } from '@theia/core/lib/browser';
-import { ScmService } from './scm-service';
+import { ScmService } from './scm-service.js';
 
 @injectable()
 export class ScmCommitWidget extends ReactWidget implements StatefulWidget {

@@ -22,7 +22,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { injectable, postConstruct } from 'inversify';
-import { Disposable, DisposableCollection, Emitter, Event } from '../../common';
+import { Disposable, DisposableCollection, Emitter, Event } from '../../common/index.js';
 
 export interface WindowFocusEvent {
     win: Window;

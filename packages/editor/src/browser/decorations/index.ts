@@ -14,6 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './editor-decoration';
-export * from './editor-decoration-style';
-export * from './editor-decorator';
+export * from './editor-decoration.js';
+export * from './editor-decoration-style.js';
+export * from './editor-decorator.js';

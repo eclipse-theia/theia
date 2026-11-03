@@ -16,10 +16,10 @@
 
 import * as theia from '@theia/plugin';
 import { URI } from '@theia/core/shared/vscode-uri';
-import { DocumentsExtImpl } from '../documents';
-import * as Converter from '../type-converters';
-import { RawColorInfo } from '../../common/plugin-api-rpc';
-import { ColorPresentation } from '../../common/plugin-api-rpc-model';
+import { DocumentsExtImpl } from '../documents.js';
+import * as Converter from '../type-converters.js';
+import { RawColorInfo } from '../../common/plugin-api-rpc.js';
+import { ColorPresentation } from '../../common/plugin-api-rpc-model.js';
 
 export class ColorProviderAdapter {
 

@@ -20,14 +20,14 @@ import express from '@theia/core/shared/express';
 import { expect } from 'chai';
 import * as http from 'http';
 import * as net from 'net';
-import { ExternalApiContribution } from './external-api-contribution';
-import { ExternalApiResponseWriterImpl } from './external-api-response-writer';
-import { ExternalApiRouterOptions } from './external-api-router';
-import { ExternalApiServer } from './external-api-server';
-import { OpenApiDocumentBuilderImpl } from './openapi-document-builder';
-import { OpenApiSpecContribution } from './openapi-spec-contribution';
-import { RestResult } from './rest-result';
-import { ExternalApiTestSupport } from './test/external-api-test-support';
+import { ExternalApiContribution } from './external-api-contribution.js';
+import { ExternalApiResponseWriterImpl } from './external-api-response-writer.js';
+import { ExternalApiRouterOptions } from './external-api-router.js';
+import { ExternalApiServer } from './external-api-server.js';
+import { OpenApiDocumentBuilderImpl } from './openapi-document-builder.js';
+import { OpenApiSpecContribution } from './openapi-spec-contribution.js';
+import { RestResult } from './rest-result.js';
+import { ExternalApiTestSupport } from './test/external-api-test-support.js';
 
 describe('ExternalApiServer', () => {
 

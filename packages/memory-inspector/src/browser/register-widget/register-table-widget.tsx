@@ -18,11 +18,11 @@ import { Key, KeyCode } from '@theia/core/lib/browser';
 import { inject } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { DebugVariable } from '@theia/debug/lib/browser/console/debug-console-items';
-import { EMPTY_MEMORY } from '../memory-widget/memory-options-widget';
-import { MemoryTable, MemoryTableWidget } from '../memory-widget/memory-table-widget';
-import { Interfaces } from '../utils/memory-widget-utils';
-import { RegisterReadResult } from '../utils/memory-widget-variable-utils';
-import { RegisterOptions, RegisterOptionsWidget } from './register-options-widget';
+import { EMPTY_MEMORY } from '../memory-widget/memory-options-widget.js';
+import { MemoryTable, MemoryTableWidget } from '../memory-widget/memory-table-widget.js';
+import { Interfaces } from '../utils/memory-widget-utils.js';
+import { RegisterReadResult } from '../utils/memory-widget-variable-utils.js';
+import { RegisterOptions, RegisterOptionsWidget } from './register-options-widget.js';
 
 export namespace RegisterTable {
 

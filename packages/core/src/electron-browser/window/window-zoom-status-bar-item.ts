@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { FrontendApplicationContribution, KeybindingRegistry, StatusBar, StatusBarAlignment } from '../../browser';
-import { CommandRegistry, nls, PreferenceService } from '../../common';
-import { PREF_WINDOW_ZOOM_LEVEL } from '../../electron-common/electron-window-preferences';
-import { renderWindowZoomActionBar } from './window-zoom-action-bar';
+import { FrontendApplicationContribution, KeybindingRegistry, StatusBar, StatusBarAlignment } from '../../browser/index.js';
+import { CommandRegistry, nls, PreferenceService } from '../../common/index.js';
+import { PREF_WINDOW_ZOOM_LEVEL } from '../../electron-common/electron-window-preferences.js';
+import { renderWindowZoomActionBar } from './window-zoom-action-bar.js';
 
 @injectable()
 export class WindowZoomStatusBarItem implements FrontendApplicationContribution {

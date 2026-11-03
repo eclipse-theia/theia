@@ -14,20 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import throttle = require('@theia/core/shared/lodash.throttle');
-import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
+import throttle from '@theia/core/shared/lodash.throttle';
+import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol.js';
 import { ConsoleSession, ConsoleItem } from '@theia/console/lib/browser/console-session';
 import { AnsiConsoleItem } from '@theia/console/lib/browser/ansi-console-item';
-import { DebugSession } from '../debug-session';
+import { DebugSession } from '../debug-session.js';
 import URI from '@theia/core/lib/common/uri';
 import { generateUuid } from '@theia/core/lib/common/uuid';
-import { ExpressionContainer, ExpressionItem } from './debug-console-items';
+import { ExpressionContainer, ExpressionItem } from './debug-console-items.js';
 import { Severity } from '@theia/core/lib/common/severity';
 import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
-import { DebugSessionManager } from '../debug-session-manager';
-import { DebugPreferences } from '../../common/debug-preferences';
+import { DebugSessionManager } from '../debug-session-manager.js';
+import { DebugPreferences } from '../../common/debug-preferences.js';
 import * as monaco from '@theia/monaco-editor-core';
-import { LanguageSelector } from '@theia/monaco-editor-core/esm/vs/editor/common/languageSelector';
+import { LanguageSelector } from '@theia/monaco-editor-core/esm/vs/editor/common/languageSelector.js';
 import { Disposable, ILogger } from '@theia/core';
 
 export const DebugConsoleSessionFactory = Symbol('DebugConsoleSessionFactory');

@@ -18,8 +18,8 @@ import { injectable, postConstruct } from 'inversify';
 import { MimeData } from '@lumino/coreutils';
 import { Drag } from '@lumino/dragdrop';
 import { TabBar, Title, Widget } from '@lumino/widgets';
-import { Disposable } from '../../common/disposable';
-import { Emitter, Event } from '../../common/event';
+import { Disposable } from '../../common/disposable.js';
+import { Emitter, Event } from '../../common/event.js';
 
 /**
  * The mime type that Lumino drop targets, e.g. dock panels, expect for dragged widgets.

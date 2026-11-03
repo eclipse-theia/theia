@@ -22,10 +22,10 @@ import { CommandRegistry } from '@theia/core/shared/@lumino/commands';
 import { Menu } from '@theia/core/shared/@lumino/widgets';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
-import { PluginDevServer } from '../common/plugin-dev-protocol';
-import { HostedPluginManagerClient, HostedInstanceState, HostedPluginCommands, HostedInstanceData } from './hosted-plugin-manager-client';
-import { HostedPluginLogViewer } from './hosted-plugin-log-viewer';
-import { HostedPluginPreferences } from '../common/hosted-plugin-preferences';
+import { PluginDevServer } from '../common/plugin-dev-protocol.js';
+import { HostedPluginManagerClient, HostedInstanceState, HostedPluginCommands, HostedInstanceData } from './hosted-plugin-manager-client.js';
+import { HostedPluginLogViewer } from './hosted-plugin-log-viewer.js';
+import { HostedPluginPreferences } from '../common/hosted-plugin-preferences.js';
 import { nls } from '@theia/core/lib/common/nls';
 import { ILogger } from '@theia/core';
 

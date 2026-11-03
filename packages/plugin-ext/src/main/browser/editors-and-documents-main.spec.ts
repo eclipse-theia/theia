@@ -29,12 +29,12 @@ import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-mo
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { interfaces } from '@theia/core/shared/inversify';
 import { URI as CodeURI } from '@theia/core/shared/vscode-uri';
-import { EditorsAndDocumentsMain } from './editors-and-documents-main';
-import { EditorModelService } from './text-editor-model-service';
-import { TabsMainImpl } from './tabs/tabs-main';
-import { RPCProtocol } from '../../common/rpc-protocol';
-import { EditorsAndDocumentsDelta } from '../../common/plugin-api-rpc';
-import { EditorsAndDocumentsExtImpl } from '../../plugin/editors-and-documents';
+import { EditorsAndDocumentsMain } from './editors-and-documents-main.js';
+import { EditorModelService } from './text-editor-model-service.js';
+import { TabsMainImpl } from './tabs/tabs-main.js';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
+import { EditorsAndDocumentsDelta } from '../../common/plugin-api-rpc.js';
+import { EditorsAndDocumentsExtImpl } from '../../plugin/editors-and-documents.js';
 
 disableJSDOM();
 

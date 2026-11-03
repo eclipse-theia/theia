@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { CancellationToken, Emitter, Event } from '../common';
-import URI from '../common/uri';
-import { Decoration, DecorationsProvider, DecorationsServiceImpl } from './decorations-service';
+import { CancellationToken, Emitter, Event } from '../common/index.js';
+import URI from '../common/uri.js';
+import { Decoration, DecorationsProvider, DecorationsServiceImpl } from './decorations-service.js';
 
 class TestDecorationsProvider implements DecorationsProvider {
 
