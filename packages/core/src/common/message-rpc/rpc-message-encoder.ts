@@ -29,7 +29,7 @@ import { MsgPackExtensionManager } from './msg-pack-extension-manager';
 
 export type RpcMessage = RequestMessage | ReplyMessage | ReplyErrMessage | CancelMessage | NotificationMessage;
 
-export const enum RpcMessageType {
+export enum RpcMessageType {
     Request = 1,
     Notification = 2,
     Reply = 3,

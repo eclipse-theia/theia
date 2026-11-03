@@ -2250,7 +2250,7 @@ export interface CommentsMain {
 
 // #region
 
-export const enum TabInputKind {
+export enum TabInputKind {
     UnknownInput,
     TextInput,
     TextDiffInput,
@@ -2330,7 +2330,7 @@ export interface TabGroupDto {
     groupId: number;
 }
 
-export const enum TabModelOperationKind {
+export enum TabModelOperationKind {
     TAB_OPEN,
     TAB_CLOSE,
     TAB_UPDATE,
@@ -2384,7 +2384,7 @@ export interface TelemetryExt {
 // endregion
 
 // based from https://github.com/microsoft/vscode/blob/1.72.2/src/vs/workbench/api/common/extHostTesting.ts
-export const enum TestingResourceExt {
+export enum TestingResourceExt {
     Workspace,
     TextDocument
 }

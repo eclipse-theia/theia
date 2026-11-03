@@ -30,7 +30,7 @@ export interface ILinkComputerTarget {
     getLineContent(lineNumber: number): string;
 }
 
-export const enum State {
+export enum State {
     Invalid = 0,
     Start = 1,
     H = 2,

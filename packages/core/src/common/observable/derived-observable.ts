@@ -297,7 +297,7 @@ export namespace DerivedObservable {
         willHandleChange?: <U, UChange>(context: Observable.ChangeContext<U, UChange>, changeSummary: TChangeSummary | undefined) => boolean;
     }
 
-    export const enum State {
+    export enum State {
         /**
          * Initial state. No cached value.
          */

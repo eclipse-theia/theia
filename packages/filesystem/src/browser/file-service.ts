@@ -256,7 +256,7 @@ export interface FileSystemProviderActivationEvent extends WaitUntilEvent {
     scheme: string;
 }
 
-export const enum TextFileOperationResult {
+export enum TextFileOperationResult {
     FILE_IS_BINARY
 }
 
