@@ -173,7 +173,7 @@ export interface PreferenceService extends Disposable {
      *
      * @param preferenceName the preference identifier.
      * @param resourceUri the uri of the resource for which the preference is stored.
-     * @param overrideIdentifier @param overrideIdentifier the identifier of the override to use.
+     * @param overrideIdentifier the identifier of the override to use.
      * Values for the override are returned where defined, values of the base preference otherwise.
      *
      * @return an object containing the value of the given preference for all scopes.

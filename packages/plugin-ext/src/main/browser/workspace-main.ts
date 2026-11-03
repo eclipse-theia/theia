@@ -409,7 +409,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
             }
         } else if (typeof detectedEncoding === 'string') {
             preferredEncoding = detectedEncoding;
-        } else if (this.preferenceService.get('files.encoding', undefined, uri ? URI.fromComponents(uri).toString() : undefined) === UTF8_with_bom) {
+        } else if ((uri ? this.preferenceService.get('files.encoding', { resource: URI.fromComponents(uri).toString() }) : this.preferenceService.get('files.encoding')) === UTF8_with_bom) {
             preferredEncoding = UTF8; // if we did not detect UTF 8 BOM before, this can only be UTF 8 then
         }
         let encoding;
