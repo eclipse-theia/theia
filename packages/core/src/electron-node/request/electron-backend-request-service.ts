@@ -75,7 +75,7 @@ export class ElectronBackendRequestService extends NodeRequestService {
     override async resolveProxy(url: string): Promise<string | undefined> {
         if (!process.send) {
             // Running in --no-cluster mode (in the Electron main process): call session directly.
-            const { session } = require('../../../electron-shared/electron');
+            const { session } = require('../../../electron-shared/electron/index.cjs');
             return session.defaultSession.resolveProxy(url);
         }
         // Running as a forked child process: ask the main process via Node IPC.
