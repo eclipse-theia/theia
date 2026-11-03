@@ -20,6 +20,15 @@
   ],
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json",
+    "./lib/generator": "./lib/generator/index.js",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "scripts": {
     "build": "theiaext build",
     "clean": "theiaext clean",
@@ -29,7 +38,7 @@
     "watch": "theiaext watch"
   },
   "dependencies": {
-    "@electron/rebuild": "^4.2.0",
+    "@electron/rebuild": "^4.2.1",
     "@theia/application-package": "1.76.0",
     "@theia/bundle-plugin": "1.76.0",
     "@theia/ffmpeg": "1.76.0",

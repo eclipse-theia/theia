@@ -16,8 +16,8 @@
 
 import * as http from 'http';
 import { inject, injectable } from 'inversify';
-import { WsRequestValidatorContribution } from '../ws-request-validators';
-import { BackendApplicationHosts } from './backend-application-hosts';
+import { WsRequestValidatorContribution } from '../ws-request-validators.js';
+import { BackendApplicationHosts } from './backend-application-hosts.js';
 
 @injectable()
 export class WsOriginValidator implements WsRequestValidatorContribution {

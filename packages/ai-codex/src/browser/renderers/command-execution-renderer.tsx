@@ -21,7 +21,7 @@ import { injectable, inject, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import type { CommandExecutionItem } from '@openai/codex-sdk';
-import { CodexToolCallChatResponseContent } from '../codex-tool-call-content';
+import { CodexToolCallChatResponseContent } from '../codex-tool-call-content.js';
 import { nls, ILogger } from '@theia/core';
 
 @injectable()

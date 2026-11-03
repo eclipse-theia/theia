@@ -16,8 +16,8 @@
 
 import { interfaces } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
-import { type ILineChange } from '@theia/monaco-editor-core/esm/vs/editor/common/diff/legacyLinesDiffComputer';
-import { RPCProtocol } from '../../common/rpc-protocol';
+import { type ILineChange } from '@theia/monaco-editor-core/esm/vs/editor/common/diff/legacyLinesDiffComputer.js';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
 import {
     MAIN_RPC_CONTEXT,
     EditorsAndDocumentsExt,
@@ -25,17 +25,17 @@ import {
     ModelAddedData,
     TextEditorAddData,
     EditorPosition
-} from '../../common/plugin-api-rpc';
+} from '../../common/plugin-api-rpc.js';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { EditorModelService } from './text-editor-model-service';
+import { EditorModelService } from './text-editor-model-service.js';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import { TextEditorMain } from './text-editor-main';
+import { TextEditorMain } from './text-editor-main.js';
 import { DisposableCollection, Emitter, URI } from '@theia/core';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { ApplicationShell, NavigatableWidget, Saveable, Widget } from '@theia/core/lib/browser';
 import { SaveableService } from '@theia/core/lib/browser/saveable-service';
-import { TabsMainImpl } from './tabs/tabs-main';
+import { TabsMainImpl } from './tabs/tabs-main.js';
 import { NotebookCellEditorService, NotebookEditorWidgetService } from '@theia/notebook/lib/browser';
 import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
 import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';

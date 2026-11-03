@@ -18,7 +18,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { Theme } from '@theia/core/lib/common/theme';
-import { IconUrl } from '../../common/plugin-protocol';
+import { IconUrl } from '../../common/plugin-protocol.js';
 import { Reference, SyncReferenceCollection } from '@theia/core/lib/common/reference';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
@@ -87,12 +87,12 @@ export class PluginSharedStyle {
         selector: string;
         body: (theme: Theme) => string
     }): void {
-        const sheet = (<CSSStyleSheet>this.style.sheet);
+        const sheet = this.style.sheet as CSSStyleSheet;
         const cssBody = body(this.themeService.getCurrentTheme());
         sheet.insertRule(selector + ' {\n' + cssBody + '\n}', 0);
     }
     deleteRule(selector: string): void {
-        const sheet = (<CSSStyleSheet>this.style.sheet);
+        const sheet = this.style.sheet as CSSStyleSheet;
         const rules = sheet.rules || sheet.cssRules || [];
         for (let i = rules.length - 1; i >= 0; i--) {
             const rule = rules[i];

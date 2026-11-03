@@ -18,7 +18,7 @@ import URI from '@theia/core/lib/common/uri';
 import { injectable } from '@theia/core/shared/inversify';
 import { OVSX_RATE_LIMIT, OVSXRouterConfig } from '@theia/ovsx-client';
 import { VSCODE_DEFAULT_API_VERSION } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-types';
-import { VSXEnvironment } from '../common/vsx-environment';
+import { VSXEnvironment } from '../common/vsx-environment.js';
 
 /**
  * Same defaults as `VSXEnvironmentImpl` when nothing is configured. There's no backend to ask in a

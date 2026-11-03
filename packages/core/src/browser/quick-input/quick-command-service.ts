@@ -14,15 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from 'inversify';
-import { KeybindingRegistry } from '../keybinding';
-import { Disposable, Command, CommandRegistry, CancellationToken, nls } from '../../common';
-import { ContextKeyService } from '../context-key-service';
-import { CorePreferences } from '../../common/core-preferences';
-import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry } from './quick-access';
-import { filterItems, QuickPickItem, QuickPicks } from './quick-input-service';
-import { KeySequence } from '../keys';
-import { codiconArray } from '../widgets';
+import { inject, injectable, optional, postConstruct } from 'inversify';
+import { KeybindingRegistry } from '../keybinding.js';
+import { Disposable, Command, CommandRegistry, CancellationToken, nls } from '../../common/index.js';
+import { ContextKeyService } from '../context-key-service.js';
+import { CorePreferences } from '../../common/core-preferences.js';
+import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry } from './quick-access.js';
+import { filterItems, QuickInputService, QuickPickItem, QuickPicks } from './quick-input-service.js';
+import { KeySequence } from '../keys.js';
+import { codiconArray } from '../widgets/index.js';
+import { WindowFocusService } from '../window/window-focus-service.js';
 
 export const quickCommand: Command = {
     id: 'workbench.action.showCommands'
@@ -56,6 +57,12 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
     @inject(KeybindingRegistry)
     protected readonly keybindingRegistry: KeybindingRegistry;
 
+    @inject(QuickInputService) @optional()
+    protected readonly quickInputService: QuickInputService | undefined;
+
+    @inject(WindowFocusService) @optional()
+    protected readonly windowFocusService: WindowFocusService | undefined;
+
     // The list of exempted commands not to be displayed in the recently used list.
     readonly exemptedCommands: Command[] = [
         CLEAR_COMMAND_HISTORY,
@@ -63,6 +70,17 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
 
     private recentItems: QuickPickItem[] = [];
     private otherItems: QuickPickItem[] = [];
+
+    /**
+     * The element that was focused when the quick input was opened.
+     * Commands are evaluated against its context, since focus moves to the quick input while the palette is open.
+     */
+    protected commandContextElement: HTMLElement | undefined;
+
+    @postConstruct()
+    protected init(): void {
+        this.quickInputService?.onHide(() => this.commandContextElement = undefined);
+    }
 
     registerQuickAccessProvider(): void {
         this.quickAccessRegistry.registerQuickAccessProvider({
@@ -74,11 +92,12 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
     }
 
     reset(): void {
-        const { recent, other } = this.getCommands();
-        this.recentItems = [];
-        this.otherItems = [];
-        this.recentItems.push(...recent.map(command => this.toItem(command)));
-        this.otherItems.push(...other.map(command => this.toItem(command)));
+        this.updateCommandContextElement();
+        this.withCommandContext(() => {
+            const { recent, other } = this.getCommands();
+            this.recentItems = recent.map(command => this.toItem(command));
+            this.otherItems = other.map(command => this.toItem(command));
+        });
     }
 
     getPicks(filter: string, token: CancellationToken): QuickPicks {
@@ -105,7 +124,8 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
     toItem(command: Command): QuickPickItem {
         const label = (command.category) ? `${command.category}: ` + command.label! : command.label!;
         const iconClasses = this.getItemIconClasses(command);
-        const activeElement = window.document.activeElement as HTMLElement;
+        const activeElement = window.document.activeElement;
+        const commandContextElement = this.commandContextElement ?? (activeElement instanceof HTMLElement ? activeElement : undefined);
 
         const originalLabel = command.originalLabel || command.label!;
         const originalCategory = command.originalCategory || command.category;
@@ -121,11 +141,24 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
             alwaysShow: !!this.commandRegistry.getActiveHandler(command.id),
             keySequence: this.getKeybinding(command),
             execute: () => {
-                activeElement.focus({ preventScroll: true });
+                commandContextElement?.focus({ preventScroll: true });
                 this.commandRegistry.executeCommand(command.id);
                 this.commandRegistry.addRecentCommand(command);
             }
         };
+    }
+
+    protected updateCommandContextElement(): void {
+        // When the palette is opened directly, the picks are computed before the quick input is shown and focused.
+        // The palette may be opened in a secondary window, use the active element of the focused window.
+        const element = this.quickInputService?.previousFocusElement ?? (this.windowFocusService?.focusedWindow ?? window).document.activeElement;
+        // not using `instanceof HTMLElement`, the element may have been created in a secondary window, i.e. in another JavaScript realm
+        this.commandContextElement = element && typeof (element as HTMLElement).focus === 'function' ? element as HTMLElement : undefined;
+    }
+
+    protected withCommandContext<T>(callback: () => T): T {
+        const element = this.commandContextElement;
+        return element?.isConnected ? this.contextKeyService.withContext(element, callback) : callback();
     }
 
     private getKeybinding(command: Command): KeySequence | undefined {

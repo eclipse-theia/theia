@@ -20,7 +20,7 @@ import URI from '@theia/core/lib/common/uri';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { DocumentUri, Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import { LanguageSelector, score } from '@theia/editor/lib/common/language-selector';
-import { TypeHierarchyItem } from './typehierarchy';
+import { TypeHierarchyItem } from './typehierarchy.js';
 
 export const TypeHierarchyService = Symbol('TypeHierarchyService');
 

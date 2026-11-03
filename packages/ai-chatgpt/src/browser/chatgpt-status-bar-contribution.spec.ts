@@ -23,9 +23,9 @@ import { expect } from 'chai';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { Emitter, PreferenceChange, PreferenceService } from '@theia/core';
 import { StatusBar, StatusBarAlignment, StatusBarEntry } from '@theia/core/lib/browser/status-bar/status-bar-types';
-import { ChatGptAuthService, ChatGptAuthState, CHATGPT_ENABLED_PREF } from '../common';
-import { ChatGptCommands } from './chatgpt-command-contribution';
-import { ChatGptStatusBarContribution } from './chatgpt-status-bar-contribution';
+import { ChatGptAuthService, ChatGptAuthState, CHATGPT_ENABLED_PREF } from '../common/index.js';
+import { ChatGptCommands } from './chatgpt-command-contribution.js';
+import { ChatGptStatusBarContribution } from './chatgpt-status-bar-contribution.js';
 
 disableJSDOM();
 

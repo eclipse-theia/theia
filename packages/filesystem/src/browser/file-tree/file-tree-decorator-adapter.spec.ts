@@ -24,7 +24,7 @@ import { CancellationToken, Emitter, Event } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { Container } from '@theia/core/shared/inversify';
 import { expect } from 'chai';
-import { FileTreeDecoratorAdapter } from './file-tree-decorator-adapter';
+import { FileTreeDecoratorAdapter } from './file-tree-decorator-adapter.js';
 
 disableJSDOM();
 

@@ -18,9 +18,9 @@
 /* eslint-disable @theia/named-logger-check */
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { LoggerWatcher } from '../common/logger-watcher';
-import { LogLevelCliContribution } from './logger-cli-contribution';
-import { ILoggerServer, ILoggerClient, ConsoleLogger, rootLoggerName } from '../common/logger-protocol';
+import { LoggerWatcher } from '../common/logger-watcher.js';
+import { LogLevelCliContribution } from './logger-cli-contribution.js';
+import { ILoggerServer, ILoggerClient, ConsoleLogger, rootLoggerName } from '../common/logger-protocol.js';
 import { format } from 'util';
 import { EOL } from 'os';
 import * as fs from 'fs';

@@ -21,7 +21,6 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { PreferenceUtils } from '@theia/core/lib/common/preferences/preference-provider';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import * as React from '@theia/core/shared/react';
@@ -30,9 +29,9 @@ import { createRoot } from '@theia/core/shared/react-dom/client';
 import { AISettingsService, GenericCapabilitySelections, ServerToolDescriptor } from '@theia/ai-core/lib/common';
 import { HoverService } from '@theia/core/lib/browser';
 import { AvailableGenericCapabilities } from '@theia/ai-chat-ui/lib/browser/generic-capabilities-service';
-import * as GenericCapabilitiesTreeModule from '@theia/ai-chat-ui/lib/browser/generic-capabilities-tree';
+import type * as GenericCapabilitiesTreeModule from '@theia/ai-chat-ui/lib/browser/generic-capabilities-tree';
 import { AiSettingsRowService } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row-service';
-import { AgentGenericCapabilitiesSettings, AgentServerToolsSettings } from './agent-capabilities-settings';
+import { AgentGenericCapabilitiesSettings, AgentServerToolsSettings } from './agent-capabilities-settings.js';
 
 disableJSDOM();
 
@@ -199,7 +198,8 @@ describe('AgentGenericCapabilitiesSettings', () => {
     function render(
         savedSelections: GenericCapabilitySelections | undefined,
         availableCapabilities: AvailableGenericCapabilities | undefined,
-        deferWrites = false
+        deferWrites = false,
+        capabilitiesTree?: React.ComponentType<GenericCapabilitiesTreeModule.GenericCapabilitiesTreeProps>
     ): Rendered {
         const updates: Array<Record<string, unknown>> = [];
         let stored = savedSelections;
@@ -247,7 +247,8 @@ describe('AgentGenericCapabilitiesSettings', () => {
             aiSettingsService,
             settingsRowService: { openResetMenu: () => { } } as unknown as AiSettingsRowService,
             hoverService: { requestHover: () => { } } as unknown as HoverService,
-            onOpenPromptSnippet: () => { }
+            onOpenPromptSnippet: () => { },
+            capabilitiesTree
         })));
         reload(savedSelections);
         return {
@@ -280,6 +281,21 @@ describe('AgentGenericCapabilitiesSettings', () => {
 
     function item(container: HTMLElement, name: string): HTMLElement {
         return Array.from(container.querySelectorAll<HTMLElement>('.theia-GenericCapabilities-TreeItem')).find(candidate => candidate.textContent === name)!;
+    }
+
+    function isChecked(container: HTMLElement, name: string): boolean {
+        return item(container, name).querySelector<HTMLInputElement>('input')!.checked;
+    }
+
+    /**
+     * Waits until `condition` holds. Rereading the stored selections updates the state outside `flushSync`,
+     * so React commits it in a task of its own and a single `setTimeout(0)` does not reliably wait for it.
+     */
+    async function waitUntil(condition: () => boolean, timeout = 2000): Promise<void> {
+        const deadline = Date.now() + timeout;
+        while (!condition() && Date.now() < deadline) {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        }
     }
 
     it('offers no editor when there is nothing to choose from', () => {
@@ -416,11 +432,11 @@ describe('AgentGenericCapabilitiesSettings', () => {
 
     it('preserves a rejected save promise without poisoning later queued writes', async () => {
         let change!: GenericCapabilitiesTreeModule.GenericCapabilitiesTreeProps['onGenericCapabilityChange'];
-        const tree = sinon.stub(GenericCapabilitiesTreeModule, 'GenericCapabilitiesTree').callsFake(props => {
+        const tree = (props: GenericCapabilitiesTreeModule.GenericCapabilitiesTreeProps) => {
             change = props.onGenericCapabilityChange;
             return React.createElement('div');
-        });
-        const { container, updates, rejectWrite, finishWrite, getStored, dispose } = render(undefined, available, true);
+        };
+        const { container, updates, rejectWrite, finishWrite, getStored, dispose } = render(undefined, available, true, tree);
         try {
             flushSync(() => container.querySelector<HTMLButtonElement>('button[aria-label="Edit generic capabilities"]')!.click());
             let failed!: Promise<void>;
@@ -443,7 +459,6 @@ describe('AgentGenericCapabilitiesSettings', () => {
             expect(container.querySelector('.ai-configuration-item-list')!.textContent).to.include('skill-a, skill-b');
         } finally {
             dispose();
-            tree.restore();
         }
     });
 
@@ -454,7 +469,7 @@ describe('AgentGenericCapabilitiesSettings', () => {
             flushSync(() => item(container, 'skill-b').click());
             expect(item(container, 'skill-b').querySelector<HTMLInputElement>('input')!.checked).to.equal(true);
             await finishWrite(0, false);
-            await new Promise(resolve => setTimeout(resolve, 0));
+            await waitUntil(() => !isChecked(container, 'skill-b'));
             expect(item(container, 'skill-b').querySelector<HTMLInputElement>('input')!.checked).to.equal(false);
             expect(item(container, 'skill-a').querySelector<HTMLInputElement>('input')!.checked).to.equal(true);
         } finally {
@@ -472,7 +487,7 @@ describe('AgentGenericCapabilitiesSettings', () => {
             await new Promise(resolve => setTimeout(resolve, 0));
             expect(item(container, 'skill-b').querySelector<HTMLInputElement>('input')!.checked).to.equal(true);
             await finishWrite(1, false);
-            await new Promise(resolve => setTimeout(resolve, 0));
+            await waitUntil(() => !isChecked(container, 'skill-b'));
             expect(item(container, 'skill-a').querySelector<HTMLInputElement>('input')!.checked).to.equal(true);
             expect(item(container, 'skill-b').querySelector<HTMLInputElement>('input')!.checked).to.equal(false);
             flushSync(() => item(container, 'skill-a').click());
@@ -492,16 +507,16 @@ describe('AgentGenericCapabilitiesSettings', () => {
             await new Promise(resolve => setTimeout(resolve, 0));
             setStored({ skills: ['skill-b'] });
             reload({ skills: ['skill-b'] });
-            await new Promise(resolve => setTimeout(resolve, 0));
+            await waitUntil(() => !isChecked(container, 'skill-a'));
             expect(item(container, 'skill-a').querySelector<HTMLInputElement>('input')!.checked).to.equal(false);
             setStored({ skills: ['skill-a'] });
             reload({ skills: ['skill-a'] });
-            await new Promise(resolve => setTimeout(resolve, 0));
+            await waitUntil(() => isChecked(container, 'skill-a') && !isChecked(container, 'skill-b'));
             expect(item(container, 'skill-a').querySelector<HTMLInputElement>('input')!.checked).to.equal(true);
             expect(item(container, 'skill-b').querySelector<HTMLInputElement>('input')!.checked).to.equal(false);
             setStored(undefined);
             reload(undefined);
-            await new Promise(resolve => setTimeout(resolve, 0));
+            await waitUntil(() => !isChecked(container, 'skill-a'));
             expect(item(container, 'skill-a').querySelector<HTMLInputElement>('input')!.checked).to.equal(false);
         } finally {
             dispose();
@@ -516,7 +531,7 @@ describe('AgentGenericCapabilitiesSettings', () => {
             await new Promise(resolve => setTimeout(resolve, 0));
             setStored(undefined);
             reload(undefined);
-            await new Promise(resolve => setTimeout(resolve, 0));
+            await waitUntil(() => !isChecked(container, 'skill-a'));
             expect(item(container, 'skill-a').querySelector<HTMLInputElement>('input')!.checked).to.equal(false);
         } finally {
             dispose();
@@ -536,7 +551,7 @@ describe('AgentGenericCapabilitiesSettings', () => {
             await new Promise(resolve => setTimeout(resolve, 0));
             expect(item(container, 'skill-b').querySelector<HTMLInputElement>('input')!.checked).to.equal(true);
             await finishWrite(1, false);
-            await new Promise(resolve => setTimeout(resolve, 0));
+            await waitUntil(() => !isChecked(container, 'skill-a') && !isChecked(container, 'skill-b'));
             expect(item(container, 'skill-a').querySelector<HTMLInputElement>('input')!.checked).to.equal(false);
             expect(item(container, 'skill-b').querySelector<HTMLInputElement>('input')!.checked).to.equal(false);
         } finally {
@@ -595,7 +610,7 @@ describe('AgentGenericCapabilitiesSettings', () => {
             reload({ skills: ['skill-b'] });
             await new Promise(resolve => setTimeout(resolve, 0));
             staleRead.resolve({ skills: ['skill-a'] });
-            await new Promise(resolve => setTimeout(resolve, 0));
+            await waitUntil(() => isChecked(container, 'skill-b'));
             expect(item(container, 'skill-a').querySelector<HTMLInputElement>('input')!.checked).to.equal(false);
             expect(item(container, 'skill-b').querySelector<HTMLInputElement>('input')!.checked).to.equal(true);
         } finally {

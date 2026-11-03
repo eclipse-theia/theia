@@ -14,14 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { injectable, inject, named, optional, postConstruct } from '@theia/core/shared/inversify';
-import { HostedPluginServer, HostedPluginClient, PluginDeployer, DeployedPlugin, PluginIdentifiers } from '../../common/plugin-protocol';
-import { HostedPluginSupport } from './hosted-plugin';
+import { HostedPluginServer, HostedPluginClient, PluginDeployer, DeployedPlugin, PluginIdentifiers } from '../../common/plugin-protocol.js';
+import { HostedPluginSupport } from './hosted-plugin.js';
 import { ILogger, Disposable, ContributionProvider, DisposableCollection } from '@theia/core';
-import { ExtPluginApiProvider, ExtPluginApi } from '../../common/plugin-ext-api-contribution';
-import { PluginDeployerHandlerImpl } from './plugin-deployer-handler-impl';
-import { PluginDeployerImpl } from '../../main/node/plugin-deployer-impl';
-import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
-import { PluginUninstallationManager } from '../../main/node/plugin-uninstallation-manager';
+import { ExtPluginApiProvider, ExtPluginApi } from '../../common/plugin-ext-api-contribution.js';
+import { PluginDeployerHandlerImpl } from './plugin-deployer-handler-impl.js';
+import { PluginDeployerImpl } from '../../main/node/plugin-deployer-impl.js';
+import { HostedPluginLocalizationService } from './hosted-plugin-localization-service.js';
+import { PluginUninstallationManager } from '../../main/node/plugin-uninstallation-manager.js';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export const BackendPluginHostableFilter = Symbol('BackendPluginHostableFilter');

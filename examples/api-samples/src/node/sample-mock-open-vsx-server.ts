@@ -15,13 +15,14 @@
 // *****************************************************************************
 
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import * as express from '@theia/core/shared/express';
+// A CommonJS module whose exports cannot be detected statically, so it is imported as a whole.
+import express from '@theia/core/shared/express';
 import * as fs from 'fs';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { OVSXMockClient, VSXExtensionRaw } from '@theia/ovsx-client';
 import * as path from 'path';
-import { SampleAppInfo } from '../common/vsx/sample-app-info';
+import { SampleAppInfo } from '../common/vsx/sample-app-info.js';
 import * as http from 'http';
 import * as https from 'https';
 import { Deferred } from '@theia/core/lib/common/promise-util';

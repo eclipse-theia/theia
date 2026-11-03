@@ -17,8 +17,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { inject, injectable } from 'inversify';
-import { Measurement, MeasurementOptions } from './measurement';
-import { Stopwatch } from './stopwatch';
+import { Measurement, MeasurementOptions } from './measurement.js';
+import { Stopwatch } from './stopwatch.js';
 
 export const BackendStopwatch = Symbol('BackendStopwatch');
 

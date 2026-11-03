@@ -16,12 +16,12 @@
 
 import { injectable, inject } from 'inversify';
 import * as React from 'react';
-import { ReactWidget } from '../widgets';
-import { ContextMenuRenderer } from '../context-menu-renderer';
-import { CompoundMenuNode, MenuModelRegistry, MenuPath } from '../../common/menu';
-import { HoverService } from '../hover-service';
-import { Event, Disposable, Emitter, DisposableCollection } from '../../common';
-import { ContextKeyService } from '../context-key-service';
+import { ReactWidget } from '../widgets/index.js';
+import { ContextMenuRenderer } from '../context-menu-renderer.js';
+import { CompoundMenuNode, MenuModelRegistry, MenuPath } from '../../common/menu/index.js';
+import { HoverService } from '../hover-service.js';
+import { Event, Disposable, Emitter, DisposableCollection } from '../../common/index.js';
+import { ContextKeyService } from '../context-key-service.js';
 
 export const SidebarTopMenuWidgetFactory = Symbol('SidebarTopMenuWidgetFactory');
 export const SidebarBottomMenuWidgetFactory = Symbol('SidebarBottomMenuWidgetFactory');

@@ -24,7 +24,7 @@ import { OS } from '@theia/core';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { BundledResourceProvider } from '@theia/core/lib/node';
-import { ShellIntegrationInjector } from './shell-integration-injector';
+import { ShellIntegrationInjector } from './shell-integration-injector.js';
 
 describe('ShellIntegrationInjector', () => {
 
@@ -73,7 +73,7 @@ describe('ShellIntegrationInjector', () => {
     }
 
     it('resolves the bundled scripts to a location that shells can read', () => {
-        expect(requestedPath).to.equal(path.join(__dirname, 'shell-integrations'));
+        expect(requestedPath).to.equal(path.join(import.meta.dirname, 'shell-integrations'));
     });
 
     it('passes the resolved bash script to bash', () => {

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { TextPartRenderer } from './text-part-renderer';
+import { TextPartRenderer } from './text-part-renderer.js';
 import { expect } from 'chai';
 import { ChatResponseContent } from '@theia/ai-chat';
 

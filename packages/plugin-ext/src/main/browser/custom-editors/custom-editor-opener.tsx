@@ -18,16 +18,16 @@ import URI from '@theia/core/lib/common/uri';
 import {
     ApplicationShell, DiffUris, OpenHandler, OpenerOptions, SplitWidget, Widget, WidgetManager, WidgetOpenerOptions, getDefaultHandler, defaultHandlerPriority
 } from '@theia/core/lib/browser';
-import { CustomEditor, CustomEditorPriority, CustomEditorSelector } from '../../../common';
-import { CustomEditorWidget } from './custom-editor-widget';
-import { PluginCustomEditorRegistry } from './plugin-custom-editor-registry';
+import { CustomEditor, CustomEditorPriority, CustomEditorSelector } from '../../../common/index.js';
+import { CustomEditorWidget } from './custom-editor-widget.js';
+import { PluginCustomEditorRegistry } from './plugin-custom-editor-registry.js';
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import { DisposableCollection, Emitter, PreferenceService } from '@theia/core';
 import { EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { PreviewTabWidget } from '@theia/editor-preview/lib/browser/preview-tab-widget';
 import { ENABLE_PREVIEW_PREFERENCE } from '@theia/editor-preview/lib/common/editor-preview-preferences';
 import { match } from '@theia/core/lib/common/glob';
-import { Schemes } from '../../../common/uri-components';
+import { Schemes } from '../../../common/uri-components.js';
 
 /**
  * Schemes that never match a custom editor's `filenamePattern`, mirroring the

@@ -1703,6 +1703,24 @@ details.theia-tool-confirmation-args>summary::marker {
   font-weight: normal;
 }
 
+.delegation-cancel-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--theia-descriptionForeground);
+  padding: 2px 4px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.delegation-cancel-button:hover {
+  color: var(--theia-errorForeground);
+}
+
+.delegation-cancel-button .codicon {
+  font-size: var(--theia-icon-size);
+}
+
 .delegation-content {
   padding: var(--theia-ui-padding);
 }

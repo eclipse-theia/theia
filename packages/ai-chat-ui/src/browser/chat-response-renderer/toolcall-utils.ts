@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
-import { mayBeCompleteJson } from '../../common/toolcall-utils';
+import { mayBeCompleteJson } from '../../common/toolcall-utils.js';
 
-export { extractJsonStringField } from '../../common/toolcall-utils';
+export { extractJsonStringField } from '../../common/toolcall-utils.js';
 
 const SHORT_STRING_THRESHOLD = 50;
 const MAX_CONDENSED_LENGTH = 80;

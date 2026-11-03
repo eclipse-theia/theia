@@ -19,14 +19,14 @@ import { Container, injectable } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { LanguageModelRequest, LanguageModelResponse, ReasoningSupport, ToolCallExecutor, ToolCallExecutorImpl, UserRequest } from '@theia/ai-core';
-import { OpenAI } from 'openai';
-import { MistralFixedOpenAI, OpenAiModel, OpenAiModelParams } from './openai-language-model';
-import { OpenAiModelUtils } from './openai-model-utils';
-import { OpenAiResponseApiUtils } from './openai-response-api-utils';
-import { ChatCompletionStreamingAsyncIteratorFactory } from './openai-chat-completion-stream';
-import { getOpenAiModelDefaults } from './openai-model-defaults';
-import { OPENAI_WEB_SEARCH } from './openai-server-tools';
-import type { FinalRequestOptions } from 'openai/internal/request-options';
+import { AzureOpenAI, OpenAI } from 'openai';
+import { createOpenAiClient, MistralFixedOpenAI, OpenAiModel, OpenAiModelParams } from './openai-language-model.js';
+import { OpenAiModelUtils } from './openai-model-utils.js';
+import { OpenAiResponseApiUtils } from './openai-response-api-utils.js';
+import { OpenAiStreamingRetry } from './openai-streaming-retry.js';
+import { ChatCompletionStreamingAsyncIteratorFactory } from './openai-chat-completion-stream.js';
+import { getOpenAiModelDefaults } from './openai-model-defaults.js';
+import { OPENAI_WEB_SEARCH } from './openai-server-tools.js';
 
 const LEGACY_GPT5_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
@@ -41,6 +41,10 @@ const O_SERIES_REASONING_SUPPORT: ReasoningSupport = {
 @injectable()
 class TestableOpenAiModel extends OpenAiModel {
     chatCompletionsRequests = 0;
+
+    public callInitializeOpenAi(): OpenAI {
+        return this.initializeOpenAi();
+    }
 
     public callGetSettings(request: LanguageModelRequest, forResponseApi: boolean = false): Record<string, unknown> {
         return this.getSettings(request, forResponseApi);
@@ -67,6 +71,7 @@ function buildModel<T extends OpenAiModel>(
 ): T {
     const parent = new Container();
     parent.bind(OpenAiModelUtils).toSelf();
+    parent.bind(OpenAiStreamingRetry).toSelf();
     if (responseApiUtils) {
         parent.bind(OpenAiResponseApiUtils).toConstantValue(responseApiUtils);
     } else {
@@ -112,6 +117,30 @@ function createCompactionModel(
         serverSideCompactionTokenThresholdByDefault
     });
 }
+
+describe('OpenAI client retry configuration', () => {
+    for (const azure of [false, true]) {
+        const apiVersion = azure ? '2024-10-21' : undefined;
+        const baseURL = azure ? 'https://test.openai.azure.com' : undefined;
+
+        for (const maxRetries of [undefined, 0, 5]) {
+            it(`keeps ${maxRetries ?? 'SDK default'} retries for ${azure ? 'Azure' : 'OpenAI'} clients`, () => {
+                const client = createOpenAiClient({ apiKey: 'test-key', apiVersion, baseURL, maxRetries });
+                expect(client).to.be.instanceOf(azure ? AzureOpenAI : MistralFixedOpenAI);
+                expect(client.maxRetries).to.equal(maxRetries ?? new OpenAI({ apiKey: 'test-key' }).maxRetries);
+            });
+
+            it(`passes ${maxRetries ?? 'default model'} retries from the model to its ${azure ? 'Azure' : 'OpenAI'} client`, () => {
+                const model = buildModel(TestableOpenAiModel, {
+                    model: 'gpt-5', apiVersion: () => apiVersion, url: baseURL, maxRetries
+                });
+                const client = model.callInitializeOpenAi();
+                expect(client).to.be.instanceOf(azure ? AzureOpenAI : MistralFixedOpenAI);
+                expect(client.maxRetries).to.equal(maxRetries ?? 3);
+            });
+        }
+    }
+});
 
 describe('OpenAiModel reasoning translation', () => {
 
@@ -297,7 +326,7 @@ describe('OpenAiModel Response API fallback', () => {
 });
 
 class TestableMistralFixedOpenAI extends MistralFixedOpenAI {
-    callPrepareOptions(options: FinalRequestOptions): Promise<void> {
+    callPrepareOptions(options: OpenAI.RequestOptions): Promise<void> {
         return this.prepareOptions(options);
     }
 }
@@ -308,13 +337,13 @@ describe('MistralFixedOpenAI request preparation', () => {
 
     it('leaves a request without a body alone', async () => {
         // `GET /models`, which model discovery issues, carries no body at all.
-        const options = { method: 'get', path: '/models' } as FinalRequestOptions;
+        const options = { method: 'get', path: '/models' } as OpenAI.RequestOptions;
         await client.callPrepareOptions(options);
         expect(options.body).to.equal(undefined);
     });
 
     it('leaves a body without messages alone', async () => {
-        const options = { method: 'post', path: '/embeddings', body: { input: 'hello' } } as FinalRequestOptions;
+        const options = { method: 'post', path: '/embeddings', body: { input: 'hello' } } as OpenAI.RequestOptions;
         await client.callPrepareOptions(options);
         expect(options.body).to.deep.equal({ input: 'hello' });
     });
@@ -329,7 +358,7 @@ describe('MistralFixedOpenAI request preparation', () => {
                     { role: 'assistant', tool_calls: [{ id: 't1' }], refusal: null, parsed: null }
                 ]
             }
-        } as FinalRequestOptions;
+        } as OpenAI.RequestOptions;
         await client.callPrepareOptions(options);
         const message = (options.body as { messages: Array<Record<string, unknown>> }).messages[0];
         expect(message.refusal).to.equal(undefined);

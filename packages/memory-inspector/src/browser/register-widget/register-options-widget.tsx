@@ -18,13 +18,13 @@ import { Disposable, DisposableCollection, Emitter, nls, ILogger } from '@theia/
 import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { DebugSession, DebugState } from '@theia/debug/lib/browser/debug-session';
-import { ASCII_TOGGLE_ID, AUTO_UPDATE_TOGGLE_ID, MemoryOptionsWidget } from '../memory-widget/memory-options-widget';
-import { MWInputWithSelect } from '../utils/memory-widget-components';
-import { Constants, Interfaces, RegisterWidgetOptions } from '../utils/memory-widget-utils';
-import { getRegisters, RegisterReadResult } from '../utils/memory-widget-variable-utils';
-import { MWMultiSelect } from '../utils/multi-select-bar';
-import { RegisterFilterService } from './register-filter-service';
-import debounce = require('@theia/core/shared/lodash.debounce');
+import { ASCII_TOGGLE_ID, AUTO_UPDATE_TOGGLE_ID, MemoryOptionsWidget } from '../memory-widget/memory-options-widget.js';
+import { MWInputWithSelect } from '../utils/memory-widget-components.js';
+import { Constants, Interfaces, RegisterWidgetOptions } from '../utils/memory-widget-utils.js';
+import { getRegisters, RegisterReadResult } from '../utils/memory-widget-variable-utils.js';
+import { MWMultiSelect } from '../utils/multi-select-bar.js';
+import { RegisterFilterService } from './register-filter-service.js';
+import debounce from '@theia/core/shared/lodash.debounce';
 
 export const EMPTY_REGISTERS: RegisterReadResult = {
     threadId: undefined,

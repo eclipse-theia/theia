@@ -21,10 +21,10 @@ import { Autorun, ObservableUtils } from '@theia/core/lib/common/observable';
 import { EditorDecoration, Range } from '@theia/editor/lib/browser';
 import { NavigationLocation } from '@theia/editor/lib/browser/navigation/navigation-location';
 import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
-import { MergeEditorPane } from './merge-editor-pane';
-import { MergeEditorPaneToolbarItem } from './merge-editor-pane-header';
-import { LineRange } from '../../model/line-range';
-import { MergeRange } from '../../model/merge-range';
+import { MergeEditorPane } from './merge-editor-pane.js';
+import { MergeEditorPaneToolbarItem } from './merge-editor-pane-header.js';
+import { LineRange } from '../../model/line-range.js';
+import { MergeRange } from '../../model/merge-range.js';
 
 @injectable()
 export class MergeEditorResultPane extends MergeEditorPane {

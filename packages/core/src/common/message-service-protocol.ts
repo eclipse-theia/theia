@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from 'inversify';
-import { CancellationToken } from './cancellation';
-import { nls } from './nls';
-import { ILogger } from './logger';
+import { CancellationToken } from './cancellation.js';
+import { nls } from './nls.js';
+import { ILogger } from './logger.js';
 
 export const messageServicePath = '/services/messageService';
 

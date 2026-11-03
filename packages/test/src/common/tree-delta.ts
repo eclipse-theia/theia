@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Emitter, Event } from '@theia/core';
-import { ChangeBatcher } from './collections';
+import { ChangeBatcher } from './collections.js';
 
 export interface CollectionDelta<K, T> {
     added?: T[];

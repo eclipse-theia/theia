@@ -19,8 +19,8 @@ import { Emitter } from '@theia/core/lib/common/event';
 import { Container } from '@theia/core/shared/inversify';
 import { TelemetryConsentProvider } from '@theia/telemetry/lib/common/telemetry-consent-provider';
 import { TelemetryLevel } from '@theia/telemetry/lib/common/telemetry-types';
-import { RPCProtocol } from '../../common/rpc-protocol';
-import { TelemetryMainImpl } from './telemetry-main';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
+import { TelemetryMainImpl } from './telemetry-main.js';
 
 describe('TelemetryMainImpl', () => {
 

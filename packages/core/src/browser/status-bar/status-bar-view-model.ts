@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from 'inversify';
-import { ArrayUtils, Emitter, Event, ILogger } from '../../common';
-import { StatusBarAlignment, StatusBarEntry, StatusBarViewEntry, StatusBarViewModelEntry } from './status-bar-types';
+import { ArrayUtils, Emitter, Event, ILogger } from '../../common/index.js';
+import { StatusBarAlignment, StatusBarEntry, StatusBarViewEntry, StatusBarViewModelEntry } from './status-bar-types.js';
 
 interface EntryLocation {
     container: StatusBarViewModelEntry[];

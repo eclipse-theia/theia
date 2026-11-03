@@ -18,7 +18,7 @@ import { nls } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import '@theia/core/lib/electron-common/electron-api';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { WorkspaceService } from '../browser/workspace-service';
+import { WorkspaceService } from '../browser/workspace-service.js';
 
 @injectable()
 export class ElectronWorkspaceContribution implements FrontendApplicationContribution {

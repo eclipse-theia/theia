@@ -15,15 +15,15 @@
 // *****************************************************************************
 
 import { Emitter } from '@theia/core';
-import * as express from '@theia/core/shared/express';
+import express from '@theia/core/shared/express';
 import { ExternalApiRouter } from '@theia/external-api/lib/node/external-api-router';
 import { ExternalApiTestSupport } from '@theia/external-api/lib/node/test/external-api-test-support';
 import { expect } from 'chai';
 import * as http from 'http';
 import { AddressInfo } from 'net';
-import { ExternalChatSessionSummary } from '../common/external-chat-session-provider';
-import { AIExternalApiEndpoint } from './ai-external-api-endpoint';
-import { ExternalChatSessionRegistry } from './external-chat-session-registry';
+import { ExternalChatSessionSummary } from '../common/external-chat-session-provider.js';
+import { AIExternalApiEndpoint } from './ai-external-api-endpoint.js';
+import { ExternalChatSessionRegistry } from './external-chat-session-registry.js';
 
 describe('AIExternalApiEndpoint', () => {
 

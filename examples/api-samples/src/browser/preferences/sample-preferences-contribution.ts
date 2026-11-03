@@ -15,7 +15,7 @@
 
 import { CommandContribution, CommandRegistry, MessageService, QuickInputService } from '@theia/core';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
-import { SampleBackendPreferencesService, sampleBackendPreferencesServicePath } from '../../common/preference-protocol';
+import { SampleBackendPreferencesService, sampleBackendPreferencesServicePath } from '../../common/preference-protocol.js';
 import { ServiceConnectionProvider } from '@theia/core/lib/browser';
 
 @injectable()

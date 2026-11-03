@@ -20,7 +20,7 @@ import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { addClipboardListener } from '@theia/core/lib/browser/widgets';
 import { ILogger, nls } from '@theia/core';
-import type { FileDownloadData, FileDownloadService } from '../../common/download/file-download';
+import type { FileDownloadData, FileDownloadService } from '../../common/download/file-download.js';
 
 @injectable()
 export class FileDownloadServiceImpl implements FileDownloadService {
@@ -152,7 +152,6 @@ export class FileDownloadServiceImpl implements FileDownloadService {
     protected url(uris: URI[]): string {
         const endpoint = this.endpoint();
         if (uris.length === 1) {
-            // tslint:disable-next-line:whitespace
             const [uri,] = uris;
             return `${endpoint}/?uri=${uri.toString()}`;
         }

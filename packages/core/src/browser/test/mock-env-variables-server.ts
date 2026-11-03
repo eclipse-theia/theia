@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import URI from '../../common/uri';
-import { EnvVariablesServer, EnvVariable } from '../../common/env-variables';
+import URI from '../../common/uri.js';
+import { EnvVariablesServer, EnvVariable } from '../../common/env-variables/index.js';
 
 export class MockEnvVariablesServerImpl implements EnvVariablesServer {
 

@@ -34,11 +34,11 @@ import {
     FileChangeSetTitleProvider,
     DefaultFileChangeSetTitleProvider,
     ReplaceContentInFileFunctionHelperV2
-} from './file-changeset-functions';
+} from './file-changeset-functions.js';
 import { ChatToolContext, FileReadTracker, MutableChatRequestModel, MutableChatResponseModel, MutableChatModel } from '@theia/ai-chat';
 import { ChangeSet, ChangeSetElement } from '@theia/ai-chat/lib/common/change-set';
 import { Container } from '@theia/core/shared/inversify';
-import { AccessibleRootContribution, WorkspaceFunctionScope } from './workspace-functions';
+import { AccessibleRootContribution, WorkspaceFunctionScope } from './workspace-functions.js';
 import { bindRootContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { AiConfigurationService } from '@theia/ai-core';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -47,7 +47,8 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ChangeSetElementArgs, ChangeSetFileElementFactory, ChangeSetFileElement } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { URI } from '@theia/core/lib/common/uri';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { WRITE_CONTENT_MAX_SIZE_KB_PREF } from '../common/workspace-preferences';
+import { withWorkspaceServiceDefaults } from '@theia/workspace/lib/browser/test/with-workspace-service-defaults';
+import { WRITE_CONTENT_MAX_SIZE_KB_PREF } from '../common/workspace-preferences.js';
 
 disableJSDOM();
 
@@ -427,11 +428,11 @@ describe('File Changeset Functions access control', () => {
 
         container = new Container();
         container.bind(ILogger).to(MockLogger).inSingletonScope();
-        container.bind(WorkspaceService).toConstantValue({
+        container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults({
             roots: [{ resource: new URI('file:///workspace') }],
             tryGetRoots: () => [{ resource: new URI('file:///workspace') }],
             onWorkspaceChanged: () => ({ dispose: () => { } })
-        } as unknown as WorkspaceService);
+        } as unknown as WorkspaceService));
         container.bind(FileService).toConstantValue({
             exists: async () => true,
             read: async () => ({ value: { toString: () => 'old content' } }),

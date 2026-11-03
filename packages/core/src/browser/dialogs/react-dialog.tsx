@@ -16,9 +16,9 @@
 
 import * as React from 'react';
 import { injectable, inject } from 'inversify';
-import { Disposable } from '../../common';
-import { Message } from '../widgets';
-import { AbstractDialog, DialogProps } from '../dialogs';
+import { Disposable } from '../../common/index.js';
+import { Message } from '../widgets/index.js';
+import { AbstractDialog, DialogProps } from '../dialogs.js';
 import { createRoot, Root } from 'react-dom/client';
 
 @injectable()

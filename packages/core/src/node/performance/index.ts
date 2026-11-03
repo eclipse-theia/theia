@@ -14,5 +14,5 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './node-stopwatch';
-export * from './measurement-backend-bindings';
+export * from './node-stopwatch.js';
+export * from './measurement-backend-bindings.js';

@@ -17,8 +17,8 @@
 import { Disposable, DisposableCollection } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { OpenWithService } from '@theia/core/lib/browser';
-import { NotebookTypeDescriptor } from '../common/notebook-protocol';
-import { NotebookOpenHandler } from './notebook-open-handler';
+import { NotebookTypeDescriptor } from '../common/notebook-protocol.js';
+import { NotebookOpenHandler } from './notebook-open-handler.js';
 
 @injectable()
 export class NotebookTypeRegistry {

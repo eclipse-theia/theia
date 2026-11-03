@@ -18,7 +18,7 @@ import {
     AbstractViewContribution, KeybindingRegistry, LabelProvider, CommonMenus, FrontendApplication,
     FrontendApplicationContribution, CommonCommands, StylingParticipant, ColorTheme, CssStyleCollector
 } from '@theia/core/lib/browser';
-import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
+import { SearchInWorkspaceWidget } from './search-in-workspace-widget.js';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { CommandRegistry, MenuModelRegistry, SelectionService, Command, isOSX, nls } from '@theia/core';
 import { codicon, Widget } from '@theia/core/lib/browser/widgets';
@@ -26,13 +26,13 @@ import { FileNavigatorCommands, NavigatorContextMenu } from '@theia/navigator/li
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service';
+import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service.js';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { SEARCH_VIEW_CONTAINER_ID } from './search-in-workspace-factory';
-import { SearchInWorkspaceFileNode, SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-tree-widget';
+import { SEARCH_VIEW_CONTAINER_ID } from './search-in-workspace-factory.js';
+import { SearchInWorkspaceFileNode, SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-tree-widget.js';
 import { TreeWidgetSelection } from '@theia/core/lib/browser/tree/tree-widget-selection';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { isHighContrast } from '@theia/core/lib/common/theme';

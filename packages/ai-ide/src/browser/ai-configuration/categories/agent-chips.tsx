@@ -17,7 +17,7 @@
 import { Agent } from '@theia/ai-core';
 import { nls } from '@theia/core';
 import * as React from '@theia/core/shared/react';
-import { getAgentIconClass } from '../agent-icon';
+import { getAgentIconClass } from '../agent-icon.js';
 
 /** A single navigable agent chip (icon + name); shared by the Variables, Skills and Slash Command surfaces. */
 export const AgentChip: React.FC<{ agent: Agent; onOpenAgent: (agentId: string) => void }> = ({ agent, onOpenAgent }) => {

@@ -16,8 +16,8 @@
 
 import { decorate, injectable, inject, named } from 'inversify';
 import { NodeRequestOptions, NodeRequestService } from '@theia/request/lib/node-request-service';
-import { ElectronSecurityToken } from '../../electron-common/electron-token';
-import { ILogger } from '../../common';
+import { ElectronSecurityToken } from '../../electron-common/electron-token.js';
+import { ILogger } from '../../common/index.js';
 
 decorate(injectable(), NodeRequestService);
 

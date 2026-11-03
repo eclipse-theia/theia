@@ -22,8 +22,8 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { AiConfigurationSelection } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
 import { AiConfigurationCategoryRegistry } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category-registry';
 import { AiConfigurationSelectionModel } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-selection-model';
-import { AIConfigurationContainerWidget } from './ai-configuration-widget';
-import { AI_CONFIGURATION_RESOURCE_SCHEME, AI_CONFIGURATION_RESOURCE_URI } from './ai-configuration-resource';
+import { AIConfigurationContainerWidget } from './ai-configuration-widget.js';
+import { AI_CONFIGURATION_RESOURCE_SCHEME, AI_CONFIGURATION_RESOURCE_URI } from './ai-configuration-resource.js';
 
 export const AI_CONFIGURATION_BREADCRUMB_TYPE = Symbol('ai-configuration-breadcrumb');
 

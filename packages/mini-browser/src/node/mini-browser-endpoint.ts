@@ -14,19 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-const vhost = require('vhost');
-import express = require('@theia/core/shared/express');
+import express, { Application, Request, Response } from '@theia/core/shared/express';
 import * as fs from '@theia/core/shared/fs-extra';
 import { lookup } from 'mime-types';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { Application, Request, Response } from '@theia/core/shared/express';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
-import { MiniBrowserService } from '../common/mini-browser-service';
-import { MiniBrowserEndpoint as MiniBrowserEndpointNS } from '../common/mini-browser-endpoint';
+import { MiniBrowserService } from '../common/mini-browser-service.js';
+import { MiniBrowserEndpoint as MiniBrowserEndpointNS } from '../common/mini-browser-endpoint.js';
+import vhost from 'vhost';
 
 /**
  * The return type of the `FileSystem#resolveContent` method.
@@ -93,7 +92,7 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
             const extensions = await handler.supportedExtensions();
             for (const extension of (Array.isArray(extensions) ? extensions : [extensions]).map(e => e.toLocaleLowerCase())) {
                 const existingHandler = this.handlers.get(extension);
-                if (!existingHandler || handler.priority > existingHandler.priority) {
+                if (!existingHandler || handler.priority() > existingHandler.priority()) {
                     this.handlers.set(extension, handler);
                 }
             }
@@ -116,8 +115,8 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
         if (!exists) {
             return this.missingResourceHandler()(uri, response);
         }
-        const statWithContent = await this.readContent(uri);
         try {
+            const statWithContent = await this.readContent(uri);
             if (!statWithContent.stat.isDirectory()) {
                 const extension = uri.split('.').pop();
                 if (!extension) {
@@ -127,12 +126,12 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
                 if (!handler) {
                     return this.defaultHandler()(statWithContent, response);
                 }
-                return handler.respond(statWithContent, response);
+                return await handler.respond(statWithContent, response);
             }
+            return this.defaultHandler()(statWithContent, response);
         } catch (e) {
             return this.errorHandler()(e, uri, response);
         }
-        return this.defaultHandler()(statWithContent, response);
     }
 
     protected getContributions(): MiniBrowserEndpointHandler[] {
@@ -241,15 +240,11 @@ export class ImageHandler implements MiniBrowserEndpointHandler {
         return CODE_EDITOR_PRIORITY + 1;
     }
 
-    respond(statWithContent: FileStatWithContent, response: Response): MaybePromise<Response> {
-        fs.readFile(FileUri.fsPath(statWithContent.stat.uri), (error, data) => {
-            if (error) {
-                throw error;
-            }
-            response.contentType('image/jpeg');
-            response.send(data);
-        });
-        return response;
+    async respond(statWithContent: FileStatWithContent, response: Response): Promise<Response> {
+        const fsPath = FileUri.fsPath(statWithContent.stat.uri);
+        const data = await fs.readFile(fsPath);
+        response.contentType(lookup(fsPath) || 'application/octet-stream');
+        return response.send(data);
     }
 
 }
@@ -268,7 +263,7 @@ export class PdfHandler implements MiniBrowserEndpointHandler {
         return CODE_EDITOR_PRIORITY + 1;
     }
 
-    respond(statWithContent: FileStatWithContent, response: Response): MaybePromise<Response> {
+    async respond(statWithContent: FileStatWithContent, response: Response): Promise<Response> {
         // https://stackoverflow.com/questions/11598274/display-pdf-in-browser-using-express-js
         const encodeRFC5987ValueChars = (input: string) =>
             encodeURIComponent(input).
@@ -279,16 +274,12 @@ export class PdfHandler implements MiniBrowserEndpointHandler {
                 replace(/%(?:7C|60|5E)/g, unescape);
 
         const fileName = FileUri.create(statWithContent.stat.uri).path.base;
-        fs.readFile(FileUri.fsPath(statWithContent.stat.uri), (error, data) => {
-            if (error) {
-                throw error;
-            }
-            // Change `inline` to `attachment` if you would like to force downloading the PDF instead of previewing in the browser.
-            response.setHeader('Content-disposition', `inline; filename*=UTF-8''${encodeRFC5987ValueChars(fileName)}`);
-            response.contentType('application/pdf');
-            response.send(data);
-        });
-        return response;
+        const data = await fs.readFile(FileUri.fsPath(statWithContent.stat.uri));
+
+        // Change `inline` to `attachment` if you would like to force downloading the PDF instead of previewing in the browser.
+        response.setHeader('Content-disposition', `inline; filename*=UTF-8''${encodeRFC5987ValueChars(fileName)}`);
+        response.contentType('application/pdf');
+        return response.send(data);
     }
 
 }

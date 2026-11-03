@@ -15,15 +15,14 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { PluginMetrics } from '../common/metrics-protocol';
+import { PluginMetrics } from '../common/metrics-protocol.js';
 
 @injectable()
 export class PluginMetricsImpl implements PluginMetrics {
 
     private metrics: string = '{}';
 
-    // tslint:disable-next-line:typedef
-    setMetrics(metrics: string) {
+    setMetrics(metrics: string): void {
         this.metrics = metrics;
     }
 

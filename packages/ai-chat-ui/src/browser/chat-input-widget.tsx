@@ -43,30 +43,30 @@ import * as React from '@theia/core/shared/react';
 import { IMouseEvent, IPosition } from '@theia/monaco-editor-core';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
-import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-actions/change-set-action-service';
-import { ChatInputAgentSuggestions } from './chat-input-agent-suggestions';
-import { computeRevealScrollDelta } from './chat-input-scroll-util';
-import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution';
-import { ContextVariablePicker } from './context-variable-picker';
+import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-actions/change-set-action-service.js';
+import { ChatInputAgentSuggestions } from './chat-input-agent-suggestions.js';
+import { computeRevealScrollDelta } from './chat-input-scroll-util.js';
+import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution.js';
+import { ContextVariablePicker } from './context-variable-picker.js';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
-import { EditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
-import { SuggestController } from '@theia/monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggestController';
-import { ChatInputHistoryService, ChatInputNavigationState } from './chat-input-history';
+import { EditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions.js';
+import { SuggestController } from '@theia/monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggestController.js';
+import { ChatInputHistoryService, ChatInputNavigationState } from './chat-input-history.js';
 import { ContextFileValidationService, FileValidationResult, FileValidationState } from '@theia/ai-chat/lib/browser/context-file-validation-service';
 import { PendingImageRegistry } from '@theia/ai-chat/lib/browser/pending-image-registry';
-import { ChatCapabilitiesService } from './chat-capabilities-service';
-import { CapabilityChip, CapabilityChipsRow } from './chat-capabilities-panel';
-import { ChatInputFocusService } from './chat-input-focus-service';
-import { AvailableGenericCapabilities, GenericCapabilitiesService } from './generic-capabilities-service';
-import { GenericCapabilitiesSection } from './generic-capabilities-section';
-import { ServerToolsSection } from './generic-capabilities-tree';
+import { ChatCapabilitiesService } from './chat-capabilities-service.js';
+import { CapabilityChip, CapabilityChipsRow } from './chat-capabilities-panel.js';
+import { ChatInputFocusService } from './chat-input-focus-service.js';
+import { AvailableGenericCapabilities, GenericCapabilitiesService } from './generic-capabilities-service.js';
+import { GenericCapabilitiesSection } from './generic-capabilities-section.js';
+import { ServerToolsSection } from './generic-capabilities-tree.js';
 import { PreferenceService } from '@theia/core/lib/common/preferences';
 import {
     CHAT_VIEW_TOKEN_USAGE_ENABLED,
     CHAT_VIEW_TOKEN_USAGE_WARNING_ENABLED,
     CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE,
     CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE_DEFAULT
-} from './chat-view-preferences';
+} from './chat-view-preferences.js';
 import {
     buildBarTooltip,
     CHAT_CONTEXT_WINDOW_SIZE_FALLBACK,
@@ -74,8 +74,8 @@ import {
     decideTokenUsageWarning,
     getLatestTokenUsage,
     getUsageColorClass
-} from './chat-token-usage-indicator-util';
-import { AI_CHAT_HOME, ChatCommands } from './chat-view-commands';
+} from './chat-token-usage-indicator-util.js';
+import { AI_CHAT_HOME, ChatCommands } from './chat-view-commands.js';
 
 type Query = (query: string, mode?: string, capabilityOverrides?: Record<string, boolean>, genericCapabilitySelections?: GenericCapabilitySelections,
     serverToolSelections?: Record<string, string[]>) => Promise<void>;
@@ -1544,7 +1544,7 @@ export class AIChatInputWidget extends ReactWidget {
     protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.editorReady.promise.then(() => {
-            if (this.editorRef) {
+            if (this.editorRef && this.isEnabled) {
                 this.editorRef.focus();
             }
         });
@@ -2019,6 +2019,32 @@ const hasTaskContext = (chatModel: ChatModel): boolean => chatModel.context.getV
     variable.variable?.id === TASK_CONTEXT_VARIABLE.id
 );
 
+const aiDisabledLabel = () => nls.localize('theia/ai/chat-ui/aiDisabled', 'AI features are disabled');
+
+/**
+ * Aligns the input editor with the enabled state of the widget. A disabled editor neither accepts text nor focus:
+ * it is read-only, removed from the tab order, and gives up the focus it may still hold from before being disabled.
+ * Should an edit still be attempted, Monaco reports why the input is disabled instead of its generic read-only wording.
+ */
+export const applyEditorEnabledState = (editor: SimpleMonacoEditor | undefined, isEnabled: boolean | undefined): void => {
+    const control = editor?.getControl();
+    if (!control) {
+        return;
+    }
+    control.updateOptions({
+        readOnly: !isEnabled,
+        domReadOnly: !isEnabled,
+        tabIndex: isEnabled ? 0 : -1,
+        readOnlyMessage: isEnabled ? undefined : { value: aiDisabledLabel() }
+    });
+    if (!isEnabled && control.hasTextFocus()) {
+        const focused = control.getDomNode()?.ownerDocument.activeElement;
+        if (focused instanceof HTMLElement) {
+            focused.blur();
+        }
+    }
+};
+
 const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInputProperties) => {
     const onDeleteChangeSet = () => props.onDeleteChangeSet(props.chatModel.id);
     const onDeleteChangeSetElement = (uri: URI) => props.onDeleteChangeSetElement(props.chatModel.id, uri);
@@ -2043,6 +2069,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const editorRef = React.useRef<SimpleMonacoEditor | undefined>(undefined);
     // eslint-disable-next-line no-null/no-null
     const containerRef = React.useRef<HTMLDivElement>(null);
+    const isEnabledRef = React.useRef(props.isEnabled);
 
     // On the first request of the chat, if the chat has a task context and a pinned
     // agent, show a "Perform this task." placeholder which is the message to send by default
@@ -2053,13 +2080,18 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     // Update placeholder text when focus state or other dependencies change
     React.useEffect(() => {
         const newPlaceholderText = !props.isEnabled
-            ? nls.localize('theia/ai/chat-ui/aiDisabled', 'AI features are disabled')
+            ? aiDisabledLabel()
             : shouldUseTaskPlaceholder
                 ? taskPlaceholder
                 : nls.localize('theia/ai/chat-ui/askQuestion', 'Ask a question') +
                 (props.hasPromptHistory && isInputFocused ? nls.localizeByDefault(' ({0} for history)', '⇅') : '');
         setPlaceholderText(newPlaceholderText);
     }, [props.isEnabled, shouldUseTaskPlaceholder, taskPlaceholder, props.hasPromptHistory, isInputFocused]);
+
+    React.useEffect(() => {
+        isEnabledRef.current = props.isEnabled;
+        applyEditorEnabledState(editorRef.current, props.isEnabled);
+    }, [props.isEnabled]);
 
     // Handle paste events on the container
     const handlePaste = React.useCallback((event: ClipboardEvent) => {
@@ -2179,6 +2211,8 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             editor.getControl().onDidChangeCursorPosition(e => revealCursor(e.position));
 
             editorRef.current = editor;
+            // The enabled state may have changed while the editor was being created asynchronously.
+            applyEditorEnabledState(editor, isEnabledRef.current);
             props.setEditorRef(editor);
 
             if (props.initialValue) {
@@ -2274,7 +2308,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     }, [props.genericCapabilitiesProps.serverToolSelections]);
 
     // Without user input, if we can default to "Perform this task.", do so
-    const submit = React.useCallback(function submit(value: string): void {
+    const submit = React.useCallback(function submitCallback(value: string): void {
         let effectiveValue = value;
         if ((!value || value.trim().length === 0) && shouldUseTaskPlaceholder) {
             effectiveValue = taskPlaceholder;

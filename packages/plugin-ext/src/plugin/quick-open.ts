@@ -17,21 +17,21 @@
 import {
     QuickOpenExt, PLUGIN_RPC_CONTEXT as Ext, QuickOpenMain, TransferInputBox, Plugin,
     TransferQuickInputButton, TransferQuickInput, TransferQuickPickItem
-} from '../common/plugin-api-rpc';
+} from '../common/plugin-api-rpc.js';
 import * as theia from '@theia/plugin';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
-import { RPCProtocol } from '../common/rpc-protocol';
+import { RPCProtocol } from '../common/rpc-protocol.js';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
-import { InputBoxValidationSeverity, QuickInputButtons, QuickPickItemKind, ThemeIcon } from './types-impl';
+import { InputBoxValidationSeverity, QuickInputButtons, QuickPickItemKind, ThemeIcon } from './types-impl.js';
 import { Severity } from '@theia/core/lib/common/severity';
 import { URI } from '@theia/core/shared/vscode-uri';
 import * as path from 'path';
-import { convertToTransferQuickPickItems } from './type-converters';
-import { PluginPackage } from '../common/plugin-protocol';
+import { convertToTransferQuickPickItems } from './type-converters.js';
+import { PluginPackage } from '../common/plugin-protocol.js';
 import { QuickInputButtonHandle } from '@theia/core/lib/browser';
 import { MaybePromise } from '@theia/core/lib/common/types';
-import { PluginIconPath } from './plugin-icon-path';
+import { PluginIconPath } from './plugin-icon-path.js';
 
 /**
  * Converts plugin API {@link InputBoxValidationSeverity} values to Theia's {@link Severity} enum.

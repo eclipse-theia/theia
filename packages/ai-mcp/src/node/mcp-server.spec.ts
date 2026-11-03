@@ -21,13 +21,13 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StreamableHTTPClientTransport, StreamableHTTPError } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
-import { MCPServer } from './mcp-server';
-import { MCPOAuthClientProvider } from './mcp-oauth-client-provider';
-import { MCPOAuthClientProviderFactory } from './mcp-oauth-client-provider-factory';
-import { MCPOAuthAuthorizationRequiredError, MCPOAuthAuthorizationServerError } from './mcp-oauth-errors';
-import { MCPOAuthCancelledError } from './mcp-oauth-callback-service';
+import { MCPServer } from './mcp-server.js';
+import { MCPOAuthClientProvider } from './mcp-oauth-client-provider.js';
+import { MCPOAuthClientProviderFactory } from './mcp-oauth-client-provider-factory.js';
+import { MCPOAuthAuthorizationRequiredError, MCPOAuthAuthorizationServerError } from './mcp-oauth-errors.js';
+import { MCPOAuthCancelledError } from './mcp-oauth-callback-service.js';
 import { StdioServerParameters } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { LocalMCPServerDescription, MCPServerDescription, MCPServerStatus } from '../common';
+import { LocalMCPServerDescription, MCPServerDescription, MCPServerStatus } from '../common/index.js';
 
 class TestClient {
     connectCalls = 0;

@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AbstractLineMatcher } from './task-abstract-line-matcher';
-import { ProblemMatcher, ProblemMatch } from '../common/problem-matcher-protocol';
-import { StartStopLineMatcher, WatchModeLineMatcher } from './task-line-matchers';
+import { AbstractLineMatcher } from './task-abstract-line-matcher.js';
+import { ProblemMatcher, ProblemMatch } from '../common/problem-matcher-protocol.js';
+import { StartStopLineMatcher, WatchModeLineMatcher } from './task-line-matchers.js';
 
 export class ProblemCollector {
 

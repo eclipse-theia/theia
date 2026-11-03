@@ -19,7 +19,7 @@ import { JsonSchemaContribution, JsonSchemaDataStore, JsonSchemaRegisterContext 
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { extensionsSchemaID } from '../../common/recommended-extensions-preference-contribution';
+import { extensionsSchemaID } from '../../common/recommended-extensions-preference-contribution.js';
 
 export const extensionsConfigurationSchema: IJSONSchema = {
     $id: extensionsSchemaID,

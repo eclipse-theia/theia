@@ -30,13 +30,13 @@ import {
     COPILOT_AUTH_SERVICE_PATH,
     CopilotAuthServiceClient,
     CopilotAuthState
-} from '../common';
-import { CopilotPreferencesSchema } from '../common/copilot-preferences';
-import { CopilotFrontendApplicationContribution } from './copilot-frontend-application-contribution';
-import { CopilotCommandContribution } from './copilot-command-contribution';
-import { CopilotStatusBarContribution } from './copilot-status-bar-contribution';
-import { CopilotAuthDialog, CopilotAuthDialogProps } from './copilot-auth-dialog';
-import { CopilotAuthDialogMessages, DEFAULT_COPILOT_AUTH_DIALOG_MESSAGES } from './copilot-auth-dialog-messages';
+} from '../common/index.js';
+import { CopilotPreferencesSchema } from '../common/copilot-preferences.js';
+import { CopilotFrontendApplicationContribution } from './copilot-frontend-application-contribution.js';
+import { CopilotCommandContribution } from './copilot-command-contribution.js';
+import { CopilotStatusBarContribution } from './copilot-status-bar-contribution.js';
+import { CopilotAuthDialog, CopilotAuthDialogProps } from './copilot-auth-dialog.js';
+import { CopilotAuthDialogMessages, DEFAULT_COPILOT_AUTH_DIALOG_MESSAGES } from './copilot-auth-dialog-messages.js';
 
 class CopilotAuthServiceClientImpl implements CopilotAuthServiceClient {
     protected readonly onAuthStateChangedEmitter = new Emitter<CopilotAuthState>();

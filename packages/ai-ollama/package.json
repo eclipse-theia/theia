@@ -2,6 +2,7 @@
   "name": "@theia/ai-ollama",
   "version": "1.76.0",
   "description": "Theia - Ollama Integration",
+  "type": "module",
   "dependencies": {
     "@theia/ai-core": "1.76.0",
     "@theia/core": "1.76.0",
@@ -49,5 +50,13 @@
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "21358137e41342742707f660b8e222f940a27652",
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/common": "./lib/common/index.js",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  }
 }

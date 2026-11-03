@@ -21,14 +21,14 @@ import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ExtensionsSourceContribution, SearchContext, SearchResult } from '@theia/vsx-registry/lib/browser/extensions-source-contribution';
-import { RegistryFetchService } from '../../common/registry-fetch-service';
-import { RegistrySearchFilter } from '../../common/registry-search-filter';
-import { ResolvedPluginEntry } from '../../common/plugin/plugin-registry-types';
-import { PluginInstallClientImpl } from './plugin-install-client';
-import { PluginInstallService } from './plugin-install-service';
-import { PluginInstaller } from './plugin-installer';
-import { PluginMcpRegistrar } from './plugin-mcp-registrar';
-import { AGENT_PLUGINS_LABEL, PluginEntryHandlers, PluginInstalledEntry, PluginSearchResultEntry } from './plugin-entries';
+import { RegistryFetchService } from '../../common/registry-fetch-service.js';
+import { RegistrySearchFilter } from '../../common/registry-search-filter.js';
+import { ResolvedPluginEntry } from '../../common/plugin/plugin-registry-types.js';
+import { PluginInstallClientImpl } from './plugin-install-client.js';
+import { PluginInstallService } from './plugin-install-service.js';
+import { PluginInstaller } from './plugin-installer.js';
+import { PluginMcpRegistrar } from './plugin-mcp-registrar.js';
+import { AGENT_PLUGINS_LABEL, PluginEntryHandlers, PluginInstalledEntry, PluginSearchResultEntry } from './plugin-entries.js';
 
 /**
  * Agent Plugins section of the Extensions view. A plugin is exactly one row: its skills and servers

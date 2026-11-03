@@ -25,8 +25,8 @@ import { QuickInputService } from '@theia/core/lib/browser';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { CHATGPT_ENABLED_PREF, ChatGptAuthService, ChatGptAuthState, ChatGptLoginSession, ChatGptPreferencesSchema } from '../common';
-import { ChatGptCommandContribution, ChatGptCommands } from './chatgpt-command-contribution';
+import { CHATGPT_ENABLED_PREF, ChatGptAuthService, ChatGptAuthState, ChatGptLoginSession, ChatGptPreferencesSchema } from '../common/index.js';
+import { ChatGptCommandContribution, ChatGptCommands } from './chatgpt-command-contribution.js';
 
 disableJSDOM();
 

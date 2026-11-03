@@ -22,10 +22,10 @@
 
 import { URI } from '@theia/core/shared/vscode-uri';
 import * as theia from '@theia/plugin';
-import { DocumentsExtImpl } from '../documents';
-import * as Converter from '../type-converters';
-import { Position } from '../../common/plugin-api-rpc';
-import { SignatureHelp, SignatureHelpContext } from '../../common/plugin-api-rpc-model';
+import { DocumentsExtImpl } from '../documents.js';
+import * as Converter from '../type-converters.js';
+import { Position } from '../../common/plugin-api-rpc.js';
+import { SignatureHelp, SignatureHelpContext } from '../../common/plugin-api-rpc-model.js';
 
 export class SignatureHelpAdapter {
 

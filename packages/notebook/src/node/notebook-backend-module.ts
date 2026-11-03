@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { bindNotebookPreferences } from '../common/notebook-preferences';
+import { bindNotebookPreferences } from '../common/notebook-preferences.js';
 
 export default new ContainerModule(bind => {
     bindNotebookPreferences(bind);

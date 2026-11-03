@@ -15,14 +15,14 @@
 // *****************************************************************************
 
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
-import { VariableContribution, VariableRegistry } from './variable';
+import { VariableContribution, VariableRegistry } from './variable.js';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { CommandService } from '@theia/core/lib/common/command';
 import { OS } from '@theia/core/lib/common/os';
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { ResourceContextKey } from '@theia/core/lib/browser/resource-context-key';
-import { VariableInput } from './variable-input';
+import { VariableInput } from './variable-input.js';
 import { QuickInputService, QuickPickValue } from '@theia/core/lib/browser';
 import { MaybeArray, RecursivePartial } from '@theia/core/lib/common/types';
 import { cancelled } from '@theia/core/lib/common/cancellation';
@@ -108,10 +108,15 @@ export class CommonVariableContribution implements VariableContribution {
                     if (typeof input.description !== 'string') {
                         return undefined;
                     }
-                    return this.quickInputService?.input({
+                    const value = await this.quickInputService?.input({
                         prompt: input.description,
-                        value: input.default
+                        value: input.default,
+                        ignoreFocusLost: true
                     });
+                    if (value === undefined) {
+                        throw cancelled();
+                    }
+                    return value;
                 }
                 if (input.type === 'pickString') {
                     if (typeof input.description !== 'string' || !Array.isArray(input.options)) {
@@ -135,8 +140,14 @@ export class CommonVariableContribution implements VariableContribution {
                             });
                         }
                     }
-                    const selectedPick = await this.quickInputService?.showQuickPick(elements, { placeholder: input.description });
-                    return selectedPick?.value;
+                    const selectedPick = await this.quickInputService?.showQuickPick(elements, {
+                        placeholder: input.description,
+                        ignoreFocusOut: true
+                    });
+                    if (!selectedPick) {
+                        throw cancelled();
+                    }
+                    return selectedPick.value;
                 }
                 if (input.type === 'command') {
                     if (typeof input.command !== 'string') {

@@ -17,8 +17,8 @@
 import URI from '@theia/core/lib/common/uri';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { DebugConfiguration } from '../common/debug-common';
-import { DebugCompound } from '../common/debug-compound';
+import { DebugConfiguration } from '../common/debug-common.js';
+import { DebugCompound } from '../common/debug-compound.js';
 import { isObject, PreferenceService } from '@theia/core/lib/common';
 
 export class DebugConfigurationModel implements Disposable {

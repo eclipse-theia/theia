@@ -16,8 +16,8 @@
 
 import * as theia from '@theia/plugin';
 import { DebugAdapter } from '@theia/debug/lib/common/debug-model';
-import { PluginPackageDebuggersContribution } from '../../common';
-import { DebugAdapterInlineImplementation } from '../types-impl';
+import { PluginPackageDebuggersContribution } from '../../common/index.js';
+import { DebugAdapterInlineImplementation } from '../types-impl.js';
 import { InlineDebugAdapter } from '@theia/debug/lib/common/inline-debug-adapter';
 
 export class PluginDebugAdapterCreator {

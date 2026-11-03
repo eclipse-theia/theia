@@ -23,8 +23,8 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorContextMenu, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoCommandRegistry, MonacoEditorCommandHandler } from '@theia/monaco/lib/browser/monaco-command-registry';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import { AskAIInputMonacoZoneWidget } from './ask-ai-input-monaco-zone-widget';
-import { AskAIInputFactory } from './ask-ai-input-widget';
+import { AskAIInputMonacoZoneWidget } from './ask-ai-input-monaco-zone-widget.js';
+import { AskAIInputFactory } from './ask-ai-input-widget.js';
 
 export namespace AI_EDITOR_COMMANDS {
     export const AI_EDITOR_ASK_AI: Command = Command.toLocalizedCommand({

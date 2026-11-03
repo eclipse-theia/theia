@@ -25,8 +25,8 @@ import { Container } from '@theia/core/shared/inversify';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { ShellExecutionRequest, ShellExecutionResult, ShellExecutionServer } from '../common/shell-execution-server';
-import { PREDEFINED_SHELL_TOOL_PROVIDER, PredefinedShellTool } from './predefined-shell-tool';
+import { ShellExecutionRequest, ShellExecutionResult, ShellExecutionServer } from '../common/shell-execution-server.js';
+import { PREDEFINED_SHELL_TOOL_PROVIDER, PredefinedShellTool } from './predefined-shell-tool.js';
 
 disableJSDOM();
 

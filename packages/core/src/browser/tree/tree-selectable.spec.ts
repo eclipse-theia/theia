@@ -14,14 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { TreeNode } from './tree';
-import { TreeModel } from './tree-model';
-import { notEmpty } from '../../common/objects';
+import { TreeNode } from './tree.js';
+import { TreeModel } from './tree-model.js';
+import { notEmpty } from '../../common/objects.js';
 import { expect } from 'chai';
-import { createTreeTestContainer } from './test/tree-test-container';
-import { SelectableTreeNode } from './tree-selection';
-import { MockSelectableTreeModel } from './test/mock-selectable-tree-model';
-import { ExpandableTreeNode } from './tree-expansion';
+import { createTreeTestContainer } from './test/tree-test-container.js';
+import { SelectableTreeNode } from './tree-selection.js';
+import { MockSelectableTreeModel } from './test/mock-selectable-tree-model.js';
+import { ExpandableTreeNode } from './tree-expansion.js';
 
 describe('Selectable Tree', () => {
     let model: TreeModel;

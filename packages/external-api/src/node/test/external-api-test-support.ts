@@ -16,10 +16,10 @@
 
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import * as express from '@theia/core/shared/express';
-import { ExternalApiContribution } from '../external-api-contribution';
-import { ExternalApiEventStream, ExternalApiEventStreamFactory, ExternalApiEventStreamImpl, ExternalApiEventStreamOptions } from '../external-api-event-stream';
-import { ExternalApiResponseWriterImpl } from '../external-api-response-writer';
-import { ExternalApiRouter, ExternalApiRouterFactory, ExternalApiRouterImpl } from '../external-api-router';
+import { ExternalApiContribution } from '../external-api-contribution.js';
+import { ExternalApiEventStream, ExternalApiEventStreamFactory, ExternalApiEventStreamImpl, ExternalApiEventStreamOptions } from '../external-api-event-stream.js';
+import { ExternalApiResponseWriterImpl } from '../external-api-response-writer.js';
+import { ExternalApiRouter, ExternalApiRouterFactory, ExternalApiRouterImpl } from '../external-api-router.js';
 
 /**
  * Wires the external API endpoint infrastructure for tests, without a DI container.

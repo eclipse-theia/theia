@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as http from 'http';
+// Default import so that tests can stub the real module; a namespace import would be an `esModuleInterop` copy.
+import http from 'http';
 import { Disposable, Emitter, Event, ILogger } from '@theia/core';
 import { KeyStoreService } from '@theia/core/lib/common/key-store';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -26,7 +27,7 @@ import {
     ChatGptAuthState,
     ChatGptCredentials,
     ChatGptLoginSession
-} from '../common';
+} from '../common/index.js';
 import {
     buildAuthorizationUrl,
     createLoginState,
@@ -34,8 +35,8 @@ import {
     decodeChatGptIdentity,
     parseAuthorizationInput,
     CHATGPT_TOKEN_URL
-} from './chatgpt-oauth';
-import { ChatGptAuthServiceConfig, ChatGptBackendAuthService } from './chatgpt-auth-service';
+} from './chatgpt-oauth.js';
+import { ChatGptAuthServiceConfig, ChatGptBackendAuthService } from './chatgpt-auth-service.js';
 
 /** A login attempt is abandoned when the user does not complete it within this time. */
 const LOGIN_TIMEOUT_MS = 10 * 60 * 1000;

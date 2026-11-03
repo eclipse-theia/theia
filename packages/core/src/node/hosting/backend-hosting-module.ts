@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { BackendApplicationContribution } from '../backend-application';
-import { WsRequestValidatorContribution } from '../ws-request-validators';
-import { BackendApplicationHosts } from './backend-application-hosts';
+import { BackendApplicationContribution } from '../backend-application.js';
+import { WsRequestValidatorContribution } from '../ws-request-validators.js';
+import { BackendApplicationHosts } from './backend-application-hosts.js';
 import {
     BrowserConnectionToken, BrowserConnectionTokenBackendContribution, HttpConnectionValidator, createBrowserConnectionToken
-} from './browser-connection-token';
-import { WsOriginValidator } from './ws-origin-validator';
+} from './browser-connection-token.js';
+import { WsOriginValidator } from './ws-origin-validator.js';
 
 export default new ContainerModule(bind => {
     bind(BackendApplicationHosts).toSelf().inSingletonScope();

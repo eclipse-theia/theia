@@ -16,14 +16,14 @@
 
 import { expect } from 'chai';
 import { Container, injectable, preDestroy } from 'inversify';
-import { ConnectionHandler, bindContributionProvider, servicesPath, ILogger } from '../../../common';
-import { BasicChannel, Channel } from '../../../common/message-rpc/channel';
-import { Uint8ArrayWriteBuffer } from '../../../common/message-rpc/uint8-array-message-buffer';
-import { ConnectionContainerModule } from '../connection-container-module';
-import { DefaultMessagingService, MessagingContainer } from '../default-messaging-service';
-import { FrontendConnectionService } from '../frontend-connection-service';
-import { MessagingService } from '../messaging-service';
-import { MockLogger } from '../../../common/test/mock-logger';
+import { ConnectionHandler, bindContributionProvider, servicesPath, ILogger } from '../../../common/index.js';
+import { BasicChannel, Channel } from '../../../common/message-rpc/channel.js';
+import { Uint8ArrayWriteBuffer } from '../../../common/message-rpc/uint8-array-message-buffer.js';
+import { ConnectionContainerModule } from '../connection-container-module.js';
+import { DefaultMessagingService, MessagingContainer } from '../default-messaging-service.js';
+import { FrontendConnectionService } from '../frontend-connection-service.js';
+import { MessagingService } from '../messaging-service.js';
+import { MockLogger } from '../../../common/test/mock-logger.js';
 
 describe('DefaultMessagingService', () => {
 

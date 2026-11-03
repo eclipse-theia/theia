@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { injectable, inject } from 'inversify';
-import URI from '../common/uri';
-import { LabelProviderContribution, LabelProvider, DidChangeLabelEvent } from './label-provider';
-import { codicon } from './widgets';
+import URI from '../common/uri.js';
+import { LabelProviderContribution, LabelProvider, DidChangeLabelEvent } from './label-provider.js';
+import { codicon } from './widgets/index.js';
 
 export namespace DiffUris {
 

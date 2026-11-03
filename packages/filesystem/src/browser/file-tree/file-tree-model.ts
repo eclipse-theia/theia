@@ -17,14 +17,14 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { CompositeTreeNode, TreeNode, ConfirmDialog, CompressedTreeModel, Dialog } from '@theia/core/lib/browser';
-import { FileStatNode, DirNode, FileNode } from './file-tree';
-import { LocationService } from '../location';
+import { FileStatNode, DirNode, FileNode } from './file-tree.js';
+import { LocationService } from '../location/index.js';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { FileService } from '../file-service';
-import { FileOperationError, FileOperationResult, FileChangesEvent, FileChangeType, FileChange } from '../../common/files';
+import { FileService } from '../file-service.js';
+import { FileOperationError, FileOperationResult, FileChangesEvent, FileChangeType, FileChange } from '../../common/files.js';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { FileSystemUtils } from '../../common';
+import { FileSystemUtils } from '../../common/index.js';
 import { nls } from '@theia/core';
 
 @injectable()

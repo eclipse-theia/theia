@@ -20,8 +20,8 @@
 // based on https://github.com/microsoft/vscode/blob/04c36be045a94fee58e5f8992d3e3fd980294a84/src/vs/workbench/api/browser/mainThreadFileSystem.ts
 
 /* eslint-disable max-len */
-/* eslint-disable @typescript-eslint/tslint/config */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @theia/explicit-return-type */
 
 import { URI } from '@theia/core/shared/vscode-uri';
 import { interfaces } from '@theia/core/shared/inversify';
@@ -29,16 +29,16 @@ import CoreURI from '@theia/core/lib/common/uri';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Event, Emitter } from '@theia/core/lib/common/event';
-import { MAIN_RPC_CONTEXT, FileSystemMain, FileSystemExt, IFileChangeDto } from '../../common/plugin-api-rpc';
-import { RPCProtocol } from '../../common/rpc-protocol';
-import { UriComponents } from '../../common/uri-components';
+import { MAIN_RPC_CONTEXT, FileSystemMain, FileSystemExt, IFileChangeDto } from '../../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
+import { UriComponents } from '../../common/uri-components.js';
 import {
     FileSystemProviderCapabilities, Stat, FileType, FileSystemProviderErrorCode, FileOverwriteOptions, FileDeleteOptions, FileOpenOptions, FileWriteOptions, WatchOptions,
     FileSystemProviderWithFileReadWriteCapability, FileSystemProviderWithOpenReadWriteCloseCapability, FileSystemProviderWithFileFolderCopyCapability,
     FileStat, FileChange, FileOperationError, FileOperationResult, ReadOnlyMessageFileSystemProvider
 } from '@theia/filesystem/lib/common/files';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { MarkdownString } from '../../common/plugin-api-rpc-model';
+import { MarkdownString } from '../../common/plugin-api-rpc-model.js';
 
 type IDisposable = Disposable;
 

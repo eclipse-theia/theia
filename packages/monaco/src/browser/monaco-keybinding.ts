@@ -15,16 +15,18 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
-import { KeybindingContribution, KeybindingRegistry, KeybindingScope, KeyCode } from '@theia/core/lib/browser';
-import { MonacoCommands } from './monaco-command';
-import { MonacoCommandRegistry } from './monaco-command-registry';
+import {
+    KeybindingContribution, KeybindingRegistry, KeybindingScope, KeyCode, layoutModifiersIncludeAltGraph, layoutModifiersIncludeShift
+} from '@theia/core/lib/browser';
+import { MonacoCommands } from './monaco-command.js';
+import { MonacoCommandRegistry } from './monaco-command-registry.js';
 import { CommandRegistry, DisposableCollection, environment, isOSX, ILogger } from '@theia/core';
-import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
-import { KeybindingsRegistry } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/keybindingsRegistry';
-import { StandaloneKeybindingService, StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { IKeybindingService } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/keybinding';
-import { MonacoContextKeyService } from './monaco-context-key-service';
-import { KEY_CODE_MAP } from './monaco-keycode-map';
+import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding.js';
+import { KeybindingsRegistry } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/keybindingsRegistry.js';
+import { StandaloneKeybindingService, StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { IKeybindingService } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/keybinding.js';
+import { MonacoContextKeyService } from './monaco-context-key-service.js';
+import { KEY_CODE_MAP } from './monaco-keycode-map.js';
 import * as monaco from '@theia/monaco-editor-core';
 
 @injectable()
@@ -68,6 +70,9 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
             this.toDisposeOnKeybindingChange.dispose();
             for (const binding of this.keybindings.getKeybindingsByScope(KeybindingScope.USER).concat(this.keybindings.getKeybindingsByScope(KeybindingScope.WORKSPACE))) {
                 const resolved = this.keybindings.resolveKeybinding(binding);
+                if (this.keybindings.isKeybindingInactive(binding) || !this.isMonacoRepresentable(resolved)) {
+                    continue;
+                }
                 const command = binding.command;
                 const when = binding.when
                     ? this.contextKeyService.parse(binding.when)
@@ -82,6 +87,11 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
                 ));
             }
         }
+    }
+
+    protected isMonacoRepresentable(codes: KeyCode[]): boolean {
+        return codes.length <= 2 && codes.every(code => code.key && KEY_CODE_MAP[code.key.keyCode] !== undefined
+            && !layoutModifiersIncludeAltGraph(code.layoutModifiers));
     }
 
     protected toMonacoKeybindingNumber(codes: KeyCode[]): number {
@@ -100,11 +110,11 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
         if (code.alt) {
             encoded |= monaco.KeyMod.Alt;
         }
-        if (code.shift) {
+        if (code.shift || layoutModifiersIncludeShift(code.layoutModifiers)) {
             encoded |= monaco.KeyMod.Shift;
         }
         if (code.ctrl) {
-            encoded |= monaco.KeyMod.WinCtrl;
+            encoded |= isOSX ? monaco.KeyMod.WinCtrl : monaco.KeyMod.CtrlCmd;
         }
         if (code.meta && isOSX) {
             encoded |= monaco.KeyMod.CtrlCmd;

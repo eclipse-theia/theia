@@ -16,8 +16,8 @@
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { CHAT_VIEW_ALLOWED_RESOURCE_URLS, ChatViewPreferences } from '../chat-view-preferences';
-import { setAllowedResourceUrls } from './block-external-resources';
+import { CHAT_VIEW_ALLOWED_RESOURCE_URLS, ChatViewPreferences } from '../chat-view-preferences.js';
+import { setAllowedResourceUrls } from './block-external-resources.js';
 
 /**
  * Keeps the resource allowlist used by {@link blockExternalResources} in sync with the

@@ -21,10 +21,10 @@ import {
     StatefulWidget, CommonMenus, TreeViewWelcomeWidget, ViewContainerPart, BaseWidget,
     CompositeTreeNode, ExpandableTreeNode,
 } from '@theia/core/lib/browser';
-import { ViewContainer, View, ViewWelcome, PluginViewType } from '../../../common';
-import { PluginSharedStyle } from '../plugin-shared-style';
+import { ViewContainer, View, ViewWelcome, PluginViewType } from '../../../common/index.js';
+import { PluginSharedStyle } from '../plugin-shared-style.js';
 import { DebugWidget } from '@theia/debug/lib/browser/view/debug-widget';
-import { PluginViewWidget, PluginViewWidgetIdentifier } from './plugin-view-widget';
+import { PluginViewWidget, PluginViewWidgetIdentifier } from './plugin-view-widget.js';
 import { SCM_VIEW_CONTAINER_ID, SCM_WIDGET_FACTORY_ID, ScmContribution } from '@theia/scm/lib/browser/scm-contribution';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { ScmTreeWidget } from '@theia/scm/lib/browser/scm-tree-widget';
@@ -36,21 +36,21 @@ import { CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { ViewContextKeyService } from './view-context-key-service';
+import { ViewContextKeyService } from './view-context-key-service.js';
 import { PROBLEMS_WIDGET_ID } from '@theia/markers/lib/browser/problem/problem-widget';
 import { OutputWidget } from '@theia/output/lib/browser/output-widget';
 import { DebugConsoleContribution } from '@theia/debug/lib/browser/console/debug-console-contribution';
-import { TreeViewWidget } from './tree-view-widget';
+import { TreeViewWidget } from './tree-view-widget.js';
 import { SEARCH_VIEW_CONTAINER_ID } from '@theia/search-in-workspace/lib/browser/search-in-workspace-factory';
 import { TEST_VIEW_CONTAINER_ID } from '@theia/test/lib/browser/view/test-view-contribution';
-import { WebviewView, WebviewViewResolver } from '../webview-views/webview-views';
-import { WebviewWidget, WebviewWidgetIdentifier } from '../webview/webview';
+import { WebviewView, WebviewViewResolver } from '../webview-views/webview-views.js';
+import { WebviewWidget, WebviewWidgetIdentifier } from '../webview/webview.js';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import { nls, ILogger } from '@theia/core';
 import { TheiaDockPanel } from '@theia/core/lib/browser/shell/theia-dock-panel';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables.js';
 
 export const PLUGIN_VIEW_FACTORY_ID = 'plugin-view';
 export const PLUGIN_VIEW_CONTAINER_FACTORY_ID = 'plugin-view-container';
@@ -160,6 +160,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
         this.updateFocusedView();
         this.shell.onDidChangeActiveWidget(() => this.updateFocusedView());
+        this.onDidExpandView(viewId => this.prepareWelcomeOnlyView(viewId).catch(e => this.logger.error(e)));
 
         this.widgetManager.onWillCreateWidget(({ factoryId, widget, waitUntil }) => {
             if (factoryId === EXPLORER_VIEW_CONTAINER_ID && widget instanceof ViewContainerWidget) {
@@ -680,14 +681,24 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             }
         };
 
-        const toDispose = this.onNewResolverRegistered(resolver => {
-            if (resolver.viewType === viewId) {
-                // Potentially re-activate if we have a new resolver
+        // Like VS Code, resolve a webview view only once it is visible: extensions start work in
+        // `resolveWebviewView`, and views that are hidden or never opened should not pay for it.
+        const resolveIfVisible = () => {
+            if (webview.isVisible) {
                 webviewView.resolve();
             }
-        });
+        };
+        const toDispose = new DisposableCollection(
+            this.onNewResolverRegistered(resolver => {
+                if (resolver.viewType === viewId) {
+                    // Potentially re-activate if we have a new resolver
+                    resolveIfVisible();
+                }
+            }),
+            webview.onDidChangeVisibility(resolveIfVisible)
+        );
 
-        webviewView.resolve();
+        resolveIfVisible();
         return webviewView;
     }
 
@@ -786,7 +797,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         const currentDataWidget = widget.widgets[0];
         const webviewId = currentDataWidget instanceof WebviewWidget ? currentDataWidget.identifier?.id : undefined;
         const viewDataWidget = await this.createViewDataWidget(view.id, webviewId);
-        if (widget.isDisposed) {
+        // `onDidInitializeLayout` can dispose the data widget before it is added here.
+        if (widget.isDisposed || viewDataWidget?.isDisposed) {
             viewDataWidget?.dispose();
             return;
         }
@@ -1029,8 +1041,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     }
 
     /**
-     * retrieve restored layout state from previous user session but close widgets
-     * widgets should be opened only when view data providers are registered
+     * Retrieves the restored state of the data widgets and disposes them: a view gets a new data widget
+     * once its data provider registers or, for a view with only welcome content, once it is expanded.
      */
     onDidInitializeLayout(): void {
         const widgets = this.widgetManager.getWidgets(PLUGIN_VIEW_DATA_FACTORY_ID);
@@ -1106,6 +1118,21 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             this.viewDataState.delete(viewId);
         }
         return widget;
+    }
+
+    /**
+     * Gives an expanded view that has `viewsWelcome` content but neither a data provider nor a
+     * content widget its welcome widget, which `onDidInitializeLayout` disposes when it was restored.
+     */
+    protected async prepareWelcomeOnlyView(viewId: string): Promise<void> {
+        if (this.views.get(viewId)?.[1]?.type === PluginViewType.Webview
+            || this.viewDataProviders.has(viewId) || !this.getViewWelcomes(viewId).length) {
+            return;
+        }
+        const view = await this.getView(viewId);
+        if (view && !view.widgets.length) {
+            await this.prepareView(view);
+        }
     }
 
     protected async createViewWelcomeWidget(viewId: string): Promise<TreeViewWidget> {
