@@ -26,7 +26,6 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { MockEnvVariablesServerImpl } from '@theia/core/lib/browser/test/mock-env-variables-server';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Container } from '@theia/core/shared/inversify';
-import { LocalStorageService, StorageService } from '@theia/core/lib/browser/storage-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { PluginPathsService } from '../../main/common/plugin-paths-protocol';
@@ -35,28 +34,14 @@ import { installFakeLockManager as installNavigatorLocks } from './test/navigato
 
 disableJSDOM();
 
-class InMemoryStorageService implements StorageService {
-    readonly data = new Map<string, string>();
-
-    async setData<T>(key: string, data?: T): Promise<void> {
-        if (data === undefined) {
-            this.data.delete(key);
-        } else {
-            this.data.set(key, JSON.stringify(data));
-        }
-    }
-
-    async getData<T>(key: string, defaultValue?: T): Promise<T | undefined> {
-        const stored = this.data.get(key);
-        return stored === undefined ? defaultValue : JSON.parse(stored);
-    }
-}
-
 /** In-memory stand-in for the browser-local file system. */
 class FakeFileService {
     readonly files = new Map<string, string>();
-    /** Makes every write fail, like when the browser storage quota is exceeded. */
-    failWrites = false;
+    /**
+     * Number of upcoming writes that fail, e.g. because the quota is exceeded. Like OPFS, a
+     * failed write leaves the file empty.
+     */
+    writesToFail = 0;
 
     async readFile(uri: URI): Promise<{ value: BinaryBuffer }> {
         const content = this.files.get(uri.toString());
@@ -67,7 +52,9 @@ class FakeFileService {
     }
 
     async writeFile(uri: URI, content: BinaryBuffer): Promise<void> {
-        if (this.failWrites) {
+        if (this.writesToFail > 0) {
+            this.writesToFail--;
+            this.files.set(uri.toString(), '');
             throw new Error('QuotaExceededError');
         }
         this.files.set(uri.toString(), content.toString());
@@ -80,7 +67,6 @@ class FakeFileService {
 }
 
 const GLOBAL_STATE_URI = 'file:///.theia/plugin-storage/global-state.json';
-const LEGACY_GLOBAL_STORAGE_KEY = 'plugin-storage:global';
 
 const pluginPathsService: PluginPathsService = {
     getHostLogPath: async () => '/logs/host',
@@ -112,7 +98,6 @@ function installFakeLockManager(): () => void {
 
 describe('BrowserOnlyPluginServer', () => {
 
-    let storageService: InMemoryStorageService;
     let fileService: FakeFileService;
 
     function createServer(): BrowserOnlyPluginServer {
@@ -121,13 +106,11 @@ describe('BrowserOnlyPluginServer', () => {
         container.bind(ILogger).to(MockLogger);
         container.bind(FileService).toConstantValue(fileService as unknown as FileService);
         container.bind(EnvVariablesServer).toConstantValue(new MockEnvVariablesServerImpl(new URI('file:///.theia')));
-        container.bind<StorageService>(LocalStorageService).toConstantValue(storageService);
         container.bind(PluginPathsService).toConstantValue(pluginPathsService);
         return container.get(BrowserOnlyPluginServer);
     }
 
     beforeEach(() => {
-        storageService = new InMemoryStorageService();
         fileService = new FakeFileService();
     });
 
@@ -151,53 +134,22 @@ describe('BrowserOnlyPluginServer', () => {
     });
 
     it('fails to save a value that cannot be written', async () => {
-        fileService.failWrites = true;
+        fileService.writesToFail = Number.POSITIVE_INFINITY;
 
         await createServer().setStorageValue('my.plugin', { count: 1 }, undefined).then(
             () => expect.fail('should have rejected'),
             error => expect(error.message).to.contain('QuotaExceededError'));
     });
 
-    describe('state kept in local storage by earlier versions', () => {
+    it('keeps the values stored before a write that fails', async () => {
+        await createServer().setStorageValue('plugin.one', { count: 1 }, undefined);
+        fileService.writesToFail = 1;
 
-        it('is moved to the files', async () => {
-            await storageService.setData(LEGACY_GLOBAL_STORAGE_KEY, { 'my.plugin': { scope: 'global' } });
-            await storageService.setData('plugin-storage:workspace:/workspace-storage/file:///a', { 'my.plugin': { scope: 'workspace' } });
-            const server = createServer();
+        await createServer().setStorageValue('plugin.other', { count: 2 }, undefined).then(
+            () => expect.fail('should have rejected'),
+            error => expect(error.message).to.contain('QuotaExceededError'));
 
-            expect(await server.getStorageValue('my.plugin', undefined)).to.deep.equal({ scope: 'global' });
-            expect(await server.getStorageValue('my.plugin', { workspace: 'file:///a', roots: [] })).to.deep.equal({ scope: 'workspace' });
-
-            expect(fileService.read(GLOBAL_STATE_URI)).to.deep.equal({ 'my.plugin': { scope: 'global' } });
-            expect(storageService.data.size).to.equal(0);
-        });
-
-        it('is merged with a value set before the first read', async () => {
-            await storageService.setData(LEGACY_GLOBAL_STORAGE_KEY, { 'plugin.one': { count: 1 } });
-
-            await createServer().setStorageValue('plugin.other', { count: 2 }, undefined);
-
-            expect(fileService.read(GLOBAL_STATE_URI)).to.deep.equal({
-                'plugin.one': { count: 1 },
-                'plugin.other': { count: 2 }
-            });
-        });
-
-        it('is ignored once there is a file', async () => {
-            await createServer().setStorageValue('my.plugin', { count: 2 }, undefined);
-            await storageService.setData(LEGACY_GLOBAL_STORAGE_KEY, { 'my.plugin': { count: 1 } });
-
-            expect(await createServer().getStorageValue('my.plugin', undefined)).to.deep.equal({ count: 2 });
-        });
-
-        it('stays in local storage if it cannot be written to the file', async () => {
-            await storageService.setData(LEGACY_GLOBAL_STORAGE_KEY, { 'my.plugin': { count: 1 } });
-            fileService.failWrites = true;
-
-            // otherwise the plugin host wouldn't start
-            expect(await createServer().getAllStorageValues(undefined)).to.deep.equal({ 'my.plugin': { count: 1 } });
-            expect(await storageService.getData(LEGACY_GLOBAL_STORAGE_KEY)).to.deep.equal({ 'my.plugin': { count: 1 } });
-        });
+        expect(fileService.read(GLOBAL_STATE_URI)).to.deep.equal({ 'plugin.one': { count: 1 } });
     });
 
     it('keeps workspace state per workspace', async () => {
@@ -218,7 +170,6 @@ describe('BrowserOnlyPluginServer', () => {
         expect(await server.getAllStorageValues({ workspace: 'file:///a', roots: [] })).to.deep.equal({ 'my.plugin': { scope: 'workspace' } });
         expect(fileService.read(GLOBAL_STATE_URI)).to.deep.equal({ 'my.plugin': { scope: 'global' } });
         expect(fileService.read('file:///workspace-storage/file%3A///a/workspace-state.json')).to.deep.equal({ 'my.plugin': { scope: 'workspace' } });
-        expect(storageService.data.size).to.equal(0);
     });
 
     it('cannot keep workspace state while no workspace is open', async () => {

@@ -20,7 +20,6 @@ import { ILogger, nls } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { LocalStorageService, StorageService } from '@theia/core/lib/browser/storage-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { PluginDeployOptions, PluginIdentifiers, PluginServer, PluginStorageKind, PluginType } from '../../common';
@@ -28,17 +27,7 @@ import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
 import { PluginPaths } from '../../main/common/paths/const';
 import { PluginPathsService } from '../../main/common/plugin-paths-protocol';
 
-const LEGACY_GLOBAL_STORAGE_KEY = 'plugin-storage:global';
-const LEGACY_WORKSPACE_STORAGE_KEY_PREFIX = 'plugin-storage:workspace:';
 const LOCK_NAME_PREFIX = 'theia:plugin-storage:';
-
-/** Where one kind of plugin key-value storage is kept. */
-export interface BrowserOnlyPluginStore {
-    /** The JSON file holding the values. */
-    uri: URI;
-    /** The local storage key that held the values before they moved to {@link uri}. */
-    legacyKey: string;
-}
 
 /**
  * Plugins of a browser-only application are deployed at build time, so they can't be installed,
@@ -60,12 +49,6 @@ export class BrowserOnlyPluginServer implements PluginServer {
 
     @inject(EnvVariablesServer)
     protected readonly envServer: EnvVariablesServer;
-
-    // Only used to move over state kept in local storage by earlier versions. `LocalStorageService`
-    // is injected directly because `@theia/workspace` rebinds `StorageService` to one that prefixes
-    // every key with the current workspace, which the legacy keys never were.
-    @inject(LocalStorageService)
-    protected readonly storageService: StorageService;
 
     @inject(PluginPathsService)
     protected readonly pluginPathsService: PluginPathsService;
@@ -113,6 +96,7 @@ export class BrowserOnlyPluginServer implements PluginServer {
         // from another tab could land in between and get overwritten by this one
         await this.withStoreLock(store, async () => {
             const values = await this.readStore(store);
+            const previousContent = JSON.stringify(values);
             if (value === undefined || Object.keys(value).length === 0) {
                 delete values[key];
             } else {
@@ -120,7 +104,7 @@ export class BrowserOnlyPluginServer implements PluginServer {
             }
             // a failed write rejects, so the plugin's `Memento.update` does too instead of
             // resolving for a value that was never saved
-            await this.writeStore(store, values);
+            await this.writeStore(store, values, previousContent);
         });
         return true;
     }
@@ -135,13 +119,12 @@ export class BrowserOnlyPluginServer implements PluginServer {
             return {};
         }
         try {
-            // locked as well, so a read never sees a file another tab is halfway through writing,
-            // and two tabs can't both migrate the legacy state
+            // locked as well, so a read never sees a file another tab is halfway through writing
             return await this.withStoreLock(store, () => this.readStore(store));
         } catch (error) {
             // the plugin host loads all state on startup, so throwing here would stop every plugin
             // from loading. Writes still fail, so the file isn't overwritten with the empty state.
-            this.logger.error(`Failed to read plugin data from ${store.uri.toString()}:`, error);
+            this.logger.error(`Failed to read plugin data from ${store.toString()}:`, error);
             return {};
         }
     }
@@ -150,13 +133,13 @@ export class BrowserOnlyPluginServer implements PluginServer {
      * Reads the values of `store`. Not cached: other tabs write the same file. Must be called
      * while holding the lock for `store`, see {@link withStoreLock}.
      */
-    protected async readStore(store: BrowserOnlyPluginStore): Promise<KeysToKeysToAnyValue> {
+    protected async readStore(store: URI): Promise<KeysToKeysToAnyValue> {
         let content: string;
         try {
-            content = (await this.fileService.readFile(store.uri)).value.toString();
+            content = (await this.fileService.readFile(store)).value.toString();
         } catch (error) {
             if (error instanceof FileOperationError && error.fileOperationResult === FileOperationResult.FILE_NOT_FOUND) {
-                return this.migrateLegacyStore(store);
+                return {};
             }
             throw error;
         }
@@ -164,43 +147,38 @@ export class BrowserOnlyPluginServer implements PluginServer {
             return JSON.parse(content);
         } catch (error) {
             // same as the backend: start over rather than fail every later read and write
-            this.logger.error(`Failed to parse plugin data from ${store.uri.toString()}:`, error);
+            this.logger.error(`Failed to parse plugin data from ${store.toString()}:`, error);
             return {};
         }
-    }
-
-    protected async writeStore(store: BrowserOnlyPluginStore, values: KeysToKeysToAnyValue): Promise<void> {
-        await this.fileService.writeFile(store.uri, BinaryBuffer.fromString(JSON.stringify(values)));
     }
 
     /**
-     * Moves the values earlier versions kept in local storage over to the file of `store`, so
-     * plugins don't lose their state on upgrade. Only called while that file doesn't exist yet.
+     * Writes `values` to `store`, putting `previousContent` back if that fails. Must be called
+     * while holding the lock for `store`, see {@link withStoreLock}.
      */
-    protected async migrateLegacyStore(store: BrowserOnlyPluginStore): Promise<KeysToKeysToAnyValue> {
-        const values = await this.storageService.getData<KeysToKeysToAnyValue>(store.legacyKey);
-        if (values === undefined) {
-            return {};
-        }
+    protected async writeStore(store: URI, values: KeysToKeysToAnyValue, previousContent: string): Promise<void> {
         try {
-            await this.writeStore(store, values);
-            await this.storageService.setData(store.legacyKey, undefined);
+            await this.fileService.writeFile(store, BinaryBuffer.fromString(JSON.stringify(values)));
         } catch (error) {
-            // the values are still better than the empty state `getAllStorageValues` would fall
-            // back to. If the file wasn't written, the move is tried again on the next read.
-            this.logger.error(`Failed to move plugin data to ${store.uri.toString()}:`, error);
+            // OPFS truncates the file before writing, so a failed write (e.g. quota exceeded)
+            // would leave it empty and wipe the state of every plugin
+            try {
+                await this.fileService.writeFile(store, BinaryBuffer.fromString(previousContent));
+            } catch (restoreError) {
+                this.logger.error(`Failed to restore plugin data in ${store.toString()}:`, restoreError);
+            }
+            throw error;
         }
-        return values;
     }
 
     /**
      * Runs `task` while holding the cross-tab lock for `store`, via the Web Locks API, so a
      * concurrent read or update of the same store on this or another tab can't interleave with it.
      */
-    protected withStoreLock<T>(store: BrowserOnlyPluginStore, task: () => Promise<T>): Promise<T> {
+    protected withStoreLock<T>(store: URI, task: () => Promise<T>): Promise<T> {
         const locks = this.getWebLocks();
         if (locks) {
-            return this.requestLock(locks, `${LOCK_NAME_PREFIX}${store.uri.toString()}`, task);
+            return this.requestLock(locks, `${LOCK_NAME_PREFIX}${store.toString()}`, task);
         }
         // no Web Locks API (insecure context, older browser): fall back to serializing store
         // access within this tab. A write from another tab can still race and get lost.
@@ -231,20 +209,14 @@ export class BrowserOnlyPluginServer implements PluginServer {
      * Where the given kind of values is kept, or `undefined` if there's nowhere to keep them -
      * e.g. workspace state while no workspace is open.
      */
-    protected async getStore(kind: PluginStorageKind): Promise<BrowserOnlyPluginStore | undefined> {
+    protected async getStore(kind: PluginStorageKind): Promise<URI | undefined> {
         const configDirUri = new URI(await this.envServer.getConfigDirUri());
         if (!kind) {
-            return {
-                uri: configDirUri.resolve(PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR).resolve(PluginPaths.PLUGINS_GLOBAL_STATE_FILE),
-                legacyKey: LEGACY_GLOBAL_STORAGE_KEY
-            };
+            return configDirUri.resolve(PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR).resolve(PluginPaths.PLUGINS_GLOBAL_STATE_FILE);
         }
         // kept next to `ExtensionContext.storageUri`. The storage path lives on the same file
         // system as the config dir, so we can take the scheme from there
         const storagePath = await this.pluginPathsService.getHostStoragePath(kind.workspace, kind.roots);
-        return storagePath ? {
-            uri: configDirUri.withPath(storagePath).resolve(PluginPaths.PLUGINS_WORKSPACE_STATE_FILE),
-            legacyKey: `${LEGACY_WORKSPACE_STORAGE_KEY_PREFIX}${storagePath}`
-        } : undefined;
+        return storagePath ? configDirUri.withPath(storagePath).resolve(PluginPaths.PLUGINS_WORKSPACE_STATE_FILE) : undefined;
     }
 }
