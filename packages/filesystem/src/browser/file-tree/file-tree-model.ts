@@ -156,6 +156,11 @@ export class FileTreeModel extends CompressedTreeModel implements LocationServic
      */
     async move(source: TreeNode, target: TreeNode): Promise<URI | undefined> {
         if (DirNode.is(target) && FileStatNode.is(source)) {
+
+            if (source.uri.isEqualOrParent(target.uri)) {
+                return undefined;
+            }
+
             const name = source.fileStat.name;
             const targetUri = target.uri.resolve(name);
             if (source.uri.isEqual(targetUri)) { return; }
