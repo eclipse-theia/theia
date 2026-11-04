@@ -21,8 +21,8 @@ import {
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import { escapeRegExpCharacters } from '@theia/core/lib/common/strings';
 import { injectable } from '@theia/core/shared/inversify';
-import { MarkdownRendering } from '../chat-response-renderer/markdown-part-renderer';
-import { ChatFindText } from './chat-find-text';
+import { MarkdownRendering } from '../chat-response-renderer/markdown-part-renderer.js';
+import { ChatFindText } from './chat-find-text.js';
 
 /** Language id of code parts that are rendered as a diagram instead of as source. */
 const MERMAID_LANGUAGE_ID = 'mermaid';

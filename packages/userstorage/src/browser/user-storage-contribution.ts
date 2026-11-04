@@ -21,7 +21,7 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { FileSystemProvider } from '@theia/filesystem/lib/common/files';
 import { FileService, FileServiceContribution } from '@theia/filesystem/lib/browser/file-service';
 import { DelegatingFileSystemProvider } from '@theia/filesystem/lib/common/delegating-file-system-provider';
-import { UserStorageUri } from './user-storage-uri';
+import { UserStorageUri } from './user-storage-uri.js';
 import { MaybePromise } from '@theia/core';
 
 @injectable()

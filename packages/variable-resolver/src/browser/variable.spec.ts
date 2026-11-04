@@ -18,7 +18,7 @@ import * as chai from 'chai';
 import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { ILogger, Disposable } from '@theia/core/lib/common';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { Variable, VariableRegistry } from './variable';
+import { Variable, VariableRegistry } from './variable.js';
 
 const expect = chai.expect;
 let variableRegistry: VariableRegistry;

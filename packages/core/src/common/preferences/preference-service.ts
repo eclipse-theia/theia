@@ -18,18 +18,18 @@
 
 import { JSONValue } from '@lumino/coreutils';
 import { inject, injectable, postConstruct, named } from 'inversify';
-import { Disposable, DisposableCollection } from '../disposable';
-import { Emitter, Event } from '../event';
-import { Deferred } from '../promise-util';
-import URI from '../uri';
-import { OverridePreferenceName, PreferenceLanguageOverrideService } from './preference-language-override-service';
-import { PreferenceProvider, PreferenceProviderDataChange, PreferenceProviderDataChanges, PreferenceResolveResult, PreferenceUtils } from './preference-provider';
-import { PreferenceSchemaService } from './preference-schema';
-import { PreferenceScope } from './preference-scope';
-import { PreferenceConfigurations } from './preference-configurations';
-import { deepFreeze } from '../objects';
-import { unreachable } from '../types';
-import { ILogger } from '../logger';
+import { Disposable, DisposableCollection } from '../disposable.js';
+import { Emitter, Event } from '../event.js';
+import { Deferred } from '../promise-util.js';
+import URI from '../uri.js';
+import { OverridePreferenceName, PreferenceLanguageOverrideService } from './preference-language-override-service.js';
+import { PreferenceProvider, PreferenceProviderDataChange, PreferenceProviderDataChanges, PreferenceResolveResult, PreferenceUtils } from './preference-provider.js';
+import { PreferenceSchemaService } from './preference-schema.js';
+import { PreferenceScope } from './preference-scope.js';
+import { PreferenceConfigurations } from './preference-configurations.js';
+import { deepFreeze } from '../objects.js';
+import { unreachable } from '../types.js';
+import { ILogger } from '../logger.js';
 
 /**
  * Representation of a preference change. A preference value can be set to `undefined` for a specific scope.

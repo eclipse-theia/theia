@@ -32,7 +32,7 @@ Adopters will benefit from Electron versions upgrades simply by upgrading their 
 
 ## Update Process
 
-- Follow Electron stable release cadence and initiate the update when a new Electron _Stable Release_ is published.
+- Update to Electron's latest _Stable Release_ after every Theia release, together with the NPM upgrade (see [3.8 Electron Update](Publishing.md#38-electron-update) in the publishing guide).
 - Check the new Electron version for potential IP problems.
 - Update the framework dependencies to target the new Electron version.
 - Update the codebase to replace/use the new Electron APIs.

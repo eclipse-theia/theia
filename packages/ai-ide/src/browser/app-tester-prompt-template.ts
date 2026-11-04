@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/tslint/config, max-len */
+/* eslint-disable max-len, @theia/file-header */
 // *****************************************************************************
 // Copyright (C) 2025 EclipseSource GmbH and others.
 //
@@ -9,16 +9,16 @@
 // SPDX-License-Identifier: MIT
 // *****************************************************************************
 
-import { BasePromptFragment } from '@theia/ai-core/lib/common';
+import { AGENTS_MD_PROMPT_FRAGMENT_ID, BasePromptFragment } from '@theia/ai-core/lib/common';
 import { CHAT_CONTEXT_DETAILS_VARIABLE_ID } from '@theia/ai-chat';
-import { QUERY_DOM_FUNCTION_ID, LAUNCH_BROWSER_FUNCTION_ID, CLOSE_BROWSER_FUNCTION_ID, IS_BROWSER_RUNNING_FUNCTION_ID } from '../common/app-tester-chat-functions';
+import { QUERY_DOM_FUNCTION_ID, LAUNCH_BROWSER_FUNCTION_ID, CLOSE_BROWSER_FUNCTION_ID, IS_BROWSER_RUNNING_FUNCTION_ID } from '../common/app-tester-chat-functions.js';
 import { MCPServerDescription } from '@theia/ai-mcp/lib/common/mcp-server-manager';
 import {
   FILE_CONTENT_FUNCTION_ID,
   LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID,
   RUN_LAUNCH_CONFIGURATION_FUNCTION_ID,
   STOP_LAUNCH_CONFIGURATION_FUNCTION_ID
-} from '../common/workspace-functions';
+} from '../common/workspace-functions.js';
 
 export const REQUIRED_MCP_SERVERS: MCPServerDescription[] = [
   {
@@ -165,8 +165,7 @@ If you started an app with ~{${RUN_LAUNCH_CONFIGURATION_FUNCTION_ID}}, close it 
 ## Context
 {{${CHAT_CONTEXT_DETAILS_VARIABLE_ID}}}
 
-## Project Info
-{{prompt:project-info}}
+{{prompt:${AGENTS_MD_PROMPT_FRAGMENT_ID}}}
 `
 };
 
@@ -389,8 +388,6 @@ Execute all tool calls silently with ZERO text output during Steps 1-5. Produce 
 
 {{${CHAT_CONTEXT_DETAILS_VARIABLE_ID}}}
 
-# Project Info
-
-{{prompt:project-info}}
+{{prompt:${AGENTS_MD_PROMPT_FRAGMENT_ID}}}
 `
 };

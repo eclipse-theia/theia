@@ -22,8 +22,8 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { FileNavigatorPreferences } from '../common/navigator-preferences';
-import { FileNavigatorFilter, FileNavigatorFilterPredicate } from './navigator-filter';
+import { FileNavigatorPreferences } from '../common/navigator-preferences.js';
+import { FileNavigatorFilter, FileNavigatorFilterPredicate } from './navigator-filter.js';
 
 disableJSDOM();
 

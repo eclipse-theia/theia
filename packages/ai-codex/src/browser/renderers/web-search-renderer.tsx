@@ -22,7 +22,7 @@ import { injectable, inject, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import type { WebSearchItem } from '@openai/codex-sdk';
-import { CodexToolCallChatResponseContent } from '../codex-tool-call-content';
+import { CodexToolCallChatResponseContent } from '../codex-tool-call-content.js';
 
 @injectable()
 export class WebSearchRenderer implements ChatResponsePartRenderer<CodexToolCallChatResponseContent> {

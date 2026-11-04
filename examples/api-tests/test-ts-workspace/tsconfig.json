@@ -1,9 +1,13 @@
+// This fixture is read by the builtin vscode.typescript-language-features plugin, which uses
+// TypeScript 5.9.3 in vscode-builtin-extensions 1.108.2. Keep it valid for both TypeScript 5.9 and 6:
+// `bundler` module resolution fails with CommonJS in 5.9, while `node` is deprecated in TypeScript 6.
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     "skipLibCheck": true,
     "declaration": true,
     "declarationMap": true,
+    "strict": false,
     "noImplicitAny": true,
     "noImplicitOverride": true,
     "noEmitOnError": false,
@@ -13,11 +17,15 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "importHelpers": true,
-    "downlevelIteration": true,
+    "esModuleInterop": true,
     "resolveJsonModule": true,
     "useDefineForClassFields": false,
+    "types": [
+      "node",
+      "mocha"
+    ],
+    "noUncheckedSideEffectImports": false,
     "module": "CommonJS",
-    "moduleResolution": "Node",
     "target": "ES2023",
     "jsx": "react",
     "lib": [

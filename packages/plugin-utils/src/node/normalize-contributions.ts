@@ -19,7 +19,7 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as jsoncparser from 'jsonc-parser';
-import { deepClone, isColorDefaults, isENOENT, isObject, isStringArray } from '../common/utils';
+import { deepClone, isColorDefaults, isENOENT, isObject, isStringArray } from '../common/utils.js';
 import {
     ICON_NAME_SEGMENT,
     type ColorDefinition,
@@ -30,7 +30,7 @@ import {
     type PreferenceSchema,
     PreferenceScope,
     type TaskDefinition,
-} from '../common/protocol-shims';
+} from '../common/protocol-shims.js';
 import {
     CustomEditorPriority,
     type AutoClosingPair,
@@ -77,9 +77,9 @@ import {
     type WalkthroughStepContribution,
     type WalkthroughStepMedia,
     type PluginPackageWalkthroughStepMedia,
-} from '../common/contribution-types';
-import { rawContributes, type PluginManifest } from '../common/manifest-types';
-import { UNPUBLISHED } from '../common/constants';
+} from '../common/contribution-types.js';
+import { rawContributes, type PluginManifest } from '../common/manifest-types.js';
+import { UNPUBLISHED } from '../common/constants.js';
 
 function isPluginUiTheme(value: unknown): value is PluginUiTheme {
     return value === 'vs' || value === 'vs-dark' || value === 'hc-black' || value === 'hc-light';

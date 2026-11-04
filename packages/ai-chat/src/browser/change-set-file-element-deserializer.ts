@@ -16,10 +16,10 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { URI } from '@theia/core';
-import { ChangeSetElement } from '../common/change-set';
-import { ChangeSetElementDeserializerContribution, ChangeSetElementDeserializerRegistry, ChangeSetDeserializationContext } from '../common/change-set-element-deserializer';
-import { SerializableChangeSetElement, SerializableChangeSetFileElementData } from '../common/chat-model-serialization';
-import { ChangeSetElementArgs, ChangeSetFileElementFactory } from './change-set-file-element';
+import { ChangeSetElement } from '../common/change-set.js';
+import { ChangeSetElementDeserializerContribution, ChangeSetElementDeserializerRegistry, ChangeSetDeserializationContext } from '../common/change-set-element-deserializer.js';
+import { SerializableChangeSetElement, SerializableChangeSetFileElementData } from '../common/chat-model-serialization.js';
+import { ChangeSetElementArgs, ChangeSetFileElementFactory } from './change-set-file-element.js';
 
 @injectable()
 export class ChangeSetFileElementDeserializerContribution implements ChangeSetElementDeserializerContribution {

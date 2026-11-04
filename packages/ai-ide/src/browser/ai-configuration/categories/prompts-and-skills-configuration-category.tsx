@@ -51,7 +51,7 @@ import {
     CollapsibleRowAction
 } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/collapsible-list';
 import { AiConfigurationOrigin } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-origin-badge';
-import { AgentChips } from './agent-chips';
+import { AgentChips } from './agent-chips.js';
 
 const SKILL_ROW_PREFIX = 'skill:';
 const COMMAND_ROW_PREFIX = 'cmd:';

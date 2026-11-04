@@ -28,9 +28,9 @@ import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Container } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
-import { PluginPathsService } from '../../main/common/plugin-paths-protocol';
-import { BrowserOnlyPluginServer } from './browser-only-plugin-server';
-import { installFakeLockManager as installNavigatorLocks } from './test/navigator-locks-test-util';
+import { PluginPathsService } from '../../main/common/plugin-paths-protocol.js';
+import { BrowserOnlyPluginServer } from './browser-only-plugin-server.js';
+import { installFakeLockManager as installNavigatorLocks } from './test/navigator-locks-test-util.js';
 
 disableJSDOM();
 

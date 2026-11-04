@@ -17,14 +17,14 @@
 import { Disposable, DisposableCollection, MaybePromise } from '@theia/core';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { ILogger } from '@theia/core/lib/common/logger';
-import * as Ajv from '@theia/core/shared/ajv';
+import Ajv from '@theia/core/shared/ajv';
 import * as express from '@theia/core/shared/express';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as http from 'http';
-import { RestBodySchema } from '../common/rest-body-schema';
-import { ExternalApiEventStream, ExternalApiEventStreamFactory, ExternalApiEventStreamOptions } from './external-api-event-stream';
-import { ExternalApiResponseWriter } from './external-api-response-writer';
-import { RestResult } from './rest-result';
+import { RestBodySchema } from '../common/rest-body-schema.js';
+import { ExternalApiEventStream, ExternalApiEventStreamFactory, ExternalApiEventStreamOptions } from './external-api-event-stream.js';
+import { ExternalApiResponseWriter } from './external-api-response-writer.js';
+import { RestResult } from './rest-result.js';
 
 /** HTTP methods supported by the typed routes of the {@link ExternalApiRouter}. */
 export type RestMethod = 'get' | 'post' | 'put' | 'patch' | 'delete';

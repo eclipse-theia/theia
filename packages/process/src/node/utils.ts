@@ -16,7 +16,7 @@
 
 import { isWindows } from '@theia/core';
 import * as os from 'os';
-const stringArgv = require('string-argv');
+import stringArgv from 'string-argv';
 
 /**
  * Parses the given line into an array of args respecting escapes and string literals.

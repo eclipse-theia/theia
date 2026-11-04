@@ -15,14 +15,14 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from 'inversify';
-import { ColorRegistry } from './color-registry';
-import { Emitter } from '../common/event';
-import { ThemeService } from './theming';
-import { FrontendApplicationContribution } from './frontend-application-contribution';
-import { ContributionProvider } from '../common/contribution-provider';
-import { Disposable, DisposableCollection } from '../common/disposable';
-import { DEFAULT_BACKGROUND_COLOR_STORAGE_KEY } from './frontend-application-config-provider';
-import { SecondaryWindowHandler } from './secondary-window-handler';
+import { ColorRegistry } from './color-registry.js';
+import { Emitter } from '../common/event.js';
+import { ThemeService } from './theming.js';
+import { FrontendApplicationContribution } from './frontend-application-contribution.js';
+import { ContributionProvider } from '../common/contribution-provider.js';
+import { Disposable, DisposableCollection } from '../common/disposable.js';
+import { DEFAULT_BACKGROUND_COLOR_STORAGE_KEY } from './frontend-application-config-provider.js';
+import { SecondaryWindowService } from './window/secondary-window-service.js';
 
 export const ColorContribution = Symbol('ColorContribution');
 export interface ColorContribution {
@@ -44,8 +44,8 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
 
     @inject(ThemeService) protected readonly themeService: ThemeService;
 
-    @inject(SecondaryWindowHandler)
-    protected readonly secondaryWindowHandler: SecondaryWindowHandler;
+    @inject(SecondaryWindowService)
+    protected readonly secondaryWindowService: SecondaryWindowService;
 
     onStart(): void {
         for (const contribution of this.colorContributions.getContributions()) {
@@ -59,10 +59,9 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
         this.colors.onDidChange(() => this.update());
 
         this.registerWindow(window);
-        this.secondaryWindowHandler.onWillAddWidget(([widget, window]) => {
-            this.registerWindow(window);
-        });
-        this.secondaryWindowHandler.onWillRemoveWidget(([widget, window]) => {
+        // registered per window rather than per widget, as a window may contain several widgets
+        this.secondaryWindowService.onWindowLoaded(win => this.registerWindow(win));
+        this.secondaryWindowService.onWindowClosed(window => {
             this.windows.delete(window);
         });
     }
@@ -72,6 +71,13 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
         this.updateWindow(win);
         this.onDidChangeEmitter.fire();
     }
+
+    /**
+     * The CSS variables currently applied to the document element of a window. Used to only remove
+     * those that the current theme does not provide anymore, instead of removing and re-applying all
+     * of them on every update.
+     */
+    protected readonly appliedCssVariables = new WeakMap<Window, ReadonlySet<string>>();
 
     protected readonly toUpdate = new DisposableCollection();
     protected update(): void {
@@ -88,14 +94,19 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
 
         const documentElement = win.document.documentElement;
         if (documentElement) {
+            const applied = new Set<string>();
             for (const id of this.colors.getColors()) {
-                const variable = this.colors.getCurrentCssVariable(id);
-                if (variable) {
-                    const { name, value } = variable;
+                for (const { name, value } of this.colors.getCurrentCssVariables(id)) {
                     documentElement.style.setProperty(name, value);
-                    this.toUpdate.push(Disposable.create(() => documentElement.style.removeProperty(name)));
+                    applied.add(name);
                 }
             }
+            for (const name of this.appliedCssVariables.get(win) ?? []) {
+                if (!applied.has(name)) {
+                    documentElement.style.removeProperty(name);
+                }
+            }
+            this.appliedCssVariables.set(win, applied);
         }
     }
 

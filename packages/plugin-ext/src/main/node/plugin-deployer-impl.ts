@@ -22,18 +22,19 @@ import {
     PluginDeployerResolver, PluginDeployerFileHandler, PluginDeployerDirectoryHandler,
     PluginDeployerEntry, PluginDeployer, PluginDeployerParticipant, PluginDeployerStartContext,
     PluginDeployerResolverInit,
-    PluginDeployerEntryType, PluginDeployerHandler, PluginType, UnresolvedPluginEntry, PluginIdentifiers, PluginDeployOptions
-} from '../../common/plugin-protocol';
-import { PluginDeployerEntryImpl } from './plugin-deployer-entry-impl';
+    PluginDeployerEntryType, PluginDeployerHandler, PluginType, UnresolvedPluginEntry, PluginIdentifiers, PluginDeployOptions,
+    DuplicateExtensionError
+} from '../../common/plugin-protocol.js';
+import { PluginDeployerEntryImpl } from './plugin-deployer-entry-impl.js';
 import {
     PluginDeployerResolverContextImpl,
     PluginDeployerResolverInitImpl
-} from './plugin-deployer-resolver-context-impl';
-import { ProxyPluginDeployerEntry } from './plugin-deployer-proxy-entry-impl';
-import { PluginDeployerFileHandlerContextImpl } from './plugin-deployer-file-handler-context-impl';
-import { PluginDeployerDirectoryHandlerContextImpl } from './plugin-deployer-directory-handler-context-impl';
+} from './plugin-deployer-resolver-context-impl.js';
+import { ProxyPluginDeployerEntry } from './plugin-deployer-proxy-entry-impl.js';
+import { PluginDeployerFileHandlerContextImpl } from './plugin-deployer-file-handler-context-impl.js';
+import { PluginDeployerDirectoryHandlerContextImpl } from './plugin-deployer-directory-handler-context-impl.js';
 import { ILogger, Emitter, ContributionProvider } from '@theia/core';
-import { PluginCliContribution } from './plugin-cli-contribution';
+import { PluginCliContribution } from './plugin-cli-contribution.js';
 import { Measurement, Stopwatch } from '@theia/core/lib/common';
 
 @injectable()
@@ -215,7 +216,11 @@ export class PluginDeployerImpl implements PluginDeployer {
                         }
                     }
                 } catch (e) {
-                    this.logger.error(`Failed to resolve plugins from '${entry.id}'`, e);
+                    if (DuplicateExtensionError.is(e)) {
+                        this.logger.info(`Skipping '${entry.id}': ${e.message}`);
+                    } else {
+                        this.logger.error(`Failed to resolve plugins from '${entry.id}'`, e);
+                    }
                     errors.push(e instanceof Error ? e : new Error(String(e)));
                 }
             }));

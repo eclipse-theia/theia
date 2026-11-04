@@ -18,8 +18,8 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { CommandService, MessageService, nls } from '@theia/core';
 import { FrontendApplicationContribution, LocalStorageService } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
-import { RemoteContainerCommands } from './container-connection-contribution';
+import { RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider.js';
+import { RemoteContainerCommands } from './container-connection-contribution.js';
 import { RemoteStatusService } from '@theia/remote/lib/electron-common/remote-status-service';
 
 const DONT_SHOW_AGAIN_KEY = 'dev-container.suggestion.dontShowAgain';

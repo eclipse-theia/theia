@@ -18,9 +18,9 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { Command, CommandContribution, CommandRegistry, Disposable, DisposableCollection, nls, PreferenceService } from '@theia/core';
 import { ConfirmDialog, Dialog } from '@theia/core/lib/browser';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
-import { CopilotAuthService, CopilotAuthState } from '../common/copilot-auth-service';
-import { CopilotAuthDialog, CopilotAuthDialogProps } from './copilot-auth-dialog';
-import { COPILOT_ENABLED_PREF, COPILOT_ENTERPRISE_URL_PREF } from '../common/copilot-preferences';
+import { CopilotAuthService, CopilotAuthState } from '../common/copilot-auth-service.js';
+import { CopilotAuthDialog, CopilotAuthDialogProps } from './copilot-auth-dialog.js';
+import { COPILOT_ENABLED_PREF, COPILOT_ENTERPRISE_URL_PREF } from '../common/copilot-preferences.js';
 
 export namespace CopilotCommands {
     export const SIGN_IN: Command = Command.toLocalizedCommand(

@@ -21,13 +21,13 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import { ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser/ai-activation-service';
 import { WalkthroughDefinition } from '@theia/getting-started/lib/common/walkthrough-types';
-import { AI_GETTING_STARTED_WALKTHROUGH_ID, AiGettingStartedWalkthroughProvider } from './ai-getting-started-walkthrough';
+import { AI_GETTING_STARTED_WALKTHROUGH_ID, AiGettingStartedWalkthroughProvider } from './ai-getting-started-walkthrough.js';
 import {
     AI_CHAT_USED_CONTEXT_KEY,
     AI_DEFAULT_AGENT_CONTEXT_KEY,
     AI_MODEL_READY_CONTEXT_KEY,
     AI_TOOL_CONFIRMATION_CONFIGURED_CONTEXT_KEY
-} from './ai-walkthrough-context-keys';
+} from './ai-walkthrough-context-keys.js';
 disableJSDOM();
 
 /** The commands the walkthrough is allowed to link to; each one is registered by one of the AI packages. */

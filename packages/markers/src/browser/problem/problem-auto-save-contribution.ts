@@ -18,7 +18,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { Emitter, Event } from '@theia/core';
 import { SaveErrorChecker } from '@theia/core/lib/browser/saveable-service';
 import { DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-protocol';
-import { ProblemManager } from './problem-manager';
+import { ProblemManager } from './problem-manager.js';
 import URI from '@theia/core/lib/common/uri';
 
 @injectable()

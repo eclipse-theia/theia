@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { MCPServerManagerImpl } from './mcp-server-manager-impl';
-import { MCPOAuthCredentialStore } from './mcp-oauth-credential-store';
-import { MCPServer } from './mcp-server';
+import { MCPServerManagerImpl } from './mcp-server-manager-impl.js';
+import { MCPOAuthCredentialStore } from './mcp-oauth-credential-store.js';
+import { MCPServer } from './mcp-server.js';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 describe('MCPServerManagerImpl OAuth cleanup', () => {

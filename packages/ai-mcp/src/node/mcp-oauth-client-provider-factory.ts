@@ -16,10 +16,10 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { KeyStoreService } from '@theia/core/lib/common/key-store';
-import { MCPOAuthConfig, MCPOAuthFrontendDelegate } from '../common/mcp-oauth';
-import { MCPOAuthCallbackService } from './mcp-oauth-callback-service';
-import { MCPOAuthClientProvider } from './mcp-oauth-client-provider';
-import { deriveCredentialScope } from './mcp-oauth-keystore';
+import { MCPOAuthConfig, MCPOAuthFrontendDelegate } from '../common/mcp-oauth.js';
+import { MCPOAuthCallbackService } from './mcp-oauth-callback-service.js';
+import { MCPOAuthClientProvider } from './mcp-oauth-client-provider.js';
+import { deriveCredentialScope } from './mcp-oauth-keystore.js';
 
 /**
  * Connection-scoped factory for {@link MCPOAuthClientProvider}. Wires each provider to the shared

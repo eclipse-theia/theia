@@ -16,13 +16,27 @@
 
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
+if (typeof CSS === 'undefined') {
+    Object.assign(globalThis, { CSS: { escape: (value: string) => value } });
+}
+window.matchMedia = () => ({
+    matches: false,
+    media: '',
+    // eslint-disable-next-line no-null/no-null
+    onchange: null,
+    addListener: () => undefined,
+    removeListener: () => undefined,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    dispatchEvent: () => false
+});
 
 import { expect } from 'chai';
 import { Disposable } from '@theia/core';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
-import { InstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiationService';
-import { ServiceCollection } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/serviceCollection';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation.js';
+import { InstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiationService.js';
+import { ServiceCollection } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/serviceCollection.js';
 
 disableJSDOM();
 
@@ -44,7 +58,20 @@ disableJSDOM();
  */
 describe('Monaco InstantiationService internals', () => {
 
-    before(() => disableJSDOM = enableJSDOM());
+    before(() => {
+        disableJSDOM = enableJSDOM();
+        window.matchMedia = () => ({
+            matches: false,
+            media: '',
+            // eslint-disable-next-line no-null/no-null
+            onchange: null,
+            addListener: () => undefined,
+            removeListener: () => undefined,
+            addEventListener: () => undefined,
+            removeEventListener: () => undefined,
+            dispatchEvent: () => false
+        });
+    });
     after(() => disableJSDOM());
 
     it('StandaloneServices.get(IInstantiationService) should be an instance of InstantiationService', () => {

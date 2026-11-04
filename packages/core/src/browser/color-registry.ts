@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { DisposableCollection, Disposable } from '../common/disposable';
-import { Emitter } from '../common/event';
-import { ColorDefinition, ColorCssVariable } from '../common/color';
+import { DisposableCollection, Disposable } from '../common/disposable.js';
+import { Emitter } from '../common/event.js';
+import { ColorDefinition, ColorCssVariable } from '../common/color.js';
 
 @injectable()
 export class ColorRegistry {
@@ -37,6 +37,19 @@ export class ColorRegistry {
         }
         const name = this.toCssVariableName(id);
         return { name, value };
+    }
+
+    /**
+     * All CSS variables to set for the given color: the primary one from {@link getCurrentCssVariable} and the
+     * `--vscode-` prefixed alias. VS Code extensions reference colors with the `--vscode-` prefix, e.g. in the
+     * inline styles of the HTML they render, and Monaco only defines those variables within its own containers.
+     */
+    getCurrentCssVariables(id: string): ColorCssVariable[] {
+        const variable = this.getCurrentCssVariable(id);
+        if (!variable) {
+            return [];
+        }
+        return [variable, { name: this.toCssVariableName(id, 'vscode'), value: variable.value }];
     }
 
     toCssVariableName(id: string, prefix = 'theia'): string {

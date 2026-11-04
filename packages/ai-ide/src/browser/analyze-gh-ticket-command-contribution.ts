@@ -19,9 +19,9 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { PromptService } from '@theia/ai-core/lib/common';
 import { nls } from '@theia/core';
 import { AGENT_DELEGATION_FUNCTION_ID } from '@theia/ai-core';
-import { GitHubChatAgentId } from './github-chat-agent';
-import { ArchitectAgentId } from './architect-agent';
-import { CoderAgentId } from './coder-agent';
+import { GitHubChatAgentId } from './github-chat-agent.js';
+import { ArchitectAgentId } from './architect-agent.js';
+import { CoderAgentId } from './coder-agent.js';
 
 @injectable()
 export class AnalyzesGhTicketCommandContribution implements FrontendApplicationContribution {

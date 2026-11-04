@@ -15,16 +15,25 @@
 // *****************************************************************************
 
 import { injectable, inject } from 'inversify';
-import { CompressionToggle, TreeCompressionService } from './tree-compression-service';
-import { CompositeTreeNode, TreeNode } from '../tree';
-import { TreeModelImpl } from '../tree-model';
-import { SelectableTreeNode, TreeSelection } from '../tree-selection';
-import { ExpandableTreeNode } from '../tree-expansion';
-import { TopDownTreeIterator, TreeIterator } from '../tree-iterator';
+import { CompressionToggle, TreeCompressionService } from './tree-compression-service.js';
+import { CompositeTreeNode, TreeNode } from '../tree.js';
+import { TreeModelImpl } from '../tree-model.js';
+import { SelectableTreeNode, TreeSelection } from '../tree-selection.js';
+import { ExpandableTreeNode } from '../tree-expansion.js';
+import { TopDownTreeIterator, TreeIterator } from '../tree-iterator.js';
 
 export class TopDownCompressedTreeIterator extends TopDownTreeIterator {
+
+    constructor(
+        root: TreeNode,
+        options?: Partial<TreeIterator.Options>,
+        protected readonly compressionService: TreeCompressionService = new TreeCompressionService()
+    ) {
+        super(root, options);
+    }
+
     protected override isCollapsed(candidate: TreeNode): boolean {
-        return ExpandableTreeNode.isCollapsed(candidate) && !TreeCompressionService.prototype.isCompressionParent(candidate);
+        return ExpandableTreeNode.isCollapsed(candidate) && !this.compressionService.isCompressionParent(candidate);
     }
 }
 
@@ -75,7 +84,7 @@ export class CompressedTreeModel extends TreeModelImpl {
     }
 
     protected override createForwardIteratorForNode(node: TreeNode): TreeIterator {
-        return new TopDownCompressedTreeIterator(node, { pruneCollapsed: true });
+        return new TopDownCompressedTreeIterator(node, { pruneCollapsed: true }, this.compressionService);
     }
 
     protected override selectIfAncestorOfSelected(node: Readonly<ExpandableTreeNode>): void {

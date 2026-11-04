@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Marker } from './marker';
+import { Marker } from './marker.js';
 import { Diagnostic } from '@theia/core/shared/vscode-languageserver-protocol';
 
 export const PROBLEM_KIND = 'problem';

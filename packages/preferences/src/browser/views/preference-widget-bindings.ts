@@ -16,27 +16,27 @@
 import { createTreeContainer, LabelProviderContribution, WidgetFactory } from '@theia/core/lib/browser';
 import { bindRootContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { Container, interfaces } from '@theia/core/shared/inversify';
-import { PreferenceTreeModel } from '../preference-tree-model';
-import { PreferenceTreeLabelProvider } from '../util/preference-tree-label-provider';
-import { Preference } from '../util/preference-types';
-import { PreferenceArrayInputRenderer, PreferenceArrayInputRendererContribution } from './components/preference-array-input';
-import { PreferenceBooleanInputRenderer, PreferenceBooleanInputRendererContribution } from './components/preference-boolean-input';
-import { PreferenceSingleFilePathInputRenderer, PreferenceSingleFilePathInputRendererContribution } from './components/preference-file-input';
-import { PreferenceJSONLinkRenderer, PreferenceJSONLinkRendererContribution } from './components/preference-json-input';
-import { PreferenceHeaderRenderer, PreferenceNodeRendererFactory } from './components/preference-node-renderer';
+import { PreferenceTreeModel } from '../preference-tree-model.js';
+import { PreferenceTreeLabelProvider } from '../util/preference-tree-label-provider.js';
+import { Preference } from '../util/preference-types.js';
+import { PreferenceArrayInputRenderer, PreferenceArrayInputRendererContribution } from './components/preference-array-input.js';
+import { PreferenceBooleanInputRenderer, PreferenceBooleanInputRendererContribution } from './components/preference-boolean-input.js';
+import { PreferenceSingleFilePathInputRenderer, PreferenceSingleFilePathInputRendererContribution } from './components/preference-file-input.js';
+import { PreferenceJSONLinkRenderer, PreferenceJSONLinkRendererContribution } from './components/preference-json-input.js';
+import { PreferenceHeaderRenderer, PreferenceNodeRendererFactory } from './components/preference-node-renderer.js';
 import {
     DefaultPreferenceNodeRendererCreatorRegistry, PreferenceHeaderRendererContribution, PreferenceNodeRendererContribution, PreferenceNodeRendererCreatorRegistry
-} from './components/preference-node-renderer-creator';
-import { PreferenceNumberInputRenderer, PreferenceNumberInputRendererContribution } from './components/preference-number-input';
-import { PreferenceSelectInputRenderer, PreferenceSelectInputRendererContribution } from './components/preference-select-input';
-import { PreferenceStringInputRenderer, PreferenceStringInputRendererContribution } from './components/preference-string-input';
-import { PreferenceMarkdownRenderer } from './components/preference-markdown-renderer';
-import { PreferencesEditorWidget } from './preference-editor-widget';
-import { PreferencesScopeTabBar } from './preference-scope-tabbar-widget';
-import { PreferencesSearchbarWidget } from './preference-searchbar-widget';
-import { PreferencesTreeWidget } from './preference-tree-widget';
-import { PreferencesWidget } from './preference-widget';
-import { PreferenceNullInputRenderer, PreferenceNullRendererContribution } from './components/preference-null-input';
+} from './components/preference-node-renderer-creator.js';
+import { PreferenceNumberInputRenderer, PreferenceNumberInputRendererContribution } from './components/preference-number-input.js';
+import { PreferenceSelectInputRenderer, PreferenceSelectInputRendererContribution } from './components/preference-select-input.js';
+import { PreferenceStringInputRenderer, PreferenceStringInputRendererContribution } from './components/preference-string-input.js';
+import { PreferenceMarkdownRenderer } from './components/preference-markdown-renderer.js';
+import { PreferencesEditorWidget } from './preference-editor-widget.js';
+import { PreferencesScopeTabBar } from './preference-scope-tabbar-widget.js';
+import { PreferencesSearchbarWidget } from './preference-searchbar-widget.js';
+import { PreferencesTreeWidget } from './preference-tree-widget.js';
+import { PreferencesWidget } from './preference-widget.js';
+import { PreferenceNullInputRenderer, PreferenceNullRendererContribution } from './components/preference-null-input.js';
 
 export function bindPreferencesWidgets(bind: interfaces.Bind): void {
     bind(PreferenceTreeLabelProvider).toSelf().inSingletonScope();

@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { OutlineViewService } from './outline-view-service';
-import { OutlineViewContribution } from './outline-view-contribution';
+import { OutlineViewService } from './outline-view-service.js';
+import { OutlineViewContribution } from './outline-view-contribution.js';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import {
     FrontendApplicationContribution,
@@ -27,12 +27,12 @@ import {
     BreadcrumbsContribution
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { OutlineViewWidgetFactory, OutlineViewWidget } from './outline-view-widget';
+import { OutlineViewWidgetFactory, OutlineViewWidget } from './outline-view-widget.js';
 import '../../src/browser/styles/index.css';
 import { bindRootContributionProvider } from '@theia/core/lib/common/contribution-provider';
-import { OutlineDecoratorService, OutlineTreeDecorator } from './outline-decorator-service';
-import { OutlineViewTreeModel } from './outline-view-tree-model';
-import { BreadcrumbPopupOutlineView, BreadcrumbPopupOutlineViewFactory, OutlineBreadcrumbsContribution } from './outline-breadcrumbs-contribution';
+import { OutlineDecoratorService, OutlineTreeDecorator } from './outline-decorator-service.js';
+import { OutlineViewTreeModel } from './outline-view-tree-model.js';
+import { BreadcrumbPopupOutlineView, BreadcrumbPopupOutlineViewFactory, OutlineBreadcrumbsContribution } from './outline-breadcrumbs-contribution.js';
 
 export default new ContainerModule(bind => {
     bind(OutlineViewWidgetFactory).toFactory(ctx =>

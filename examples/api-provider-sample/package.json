@@ -3,6 +3,7 @@
   "name": "@theia/api-provider-sample",
   "version": "1.76.0",
   "description": "Theia - Example code to demonstrate Theia API Provider Extensions",
+  "type": "module",
   "dependencies": {
     "@theia/core": "1.76.0",
     "@theia/plugin-ext": "1.76.0",
@@ -30,6 +31,16 @@
     "src"
   ],
   "types": "src/gotd.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/gotd.d.ts"
+    },
+    "./package.json": "./package.json",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "scripts": {
     "lint": "theiaext lint",
     "build": "theiaext build",

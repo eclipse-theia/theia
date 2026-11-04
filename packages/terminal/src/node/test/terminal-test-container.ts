@@ -18,7 +18,7 @@ import { bindLogger } from '@theia/core/lib/node/logger-backend-module';
 import { backendApplicationModule } from '@theia/core/lib/node/backend-application-module';
 import processBackendModule from '@theia/process/lib/node/process-backend-module';
 import { messagingBackendModule } from '@theia/core/lib/node/messaging/messaging-backend-module';
-import terminalBackendModule from '../terminal-backend-module';
+import terminalBackendModule from '../terminal-backend-module.js';
 import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
 import { ProcessUtils } from '@theia/core/lib/node/process-utils';
 

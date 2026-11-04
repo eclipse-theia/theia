@@ -18,7 +18,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { VariableRegistry, VariableResolverService } from '@theia/variable-resolver/lib/browser';
-import { AIVariableContribution, AIVariableResolver, AIVariableService, AIVariableResolutionRequest, AIVariableContext, ResolvedAIVariable } from '../common';
+import { AIVariableContribution, AIVariableResolver, AIVariableService, AIVariableResolutionRequest, AIVariableContext, ResolvedAIVariable } from '../common/index.js';
 
 /**
  * Mapping configuration for a Theia variable to one or more AI variables
@@ -72,19 +72,19 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
             {
                 name: 'currentRelativeFilePath',
                 description: nls.localize('theia/ai/core/variable-contribution/currentRelativeFilePath',
-                    'The workspace-relative path of the currently opened file (e.g., my-project/src/index.ts).')
+                    'The path of the currently opened file relative to its workspace root, without the root name (e.g., src/index.ts).')
             },
             {
                 name: '_f',
                 description: nls.localize('theia/ai/core/variable-contribution/dotRelativePath',
-                    'Short reference to the workspace-relative path of the currently opened file (\'currentRelativeFilePath\').')
+                    'Short reference to the path of the currently opened file relative to its workspace root, without the root name (\'currentRelativeFilePath\').')
             }
         ]],
         ['relativeFileDirname', [
             {
                 name: 'currentRelativeDirPath',
                 description: nls.localize('theia/ai/core/variable-contribution/currentRelativeDirPath',
-                    'The workspace-relative path of the directory containing the currently opened file (e.g., my-project/src).')
+                    'The path of the directory containing the currently opened file relative to its workspace root, without the root name (e.g., src).')
             }
         ]],
         ['lineNumber', [{}]],

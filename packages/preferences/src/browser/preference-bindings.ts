@@ -15,15 +15,15 @@
 // *****************************************************************************
 
 import { Container, interfaces } from '@theia/core/shared/inversify';
-import { UserPreferenceProvider, UserPreferenceProviderFactory } from '../common/user-preference-provider';
-import { WorkspacePreferenceProvider } from './workspace-preference-provider';
-import { WorkspaceFilePreferenceProvider, WorkspaceFilePreferenceProviderFactory, WorkspaceFilePreferenceProviderOptions } from './workspace-file-preference-provider';
-import { FoldersPreferencesProvider } from './folders-preferences-provider';
-import { FolderPreferenceProvider, FolderPreferenceProviderFactory, FolderPreferenceProviderFolder } from './folder-preference-provider';
-import { SectionPreferenceProviderUri, SectionPreferenceProviderSection } from '../common/section-preference-provider';
+import { UserPreferenceProvider, UserPreferenceProviderFactory } from '../common/user-preference-provider.js';
+import { WorkspacePreferenceProvider } from './workspace-preference-provider.js';
+import { WorkspaceFilePreferenceProvider, WorkspaceFilePreferenceProviderFactory, WorkspaceFilePreferenceProviderOptions } from './workspace-file-preference-provider.js';
+import { FoldersPreferencesProvider } from './folders-preferences-provider.js';
+import { FolderPreferenceProvider, FolderPreferenceProviderFactory, FolderPreferenceProviderFolder } from './folder-preference-provider.js';
+import { SectionPreferenceProviderUri, SectionPreferenceProviderSection } from '../common/section-preference-provider.js';
 import { bindFactory, PreferenceProvider, PreferenceScope } from '@theia/core';
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
-import { UserConfigsPreferenceProvider, UserStorageLocationProvider } from '../common/user-configs-preference-provider';
+import { UserConfigsPreferenceProvider, UserStorageLocationProvider } from '../common/user-configs-preference-provider.js';
 
 export function bindWorkspaceFilePreferenceProvider(bind: interfaces.Bind): void {
     bind(WorkspaceFilePreferenceProviderFactory).toFactory(ctx => (options: WorkspaceFilePreferenceProviderOptions) => {

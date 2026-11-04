@@ -39,9 +39,9 @@ import { TerminalWidget, TerminalWidgetOptions } from '@theia/terminal/lib/brows
 import { TerminalWidgetImpl, nextTerminalCreationToken } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
-import { TerminalManagerPreferences } from './terminal-manager-preferences';
-import { TerminalManagerTreeTypes } from './terminal-manager-types';
-import { TerminalManagerTreeWidget } from './terminal-manager-tree-widget';
+import { TerminalManagerPreferences } from './terminal-manager-preferences.js';
+import { TerminalManagerTreeTypes } from './terminal-manager-types.js';
+import { TerminalManagerTreeWidget } from './terminal-manager-tree-widget.js';
 import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 
 export namespace TerminalManagerWidgetState {

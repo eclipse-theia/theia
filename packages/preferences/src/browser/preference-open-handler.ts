@@ -17,7 +17,7 @@
 import { animationFrame, OpenHandler } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { PreferencesContribution } from './preferences-contribution';
+import { PreferencesContribution } from './preferences-contribution.js';
 
 @injectable()
 export class PreferenceOpenHandler implements OpenHandler {

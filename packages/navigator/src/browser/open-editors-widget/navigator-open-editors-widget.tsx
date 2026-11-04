@@ -34,15 +34,15 @@ import {
     TREE_NODE_CONTENT_CLASS,
     Widget,
 } from '@theia/core/lib/browser';
-import { OpenEditorNode, OpenEditorsModel } from './navigator-open-editors-tree-model';
+import { OpenEditorNode, OpenEditorsModel } from './navigator-open-editors-tree-model.js';
 import { createFileTreeContainer, FileTreeModel, FileTreeWidget } from '@theia/filesystem/lib/browser';
-import { OpenEditorsTreeDecoratorService } from './navigator-open-editors-decorator-service';
-import { OPEN_EDITORS_CONTEXT_MENU } from './navigator-open-editors-menus';
+import { OpenEditorsTreeDecoratorService } from './navigator-open-editors-decorator-service.js';
+import { OPEN_EDITORS_CONTEXT_MENU } from './navigator-open-editors-menus.js';
 import { CommandService } from '@theia/core/lib/common';
-import { OpenEditorsCommands } from './navigator-open-editors-commands';
+import { OpenEditorsCommands } from './navigator-open-editors-commands.js';
 import { nls } from '@theia/core/lib/common/nls';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { AbstractNavigatorTreeWidget } from '../abstract-navigator-tree-widget';
+import { AbstractNavigatorTreeWidget } from '../abstract-navigator-tree-widget.js';
 
 export const OPEN_EDITORS_PROPS: TreeProps = {
     ...defaultTreeProps,

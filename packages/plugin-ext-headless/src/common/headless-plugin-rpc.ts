@@ -20,7 +20,7 @@ import { KeysToKeysToAnyValue } from '@theia/plugin-ext/lib/common/types';
 import {
     MAIN_RPC_CONTEXT, PLUGIN_RPC_CONTEXT
 } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
-import { ExtPluginApi } from './plugin-ext-headless-api-contribution';
+import { ExtPluginApi } from './plugin-ext-headless-api-contribution.js';
 
 export const HEADLESSPLUGIN_RPC_CONTEXT = {
     MESSAGE_REGISTRY_MAIN: PLUGIN_RPC_CONTEXT.MESSAGE_REGISTRY_MAIN,

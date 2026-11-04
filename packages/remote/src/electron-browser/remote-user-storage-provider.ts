@@ -18,8 +18,8 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileSystemProvider } from '@theia/filesystem/lib/common/files';
 import { UserStorageContribution } from '@theia/userstorage/lib/browser/user-storage-contribution';
-import { RemoteStatusService } from '../electron-common/remote-status-service';
-import { LocalEnvVariablesServer, LocalRemoteFileSystemProvider } from './local-backend-services';
+import { RemoteStatusService } from '../electron-common/remote-status-service.js';
+import { LocalEnvVariablesServer, LocalRemoteFileSystemProvider } from './local-backend-services.js';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { URI } from '@theia/core';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';

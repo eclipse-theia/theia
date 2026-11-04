@@ -20,8 +20,8 @@ import URI from '@theia/core/lib/common/uri';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Position } from '@theia/editor/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { TerminalWidget } from './base/terminal-widget';
-import { TerminalLink, TerminalLinkProvider } from './terminal-link-provider';
+import { TerminalWidget } from './base/terminal-widget.js';
+import { TerminalLink, TerminalLinkProvider } from './terminal-link-provider.js';
 
 /**
  * Base for terminal link providers that resolve a matched string to a local file URI and open it in

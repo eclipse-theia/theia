@@ -16,7 +16,7 @@
 
 import * as chai from 'chai';
 
-import { normalize, join } from './path';
+import { normalize, join } from './path.js';
 
 const expect = chai.expect;
 

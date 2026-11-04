@@ -18,13 +18,13 @@ import { inject, injectable, postConstruct, interfaces, Container } from '@theia
 import {
     Message, ApplicationShell, Widget, BaseWidget, PanelLayout, StatefulWidget, ViewContainer, codicon, ViewContainerTitleOptions, WidgetManager
 } from '@theia/core/lib/browser';
-import { DebugThreadsWidget } from './debug-threads-widget';
-import { DebugStackFramesWidget } from './debug-stack-frames-widget';
-import { DebugBreakpointsWidget } from './debug-breakpoints-widget';
-import { DebugVariablesWidget } from './debug-variables-widget';
-import { DebugToolBar } from './debug-toolbar-widget';
-import { DebugViewModel } from './debug-view-model';
-import { DebugWatchWidget } from './debug-watch-widget';
+import { DebugThreadsWidget } from './debug-threads-widget.js';
+import { DebugStackFramesWidget } from './debug-stack-frames-widget.js';
+import { DebugBreakpointsWidget } from './debug-breakpoints-widget.js';
+import { DebugVariablesWidget } from './debug-variables-widget.js';
+import { DebugToolBar } from './debug-toolbar-widget.js';
+import { DebugViewModel } from './debug-view-model.js';
+import { DebugWatchWidget } from './debug-watch-widget.js';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 
 export const DEBUG_VIEW_CONTAINER_TITLE_OPTIONS: ViewContainerTitleOptions = {

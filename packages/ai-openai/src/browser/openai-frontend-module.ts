@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { OpenAiPreferencesSchema } from '../common/openai-preferences';
+import { OpenAiPreferencesSchema } from '../common/openai-preferences.js';
 import { FrontendApplicationContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
-import { OpenAiFrontendApplicationContribution } from './openai-frontend-application-contribution';
-import { OPENAI_LANGUAGE_MODELS_MANAGER_PATH, OpenAiLanguageModelsManager } from '../common';
+import { OpenAiFrontendApplicationContribution } from './openai-frontend-application-contribution.js';
+import { OPENAI_LANGUAGE_MODELS_MANAGER_PATH, OpenAiLanguageModelsManager } from '../common/index.js';
 import { PreferenceContribution } from '@theia/core';
 
 export default new ContainerModule(bind => {

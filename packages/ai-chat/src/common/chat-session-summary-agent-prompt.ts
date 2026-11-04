@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/tslint/config  */
+/* eslint-disable @theia/file-header */
 // *****************************************************************************
 // Copyright (C) 2025 EclipseSource GmbH and others.
 //
@@ -8,7 +8,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { CHANGE_SET_SUMMARY_VARIABLE_ID } from './context-variables';
+import { CHANGE_SET_SUMMARY_VARIABLE_ID } from './context-variables.js';
 
 export const CHAT_SESSION_SUMMARY_PROMPT = {
     id: 'chat-session-summary-system',

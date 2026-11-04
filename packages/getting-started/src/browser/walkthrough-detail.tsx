@@ -24,9 +24,9 @@ import { nls } from '@theia/core/lib/common/nls';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { ThemeType } from '@theia/core/lib/common/theme';
 import * as React from '@theia/core/shared/react';
-import { Walkthrough, WalkthroughStep } from '../common/walkthrough-types';
+import { Walkthrough, WalkthroughStep } from '../common/walkthrough-types.js';
 import { PluginSharedStyle } from '@theia/plugin-ext/lib/main/browser/plugin-shared-style';
-import { WalkthroughIcon } from './walkthrough-icon';
+import { WalkthroughIcon } from './walkthrough-icon.js';
 
 export interface WalkthroughDetailProps {
     walkthrough: Walkthrough;

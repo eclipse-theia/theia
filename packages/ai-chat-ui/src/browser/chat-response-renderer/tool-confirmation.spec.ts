@@ -33,7 +33,7 @@ import {
     ToolConfirmationActionsProps,
     ToolConfirmationProps,
     withToolCallConfirmation
-} from './tool-confirmation';
+} from './tool-confirmation.js';
 
 const mockContextMenuRenderer = {} as ContextMenuRenderer;
 const mockOpenerService = {} as OpenerService;

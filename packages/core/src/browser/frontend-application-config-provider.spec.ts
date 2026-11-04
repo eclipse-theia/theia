@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '../browser/test/jsdom';
+import { enableJSDOM } from '../browser/test/jsdom.js';
 let disableJSDOM = enableJSDOM();
 
-import { FrontendApplicationConfig } from '@theia/application-package/lib/';
+import { FrontendApplicationConfig } from '@theia/application-package';
 import { expect } from 'chai';
-import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
+import { FrontendApplicationConfigProvider } from './frontend-application-config-provider.js';
 
 disableJSDOM();
 

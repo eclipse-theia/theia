@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import * as theia from '@theia/plugin';
-import { ModelChangedEvent, DocumentsMain } from '../common/plugin-api-rpc';
-import { Range as ARange } from '../common/plugin-api-rpc-model';
-import { EndOfLine, Position, Range, URI } from './types-impl';
-import { ok } from '../common/assert';
-import { PrefixSumComputer } from './prefix-sum-computer';
-import { getWordAtText, ensureValidWordDefinition } from './word-helper';
+import { ModelChangedEvent, DocumentsMain } from '../common/plugin-api-rpc.js';
+import { Range as ARange } from '../common/plugin-api-rpc-model.js';
+import { EndOfLine, Position, Range, URI } from './types-impl.js';
+import { ok } from '../common/assert.js';
+import { PrefixSumComputer } from './prefix-sum-computer.js';
+import { getWordAtText, ensureValidWordDefinition } from './word-helper.js';
 
 const _modeId2WordDefinition = new Map<string, RegExp | null>();
 export function setWordDefinitionFor(modeId: string, wordDefinition: RegExp | null): void {
@@ -59,7 +59,6 @@ export class DocumentDataExt {
 
         // Update my lines
         const changes = e.changes;
-        // tslint:disable-next-line:one-variable-per-declaration
         for (let i = 0, len = changes.length; i < len; i++) {
             const change = changes[i];
             this.acceptDeleteRange(change.range);

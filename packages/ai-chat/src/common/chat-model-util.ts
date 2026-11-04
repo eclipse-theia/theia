@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ChatProgressMessage, ChatRequestModel, ChatResponse, ChatResponseContent, ChatResponseModel, QuestionResponseContent } from './chat-model';
+import { ChatProgressMessage, ChatRequestModel, ChatResponse, ChatResponseContent, ChatResponseModel, QuestionResponseContent } from './chat-model.js';
 
 export function lastResponseContent(request: ChatRequestModel): ChatResponseContent | undefined {
     return lastContentOfResponse(request.response?.response);

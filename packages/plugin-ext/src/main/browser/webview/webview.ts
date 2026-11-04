@@ -20,7 +20,8 @@
 // copied and modified from https://github.com/microsoft/vscode/blob/ba40bd16433d5a817bfae15f3b4350e18f144af4/src/vs/workbench/contrib/webview/browser/baseWebviewElement.ts
 // copied and modified from https://github.com/microsoft/vscode/blob/ba40bd16433d5a817bfae15f3b4350e18f144af4/src/vs/workbench/contrib/webview/browser/webviewElement.ts#
 
-import * as mime from 'mime';
+// A CommonJS module whose exports cannot be detected statically, so it is imported as a whole.
+import mime from 'mime';
 import { JSONExt } from '@theia/core/shared/@lumino/coreutils';
 import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import { WebviewPanelOptions, WebviewPortMapping } from '@theia/plugin';
@@ -28,21 +29,21 @@ import { BaseWidget, Message, codicon } from '@theia/core/lib/browser/widgets/wi
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 import { StatefulWidget } from '@theia/core/lib/browser/shell/shell-layout-restorer';
-import { WebviewPanelViewState, ThemeIcon as ThemeIconDTO } from '../../../common/plugin-api-rpc';
-import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
-import { IconUrl } from '../../../common/plugin-protocol';
+import { WebviewPanelViewState, ThemeIcon as ThemeIconDTO } from '../../../common/plugin-api-rpc.js';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables.js';
+import { IconUrl } from '../../../common/plugin-protocol.js';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { WebviewEnvironment } from './webview-environment';
+import { WebviewEnvironment } from './webview-environment.js';
 import URI from '@theia/core/lib/common/uri';
 import { Emitter } from '@theia/core/lib/common/event';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
-import { Schemes } from '../../../common/uri-components';
-import { PluginSharedStyle } from '../plugin-shared-style';
-import { WebviewThemeDataProvider } from './webview-theme-data-provider';
+import { Schemes } from '../../../common/uri-components.js';
+import { PluginSharedStyle } from '../plugin-shared-style.js';
+import { WebviewThemeDataProvider } from './webview-theme-data-provider.js';
 import { ExternalUriService } from '@theia/core/lib/browser/external-uri-service';
 import { OutputChannelManager } from '@theia/output/lib/browser/output-channel';
-import { WebviewResourceCache } from './webview-resource-cache';
+import { WebviewResourceCache } from './webview-resource-cache.js';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { isFirefox } from '@theia/core/lib/browser/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -52,8 +53,9 @@ import { ExtractableWidget } from '@theia/core/lib/browser/widgets/extractable-w
 import { MenuPath, ILogger } from '@theia/core';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { PluginViewWidget } from '../view/plugin-view-widget';
-import { WebviewPreferences } from '../../common/webview-preferences';
+import { PluginViewWidget } from '../view/plugin-view-widget.js';
+import { WebviewPreferences } from '../../common/webview-preferences.js';
+import { NormalizedKeyboardInput } from '@theia/core/lib/browser/keyboard/keys';
 
 // Style from core
 const TRANSPARENT_OVERLAY_STYLE = 'theia-transparent-overlay';
@@ -284,6 +286,8 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
             element.setAttribute('allow', 'clipboard-read; clipboard-write; usb; serial; hid;');
         }
         element.setAttribute('src', `${this.externalEndpoint}/index.html?id=${this.identifier.id}`);
+        // identifies the iframe to which messages are forwarded when the webview is in a secondary window
+        element.dataset.webviewId = this.identifier.id;
         element.style.border = 'none';
         element.style.width = '100%';
         element.style.height = '100%';
@@ -325,11 +329,14 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
         this.toHide.push(this.on(WebviewMessageChannels.loadLocalhost, (entry: any) =>
             this.loadLocalhost(entry.origin)
         ));
-        this.toHide.push(this.on(WebviewMessageChannels.didKeydown, (data: KeyboardEvent) => {
+        this.toHide.push(this.on(WebviewMessageChannels.didKeydown, (data: NormalizedKeyboardInput) => {
             // Electron: workaround for https://github.com/electron/electron/issues/14258
             // We have to detect keyboard events in the <webview> and dispatch them to our
             // keybinding service because these events do not bubble to the parent window anymore.
-            this.keybindings.dispatchKeyDown(data, this.element);
+            this.keybindings.dispatchNormalizedKeyDown(data, this.element);
+            // DOM capture listeners must still observe the emulated event. Mark it as already handled so the registry's
+            // capture listener does not execute the keybinding a second time.
+            this.keybindings.dispatchKeyDown(data, this.element, true);
         }));
         this.toHide.push(this.on(WebviewMessageChannels.didMouseDown, (data: MouseEvent) => {
             // We have to dispatch mousedown events so menus will be closed when clicking inside webviews.
@@ -415,7 +422,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
     }
 
     setContentOptions(contentOptions: WebviewContentOptions): void {
-        if (JSONExt.deepEqual(<any>this.contentOptions, <any>contentOptions)) {
+        if (JSONExt.deepEqual(this.contentOptions as any, contentOptions as any)) {
             return;
         }
         this._contentOptions = contentOptions;
@@ -639,7 +646,8 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
         if (this.element) {
             this.trace('out', channel, data);
             if (this.secondaryWindow) {
-                this.secondaryWindow.postMessage({ channel, args: data }, '*');
+                // the secondary window forwards the message to the iframe, see `WebviewSecondaryWindowSupport`
+                this.secondaryWindow.postMessage({ channel, args: data, webviewId: this.identifier.id }, '*');
             } else {
                 this.element.contentWindow!.postMessage({ channel, args: data }, '*');
             }

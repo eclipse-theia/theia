@@ -21,6 +21,7 @@ This guide details the steps for maintainers to release Eclipse Theia, including
    - [3.5 Publish GitHub Pages](#35-publish-github-pages)
    - [3.6 Update Major Dependencies](#36-update-major-dependencies)
    - [3.7 NPM Upgrade](#37-npm-upgrade)
+   - [3.8 Electron Update](#38-electron-update)
 4. [Troubleshooting](#4-troubleshooting)
    - [Failures During Publishing](#41-failures-during-publishing)
 
@@ -562,8 +563,8 @@ After each release, check the following major dependencies for version updates:
 
 - [Node.js](https://nodejs.org/en/download/releases/) - Check for LTS versions and security updates
 - [React](https://react.dev/versions) - Review latest stable releases
-- [Electron](https://www.electronjs.org/docs/latest/tutorial/electron-timelines)
-  - Evaluate supported versions and review [Breaking changes](https://www.electronjs.org/docs/latest/breaking-changes) for anything that may affect usage.
+
+Electron is not part of this check because it is updated after every release, see [3.8 Electron Update](#38-electron-update).
 
 For each dependency requiring an update, [create a ticket](https://github.com/eclipse-theia/theia/issues/new?template=feature_request.md) using the following template:
 
@@ -609,6 +610,16 @@ To perform the upgrade:
 - Wait for the "IP Check" to complete ([example](https://gitlab.eclipse.org/eclipsefdn/emo-team/iplab/-/issues/9377)).
 
 Performing this after the release helps us to find issues with the new dependencies and gives time to perform a license check on the dependencies.
+
+### 3.8 Electron Update
+<!-- release: minor -->
+
+Together with the NPM upgrade, update Electron to its latest [stable release](https://www.electronjs.org/releases/stable) after every release:
+
+- Review the [breaking changes](https://www.electronjs.org/docs/latest/breaking-changes) and adapt the code. For a new major version, add a breaking changes entry to the changelog.
+- Update the exact `electron` version in `packages/electron` and `examples/electron`, and the Node.js version in `.github/workflows/native-dependencies.yml` to match it.
+- Open a separate PR ([example](https://github.com/eclipse-theia/theia/pull/18150)), test on Linux, macOS and Windows, and run the license check.
+- [Open a ticket for the Theia IDE](https://github.com/eclipse-theia/theia-ide/issues/new?template=feature_request.md) with the `toDoWithRelease` and `dependencies` labels.
 
 ## 4. Troubleshooting
 <!-- release: both -->

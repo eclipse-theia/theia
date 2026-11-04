@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { BrowserOnlyTerminalFrontendContribution } from './browser-only-terminal-frontend-contribution';
-import { TerminalFrontendContribution } from '../browser/terminal-frontend-contribution';
+import { BrowserOnlyTerminalFrontendContribution } from './browser-only-terminal-frontend-contribution.js';
+import { TerminalFrontendContribution } from '../browser/terminal-frontend-contribution.js';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     rebind(TerminalFrontendContribution).to(BrowserOnlyTerminalFrontendContribution).inSingletonScope();

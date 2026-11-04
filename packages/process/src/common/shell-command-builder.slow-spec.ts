@@ -21,8 +21,8 @@
 import { spawn, execSync, SpawnOptions, ChildProcess, spawnSync } from 'child_process';
 import { Readable } from 'stream';
 import { join } from 'path';
-import { ShellCommandBuilder, CommandLineOptions, ProcessInfo } from './shell-command-builder';
-import * as chalk from 'chalk'; // tslint:disable-line:no-implicit-dependencies
+import { ShellCommandBuilder, CommandLineOptions, ProcessInfo } from './shell-command-builder.js';
+import chalk from 'chalk';
 
 export interface TestProcessInfo extends ProcessInfo {
     shell: ChildProcess
@@ -52,7 +52,7 @@ function debug(...parts: any[]): void {
     }
 }
 
-const testResources = join(__dirname, '../../src/common/tests');
+const testResources = join(import.meta.dirname, '../../src/common/tests');
 const spawnOptions: SpawnOptions = {
     // We do our own quoting, don't rely on the one done by NodeJS:
     windowsVerbatimArguments: true,

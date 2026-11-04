@@ -34,19 +34,19 @@ import {
     ScmHistoryItemChangeDto,
     ScmHistoryOptionsDto,
     ScmHistoryItemRefsChangeEventDto
-} from '../common';
+} from '../common/index.js';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
-import { CommandRegistryImpl } from '../plugin/command-registry';
-import { Splice } from '../common/arrays';
-import { UriComponents } from '../common/uri-components';
-import { Command } from '../common/plugin-api-rpc-model';
-import { RPCProtocol } from '../common/rpc-protocol';
-import { URI, ThemeIcon } from './types-impl';
-import { ScmCommandArg, ScmHistoryItemCommandArg } from '../common/plugin-api-rpc';
+import { CommandRegistryImpl } from '../plugin/command-registry.js';
+import { Splice } from '../common/arrays.js';
+import { UriComponents } from '../common/uri-components.js';
+import { Command } from '../common/plugin-api-rpc-model.js';
+import { RPCProtocol } from '../common/rpc-protocol.js';
+import { URI, ThemeIcon } from './types-impl.js';
+import { ScmCommandArg, ScmHistoryItemCommandArg } from '../common/plugin-api-rpc.js';
 import { sep } from '@theia/core/lib/common/paths';
-import { PluginIconPath } from './plugin-icon-path';
-import { createAPIObject } from './plugin-context';
+import { PluginIconPath } from './plugin-icon-path.js';
+import { createAPIObject } from './plugin-context.js';
 
 type ProviderHandle = number;
 type GroupHandle = number;
@@ -68,6 +68,10 @@ function getIconResource(decorations?: theia.SourceControlResourceThemableDecora
 }
 
 function comparePaths(one: string, other: string, caseSensitive = false): number {
+    if (one === other) {
+        return 0;
+    }
+
     const oneParts = one.split(sep);
     const otherParts = other.split(sep);
 
@@ -220,6 +224,17 @@ function compareCommands(a: theia.Command, b: theia.Command): number {
 
 function compareResourceStates(a: theia.SourceControlResourceState, b: theia.SourceControlResourceState): number {
     let result = comparePaths(a.resourceUri.fsPath, b.resourceUri.fsPath, true);
+
+    if (result !== 0) {
+        return result;
+    }
+
+    result = (a.multiDiffEditorOriginalUri?.toString() ?? '').localeCompare(b.multiDiffEditorOriginalUri?.toString() ?? '');
+    if (result !== 0) {
+        return result;
+    }
+
+    result = (a.multiFileDiffEditorModifiedUri?.toString() ?? '').localeCompare(b.multiFileDiffEditorModifiedUri?.toString() ?? '');
 
     if (result !== 0) {
         return result;
@@ -494,7 +509,9 @@ class ScmResourceGroupImpl implements theia.SourceControlResourceGroup {
                 const rawResource = {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     handle, sourceUri, letter: (r as any).letter, colorId: (r as any).color?.id, icons,
-                    tooltip, strikeThrough, faded, contextValue, command
+                    tooltip, strikeThrough, faded, contextValue, command,
+                    multiDiffEditorOriginalUri: r.multiDiffEditorOriginalUri,
+                    multiDiffEditorModifiedUri: r.multiFileDiffEditorModifiedUri
                 } as ScmRawResource;
 
                 return { rawResource, handle };

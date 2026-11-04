@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { UserInteractionArgs, buildDiffLabel, parseUserInteractionArgs, parseUserInteractionInput } from './user-interaction-tool';
+import { UserInteractionArgs, buildDiffLabel, parseUserInteractionArgs, parseUserInteractionInput } from './user-interaction-tool.js';
 
 function expectRejected(input: string | undefined): string {
     const result = parseUserInteractionArgs(input);

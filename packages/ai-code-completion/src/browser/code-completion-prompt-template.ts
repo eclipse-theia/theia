@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/tslint/config */
+/* eslint-disable @theia/file-header */
 // *****************************************************************************
 // Copyright (C) 2025 EclipseSource GmbH and others.
 //
@@ -10,7 +10,7 @@
 // *****************************************************************************
 
 import { PromptVariantSet } from '@theia/ai-core/lib/common';
-import { FILE, LANGUAGE, PREFIX, SUFFIX } from './code-completion-variables';
+import { FILE, LANGUAGE, PREFIX, SUFFIX } from './code-completion-variables.js';
 
 export const codeCompletionPrompts: PromptVariantSet[] = [{
     id: 'code-completion-system',

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Event } from '@theia/core';
-import { Skill } from '../common/skill';
+import { Skill } from '../common/skill.js';
 
 export const SkillRegistryUiBridge = Symbol('SkillRegistryUiBridge');
 /**

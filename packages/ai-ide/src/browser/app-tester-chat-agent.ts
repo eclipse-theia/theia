@@ -24,7 +24,7 @@ import { ILogger, nls } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { PreferenceScope, PreferenceService } from '@theia/core/lib/common';
-import { appTesterPlaywrightTemplate, appTesterDefaultTemplate, appTesterNextTemplate, REQUIRED_MCP_SERVERS, REQUIRED_MCP_SERVERS_NEXT } from './app-tester-prompt-template';
+import { appTesterPlaywrightTemplate, appTesterDefaultTemplate, appTesterNextTemplate, REQUIRED_MCP_SERVERS, REQUIRED_MCP_SERVERS_NEXT } from './app-tester-prompt-template.js';
 
 export const AppTesterChatAgentId = 'AppTester';
 @injectable()

@@ -17,9 +17,9 @@
 import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ExternalApiContribution } from '@theia/external-api/lib/node/external-api-contribution';
-import { EXTERNAL_CHAT_SESSION_PROVIDER_PATH, ExternalChatSessionBackendService, ExternalChatSessionProvider } from '../common/external-chat-session-provider';
-import { AIExternalApiEndpoint } from './ai-external-api-endpoint';
-import { ExternalChatSessionRegistry } from './external-chat-session-registry';
+import { EXTERNAL_CHAT_SESSION_PROVIDER_PATH, ExternalChatSessionBackendService, ExternalChatSessionProvider } from '../common/external-chat-session-provider.js';
+import { AIExternalApiEndpoint } from './ai-external-api-endpoint.js';
+import { ExternalChatSessionRegistry } from './external-chat-session-registry.js';
 
 export default new ContainerModule(bind => {
     bind(ExternalChatSessionRegistry).toSelf().inSingletonScope();

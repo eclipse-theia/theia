@@ -17,8 +17,8 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Widget, DockLayout } from '@theia/core/lib/browser';
 import { SplitEditorContribution } from '@theia/editor/lib/browser/split-editor-contribution';
-import { NotebookEditorWidget } from './notebook-editor-widget';
-import { NotebookOpenHandler } from './notebook-open-handler';
+import { NotebookEditorWidget } from './notebook-editor-widget.js';
+import { NotebookOpenHandler } from './notebook-open-handler.js';
 
 /**
  * Implementation of SplitEditorContribution for notebook editors (NotebookEditorWidget).

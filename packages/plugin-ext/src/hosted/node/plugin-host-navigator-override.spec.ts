@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { suppressNodeNavigator } from './plugin-host-navigator-override';
+import { suppressNodeNavigator } from './plugin-host-navigator-override.js';
 
 describe('suppressNodeNavigator', () => {
 
