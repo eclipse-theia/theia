@@ -165,7 +165,7 @@ describe('ChatSessionStoreImpl', () => {
         chatSessionStore = container.get(ChatSessionStoreImpl);
 
         // Set up default storage preferences for all tests
-        mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF, { fallback: 'workspace' }).returns(DEFAULT_STORAGE_SCOPE);
+        mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF, 'workspace').returns(DEFAULT_STORAGE_SCOPE);
     });
 
     afterEach(() => {
@@ -575,7 +575,7 @@ describe('ChatSessionStoreImpl', () => {
 
         describe('when scope is global', () => {
             beforeEach(() => {
-                mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF, { fallback: 'workspace' }).returns('global');
+                mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF, 'workspace').returns('global');
             });
 
             it('should use global storage path', async () => {
@@ -610,7 +610,7 @@ describe('ChatSessionStoreImpl', () => {
             expect(firstResult.toString()).to.equal(WORKSPACE_METADATA_STORAGE);
 
             // Change scope to global
-            mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF, { fallback: 'workspace' }).returns('global');
+            mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF, 'workspace').returns('global');
 
             // Trigger preference change
             expect(preferenceChangeCallback).to.not.be.undefined;
@@ -634,7 +634,7 @@ describe('ChatSessionStoreImpl', () => {
 
             // Workspace path changes are no longer applicable as we use WorkspaceMetadataStore
             // Trigger preference change event (scope remains 'workspace')
-            mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF, { fallback: 'workspace' }).returns('workspace');
+            mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF, 'workspace').returns('workspace');
 
             // Trigger preference change
             expect(preferenceChangeCallback).to.not.be.undefined;
@@ -647,7 +647,7 @@ describe('ChatSessionStoreImpl', () => {
         });
 
         it('should maintain same global path since paths are no longer customizable', async () => {
-            mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF, { fallback: 'workspace' }).returns('global');
+            mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF, 'workspace').returns('global');
 
             // First call to establish cache
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -694,7 +694,7 @@ describe('ChatSessionStoreImpl', () => {
             await (chatSessionStore as any).loadIndex();
 
             // Change scope to trigger invalidation
-            mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF, { fallback: 'workspace' }).returns('global');
+            mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF, 'workspace').returns('global');
             preferenceChangeCallback!({ preferenceName: SESSION_STORAGE_PREF });
 
             // Load index again - should read from file again

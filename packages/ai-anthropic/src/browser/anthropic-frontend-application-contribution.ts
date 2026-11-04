@@ -133,7 +133,7 @@ export class AnthropicFrontendApplicationContribution extends DiscoveringProvide
     protected createModelDescription(model: DiscoveredModel): AnthropicModelDescription {
         const id = `${ANTHROPIC_PROVIDER_ID}/${model.id}`;
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
-        const globalCompaction = this.preferenceService.get(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true);
+        const globalCompaction = this.preferenceService.get<boolean>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true);
         const compactionOverride = this.preferenceService.get<ServerSideCompactionSetting>(SERVER_SIDE_COMPACTION_PREF, 'default');
         const serverSideCompactionEnabledByDefault = resolveCompactionDefault(globalCompaction, compactionOverride);
         const globalThreshold = this.preferenceService.get<number>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD, undefined);
@@ -155,7 +155,7 @@ export class AnthropicFrontendApplicationContribution extends DiscoveringProvide
 
     protected createCustomModelDescriptionsFromPreferences(preferences: Partial<AnthropicModelDescription>[]): AnthropicModelDescription[] {
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
-        const globalCompaction = this.preferenceService.get(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true);
+        const globalCompaction = this.preferenceService.get<boolean>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true);
         const compactionOverride = this.preferenceService.get<ServerSideCompactionSetting>(SERVER_SIDE_COMPACTION_PREF, 'default');
         const serverSideCompactionEnabledByDefault = resolveCompactionDefault(globalCompaction, compactionOverride);
         const globalThreshold = this.preferenceService.get<number>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD);
