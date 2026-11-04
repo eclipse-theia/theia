@@ -19,7 +19,7 @@ import { AbstractViewContribution, bindViewContribution } from '@theia/core/lib/
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { Command, CommandRegistry } from '@theia/core/lib/common';
 import { codicon, Widget, WidgetFactory } from '@theia/core/lib/browser';
-import { SampleExtractableView } from './sample-extractable-view';
+import { SampleExtractableView } from './sample-extractable-view.js';
 
 export const SampleToggleColorsCommand: Command = {
     id: 'sample.extractable.toggleColors',

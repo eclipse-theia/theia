@@ -24,11 +24,11 @@ import { inject, injectable, interfaces, postConstruct } from '@theia/core/share
 import * as React from '@theia/core/shared/react';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import PerfectScrollbar from 'perfect-scrollbar';
-import { IconSetProvider } from './icons/icon-set-provider';
-import { ReactInteraction, ReactKeyboardEvent } from './toolbar-constants';
-import { IconSet } from './toolbar-interfaces';
-import debounce = require('@theia/core/shared/lodash.debounce');
+import { PerfectScrollbar } from '@theia/core/lib/browser/widgets/perfect-scrollbar';
+import { IconSetProvider } from './icons/icon-set-provider.js';
+import { ReactInteraction, ReactKeyboardEvent } from './toolbar-constants.js';
+import { IconSet } from './toolbar-interfaces.js';
+import debounce from '@theia/core/shared/lodash.debounce';
 
 export interface ToolbarIconDialogFactory {
     (command: Command): ToolbarIconSelectorDialog;

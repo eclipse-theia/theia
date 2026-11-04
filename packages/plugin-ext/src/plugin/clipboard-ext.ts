@@ -16,8 +16,8 @@
 
 import * as theia from '@theia/plugin';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { RPCProtocol } from '../common/rpc-protocol';
-import { PLUGIN_RPC_CONTEXT, ClipboardMain } from '../common';
+import { RPCProtocol } from '../common/rpc-protocol.js';
+import { PLUGIN_RPC_CONTEXT, ClipboardMain } from '../common/index.js';
 
 @injectable()
 export class ClipboardExt implements theia.Clipboard {

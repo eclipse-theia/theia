@@ -22,10 +22,10 @@
 import { ArrayUtils } from '@theia/core';
 import { uinteger, Position, Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { TextEditorDocument } from '@theia/editor/lib/browser/editor';
-import { DetailedLineRangeMapping, MappingAlignment } from './range-mapping';
-import { LineRange } from './line-range';
-import { LineRangeEdit, RangeEdit } from './range-editing';
-import { PositionUtils, RangeUtils } from './range-utils';
+import { DetailedLineRangeMapping, MappingAlignment } from './range-mapping.js';
+import { LineRange } from './line-range.js';
+import { LineRangeEdit, RangeEdit } from './range-editing.js';
+import { PositionUtils, RangeUtils } from './range-utils.js';
 
 /**
  * Describes modifications in side 1 and side 2 for a specific range in base.

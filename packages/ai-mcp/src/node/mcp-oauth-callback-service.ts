@@ -17,7 +17,7 @@
 import { nls } from '@theia/core/lib/common/nls';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { MCPOAuthCallback } from '../common/mcp-oauth';
+import { MCPOAuthCallback } from '../common/mcp-oauth.js';
 import { randomUUID } from 'crypto';
 import { ILogger } from '@theia/core';
 

@@ -18,8 +18,8 @@ import 'reflect-metadata';
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { ChatAgent, ChatAgentService, ChatAgentServiceFactory } from '../common';
-import { ListAgentsTool } from './list-agents-tool';
+import { ChatAgent, ChatAgentService, ChatAgentServiceFactory } from '../common/index.js';
+import { ListAgentsTool } from './list-agents-tool.js';
 
 describe('ListAgentsTool', () => {
     let agents: Partial<ChatAgent>[];

@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as PDFObject from 'pdfobject';
+// A CommonJS module whose exports cannot be detected statically, so it is imported as a whole.
+import PDFObject from 'pdfobject';
 import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@lumino/messaging';
 import URI from '@theia/core/lib/common/uri';
@@ -25,11 +26,11 @@ import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { parseCssTime, Key, KeyCode } from '@theia/core/lib/browser';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { BaseWidget, addEventListener, codiconArray } from '@theia/core/lib/browser/widgets/widget';
-import { LocationMapperService } from './location-mapper-service';
+import { LocationMapperService } from './location-mapper-service.js';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 
-import debounce = require('@theia/core/shared/lodash.debounce');
-import { MiniBrowserContentStyle } from './mini-browser-content-style';
+import debounce from '@theia/core/shared/lodash.debounce';
+import { MiniBrowserContentStyle } from './mini-browser-content-style.js';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/files';
 

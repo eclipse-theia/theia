@@ -17,19 +17,19 @@
 import { Command, CommandContribution, CommandHandler, CommandRegistry, MenuContribution, MenuModelRegistry, nls, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ApplicationShell, codicon, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
-import { NotebookModel } from '../view-model/notebook-model';
-import { NotebookService } from '../service/notebook-service';
-import { CellEditType, CellKind, NotebookCommand } from '../../common';
-import { NotebookKernelQuickPickService } from '../service/notebook-kernel-quick-pick-service';
-import { NotebookExecutionService } from '../service/notebook-execution-service';
-import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-service';
+import { NotebookModel } from '../view-model/notebook-model.js';
+import { NotebookService } from '../service/notebook-service.js';
+import { CellEditType, CellKind, NotebookCommand } from '../../common/index.js';
+import { NotebookKernelQuickPickService } from '../service/notebook-kernel-quick-pick-service.js';
+import { NotebookExecutionService } from '../service/notebook-execution-service.js';
+import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-service.js';
 import {
     NOTEBOOK_CELL_CURSOR_FIRST_LINE, NOTEBOOK_CELL_CURSOR_LAST_LINE,
     NOTEBOOK_CELL_FOCUSED, NOTEBOOK_EDITOR_FOCUSED, NOTEBOOK_HAS_OUTPUTS, NOTEBOOK_OUTPUT_FOCUSED
-} from './notebook-context-keys';
-import { NotebookClipboardService } from '../service/notebook-clipboard-service';
+} from './notebook-context-keys.js';
+import { NotebookClipboardService } from '../service/notebook-clipboard-service.js';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { NotebookEditorWidget } from '../notebook-editor-widget';
+import { NotebookEditorWidget } from '../notebook-editor-widget.js';
 
 export namespace NotebookCommands {
     export const ADD_NEW_CELL_COMMAND = Command.toDefaultLocalizedCommand({

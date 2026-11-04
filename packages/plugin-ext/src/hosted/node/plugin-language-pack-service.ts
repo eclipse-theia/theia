@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { LanguagePackBundle, LanguagePackService } from '../../common/language-pack-service';
+import { LanguagePackBundle, LanguagePackService } from '../../common/language-pack-service.js';
 
 @injectable()
 export class PluginLanguagePackService implements LanguagePackService {

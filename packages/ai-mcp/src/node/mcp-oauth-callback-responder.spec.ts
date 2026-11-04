@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { MCPOAuthCallbackService } from './mcp-oauth-callback-service';
-import { MCPOAuthCallbackResponder } from './mcp-oauth-callback-responder';
+import { MCPOAuthCallbackService } from './mcp-oauth-callback-service.js';
+import { MCPOAuthCallbackResponder } from './mcp-oauth-callback-responder.js';
 
 function createResponder(): { responder: MCPOAuthCallbackResponder, callbackService: MCPOAuthCallbackService } {
     const callbackService = new MCPOAuthCallbackService();

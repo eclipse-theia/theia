@@ -2,6 +2,7 @@
   "name": "@theia/ai-chatgpt",
   "version": "1.76.0",
   "description": "Theia - ChatGPT Subscription Integration",
+  "type": "module",
   "dependencies": {
     "@theia/ai-core": "1.76.0",
     "@theia/ai-openai": "1.76.0",
@@ -47,5 +48,13 @@
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/common": "./lib/common/index.js",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
   }
 }

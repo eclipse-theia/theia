@@ -24,8 +24,8 @@ import { MonacoDiffEditor } from '@theia/monaco/lib/browser/monaco-diff-editor';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { MonacoEditorPeekViewWidget, peekViewBorder, peekViewTitleBackground, peekViewTitleForeground, peekViewTitleInfoForeground }
     from '@theia/monaco/lib/browser/monaco-editor-peek-view-widget';
-import { Change, LineRange } from './diff-computer';
-import { ScmColors } from '../scm-colors';
+import { Change, LineRange } from './diff-computer.js';
+import { ScmColors } from '../scm-colors.js';
 import * as monaco from '@theia/monaco-editor-core';
 
 export const SCM_CHANGE_TITLE_MENU: MenuPath = ['scm-change-title-menu'];

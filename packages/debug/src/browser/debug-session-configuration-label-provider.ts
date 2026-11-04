@@ -17,7 +17,7 @@
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { type DebugSessionOptions } from './debug-session-options';
+import { type DebugSessionOptions } from './debug-session-options.js';
 
 /**
  * Provides a label for the debug session without the need to create the session.

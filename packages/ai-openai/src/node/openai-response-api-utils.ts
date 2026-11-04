@@ -26,7 +26,7 @@ import {
     ToolRequest,
     UserRequest
 } from '@theia/ai-core';
-import { CancellationToken, isObject, nls, unreachable, ILogger } from '@theia/core';
+import { CancellationError, CancellationToken, CancellationTokenSource, isObject, nls, unreachable, ILogger } from '@theia/core';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
 import { toResponseInputItems } from 'openai/lib/responses/ResponseInputItems';
@@ -45,10 +45,11 @@ import type {
     ResponseToolSearchOutputItem
 } from 'openai/resources/responses/responses';
 import type { ResponsesModel } from 'openai/resources/shared';
-import { DeveloperMessageSettings } from './openai-language-model';
-import type { OpenAiModelUtils } from './openai-model-utils';
-import { OPENAI_WEB_SEARCH, OPENAI_WEB_SEARCH_REPLAY_DATA_KEY } from './openai-server-tools';
-import { AbstractStreamingResponseIterator } from './streaming-response-iterator';
+import { DeveloperMessageSettings } from './openai-language-model.js';
+import type { OpenAiModelUtils } from './openai-model-utils.js';
+import { OPENAI_WEB_SEARCH, OPENAI_WEB_SEARCH_REPLAY_DATA_KEY } from './openai-server-tools.js';
+import { AbstractStreamingResponseIterator } from './streaming-response-iterator.js';
+import { OpenAiStreamingRetry } from './openai-streaming-retry.js';
 
 export const OPENAI_FUNCTION_CALL_REASONING_DATA_KEY = 'openAiFunctionCallReasoning';
 
@@ -90,6 +91,9 @@ export class OpenAiResponseApiUtils {
     @inject(ToolCallExecutor)
     protected readonly toolCallExecutor: ToolCallExecutor;
 
+    @inject(OpenAiStreamingRetry)
+    protected readonly streamingRetry: OpenAiStreamingRetry;
+
     @inject(ILogger) @named('ai-openai:OpenAiResponseApiUtils')
     protected readonly logger: ILogger;
 
@@ -130,7 +134,7 @@ export class OpenAiResponseApiUtils {
                     input,
                     ...sentSettings,
                     stream: true
-                }));
+                }, cancellationToken));
                 return { stream: this.createSimpleResponseApiStreamIterator(stream, cancellationToken) };
             } else {
                 const response = await this.sendWithReasoningSummaryFallback(effectiveSettings, modelId, sentSettings => openai.responses.create({
@@ -167,10 +171,6 @@ export class OpenAiResponseApiUtils {
         );
 
         return { stream: iterator };
-    }
-
-    streamResponse(openai: OpenAI, parameters: ResponseCreateParamsStreaming): AsyncIterable<ResponseStreamEvent> {
-        return openai.responses.stream(parameters);
     }
 
     /**
@@ -288,6 +288,15 @@ export class OpenAiResponseApiUtils {
         }
     }
 
+    streamResponse(openai: OpenAI, parameters: ResponseCreateParamsStreaming, cancellationToken?: CancellationToken): AsyncIterable<ResponseStreamEvent> {
+        return this.streamingRetry.retry(
+            async signal => openai.responses.create(parameters, { signal }),
+            openai.maxRetries ?? 3,
+            event => ['response.created', 'response.queued', 'response.in_progress', 'response.metadata'].includes(event.type),
+            cancellationToken
+        );
+    }
+
     protected createSimpleResponseApiStreamIterator(
         stream: AsyncIterable<ResponseStreamEvent>,
         cancellationToken?: CancellationToken
@@ -304,7 +313,7 @@ export class OpenAiResponseApiUtils {
                 try {
                     for await (const event of stream) {
                         if (cancellationToken?.isCancellationRequested) {
-                            break;
+                            throw new CancellationError();
                         }
 
                         if (event.type === 'response.output_text.delta') {
@@ -340,11 +349,13 @@ export class OpenAiResponseApiUtils {
                                     output_tokens: responseEvent.response.usage.output_tokens,
                                 };
                             }
-                        } else if (event.type === 'error') {
-                            logger.error('Response API error:', event.message);
-                            throw new Error(`Response API error: ${event.message}`);
                         }
                     }
+                } catch (error) {
+                    if (!cancellationToken?.isCancellationRequested && !(error instanceof CancellationError)) {
+                        logger.error('Response API error:', error);
+                    }
+                    throw error;
                 } finally {
                     // Yield partial usage data when stream is aborted before response.completed
                     if (!usageYielded && lastUsage && (lastUsage.input_tokens > 0 || lastUsage.output_tokens > 0)) {
@@ -509,6 +520,7 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
     protected readonly instructions?: string;
     protected pendingReasoningItems: ResponseInputItem[] = [];
     protected currentOutput: ResponseOutputItem[] = [];
+    protected readonly streamCancellation = new CancellationTokenSource();
 
     constructor(
         protected readonly openai: OpenAI,
@@ -530,6 +542,13 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
         this.currentInput = input;
         this.tools = utils.convertToolsForResponseApi(request.tools, request.deferredToolIds, request.serverTools);
 
+        this.toDispose.push(this.streamCancellation);
+        if (cancellationToken) {
+            this.toDispose.push(cancellationToken.onCancellationRequested(() => {
+                this.terminalError = new CancellationError();
+                this.dispose();
+            }));
+        }
         // Start the first iteration
         this.startIteration();
     }
@@ -540,6 +559,10 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
                 this.logger.debug(`Starting Response API iteration ${this.iteration} with ${this.currentInput.length} input messages`);
 
                 await this.processStream();
+                if (this.done || this.cancellationToken?.isCancellationRequested) {
+                    this.dispose();
+                    return;
+                }
 
                 // Check if we have tool calls that need execution
                 if (this.currentToolCalls.size === 0) {
@@ -559,8 +582,13 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
             // Cancelled, or abandoned by the consumer.
             this.dispose();
         } catch (error) {
-            this.terminalError = error instanceof Error ? error : new Error(String(error));
-            this.dispose();
+            if (!this.done) {
+                if (!this.cancellationToken?.isCancellationRequested && !(error instanceof CancellationError)) {
+                    this.logger.error('Response API error:', error);
+                }
+                this.terminalError = error instanceof Error ? error : new Error(String(error));
+                this.dispose();
+            }
         }
     }
 
@@ -578,7 +606,7 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
                 tools: this.tools,
                 ...settings,
                 stream: true
-            }));
+            }, this.streamCancellation.token));
 
             for await (const event of stream) {
                 if (this.done || this.cancellationToken?.isCancellationRequested) {
@@ -715,10 +743,6 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
                     });
                 }
                 break;
-
-            case 'error':
-                this.logger.error('Response API error:', event.message);
-                throw new Error(`Response API error: ${event.message}`);
         }
     }
 

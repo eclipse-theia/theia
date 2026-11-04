@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { MainMessageType, MainMessageOptions, MainMessageItem } from '../../common/plugin-api-rpc';
-import { ModalNotification, MessageType } from './dialogs/modal-notification';
-import { BasicMessageRegistryMainImpl } from '../common/basic-message-registry-main';
+import { MainMessageType, MainMessageOptions, MainMessageItem } from '../../common/plugin-api-rpc.js';
+import { ModalNotification, MessageType } from './dialogs/modal-notification.js';
+import { BasicMessageRegistryMainImpl } from '../common/basic-message-registry-main.js';
 import { WindowFocusService } from '@theia/core/lib/browser/window/window-focus-service';
 
 /**

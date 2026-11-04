@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Emitter, PreferenceChange } from '../../../common';
+import { Emitter, PreferenceChange } from '../../../common/index.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function createMockPreferenceProxy(preferences: { [p: string]: any }): any {

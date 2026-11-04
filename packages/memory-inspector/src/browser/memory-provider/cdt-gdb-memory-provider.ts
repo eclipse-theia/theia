@@ -17,9 +17,9 @@
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { DebugScope, DebugVariable } from '@theia/debug/lib/browser/console/debug-console-items';
 import { DebugSession } from '@theia/debug/lib/browser/debug-session';
-import { hexStrToUnsignedLong } from '../../common/util';
-import { VariableRange } from '../utils/memory-widget-variable-utils';
-import { AbstractMemoryProvider } from './memory-provider';
+import { hexStrToUnsignedLong } from '../../common/util.js';
+import { VariableRange } from '../utils/memory-widget-variable-utils.js';
+import { AbstractMemoryProvider } from './memory-provider.js';
 import { ILogger } from '@theia/core';
 
 /**

@@ -16,7 +16,7 @@
 
 import { ContainerModule } from 'inversify';
 import { RequestService } from '@theia/request';
-import { ElectronBackendRequestService } from './electron-backend-request-service';
+import { ElectronBackendRequestService } from './electron-backend-request-service.js';
 
 export default new ContainerModule(bind => {
     bind(RequestService).to(ElectronBackendRequestService).inSingletonScope();

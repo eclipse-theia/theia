@@ -27,10 +27,10 @@ import URI from '@theia/core/lib/common/uri';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { SearchInWorkspaceService } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
 import { WorkspaceService, WorkspaceTrustService } from '@theia/workspace/lib/browser';
-import { RPCProtocol } from '../../common/rpc-protocol';
-import { WorkspaceRootsChangeEvent } from '../../common/plugin-api-rpc-model';
-import { PluginServer } from '../../common/plugin-protocol';
-import { WorkspaceMainImpl } from './workspace-main';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
+import { WorkspaceRootsChangeEvent } from '../../common/plugin-api-rpc-model.js';
+import { PluginServer } from '../../common/plugin-protocol.js';
+import { WorkspaceMainImpl } from './workspace-main.js';
 
 disableJSDOM();
 

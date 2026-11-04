@@ -23,8 +23,8 @@ FrontendApplicationConfigProvider.set({});
 import { Disposable, URI } from '@theia/core';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { FileSystemProvider, FileSystemProviderCapabilities } from '../common/files';
-import { FileService } from './file-service';
+import { FileSystemProvider, FileSystemProviderCapabilities } from '../common/files.js';
+import { FileService } from './file-service.js';
 
 disableJSDOM();
 

@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { Key, KeyCode } from '../keyboard/keys';
-import { KeybindingRegistry } from '../keybinding';
-import { ActionMenuNode } from './action-menu-node';
+import { Key, KeyCode } from '../keyboard/keys.js';
+import { KeybindingRegistry } from '../keybinding.js';
+import { ActionMenuNode } from './action-menu-node.js';
 
 describe('ActionMenuNode accelerators', () => {
     it('selects logical and physical accelerator forms explicitly', () => {

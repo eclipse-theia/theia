@@ -13,11 +13,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export * from './quick-command-frontend-contribution';
-export * from './quick-command-service';
-export * from './quick-help-service';
-export * from './quick-access';
-export * from './quick-input-frontend-contribution';
-export * from './quick-input-service';
-export * from './quick-view-service';
-export * from './quick-pick-service-impl';
+export * from './quick-command-frontend-contribution.js';
+export * from './quick-command-service.js';
+export * from './quick-help-service.js';
+export * from './quick-access.js';
+export * from './quick-input-frontend-contribution.js';
+export * from './quick-input-service.js';
+export * from './quick-view-service.js';
+export * from './quick-pick-service-impl.js';

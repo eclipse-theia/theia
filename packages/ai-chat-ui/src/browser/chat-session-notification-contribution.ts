@@ -20,7 +20,7 @@ import { ApplicationShell, FrontendApplicationContribution } from '@theia/core/l
 import { AgentNotificationKind, AGENT_NOTIFICATION_KIND_COMPLETED, AGENT_NOTIFICATION_KIND_INPUT_NEEDED } from '@theia/ai-core';
 import { AgentNotificationService } from '@theia/ai-core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { isChatSessionFocused } from './chat-session-focus';
+import { isChatSessionFocused } from './chat-session-focus.js';
 
 interface SessionNotificationState {
     /** Whether the session status required user action at the last observed status change. */

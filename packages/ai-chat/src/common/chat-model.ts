@@ -39,8 +39,8 @@ import {
 import { ArrayUtils, CancellationToken, CancellationTokenSource, Command, Disposable, DisposableCollection, Emitter, Event, generateUuid, URI } from '@theia/core';
 import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
-import { ChangeSet, ChangeSetElement, ChangeSetImpl, ChatUpdateChangeSetEvent } from './change-set';
-import { ChatAgentLocation } from './chat-agents';
+import { ChangeSet, ChangeSetElement, ChangeSetImpl, ChatUpdateChangeSetEvent } from './change-set.js';
+import { ChatAgentLocation } from './chat-agents.js';
 import {
     SerializedChatModel,
     SerializableChatRequestData,
@@ -52,7 +52,7 @@ import {
     SerializableChangeSetElement,
     SerializableParsedRequest,
     SerializableParsedRequestPart
-} from './chat-model-serialization';
+} from './chat-model-serialization.js';
 import {
     ParsedChatRequest,
     ParsedChatRequestTextPart,
@@ -60,8 +60,8 @@ import {
     ParsedChatRequestFunctionPart,
     ParsedChatRequestAgentPart,
     ParsedChatRequestPart
-} from './parsed-chat-request';
-import debounce = require('@theia/core/shared/lodash.debounce');
+} from './parsed-chat-request.js';
+import debounce from '@theia/core/shared/lodash.debounce';
 export { ChangeSet, ChangeSetElement, ChangeSetImpl };
 
 /**********************

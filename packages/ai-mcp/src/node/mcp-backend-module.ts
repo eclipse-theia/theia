@@ -17,23 +17,23 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
-import { MCPServerManagerImpl } from './mcp-server-manager-impl';
+import { MCPServerManagerImpl } from './mcp-server-manager-impl.js';
 import {
     MCPFrontendNotificationService,
     MCPServerManager,
     MCPServerManagerPath
-} from '../common/mcp-server-manager';
+} from '../common/mcp-server-manager.js';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
-import { McpServersPreferenceSchema } from '../common/mcp-preferences';
-import { MCPServerManagerServerImpl } from './mcp-server-manager-server';
-import { MCPServerManagerServer, MCPServerManagerServerClient, MCPServerManagerServerPath } from '../common/mcp-protocol';
-import { MCPOAuthFrontendDelegate, MCPOAuthFrontendDelegateClient, mcpOAuthFrontendDelegatePath } from '../common/mcp-oauth';
-import { MCPOAuthFrontendDelegateImpl } from './mcp-oauth-frontend-delegate';
-import { MCPOAuthCallbackService } from './mcp-oauth-callback-service';
-import { MCPOAuthCallbackResponder } from './mcp-oauth-callback-responder';
-import { MCPOAuthCallbackBackendContribution } from './mcp-oauth-callback-backend-contribution';
-import { MCPOAuthClientProviderFactory } from './mcp-oauth-client-provider-factory';
-import { MCPOAuthCredentialStore } from './mcp-oauth-credential-store';
+import { McpServersPreferenceSchema } from '../common/mcp-preferences.js';
+import { MCPServerManagerServerImpl } from './mcp-server-manager-server.js';
+import { MCPServerManagerServer, MCPServerManagerServerClient, MCPServerManagerServerPath } from '../common/mcp-protocol.js';
+import { MCPOAuthFrontendDelegate, MCPOAuthFrontendDelegateClient, mcpOAuthFrontendDelegatePath } from '../common/mcp-oauth.js';
+import { MCPOAuthFrontendDelegateImpl } from './mcp-oauth-frontend-delegate.js';
+import { MCPOAuthCallbackService } from './mcp-oauth-callback-service.js';
+import { MCPOAuthCallbackResponder } from './mcp-oauth-callback-responder.js';
+import { MCPOAuthCallbackBackendContribution } from './mcp-oauth-callback-backend-contribution.js';
+import { MCPOAuthClientProviderFactory } from './mcp-oauth-client-provider-factory.js';
+import { MCPOAuthCredentialStore } from './mcp-oauth-credential-store.js';
 
 // We use a connection module to handle AI services separately for each frontend.
 const mcpConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {

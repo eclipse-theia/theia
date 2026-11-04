@@ -17,10 +17,10 @@
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { MessageService, PreferenceService } from '@theia/core';
-import { MCP_SERVERS_PREF } from '../common/mcp-preferences';
-import { MCPFrontendService, MCPServerDescription, RemoteMCPServerDescription } from '../common/mcp-server-manager';
-import { MCPInstallEntry, MCPServerEditDialogFactory, MCPServerEditorImpl } from './mcp-server-editor';
-import type { MCPServerFormData } from './mcp-server-edit-dialog';
+import { MCP_SERVERS_PREF } from '../common/mcp-preferences.js';
+import { MCPFrontendService, MCPServerDescription, RemoteMCPServerDescription } from '../common/mcp-server-manager.js';
+import { MCPInstallEntry, MCPServerEditDialogFactory, MCPServerEditorImpl } from './mcp-server-editor.js';
+import type { MCPServerFormData } from './mcp-server-edit-dialog.js';
 
 class FakePreferenceService {
     private readonly store = new Map<string, unknown>();

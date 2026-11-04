@@ -20,12 +20,12 @@ import { deepClone } from '@theia/core/lib/common/objects';
 import { Emitter } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Md5 } from 'ts-md5';
-import throttle = require('@theia/core/shared/lodash.throttle');
-import { NotificationPreferences } from '../common/notification-preferences';
+import throttle from '@theia/core/shared/lodash.throttle';
+import { NotificationPreferences } from '../common/notification-preferences.js';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { OpenerService } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
-import { NotificationContentRenderer } from './notification-content-renderer';
+import { NotificationContentRenderer } from './notification-content-renderer.js';
 
 export interface NotificationUpdateEvent {
     readonly notifications: Notification[];

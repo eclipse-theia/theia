@@ -20,9 +20,9 @@ let disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import URI from '@theia/core/lib/common/uri';
-import { OpenFileDialogProps, SaveFileDialogProps } from '../../browser/file-dialog';
-import { OpenDialogOptions, SaveDialogOptions } from '../../electron-common/electron-api';
-import { ElectronFileDialogService } from './electron-file-dialog-service';
+import { OpenFileDialogProps, SaveFileDialogProps } from '../../browser/file-dialog/index.js';
+import { OpenDialogOptions, SaveDialogOptions } from '../../electron-common/electron-api.js';
+import { ElectronFileDialogService } from './electron-file-dialog-service.js';
 
 disableJSDOM();
 

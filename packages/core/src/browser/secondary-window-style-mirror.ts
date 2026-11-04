@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { Disposable, DisposableCollection } from '../common/disposable';
-import { FrontendApplicationContribution } from './frontend-application-contribution';
-import { SecondaryWindowService } from './window/secondary-window-service';
+import { Disposable, DisposableCollection } from '../common/disposable.js';
+import { FrontendApplicationContribution } from './frontend-application-contribution.js';
+import { SecondaryWindowService } from './window/secondary-window-service.js';
 
 /**
  * Mirrors runtime-added `<style>` and `<link>` elements from the main window's `<head>`

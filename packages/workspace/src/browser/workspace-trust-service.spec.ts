@@ -17,14 +17,14 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { PreferenceChange, PreferenceScope } from '@theia/core/lib/common/preferences';
-import { WorkspaceTrustService } from './workspace-trust-service';
+import { WorkspaceTrustService } from './workspace-trust-service.js';
 import {
     WORKSPACE_TRUST_EMPTY_WINDOW,
     WORKSPACE_TRUST_ENABLED,
     WORKSPACE_TRUST_STARTUP_PROMPT,
     WORKSPACE_TRUST_TRUSTED_FOLDERS,
     WorkspaceTrustPrompt
-} from '../common/workspace-trust-preferences';
+} from '../common/workspace-trust-preferences.js';
 import URI from '@theia/core/lib/common/uri';
 
 class TestableWorkspaceTrustService extends WorkspaceTrustService {

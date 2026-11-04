@@ -16,17 +16,17 @@
 
 import * as http from 'http';
 import * as path from 'path';
-const vhost = require('vhost');
 import express from '@theia/core/shared/express';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
-import { WebviewExternalEndpoint } from '../common/webview-protocol';
+import { WebviewExternalEndpoint } from '../common/webview-protocol.js';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { WsRequestValidatorContribution } from '@theia/core/lib/node/ws-request-validators';
 import { MaybePromise } from '@theia/core/lib/common';
 import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
 import { BackendRemoteService } from '@theia/core/lib/node/remote/backend-remote-service';
 import { ILogger } from '@theia/core';
+import vhost from 'vhost';
 
 @injectable()
 export class PluginApiContribution implements BackendApplicationContribution, WsRequestValidatorContribution {

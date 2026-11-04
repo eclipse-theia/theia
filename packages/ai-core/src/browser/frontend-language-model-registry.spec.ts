@@ -29,7 +29,7 @@ import {
     ToolCallContent,
     ToolCallErrorResult,
     ToolRequest
-} from '../common';
+} from '../common/index.js';
 
 disableJSDOM();
 

@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { FileDownloadService } from '../../common/download/file-download';
-import { FileDownloadServiceImpl } from './file-download-service';
+import { FileDownloadService } from '../../common/download/file-download.js';
+import { FileDownloadServiceImpl } from './file-download-service.js';
 import { CommandContribution } from '@theia/core/lib/common';
-import { FileDownloadCommandContribution } from './file-download-command-contribution';
+import { FileDownloadCommandContribution } from './file-download-command-contribution.js';
 
 export default new ContainerModule(bind => {
     bind(FileDownloadService).to(FileDownloadServiceImpl).inSingletonScope();

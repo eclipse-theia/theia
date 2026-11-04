@@ -30,7 +30,7 @@ import {
     AiConfigurationRenderContext,
     AiConfigurationTools
 } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
-import { ToolsConfigurationCategory } from './tools-configuration-category';
+import { ToolsConfigurationCategory } from './tools-configuration-category.js';
 
 disableJSDOM();
 
@@ -114,6 +114,41 @@ describe('ToolsConfigurationCategory', () => {
             indexed.forEach(rowId => expect(anchored).to.include(rowId));
             // The same ids an agent's used-tools list and a server's tool list link to.
             expect(anchored).to.include(AiConfigurationTools.selectionFor('mcp_x_y').highlight!.rowId);
+        } finally {
+            flushSync(() => root.unmount());
+            container.remove();
+        }
+    });
+
+    it('marks the rows of the tools that a session value sets, and not as modified', async () => {
+        const category = createCategory({ a: {}, b: {} }, {}, ToolConfirmationMode.CONFIRM);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (category as any).confirmationManager = {
+            getDefaultConfirmationMode: () => ToolConfirmationMode.CONFIRM,
+            getAllConfirmationSettings: () => ({ a: ToolConfirmationMode.ALWAYS_ALLOW, b: ToolConfirmationMode.DISABLED })
+        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (category as any).aiConfigurationService = {
+            inspect: () => ({ globalValue: { b: ToolConfirmationMode.DISABLED }, sessionValue: { a: ToolConfirmationMode.ALWAYS_ALLOW } })
+        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (category as any).loadConfirmation();
+        const container = document.createElement('div');
+        document.body.appendChild(container);
+        const root = createRoot(container);
+        const ctx: AiConfigurationRenderContext = { scope: 'user', navigate: () => { }, update: () => { } };
+        try {
+            flushSync(() => root.render(category.renderPage(ctx)));
+            const marker = (rowId: string) => container.querySelector(`[data-ai-config-row-id="${rowId}"] .ai-settings-row-session`) as HTMLElement | null;
+            expect(marker('tool:a')?.textContent).to.equal('Overridden by session');
+            expect(marker('tool:a')?.title).to.include('--session-preference').and.to.include('"always_allow"');
+            // Changing any tool's mode writes the whole object, which clears the session value of every tool.
+            expect(marker('tool:a')?.title).to.include('every tool');
+            expect(marker('tool:b')).to.not.exist;
+            // As on setting rows, the modified bar shows a saved value only, not the session value.
+            const modified = (rowId: string) => container.querySelector(`[data-ai-config-row-id="${rowId}"]`)?.classList.contains('modified');
+            expect(modified('tool:a')).to.be.false;
+            expect(modified('tool:b')).to.be.true;
         } finally {
             flushSync(() => root.unmount());
             container.remove();

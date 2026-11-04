@@ -18,10 +18,10 @@
 /* eslint-disable @theia/explicit-return-type */
 
 import type * as theia from '@theia/plugin';
-import { CommandRegistryImpl } from './command-registry';
+import { CommandRegistryImpl } from './command-registry.js';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CancellationError, CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
-import { QuickOpenExtImpl } from './quick-open';
+import { QuickOpenExtImpl } from './quick-open.js';
 import {
     MAIN_RPC_CONTEXT,
     Plugin as InternalPlugin,
@@ -30,14 +30,14 @@ import {
     MainMessageType,
     DebugConfigurationProviderTriggerKind,
     PLUGIN_RPC_CONTEXT
-} from '../common/plugin-api-rpc';
-import { RPCProtocol } from '../common/rpc-protocol';
-import { MessageRegistryExt } from './message-registry';
-import { StatusBarMessageRegistryExtImpl } from './status-bar-message-registry';
-import { WindowStateExtImpl } from './window-state';
-import { WorkspaceExtImpl } from './workspace';
-import { EnvExtImpl } from './env';
-import { QueryParameters } from '../common/env';
+} from '../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../common/rpc-protocol.js';
+import { MessageRegistryExt } from './message-registry.js';
+import { StatusBarMessageRegistryExtImpl } from './status-bar-message-registry.js';
+import { WindowStateExtImpl } from './window-state.js';
+import { WorkspaceExtImpl } from './workspace.js';
+import { EnvExtImpl } from './env.js';
+import { QueryParameters } from '../common/env.js';
 import {
     ConfigurationTarget,
     Disposable,
@@ -248,56 +248,57 @@ import {
     McpStdioServerDefinition,
     InteractiveWindowInput,
     TextEditorChangeKind
-} from './types-impl';
-import { AuthenticationExtImpl } from './authentication-ext';
-import { SymbolKind } from '../common/plugin-api-rpc-model';
-import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
-import { TextEditorsExtImpl } from './text-editors';
-import { DocumentsExtImpl } from './documents';
-import { TextEditorCursorStyle } from '../common/editor-options';
-import { PreferenceRegistryExtImpl } from './preference-registry';
-import { OutputChannelRegistryExtImpl } from './output-channel-registry';
-import { TerminalServiceExtImpl } from './terminal-ext';
-import { LanguagesExtImpl } from './languages';
-import { fromDocumentSelector, pluginToPluginInfo, fromGlobPattern } from './type-converters';
-import { DialogsExtImpl } from './dialogs';
-import { NotificationExtImpl } from './notification';
+} from './types-impl.js';
+import { AuthenticationExtImpl } from './authentication-ext.js';
+import { SymbolKind } from '../common/plugin-api-rpc-model.js';
+import { EditorsAndDocumentsExtImpl } from './editors-and-documents.js';
+import { TextEditorsExtImpl } from './text-editors.js';
+import { DocumentsExtImpl } from './documents.js';
+import { TextEditorCursorStyle } from '../common/editor-options.js';
+import { PreferenceRegistryExtImpl } from './preference-registry.js';
+import { OutputChannelRegistryExtImpl } from './output-channel-registry.js';
+import { TerminalServiceExtImpl } from './terminal-ext.js';
+import { LanguagesExtImpl } from './languages.js';
+import { fromDocumentSelector, pluginToPluginInfo, fromGlobPattern } from './type-converters.js';
+import { DialogsExtImpl } from './dialogs.js';
+import { NotificationExtImpl } from './notification.js';
 import { score } from '@theia/editor/lib/common/language-selector';
-import { MarkdownString } from './markdown-string';
-import { TreeViewsExtImpl } from './tree/tree-views';
-import { ConnectionImpl } from '../common/connection';
-import { TasksExtImpl } from './tasks/tasks';
-import { DebugExtImpl } from './debug/debug-ext';
-import { FileSystemExtImpl } from './file-system-ext-impl';
-import { ScmExtImpl } from './scm';
-import { DecorationsExtImpl } from './decorations';
-import { TextEditorExt } from './text-editor';
-import { ClipboardExt } from './clipboard-ext';
-import { WebviewsExtImpl } from './webviews';
-import { ExtHostFileSystemEventService } from './file-system-event-service-ext-impl';
-import { LabelServiceExtImpl } from '../plugin/label-service';
-import { TimelineExtImpl } from './timeline';
-import { ThemingExtImpl } from './theming';
-import { CommentsExtImpl } from './comments';
-import { CustomEditorsExtImpl } from './custom-editors';
-import { WebviewViewsExtImpl } from './webview-views';
-import { PluginPackage } from '../common';
+import { MarkdownString } from './markdown-string.js';
+import { TreeViewsExtImpl } from './tree/tree-views.js';
+import { ConnectionImpl } from '../common/connection.js';
+import { TasksExtImpl } from './tasks/tasks.js';
+import { DebugExtImpl } from './debug/debug-ext.js';
+import { FileSystemExtImpl } from './file-system-ext-impl.js';
+import { ScmExtImpl } from './scm.js';
+import { DecorationsExtImpl } from './decorations.js';
+import { TextEditorExt } from './text-editor.js';
+import { ClipboardExt } from './clipboard-ext.js';
+import { WebviewsExtImpl } from './webviews.js';
+import { ExtHostFileSystemEventService } from './file-system-event-service-ext-impl.js';
+import { LabelServiceExtImpl } from '../plugin/label-service.js';
+import { TimelineExtImpl } from './timeline.js';
+import { ThemingExtImpl } from './theming.js';
+import { CommentsExtImpl } from './comments.js';
+import { CustomEditorsExtImpl } from './custom-editors.js';
+import { WebviewViewsExtImpl } from './webview-views.js';
+import { PluginPackage } from '../common/index.js';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { FilePermission } from '@theia/filesystem/lib/common/files';
-import { TabsExtImpl } from './tabs';
-import { LocalizationExtImpl } from './localization-ext';
-import { NotebooksExtImpl } from './notebook/notebooks';
-import { TelemetryExtImpl } from './telemetry-ext';
-import { NotebookDocument } from './notebook/notebook-document';
-import { NotebookRenderersExtImpl } from './notebook/notebook-renderers';
-import { NotebookKernelsExtImpl } from './notebook/notebook-kernels';
-import { NotebookDocumentsExtImpl } from './notebook/notebook-documents';
-import { NotebookEditorsExtImpl } from './notebook/notebook-editors';
-import { TestingExtImpl } from './tests';
-import { UriExtImpl } from './uri-ext';
-import { PluginLogger } from './logger';
-import { LmExtImpl } from './lm-ext';
-import { LanguageModelToolsExtImpl } from './lm-tool-ext';
+import { TabsExtImpl } from './tabs.js';
+import { LocalizationExtImpl } from './localization-ext.js';
+import { NotebooksExtImpl } from './notebook/notebooks.js';
+import { TelemetryExtImpl } from './telemetry-ext.js';
+import { NotebookDocument } from './notebook/notebook-document.js';
+import { NotebookRenderersExtImpl } from './notebook/notebook-renderers.js';
+import { NotebookKernelsExtImpl } from './notebook/notebook-kernels.js';
+import { NotebookDocumentsExtImpl } from './notebook/notebook-documents.js';
+import { NotebookEditorsExtImpl } from './notebook/notebook-editors.js';
+import { TestingExtImpl } from './tests.js';
+import { UriExtImpl } from './uri-ext.js';
+import { PluginLogger } from './logger.js';
+import { LmExtImpl } from './lm-ext.js';
+import { LanguageModelToolsExtImpl } from './lm-tool-ext.js';
+import packageJson from '../../package.json' with { type: 'json' };
 
 export function createAPIObject<T extends Object>(rawObject: T): T {
     return new Proxy(rawObject, {
@@ -1402,7 +1403,7 @@ export function createAPIFactory(
         };
 
         return <typeof theia>{
-            version: require('../../package.json').version,
+            version: packageJson.version,
             authentication,
             chat,
             commands,

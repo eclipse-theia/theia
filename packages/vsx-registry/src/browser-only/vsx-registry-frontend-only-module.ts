@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { VSXEnvironment } from '../common/vsx-environment';
-import { BrowserOnlyVSXEnvironment } from './browser-only-vsx-environment';
+import { VSXEnvironment } from '../common/vsx-environment.js';
+import { BrowserOnlyVSXEnvironment } from './browser-only-vsx-environment.js';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     rebind(VSXEnvironment).to(BrowserOnlyVSXEnvironment).inSingletonScope();

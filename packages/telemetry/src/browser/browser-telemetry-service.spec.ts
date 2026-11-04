@@ -19,11 +19,11 @@ import { FrontendIdProvider } from '@theia/core/lib/browser/messaging/frontend-i
 import { Emitter, ILogger } from '@theia/core/lib/common';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
-import { TelemetryConsentProvider } from '../common/telemetry-consent-provider';
-import { TelemetryEvent, TelemetryRpc } from '../common/telemetry-protocol';
-import { RecordingLogger } from '../common/test/recording-logger';
-import { TelemetryLevel } from '../common/telemetry-types';
-import { BrowserTelemetryService } from './browser-telemetry-service';
+import { TelemetryConsentProvider } from '../common/telemetry-consent-provider.js';
+import { TelemetryEvent, TelemetryRpc } from '../common/telemetry-protocol.js';
+import { RecordingLogger } from '../common/test/recording-logger.js';
+import { TelemetryLevel } from '../common/telemetry-types.js';
+import { BrowserTelemetryService } from './browser-telemetry-service.js';
 
 const FRONTEND_ID = 'test-frontend-id';
 

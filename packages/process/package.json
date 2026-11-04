@@ -2,6 +2,7 @@
   "name": "@theia/process",
   "version": "1.76.0",
   "description": "Theia process support.",
+  "type": "module",
   "dependencies": {
     "@theia/core": "1.76.0",
     "node-pty": "1.2.0-beta.12",
@@ -50,5 +51,13 @@
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "21358137e41342742707f660b8e222f940a27652",
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/node": "./lib/node/index.js",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  }
 }

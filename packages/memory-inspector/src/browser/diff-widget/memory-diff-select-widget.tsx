@@ -18,13 +18,13 @@ import { Key, KeyCode, Message, ReactWidget } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import Long from 'long';
-import { MemoryWidget } from '../memory-widget/memory-widget';
-import { RegisterWidget } from '../register-widget/register-widget-types';
-import { MWSelect } from '../utils/memory-widget-components';
-import { MemoryWidgetManager } from '../utils/memory-widget-manager';
-import { Interfaces } from '../utils/memory-widget-utils';
-import { VariableRange } from '../utils/memory-widget-variable-utils';
-import { MemoryDiffWidget } from './memory-diff-table-widget';
+import { MemoryWidget } from '../memory-widget/memory-widget.js';
+import { RegisterWidget } from '../register-widget/register-widget-types.js';
+import { MWSelect } from '../utils/memory-widget-components.js';
+import { MemoryWidgetManager } from '../utils/memory-widget-manager.js';
+import { Interfaces } from '../utils/memory-widget-utils.js';
+import { VariableRange } from '../utils/memory-widget-variable-utils.js';
+import { MemoryDiffWidget } from './memory-diff-table-widget.js';
 import { nls } from '@theia/core/lib/common/nls';
 
 export interface DiffMemory {

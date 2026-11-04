@@ -17,8 +17,8 @@
 import { ListenerList, DisposableCollection, URI, PreferenceScope, Listener } from '@theia/core';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { FileContentStatus, PreferenceStorage } from '../common/abstract-resource-preference-provider';
-import { PreferenceTransaction, PreferenceTransactionFactory } from './preference-transaction-manager';
+import { FileContentStatus, PreferenceStorage } from '../common/abstract-resource-preference-provider.js';
+import { PreferenceTransaction, PreferenceTransactionFactory } from './preference-transaction-manager.js';
 
 export class FrontendPreferenceStorage implements PreferenceStorage {
 

@@ -20,7 +20,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
-import { DefaultCodeCompletionPostProcessor } from './code-completion-postprocessor';
+import { DefaultCodeCompletionPostProcessor } from './code-completion-postprocessor.js';
 
 disableJSDOM();
 

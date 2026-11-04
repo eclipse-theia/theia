@@ -24,14 +24,15 @@
 
 import 'reflect-metadata';
 import * as cp from 'child_process';
+import * as path from 'path';
 import { Container } from 'inversify';
-import { bindContributionProvider, ILogger, Stopwatch } from '../../common';
-import { MockLogger } from '../../common/test/mock-logger';
+import { bindContributionProvider, ILogger, Stopwatch } from '../../common/index.js';
+import { MockLogger } from '../../common/test/mock-logger.js';
 import {
     BackendApplication, BackendApplicationCliContribution, BackendApplicationContribution, EarlyExpressMiddleware, RootContainer
-} from '../backend-application';
-import { NodeStopwatch } from '../performance/node-stopwatch';
-import { ProcessUtils } from '../process-utils';
+} from '../backend-application.js';
+import { NodeStopwatch } from '../performance/node-stopwatch.js';
+import { ProcessUtils } from '../process-utils.js';
 
 export const EXITING_BACKEND_EXIT_CODE = 3;
 
@@ -51,7 +52,8 @@ class NoPowerShellProcessUtils extends ProcessUtils {
     }
 }
 
-if (require.main === module) {
+// The equivalent of `require.main === module` for an ES module.
+if (process.argv[1] && path.resolve(process.argv[1]) === import.meta.filename) {
     const container = new Container();
     container.bind(RootContainer).toConstantValue(container);
     container.bind(ILogger).to(MockLogger).inSingletonScope();

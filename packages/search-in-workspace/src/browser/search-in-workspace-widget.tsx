@@ -16,19 +16,19 @@
 
 import { Widget, Message, BaseWidget, Key, StatefulWidget, MessageLoop, KeyCode, codicon } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-tree-widget';
-import { SearchInWorkspaceOptions } from '../common/search-in-workspace-interface';
+import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-tree-widget.js';
+import { SearchInWorkspaceOptions } from '../common/search-in-workspace-interface.js';
 import * as React from '@theia/core/shared/react';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { Event, Emitter, Disposable } from '@theia/core/lib/common';
 import { WorkspaceSearchFilterService, WorkspaceService } from '@theia/workspace/lib/browser';
-import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service';
+import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service.js';
 import { CancellationTokenSource } from '@theia/core';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { SearchInWorkspacePreferences } from '../common/search-in-workspace-preferences';
-import { SearchInWorkspaceInput } from './components/search-in-workspace-input';
-import { SearchInWorkspaceTextArea } from './components/search-in-workspace-textarea';
+import { SearchInWorkspacePreferences } from '../common/search-in-workspace-preferences.js';
+import { SearchInWorkspaceInput } from './components/search-in-workspace-input.js';
+import { SearchInWorkspaceTextArea } from './components/search-in-workspace-textarea.js';
 import { nls } from '@theia/core/lib/common/nls';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 

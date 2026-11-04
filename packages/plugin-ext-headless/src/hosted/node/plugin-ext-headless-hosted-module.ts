@@ -23,11 +23,11 @@ import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/node/hosted-pl
 import { HostedPluginProcess, HostedPluginProcessConfiguration } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin-process';
 import { BackendPluginHostableFilter } from '@theia/plugin-ext/lib/hosted/node/plugin-service';
 import { MaybePromise } from '@theia/core';
-import { HeadlessPluginContainerModule } from '../../common/headless-plugin-container';
-import { HeadlessHostedPluginSupport, isHeadlessPlugin } from './headless-hosted-plugin';
-import { TheiaHeadlessPluginScanner } from './scanners/scanner-theia-headless';
-import { SupportedHeadlessActivationEvents } from '../../common/headless-plugin-protocol';
-import { HeadlessHostedPluginServerImpl } from './headless-plugin-service';
+import { HeadlessPluginContainerModule } from '../../common/headless-plugin-container.js';
+import { HeadlessHostedPluginSupport, isHeadlessPlugin } from './headless-hosted-plugin.js';
+import { TheiaHeadlessPluginScanner } from './scanners/scanner-theia-headless.js';
+import { SupportedHeadlessActivationEvents } from '../../common/headless-plugin-protocol.js';
+import { HeadlessHostedPluginServerImpl } from './headless-plugin-service.js';
 
 export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bind(HostedPluginProcess).toSelf().inSingletonScope();
@@ -43,7 +43,7 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bind(BackendPluginHostableFilter).toConstantValue(isHeadlessPlugin);
 
     bind(HostedPluginProcessConfiguration).toConstantValue({
-        path: path.join(__dirname, 'plugin-host-headless'),
+        path: path.join(import.meta.dirname, 'plugin-host-headless'),
     });
 }
 

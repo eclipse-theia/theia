@@ -16,8 +16,8 @@
 
 import { inject, injectable, named, optional } from 'inversify';
 import { RequestConfiguration, RequestContext, RequestOptions, RequestService } from '@theia/request';
-import { ContributionProvider, MaybePromise } from '../../common';
-import { BackendApplicationConfigProvider } from '../backend-application-config-provider';
+import { ContributionProvider, MaybePromise } from '../../common/index.js';
+import { BackendApplicationConfigProvider } from '../backend-application-config-provider.js';
 
 export const BackendRequestAllowedContribution = Symbol('BackendRequestAllowedContribution');
 export interface BackendRequestAllowedContribution {

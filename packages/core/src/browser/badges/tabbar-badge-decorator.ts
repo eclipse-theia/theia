@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { inject, injectable, interfaces } from 'inversify';
-import { ViewContainer } from '../view-container';
-import { WidgetDecoration } from '../widget-decoration';
-import { Title, Widget } from '../widgets';
-import { TabBarDecorator } from '../shell/tab-bar-decorator';
-import { Disposable, Event } from '../../common';
-import { Badge, BadgeService } from './badge-service';
+import { ViewContainer } from '../view-container.js';
+import { WidgetDecoration } from '../widget-decoration.js';
+import { Title, Widget } from '../widgets/index.js';
+import { TabBarDecorator } from '../shell/tab-bar-decorator.js';
+import { Disposable, Event } from '../../common/index.js';
+import { Badge, BadgeService } from './badge-service.js';
 
 @injectable()
 export class TabBarBadgeDecorator implements TabBarDecorator {

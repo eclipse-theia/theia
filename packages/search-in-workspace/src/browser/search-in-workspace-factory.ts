@@ -22,7 +22,7 @@ import {
     WidgetFactory,
     WidgetManager
 } from '@theia/core/lib/browser';
-import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
+import { SearchInWorkspaceWidget } from './search-in-workspace-widget.js';
 import { nls } from '@theia/core/lib/common/nls';
 
 export const SEARCH_VIEW_CONTAINER_ID = 'search-view-container';

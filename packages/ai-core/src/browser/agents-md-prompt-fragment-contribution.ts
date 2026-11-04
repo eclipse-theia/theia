@@ -16,9 +16,9 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { PromptService } from '../common/prompt-service';
-import { AGENTS_MD_PROMPT_FRAGMENT_ID, PROJECT_INFO_PROMPT_FRAGMENT_ID } from '../common/agents-md';
-import { AGENTS_MD_AUTO_LOADED_VARIABLE, AGENTS_MD_CONTENT_VARIABLE, AGENTS_MD_VARIABLE } from './agents-md-variable-contribution';
+import { PromptService } from '../common/prompt-service.js';
+import { AGENTS_MD_PROMPT_FRAGMENT_ID, PROJECT_INFO_PROMPT_FRAGMENT_ID } from '../common/agents-md.js';
+import { AGENTS_MD_AUTO_LOADED_VARIABLE, AGENTS_MD_CONTENT_VARIABLE, AGENTS_MD_VARIABLE } from './agents-md-variable-contribution.js';
 
 // `getFileContent` is implemented in `@theia/ai-ide`; referencing it by name here follows the same
 // approach as the skill fragments, which name `getSkillFileContent` without depending on that package.

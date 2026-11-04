@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { CompactionChatResponseContentImpl, CompactionChatResponseContent } from './chat-model';
+import { CompactionChatResponseContentImpl, CompactionChatResponseContent } from './chat-model.js';
 
 describe('CompactionChatResponseContent', () => {
     it('round-trips through serialization', () => {

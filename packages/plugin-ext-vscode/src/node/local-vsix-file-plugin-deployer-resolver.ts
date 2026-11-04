@@ -18,9 +18,9 @@ import * as path from 'path';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { DuplicateExtensionError, PluginDeployerResolverContext, PluginIdentifiers } from '@theia/plugin-ext';
 import { LocalPluginDeployerResolver } from '@theia/plugin-ext/lib/main/node/resolvers/local-plugin-deployer-resolver';
-import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
-import { isVSCodePluginFile } from './plugin-vscode-file-handler';
-import { existsInDeploymentDir, unpackToDeploymentDir, extractExtensionIdentityFromVsix } from './plugin-vscode-utils';
+import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment.js';
+import { isVSCodePluginFile } from './plugin-vscode-file-handler.js';
+import { existsInDeploymentDir, unpackToDeploymentDir, extractExtensionIdentityFromVsix } from './plugin-vscode-utils.js';
 import { ILogger } from '@theia/core';
 
 @injectable()

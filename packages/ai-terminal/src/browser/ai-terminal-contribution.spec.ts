@@ -20,7 +20,7 @@ import { AIVariableContext, AIVariableResolutionRequest } from '@theia/ai-core';
 import { Container } from '@theia/core/shared/inversify';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalBlock, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
-import { AiTerminalCommandBlockVariableContribution } from './ai-terminal-command-block-variable';
+import { AiTerminalCommandBlockVariableContribution } from './ai-terminal-command-block-variable.js';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 function createMockTerminal(overrides: Partial<{

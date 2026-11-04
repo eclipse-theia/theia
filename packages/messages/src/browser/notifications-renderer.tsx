@@ -19,9 +19,9 @@ import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { ApplicationShell, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { SecondaryWindowService } from '@theia/core/lib/browser/window/secondary-window-service';
-import { NotificationManager } from './notifications-manager';
-import { NotificationCenterComponent } from './notification-center-component';
-import { NotificationToastsComponent } from './notification-toasts-component';
+import { NotificationManager } from './notifications-manager.js';
+import { NotificationCenterComponent } from './notification-center-component.js';
+import { NotificationToastsComponent } from './notification-toasts-component.js';
 import { CorePreferences, DisposableCollection } from '@theia/core';
 
 @injectable()

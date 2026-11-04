@@ -18,11 +18,11 @@ import { interfaces } from '@theia/core/shared/inversify';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import * as theia from '@theia/plugin';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { CommandRegistryMain, CommandRegistryExt, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
-import { RPCProtocol } from '../../common/rpc-protocol';
+import { CommandRegistryMain, CommandRegistryExt, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
 import { KeybindingRegistry } from '@theia/core/lib/browser';
-import { PluginContributionHandler } from './plugin-contribution-handler';
-import { ArgumentProcessor } from '../../common/commands';
+import { PluginContributionHandler } from './plugin-contribution-handler.js';
+import { ArgumentProcessor } from '../../common/commands.js';
 import { ContributionProvider } from '@theia/core';
 
 export const ArgumentProcessorContribution = Symbol('ArgumentProcessorContribution');

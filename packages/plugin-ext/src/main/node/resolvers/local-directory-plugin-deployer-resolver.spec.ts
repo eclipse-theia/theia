@@ -18,8 +18,8 @@ import { expect } from 'chai';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { LocalDirectoryPluginDeployerResolver } from './local-directory-plugin-deployer-resolver';
-import { PluginDeployerResolverContext } from '../../../common/plugin-protocol';
+import { LocalDirectoryPluginDeployerResolver } from './local-directory-plugin-deployer-resolver.js';
+import { PluginDeployerResolverContext } from '../../../common/plugin-protocol.js';
 
 describe('LocalDirectoryPluginDeployerResolver', () => {
 

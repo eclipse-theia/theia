@@ -18,12 +18,12 @@ import { inject, injectable, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { FileSystemPreferences } from '../../common/filesystem-preferences';
+import { FileSystemPreferences } from '../../common/filesystem-preferences.js';
 import { nls } from '@theia/core';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { binaryStreamToWebStream } from '@theia/core/lib/common/stream';
-import { FileService } from '../../browser/file-service';
-import type { FileDownloadService } from '../../common/download/file-download';
+import { FileService } from '../../browser/file-service.js';
+import type { FileDownloadService } from '../../common/download/file-download.js';
 import * as tarStream from 'tar-stream';
 import { minimatch } from 'minimatch';
 

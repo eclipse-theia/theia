@@ -20,18 +20,18 @@
 // some code was copied and modified from https://github.com/Microsoft/vscode/blob/main/src/vs/workbench/api/browser/mainThreadWorkspace.ts
 import * as theia from '@theia/plugin';
 import { interfaces, injectable } from '@theia/core/shared/inversify';
-import { WorkspaceExt, StorageExt, MAIN_RPC_CONTEXT, WorkspaceMain, WorkspaceFolderPickOptionsMain, FindFilesOptions } from '../../common/plugin-api-rpc';
-import { WorkspaceFolderToAdd } from '../../common/plugin-api-rpc-model';
-import { RPCProtocol } from '../../common/rpc-protocol';
+import { WorkspaceExt, StorageExt, MAIN_RPC_CONTEXT, WorkspaceMain, WorkspaceFolderPickOptionsMain, FindFilesOptions } from '../../common/plugin-api-rpc.js';
+import { WorkspaceFolderToAdd } from '../../common/plugin-api-rpc-model.js';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
 import { URI as Uri } from '@theia/core/shared/vscode-uri';
-import { UriComponents } from '../../common/uri-components';
+import { UriComponents } from '../../common/uri-components.js';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService, WorkspaceTrustService, CanonicalUriService } from '@theia/workspace/lib/browser';
 import { Resource } from '@theia/core/lib/common/resource';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, Event, ResourceResolver, CancellationToken, isUndefined } from '@theia/core';
-import { PluginServer } from '../../common/plugin-protocol';
+import { PluginServer } from '../../common/plugin-protocol.js';
 import { FileSystemPreferences } from '@theia/filesystem/lib/common';
 import { SearchInWorkspaceService } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
@@ -409,6 +409,8 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
             }
         } else if (typeof detectedEncoding === 'string') {
             preferredEncoding = detectedEncoding;
+        } else if (this.preferenceService.get('files.encoding', undefined, uri ? URI.fromComponents(uri).toString() : undefined) === UTF8_with_bom) {
+            preferredEncoding = UTF8; // if we did not detect UTF 8 BOM before, this can only be UTF 8 then
         }
         let encoding;
         if (uri) {

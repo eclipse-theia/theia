@@ -28,7 +28,7 @@ import {
 } from '@theia/ai-core';
 import { ChatSessionContext } from '@theia/ai-chat';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
-import { TASK_CONTEXT_SUMMARY_VARIABLE_ID } from '../common/context-variables';
+import { TASK_CONTEXT_SUMMARY_VARIABLE_ID } from '../common/context-variables.js';
 
 export const TASK_CONTEXT_SUMMARY_VARIABLE: AIVariable = {
     id: TASK_CONTEXT_SUMMARY_VARIABLE_ID,

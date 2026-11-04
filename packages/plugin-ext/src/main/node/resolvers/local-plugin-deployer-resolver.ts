@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { PluginDeployerResolver, PluginDeployerResolverContext } from '../../../common/plugin-protocol';
+import { PluginDeployerResolver, PluginDeployerResolverContext } from '../../../common/plugin-protocol.js';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
 import { FileUri } from '@theia/core/lib/node';

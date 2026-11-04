@@ -29,13 +29,13 @@ import {
     InlayHintDto,
     IdentifiableInlineCompletions,
     HoverWithId,
-} from '../common/plugin-api-rpc';
-import { RPCProtocol } from '../common/rpc-protocol';
+} from '../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../common/rpc-protocol.js';
 import * as theia from '@theia/plugin';
-import { DocumentsExtImpl } from './documents';
-import { PluginModel } from '../common/plugin-protocol';
-import { Disposable, URI, LanguageStatusSeverity } from './types-impl';
-import { UriComponents } from '../common/uri-components';
+import { DocumentsExtImpl } from './documents.js';
+import { PluginModel } from '../common/plugin-protocol.js';
+import { Disposable, URI, LanguageStatusSeverity } from './types-impl.js';
+import { UriComponents } from '../common/uri-components.js';
 import {
     CodeActionProviderDocumentation,
     CompletionContext,
@@ -74,49 +74,49 @@ import {
     DocumentDropEdit,
     DataTransferDTO,
     HoverContext
-} from '../common/plugin-api-rpc-model';
-import { CompletionAdapter } from './languages/completion';
-import { Diagnostics } from './languages/diagnostics';
-import { SignatureHelpAdapter } from './languages/signature';
-import { HoverAdapter } from './languages/hover';
-import { EvaluatableExpressionAdapter } from './languages/evaluatable-expression';
-import { InlineValuesAdapter } from './languages/inline-values';
-import { DocumentHighlightAdapter } from './languages/document-highlight';
-import { MultiDocumentHighlightAdapter } from './languages/multi-document-highlight';
-import { DocumentFormattingAdapter } from './languages/document-formatting';
-import { RangeFormattingAdapter } from './languages/range-formatting';
-import { OnTypeFormattingAdapter } from './languages/on-type-formatting';
-import { DefinitionAdapter } from './languages/definition';
-import { ImplementationAdapter } from './languages/implementation';
-import { TypeDefinitionAdapter } from './languages/type-definition';
-import { CodeActionAdapter } from './languages/code-action';
-import { LinkProviderAdapter } from './languages/link-provider';
-import { CodeLensAdapter } from './languages/lens';
-import { OutlineAdapter } from './languages/outline';
-import { ReferenceAdapter } from './languages/reference';
-import { WorkspaceSymbolAdapter } from './languages/workspace-symbol';
+} from '../common/plugin-api-rpc-model.js';
+import { CompletionAdapter } from './languages/completion.js';
+import { Diagnostics } from './languages/diagnostics.js';
+import { SignatureHelpAdapter } from './languages/signature.js';
+import { HoverAdapter } from './languages/hover.js';
+import { EvaluatableExpressionAdapter } from './languages/evaluatable-expression.js';
+import { InlineValuesAdapter } from './languages/inline-values.js';
+import { DocumentHighlightAdapter } from './languages/document-highlight.js';
+import { MultiDocumentHighlightAdapter } from './languages/multi-document-highlight.js';
+import { DocumentFormattingAdapter } from './languages/document-formatting.js';
+import { RangeFormattingAdapter } from './languages/range-formatting.js';
+import { OnTypeFormattingAdapter } from './languages/on-type-formatting.js';
+import { DefinitionAdapter } from './languages/definition.js';
+import { ImplementationAdapter } from './languages/implementation.js';
+import { TypeDefinitionAdapter } from './languages/type-definition.js';
+import { CodeActionAdapter } from './languages/code-action.js';
+import { LinkProviderAdapter } from './languages/link-provider.js';
+import { CodeLensAdapter } from './languages/lens.js';
+import { OutlineAdapter } from './languages/outline.js';
+import { ReferenceAdapter } from './languages/reference.js';
+import { WorkspaceSymbolAdapter } from './languages/workspace-symbol.js';
 import { SymbolInformation } from '@theia/core/shared/vscode-languageserver-protocol';
-import { FoldingProviderAdapter } from './languages/folding';
-import { SelectionRangeProviderAdapter } from './languages/selection-range';
-import { ColorProviderAdapter } from './languages/color';
-import { RenameAdapter } from './languages/rename';
+import { FoldingProviderAdapter } from './languages/folding.js';
+import { SelectionRangeProviderAdapter } from './languages/selection-range.js';
+import { ColorProviderAdapter } from './languages/color.js';
+import { RenameAdapter } from './languages/rename.js';
 import { Event } from '@theia/core/lib/common/event';
-import { CommandRegistryImpl } from './command-registry';
-import { DeclarationAdapter } from './languages/declaration';
-import { CallHierarchyAdapter } from './languages/call-hierarchy';
-import { TypeHierarchyAdapter } from './languages/type-hierarchy';
+import { CommandRegistryImpl } from './command-registry.js';
+import { DeclarationAdapter } from './languages/declaration.js';
+import { CallHierarchyAdapter } from './languages/call-hierarchy.js';
+import { TypeHierarchyAdapter } from './languages/type-hierarchy.js';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { DocumentSemanticTokensAdapter, DocumentRangeSemanticTokensAdapter } from './languages/semantic-highlighting';
-import { isReadonlyArray } from '../common/arrays';
+import { DocumentSemanticTokensAdapter, DocumentRangeSemanticTokensAdapter } from './languages/semantic-highlighting.js';
+import { isReadonlyArray } from '../common/arrays.js';
 import { DisposableCollection, disposableTimeout, Disposable as TheiaDisposable } from '@theia/core/lib/common/disposable';
 import { Severity } from '@theia/core/lib/common/severity';
-import { LinkedEditingRangeAdapter } from './languages/linked-editing-range';
-import { serializeAutoClosingPairs, serializeEnterRules, serializeIndentation, serializeRegExp } from './languages-utils';
-import { InlayHintsAdapter } from './languages/inlay-hints';
-import { InlineCompletionAdapter, InlineCompletionAdapterBase } from './languages/inline-completion';
-import { DocumentDropEditAdapter } from './languages/document-drop-edit';
+import { LinkedEditingRangeAdapter } from './languages/linked-editing-range.js';
+import { serializeAutoClosingPairs, serializeEnterRules, serializeIndentation, serializeRegExp } from './languages-utils.js';
+import { InlayHintsAdapter } from './languages/inlay-hints.js';
+import { InlineCompletionAdapter, InlineCompletionAdapterBase } from './languages/inline-completion.js';
+import { DocumentDropEditAdapter } from './languages/document-drop-edit.js';
 import { IDisposable } from '@theia/monaco-editor-core';
-import { FileSystemExtImpl, FsLinkProvider } from './file-system-ext-impl';
+import { FileSystemExtImpl, FsLinkProvider } from './file-system-ext-impl.js';
 
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |

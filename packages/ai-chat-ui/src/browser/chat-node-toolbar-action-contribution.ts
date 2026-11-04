@@ -15,7 +15,7 @@
 // *****************************************************************************
 import { Command, Event, nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
-import { isRequestNode, RequestNode, ResponseNode } from './chat-tree-view';
+import { isRequestNode, RequestNode, ResponseNode } from './chat-tree-view/index.js';
 import { EditableChatRequestModel } from '@theia/ai-chat';
 
 export interface ChatNodeToolbarAction {

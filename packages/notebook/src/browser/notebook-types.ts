@@ -22,8 +22,8 @@ import {
     NotebookCellsChangeLanguageEvent,
     NotebookCellsChangeMetadataEvent,
     NotebookCellsChangeType, NotebookCellTextModelSplice, NotebookDocumentMetadata
-} from '../common';
-import { NotebookCell } from './view-model/notebook-cell-model';
+} from '../common/index.js';
+import { NotebookCell } from './view-model/notebook-cell-model.js';
 
 export interface NotebookTextModelChangedEvent {
     readonly rawEvents: NotebookContentChangedEvent[];

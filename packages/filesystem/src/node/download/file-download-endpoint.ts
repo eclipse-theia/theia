@@ -17,12 +17,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { json } from 'body-parser';
+// A CommonJS module whose exports cannot be detected statically, so it is imported as a whole.
+import bodyParser from 'body-parser';
 import { Application, Router, RequestHandler } from '@theia/core/shared/express';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { HttpConnectionValidator } from '@theia/core/lib/node';
 import { FileUri } from '@theia/core/lib/common/file-uri';
-import { FileDownloadHandler } from './file-download-handler';
+import { FileDownloadHandler } from './file-download-handler.js';
 
 @injectable()
 export class FileDownloadEndpoint implements BackendApplicationContribution {
@@ -52,7 +53,7 @@ export class FileDownloadEndpoint implements BackendApplicationContribution {
         router.get('/', (request, response) => this.singleFileDownloadHandler.handle(request, response));
         router.put('/', (request, response) => this.multiFileDownloadHandler.handle(request, response));
         // Content-Type: application/json
-        app.use(json());
+        app.use(bodyParser.json());
         app.use(FileDownloadEndpoint.PATH, guard, router);
         app.get('/file', guard, (request, response) => {
             const uri = new URL(request.url, 'http://localhost').search.slice(1);

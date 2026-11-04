@@ -35,7 +35,9 @@ export class BackendGenerator extends AbstractGenerator {
     protected compileElectronMain(electronMainModules?: Map<string, string>): string {
         return `// @ts-check
 
-require('@theia/core/shared/reflect-metadata');
+import '@theia/core/shared/reflect-metadata';
+import { resolve } from 'path';
+import { app } from 'electron';
 ${this.emitStartupLogger('Electron main', 'electron main start', { requirePerformance: true })}
 ${this.emitStartupLog('loading modules...')}
 
@@ -53,15 +55,13 @@ process.env.LC_NUMERIC = 'C';
     // in your dotfiles (.bashrc/.bash_profile/.zshrc/etc).
     // https://github.com/electron/electron/issues/550#issuecomment-162037357
     // https://github.com/eclipse-theia/theia/pull/3534#issuecomment-439689082
-    (await require('@theia/core/electron-shared/fix-path')).default();
+    (await import('@theia/core/electron-shared/fix-path')).default();
 
-    const { resolve } = require('path');
-    const theiaAppProjectPath = resolve(__dirname, '..', '..');
+    const theiaAppProjectPath = resolve(import.meta.dirname, '..', '..');
     process.env.THEIA_APP_PROJECT_PATH = theiaAppProjectPath;
-    const { default: electronMainApplicationModule } = require('@theia/core/lib/electron-main/electron-main-application-module');
-    const { ElectronMainApplication, ElectronMainApplicationGlobals } = require('@theia/core/lib/electron-main/electron-main-application');
-    const { Container } = require('@theia/core/shared/inversify');
-    const { app } = require('electron');
+    const { default: electronMainApplicationModule } = await import('@theia/core/lib/electron-main/electron-main-application-module');
+    const { ElectronMainApplication, ElectronMainApplicationGlobals } = await import('@theia/core/lib/electron-main/electron-main-application');
+    const { Container } = await import('@theia/core/shared/inversify');
 
     const config = ${this.prettyStringify(this.pck.props.frontend.config)};
     const isSingleInstance = ${this.pck.props.backend.config.singleInstance === true ? 'true' : 'false'};
@@ -76,9 +76,9 @@ process.env.LC_NUMERIC = 'C';
     container.load(electronMainApplicationModule);
     container.bind(ElectronMainApplicationGlobals).toConstantValue({
         THEIA_APP_PROJECT_PATH: theiaAppProjectPath,
-        THEIA_BACKEND_MAIN_PATH: resolve(__dirname, 'main.js'),
-        THEIA_FRONTEND_HTML_PATH: resolve(__dirname, '..', '..', 'lib', 'frontend', 'index.html'),
-        THEIA_SECONDARY_WINDOW_HTML_PATH: resolve(__dirname, '..', '..', 'lib', 'frontend', 'secondary-window.html')
+        THEIA_BACKEND_MAIN_PATH: resolve(import.meta.dirname, 'main.js'),
+        THEIA_FRONTEND_HTML_PATH: resolve(import.meta.dirname, '..', '..', 'lib', 'frontend', 'index.html'),
+        THEIA_SECONDARY_WINDOW_HTML_PATH: resolve(import.meta.dirname, '..', '..', 'lib', 'frontend', 'secondary-window.html')
     });
     ${this.emitStartupLog('container created')}
 
@@ -97,7 +97,7 @@ process.env.LC_NUMERIC = 'C';
 
     try {
 ${Array.from(electronMainModules?.values() ?? [], jsModulePath => `\
-        await load(require('${jsModulePath}'));`).join(EOL)}
+        await load(await import('${jsModulePath}'));`).join(EOL)}
         ${this.emitStartupLog('modules loaded')}
         await start();
     } catch (reason) {
@@ -115,7 +115,8 @@ ${Array.from(electronMainModules?.values() ?? [], jsModulePath => `\
 
     protected compileServer(backendModules: Map<string, string>): string {
         return `// @ts-check
-require('reflect-metadata');
+import 'reflect-metadata';
+import path from 'path';
 ${this.emitStartupLogger('Backend server', 'backend process start', { requirePerformance: true })}
 ${this.emitStartupLog('loading modules...')}${this.ifElectron(`
 
@@ -129,59 +130,61 @@ if ('ELECTRON_RUN_AS_NODE' in process.env) {
     delete process.env.ELECTRON_RUN_AS_NODE;
 }
 
-const path = require('path');
-process.env.THEIA_APP_PROJECT_PATH = path.resolve(__dirname, '..', '..')
-const express = require('@theia/core/shared/express');
-const { Container } = require('@theia/core/shared/inversify');
-const { BackendApplication, BackendApplicationServer, CliManager } = require('@theia/core/lib/node');
-const { backendApplicationModule } = require('@theia/core/lib/node/backend-application-module');
-const { messagingBackendModule } = require('@theia/core/lib/node/messaging/messaging-backend-module');
-const { loggerBackendModule } = require('@theia/core/lib/node/logger-backend-module');
+process.env.THEIA_APP_PROJECT_PATH = path.resolve(import.meta.dirname, '..', '..')
 
-const container = new Container();
-container.load(backendApplicationModule);
-container.load(messagingBackendModule);
-container.load(loggerBackendModule);
-${this.emitStartupLog('container created')}
-
-function defaultServeStatic(app) {
-    app.use(express.static(path.resolve(__dirname, '../../lib/frontend')))
-}
-
-function load(raw) {
-    return Promise.resolve(raw).then(
-        module => container.load(module.default)
-    );
-}
-
-async function start(port, host, argv = process.argv) {
-    if (!container.isBound(BackendApplicationServer)) {
-        container.bind(BackendApplicationServer).toConstantValue({ configure: defaultServeStatic });
-    }
-    let result = undefined;
-    await container.get(CliManager).initializeCli(argv.slice(2),
-        () => {
-            ${this.emitStartupLog('resolving application')}
-            const application = container.get(BackendApplication);
-            ${this.emitStartupLog('application resolved')}
-            return application.configured;
-        },
-        async () => {
-            result = container.get(BackendApplication).start(port, host);
-        });
-    if (result) {
-        return result;
-    } else {
-        return Promise.reject(0);
-    }
-}
-
-module.exports = async (port, host, argv) => {
+// The modules are imported dynamically, so that they are loaded after the environment above has been set up.
+// This module must not use top-level \`await\`, so that Electron can load the backend with \`require\`.
+export default async (port, host, argv = process.argv) => {
     try {
+        const { default: express } = await import('@theia/core/shared/express');
+        const { Container } = await import('@theia/core/shared/inversify');
+        const { BackendApplication, BackendApplicationServer, CliManager } = await import('@theia/core/lib/node');
+        const { backendApplicationModule } = await import('@theia/core/lib/node/backend-application-module');
+        const { messagingBackendModule } = await import('@theia/core/lib/node/messaging/messaging-backend-module');
+        const { loggerBackendModule } = await import('@theia/core/lib/node/logger-backend-module');
+
+        const container = new Container();
+        container.load(backendApplicationModule);
+        container.load(messagingBackendModule);
+        container.load(loggerBackendModule);
+        ${this.emitStartupLog('container created')}
+
+        function defaultServeStatic(app) {
+            app.use(express.static(path.resolve(import.meta.dirname, '../../lib/frontend')))
+        }
+
+        function load(raw) {
+            return Promise.resolve(raw).then(
+                module => container.load(module.default)
+            );
+        }
+
+        async function start() {
+            if (!container.isBound(BackendApplicationServer)) {
+                container.bind(BackendApplicationServer).toConstantValue({ configure: defaultServeStatic });
+            }
+            let result = undefined;
+            await container.get(CliManager).initializeCli(argv.slice(2),
+                () => {
+                    ${this.emitStartupLog('resolving application')}
+                    const application = container.get(BackendApplication);
+                    ${this.emitStartupLog('application resolved')}
+                    return application.configured;
+                },
+                async () => {
+                    result = container.get(BackendApplication).start(port, host);
+                });
+            if (result) {
+                return result;
+            } else {
+                return Promise.reject(0);
+            }
+        }
+
 ${Array.from(backendModules.values(), jsModulePath => `\
-        await load(require('${jsModulePath}'));`).join(EOL)}
+        await load(import('${jsModulePath}'));`).join(EOL)}
         ${this.emitStartupLog('modules loaded')}
-        return await start(port, host, argv);
+        return await start();
     } catch (error) {
         if (typeof error !== 'number') {
             console.error('Failed to start the backend application:');
@@ -198,15 +201,16 @@ ${Array.from(backendModules.values(), jsModulePath => `\
         return `// @ts-check
 ${this.emitStartupLogger('Backend main', 'backend process start', { requirePerformance: true })}
 ${this.emitStartupLog('entry point loaded')}
-const { BackendApplicationConfigProvider } = require('@theia/core/lib/node/backend-application-config-provider');
-const main = require('@theia/core/lib/node/main');
+import { BackendApplicationConfigProvider } from '@theia/core/lib/node/backend-application-config-provider';
+import * as main from '@theia/core/lib/node/main';
 
 BackendApplicationConfigProvider.set(${this.prettyStringify(this.pck.props.backend.config)});
 
 globalThis.extensionInfo = ${this.prettyStringify(this.pck.extensionPackages.map(({ name, version }) => ({ name, version })))};
 
-const serverModule = require('./server');
-const serverAddress = main.start(serverModule());
+// Loaded after the configuration has been set, as imports are evaluated first.
+// No top-level \`await\`, so that Electron can load the backend with \`require\`.
+const serverAddress = import('./server.js').then(({ default: serverModule }) => main.start(serverModule()));
 
 serverAddress.then((addressInfo) => {
     if (process && process.send && addressInfo) {

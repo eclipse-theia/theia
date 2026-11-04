@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { Emitter, Event } from '../common';
-import { IconThemeService } from './icon-theme-service';
-import { DidChangeLabelEvent, LabelProviderContribution } from './label-provider';
-import { LanguageService } from './language-service';
+import { Emitter, Event } from '../common/index.js';
+import { IconThemeService } from './icon-theme-service.js';
+import { DidChangeLabelEvent, LabelProviderContribution } from './label-provider.js';
+import { LanguageService } from './language-service.js';
 
 @injectable()
 export class LanguageIconLabelProvider implements LabelProviderContribution {

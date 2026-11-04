@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { isEmptyToolArgs, normalizeToolArgs } from './chat-tool-request-service';
+import { isEmptyToolArgs, normalizeToolArgs } from './chat-tool-request-service.js';
 
 describe('Tool Arguments Utilities', () => {
 

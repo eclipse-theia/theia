@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { ElectronSecurityToken } from '../../electron-common/electron-token';
+import { ElectronSecurityToken } from '../../electron-common/electron-token.js';
 
 export default new ContainerModule(bind => {
     bind(ElectronSecurityToken).toConstantValue(window.electronTheiaCore.getSecurityToken());

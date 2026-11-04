@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DirectoryArchiver } from '../directory-archiver';
+import { DirectoryArchiver } from '../directory-archiver.js';
 import URI from '@theia/core/lib/common/uri';
 
 export class MockDirectoryArchiver extends DirectoryArchiver {

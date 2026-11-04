@@ -14,16 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '../test/jsdom';
+import { enableJSDOM } from '../test/jsdom.js';
 let disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
 
 import { MessageLoop } from '@lumino/messaging';
 import { TabBar, Title, Widget } from '@lumino/widgets';
-import { BreadcrumbsRenderer } from '../breadcrumbs/breadcrumbs-renderer';
-import { NativeTabDragService } from './native-tab-drag-service';
-import { TabBarToolbar, TabBarToolbarRegistry } from './tab-bar-toolbar';
-import { SideTabBar, TabBarRenderer, ToolbarAwareTabBar } from './tab-bars';
+import { BreadcrumbsRenderer } from '../breadcrumbs/breadcrumbs-renderer.js';
+import { NativeTabDragService } from './native-tab-drag-service.js';
+import { TabBarToolbar, TabBarToolbarRegistry } from './tab-bar-toolbar/index.js';
+import { SideTabBar, TabBarRenderer, ToolbarAwareTabBar } from './tab-bars.js';
 
 disableJSDOM();
 

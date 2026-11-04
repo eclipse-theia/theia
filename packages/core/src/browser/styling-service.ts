@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider } from '../common/contribution-provider';
-import { Theme, ThemeType } from '../common/theme';
-import { ColorRegistry } from './color-registry';
-import { DecorationStyle } from './decoration-style';
-import { FrontendApplicationContribution } from './frontend-application-contribution';
-import { ThemeService } from './theming';
-import { SecondaryWindowService } from './window/secondary-window-service';
+import { ContributionProvider } from '../common/contribution-provider.js';
+import { Theme, ThemeType } from '../common/theme.js';
+import { ColorRegistry } from './color-registry.js';
+import { DecorationStyle } from './decoration-style.js';
+import { FrontendApplicationContribution } from './frontend-application-contribution.js';
+import { ThemeService } from './theming.js';
+import { SecondaryWindowService } from './window/secondary-window-service.js';
 
 export const StylingParticipant = Symbol('StylingParticipant');
 

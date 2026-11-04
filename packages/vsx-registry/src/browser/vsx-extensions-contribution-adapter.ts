@@ -18,9 +18,9 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { Event, nls } from '@theia/core';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { PluginIdentifiers } from '@theia/plugin-ext';
-import { ExtensionsSourceContribution, SearchResult } from './extensions-source-contribution';
-import { VSXExtension } from './vsx-extension';
-import { VSXExtensionsModel } from './vsx-extensions-model';
+import { ExtensionsSourceContribution, SearchResult } from './extensions-source-contribution.js';
+import { VSXExtension } from './vsx-extension.js';
+import { VSXExtensionsModel } from './vsx-extensions-model.js';
 
 /**
  * Adapter that exposes the VSX extensions model as a generic `ExtensionsSourceContribution`.

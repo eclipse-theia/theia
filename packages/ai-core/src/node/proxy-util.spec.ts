@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { getProxyUrl } from './proxy-util';
+import { getProxyUrl } from './proxy-util.js';
 
 describe('getProxyUrl', () => {
     const savedEnv: Record<string, string | undefined> = {};

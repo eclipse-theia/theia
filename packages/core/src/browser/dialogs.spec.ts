@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import * as assert from 'assert';
-import { enableJSDOM } from './test/jsdom';
+import { enableJSDOM } from './test/jsdom.js';
 
 let disableJSDOM = enableJSDOM();
 
-import { AbstractDialog, ConfirmDialog, ConfirmSaveDialog, SingleTextInputDialog } from './dialogs';
+import { AbstractDialog, ConfirmDialog, ConfirmSaveDialog, SingleTextInputDialog } from './dialogs.js';
 import { JSDOM } from 'jsdom';
 
 class TestDialog extends AbstractDialog<string> {

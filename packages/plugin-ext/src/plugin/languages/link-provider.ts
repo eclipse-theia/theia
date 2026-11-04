@@ -16,10 +16,10 @@
 
 import { URI } from '@theia/core/shared/vscode-uri';
 import * as theia from '@theia/plugin';
-import { DocumentsExtImpl } from '../documents';
-import { DocumentLink } from '../../common/plugin-api-rpc-model';
-import * as Converter from '../type-converters';
-import { ObjectIdentifier } from '../../common/object-identifier';
+import { DocumentsExtImpl } from '../documents.js';
+import { DocumentLink } from '../../common/plugin-api-rpc-model.js';
+import * as Converter from '../type-converters.js';
+import { ObjectIdentifier } from '../../common/object-identifier.js';
 
 export class LinkProviderAdapter {
     private cacheId = 0;

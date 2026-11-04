@@ -14,5 +14,5 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './outline-view-widget';
-export * from './outline-view-frontend-module';
+export * from './outline-view-widget.js';
+export * from './outline-view-frontend-module.js';

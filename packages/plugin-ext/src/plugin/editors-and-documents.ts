@@ -15,15 +15,15 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { EditorsAndDocumentsExt, EditorsAndDocumentsDelta, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
-import { TextEditorExt } from './text-editor';
-import { RPCProtocol } from '../common/rpc-protocol';
+import { EditorsAndDocumentsExt, EditorsAndDocumentsDelta, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc.js';
+import { TextEditorExt } from './text-editor.js';
+import { RPCProtocol } from '../common/rpc-protocol.js';
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { DocumentDataExt } from './document-data';
-import { ok } from '../common/assert';
-import * as Converter from './type-converters';
-import { dispose } from '../common/disposable-util';
-import { URI } from './types-impl';
+import { DocumentDataExt } from './document-data.js';
+import { ok } from '../common/assert.js';
+import * as Converter from './type-converters.js';
+import { dispose } from '../common/disposable-util.js';
+import { URI } from './types-impl.js';
 
 @injectable()
 export class EditorsAndDocumentsExtImpl implements EditorsAndDocumentsExt {

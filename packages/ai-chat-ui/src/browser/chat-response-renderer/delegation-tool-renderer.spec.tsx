@@ -28,8 +28,8 @@ import { flushSync } from '@theia/core/shared/react-dom';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { ResponseNode } from '../chat-tree-view';
-import { DelegationToolRenderer } from './delegation-tool-renderer';
+import { ResponseNode } from '../chat-tree-view/index.js';
+import { DelegationToolRenderer } from './delegation-tool-renderer.js';
 
 disableJSDOM();
 

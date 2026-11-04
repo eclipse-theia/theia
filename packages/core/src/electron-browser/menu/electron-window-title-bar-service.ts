@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { codicon } from '../../browser/widgets/widget';
+import { codicon } from '../../browser/widgets/widget.js';
 
 @injectable()
 export class ElectronWindowTitleBarService {

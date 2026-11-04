@@ -12,15 +12,15 @@ import { AGENTS_MD_FILE_NAME, PromptVariantSet } from '@theia/ai-core/lib/common
 import {
     GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, SEARCH_IN_WORKSPACE_FUNCTION_ID,
     FIND_FILES_BY_PATTERN_FUNCTION_ID
-} from './workspace-functions';
-import { CONTEXT_FILES_VARIABLE_ID } from './context-variables';
-import { UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions';
+} from './workspace-functions.js';
+import { CONTEXT_FILES_VARIABLE_ID } from './context-variables.js';
+import { UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions.js';
 import {
     SUGGEST_FILE_CONTENT_ID,
     SUGGEST_FILE_REPLACEMENTS_ID,
     GET_PROPOSED_CHANGES_ID,
     CLEAR_FILE_CHANGES_ID
-} from './file-changeset-function-ids';
+} from './file-changeset-function-ids.js';
 
 export const AGENTS_MD_SYSTEM_PROMPT_TEMPLATE_ID = 'agents-md-system';
 export const AGENTS_MD_TEMPLATE_PROMPT_ID = 'agents-md-template';

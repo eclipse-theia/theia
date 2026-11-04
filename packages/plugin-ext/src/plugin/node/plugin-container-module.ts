@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { interfaces, ContainerModule } from '@theia/core/shared/inversify';
-import { Plugin, PluginManager, emptyPlugin } from '../../common';
+import { Plugin, PluginManager, emptyPlugin } from '../../common/index.js';
+import Module from 'node:module';
 
 export type ApiFactory<T extends object> = (plugin: Plugin) => T;
 
@@ -124,8 +125,8 @@ export class PluginApiCache<T extends object> {
      * the construction of its default exports object.
      */
     private overrideInternalLoad(): void {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const module = require('module');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const module: any = Module;
 
         const internalLoad = module._load;
         const self = this;

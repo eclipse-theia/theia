@@ -17,7 +17,7 @@
 import { Event } from '@theia/core';
 import { RpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
-import { ProblemMatcher, ProblemMatch, WatchingMatcherContribution, ProblemMatcherContribution, ProblemPatternContribution } from './problem-matcher-protocol';
+import { ProblemMatcher, ProblemMatch, WatchingMatcherContribution, ProblemMatcherContribution, ProblemPatternContribution } from './problem-matcher-protocol.js';
 export { WatchingMatcherContribution, ProblemMatcherContribution, ProblemPatternContribution };
 
 export const taskPath = '/services/task';

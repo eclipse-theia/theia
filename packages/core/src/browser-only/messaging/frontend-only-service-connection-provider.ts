@@ -13,13 +13,13 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { Emitter, Event } from '../../common/event';
-import { Channel } from '../../common/message-rpc/channel';
-import { RpcProxy, RpcProxyFactory } from '../../common/messaging/proxy-factory';
+import { Emitter, Event } from '../../common/event.js';
+import { Channel } from '../../common/message-rpc/channel.js';
+import { RpcProxy, RpcProxyFactory } from '../../common/messaging/proxy-factory.js';
 import { injectable, inject, named } from 'inversify';
-import { ServiceConnectionProvider } from '../../browser/messaging/service-connection-provider';
-import { ILogger } from '../../common/logger';
-import { ConnectionSource } from '../../browser/messaging/connection-source';
+import { ServiceConnectionProvider } from '../../browser/messaging/service-connection-provider.js';
+import { ILogger } from '../../common/logger.js';
+import { ConnectionSource } from '../../browser/messaging/connection-source.js';
 
 @injectable()
 export class FrontendOnlyConnectionSource implements ConnectionSource {

@@ -16,17 +16,17 @@
 
 import type * as theia from '@theia/plugin';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { RPCProtocol } from '../common/rpc-protocol';
+import { RPCProtocol } from '../common/rpc-protocol.js';
 import {
     McpServerDefinitionRegistryExt,
     McpServerDefinitionRegistryMain,
     McpServerDefinitionDto,
     isMcpHttpServerDefinitionDto,
-} from '../common/lm-protocol';
-import { PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
-import { PluginPackageMcpServerDefinitionProviderContribution } from '../common';
-import { PluginLogger } from './logger';
-import { McpHttpServerDefinition, McpServerDefinition, URI } from './types-impl';
+} from '../common/lm-protocol.js';
+import { PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc.js';
+import { PluginPackageMcpServerDefinitionProviderContribution } from '../common/index.js';
+import { PluginLogger } from './logger.js';
+import { McpHttpServerDefinition, McpServerDefinition, URI } from './types-impl.js';
 
 // Local interfaces that match the proposed MCP API
 interface McpServerDefinitionProvider {

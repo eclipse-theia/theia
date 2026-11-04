@@ -26,8 +26,9 @@ function is(userAgent: string, platform: string): boolean {
     return false;
 }
 
-export const isWindows = is('Windows', 'win32');
-export const isOSX = is('Mac', 'darwin');
+// `let` so that tests can override them with `OS.override`, as the exports of ES modules cannot be stubbed.
+export let isWindows = is('Windows', 'win32');
+export let isOSX = is('Mac', 'darwin');
 
 export const EOL = isWindows ? '\r\n' : '\n';
 
@@ -70,6 +71,18 @@ export namespace OS {
         isOSX,
         EOL
     };
+
+    /**
+     * Overrides the detected value of `isWindows` or `isOSX`, e.g. to test platform specific behavior.
+     * The exports of ES modules cannot be replaced by test doubles, so tests use this function instead.
+     */
+    export function override(property: 'isWindows' | 'isOSX', value: boolean): void {
+        if (property === 'isWindows') {
+            isWindows = value;
+        } else {
+            isOSX = value;
+        }
+    }
 
 }
 

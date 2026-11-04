@@ -14,16 +14,16 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import type { ApplicationShell } from './shell';
+import type { ApplicationShell } from './shell/index.js';
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, UNTITLED_SCHEME, URI, Disposable, DisposableCollection, Emitter, Event, ILogger } from '../common';
-import { Navigatable, NavigatableWidget } from './navigatable-types';
-import { AutoSaveMode, Saveable, SaveableSource, SaveableWidget, SaveOptions, SaveReason, setDirty, close, PostCreationSaveableWidget, ShouldSaveDialog } from './saveable';
-import { waitForClosed, Widget } from './widgets';
-import { FrontendApplicationContribution } from './frontend-application-contribution';
-import { FrontendApplication } from './frontend-application';
-import { WindowFocusService } from './window/window-focus-service';
-import throttle = require('lodash.throttle');
+import { ContributionProvider, UNTITLED_SCHEME, URI, Disposable, DisposableCollection, Emitter, Event, ILogger } from '../common/index.js';
+import { Navigatable, NavigatableWidget } from './navigatable-types.js';
+import { AutoSaveMode, Saveable, SaveableSource, SaveableWidget, SaveOptions, SaveReason, setDirty, close, PostCreationSaveableWidget, ShouldSaveDialog } from './saveable.js';
+import { waitForClosed, Widget } from './widgets/index.js';
+import { FrontendApplicationContribution } from './frontend-application-contribution.js';
+import { FrontendApplication } from './frontend-application.js';
+import { WindowFocusService } from './window/window-focus-service.js';
+import throttle from '../../shared/lodash.throttle/index.cjs';
 
 export const SaveErrorChecker = Symbol('SaveErrorChecker');
 
