@@ -184,8 +184,8 @@ export const browserOptions = {
                     // copy webview files to lib folder${this.ifBrowserOnly(`
                     // browser-only has no backend serving lib/webview/pre, so put them next to the
                     // frontend bundle to keep the same /webview path`)}
-                    // pre/ can contain unit tests, don't ship them
-                    from: join(resolvePackagePath('@theia/plugin-ext', __dirname), '..', 'src', 'main', 'browser', 'webview', 'pre', '!(*.spec.ts)'),
+                    // pre/ only holds static assets, don't ship TypeScript sources such as specs
+                    from: join(resolvePackagePath('@theia/plugin-ext', __dirname), '..', 'src', 'main', 'browser', 'webview', 'pre', '!(*.ts)'),
                     to: ${this.ifBrowserOnly("join(__dirname, 'lib', 'frontend', 'webview')", "join(__dirname, 'lib', 'webview', 'pre')")}
                 }`)}
             ]

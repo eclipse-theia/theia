@@ -51,7 +51,7 @@ describe('BundlerGenerator', () => {
 
         it('excludes spec files', () => {
             const config = new TestBundlerGenerator(createPackage('browser-only', ['@theia/plugin-ext'])).browserConfig();
-            expect(config).to.contain("'webview', 'pre', '!(*.spec.ts)')");
+            expect(config).to.contain("'webview', 'pre', '!(*.ts)')");
         });
 
         it('does not copy them without @theia/plugin-ext', () => {
