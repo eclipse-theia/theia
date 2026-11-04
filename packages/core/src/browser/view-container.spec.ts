@@ -37,14 +37,18 @@ import { ApplicationShell } from './shell/application-shell.js';
 import { TabBarDecoratorService } from './shell/tab-bar-decorator.js';
 import { ContextKeyService } from './context-key-service.js';
 import { KeybindingRegistry } from './keybinding.js';
-import { Widget, waitForRevealed } from './widgets/index.js';
+import { Panel, Widget } from './widgets/index.js';
+import { timeout } from '../common/promise-util.js';
 
 disableJSDOM();
 
 describe('ViewContainer', () => {
 
     let container: ViewContainer;
-    let requestedSizes: (number | undefined)[][];
+    let appliedSizes: (number | undefined)[][];
+    let sidePanel: Panel | undefined;
+    let displayedHeight: number;
+    let sizedAt: number[];
 
     function createViewContainer(): ViewContainer {
         const child = new Container({ defaultScope: 'Singleton' });
@@ -58,7 +62,7 @@ describe('ViewContainer', () => {
             unregisterMenuAction: () => { }
         } as unknown as MenuModelRegistry);
         child.bind(WidgetManager).toConstantValue({ getDescription: () => undefined } as unknown as WidgetManager);
-        child.bind(SplitPositionHandler).toConstantValue({} as SplitPositionHandler);
+        child.bind(SplitPositionHandler).toConstantValue({ setSplitHandlePosition: async () => 0 } as unknown as SplitPositionHandler);
         child.bind(TabBarToolbarRegistry).toConstantValue({ onDidChange: new Emitter<void>().event } as unknown as TabBarToolbarRegistry);
         child.bind(TabBarToolbarFactory).toConstantValue(() => Object.assign(new Widget(), {
             updateTarget: () => { },
@@ -81,34 +85,17 @@ describe('ViewContainer', () => {
 
     async function reveal(): Promise<void> {
         Widget.attach(container, document.body);
-        await waitForRevealed(container);
-        await new Promise(resolve => setTimeout(resolve));
+        await timeout(0);
     }
 
-    beforeEach(() => {
-        disableJSDOM = enableJSDOM();
-        container = createViewContainer();
-        requestedSizes = [];
-        container.containerLayout.setPartSizes = (weights: (number | undefined)[]) => { requestedSizes.push(weights); };
-    });
+    function attachToHiddenSidePanel(): void {
+        sidePanel = new Panel();
+        sidePanel.hide();
+        sidePanel.addWidget(container);
+        Widget.attach(sidePanel, document.body);
+    }
 
-    afterEach(() => {
-        container.dispose();
-        disableJSDOM();
-    });
-
-    it('sizes its parts by their weights once it is revealed', async () => {
-        container.addWidget(createWidget('first'), { weight: 2 });
-        container.addWidget(createWidget('second'), { weight: 1 });
-
-        await reveal();
-        container.addWidget(createWidget('third'), { weight: 1 });
-        await waitForRevealed(container);
-
-        expect(requestedSizes).to.deep.equal([[2, 1]]);
-    });
-
-    it('keeps the sizes of a restored layout when a part with a weight is added', async () => {
+    function addRestoredParts(): void {
         const first = createWidget('first');
         const second = createWidget('second');
         container.addWidget(first);
@@ -119,11 +106,108 @@ describe('ViewContainer', () => {
                 { widget: second, partId: 'second', collapsed: false, hidden: false, relativeSize: 0.75, originalContainerId: 'test-container' }
             ]
         });
+    }
+
+    before(() => {
+        // jsdom has no animation frames.
+        globalThis.requestAnimationFrame = callback => setTimeout(() => callback(Date.now())) as unknown as number;
+    });
+
+    after(() => {
+        delete (globalThis as Partial<typeof globalThis>).requestAnimationFrame;
+    });
+
+    beforeEach(() => {
+        disableJSDOM = enableJSDOM();
+        container = createViewContainer();
+        appliedSizes = [];
+        sizedAt = [];
+        displayedHeight = 400;
+        const setPartSizes = container.containerLayout.setPartSizes.bind(container.containerLayout);
+        container.containerLayout.setPartSizes = (weights: (number | undefined)[]) => {
+            const applied = setPartSizes(weights);
+            if (applied) {
+                appliedSizes.push(weights);
+                sizedAt.push(displayedHeight);
+            }
+            return applied;
+        };
+        // jsdom does no layout; a container that is not displayed has no size, as in a browser.
+        Object.defineProperty(container.containerLayout.parent!.node, 'offsetHeight', { get: () => container.isVisible ? displayedHeight : 0 });
+    });
+
+    afterEach(() => {
+        sidePanel?.dispose();
+        sidePanel = undefined;
+        container.dispose();
+        disableJSDOM();
+    });
+
+    it('sizes its parts by their weights once it is revealed', async () => {
+        container.addWidget(createWidget('first'), { weight: 2 });
+        container.addWidget(createWidget('second'), { weight: 1 });
+
+        await reveal();
+        container.addWidget(createWidget('third'), { weight: 1 });
+        await timeout(0);
+
+        expect(appliedSizes).to.deep.equal([[2, 1]]);
+    });
+
+    it('keeps the sizes set on its first reveal when a part with a weight is dropped in later', async () => {
+        container.addWidget(createWidget('first'));
+        await reveal();
+
+        container.addWidget(createWidget('dropped'), { weight: 2 });
+        await timeout(0);
+
+        expect(appliedSizes).to.deep.equal([[undefined]]);
+    });
+
+    it('sizes its parts when a side panel that was not displayed at attach is shown', async () => {
+        attachToHiddenSidePanel();
+        container.addWidget(createWidget('small'), { weight: 1 });
+        container.addWidget(createWidget('large'), { weight: 3 });
+        await timeout(0);
+
+        sidePanel!.show();
+        await timeout(0);
+
+        expect(appliedSizes).to.deep.equal([[1, 3]]);
+    });
+
+    it('sizes its parts at the size the side panel is laid out to, not the size it is shown with', async () => {
+        attachToHiddenSidePanel();
+        container.addWidget(createWidget('small'), { weight: 1 });
+        container.addWidget(createWidget('large'), { weight: 3 });
+        displayedHeight = 100;
+
+        sidePanel!.show();
+        displayedHeight = 400;
+        await timeout(0);
+
+        expect(sizedAt).to.deep.equal([400]);
+        expect(appliedSizes).to.deep.equal([[1, 3]]);
+    });
+
+    it('restores the part sizes when a side panel that was not displayed at attach is shown', async () => {
+        attachToHiddenSidePanel();
+        addRestoredParts();
+        await timeout(0);
+
+        sidePanel!.show();
+        await timeout(0);
+
+        expect(appliedSizes).to.deep.equal([[0.25, 0.75]]);
+    });
+
+    it('keeps the sizes of a restored layout when a part with a weight is added', async () => {
+        addRestoredParts();
 
         container.addWidget(createWidget('third'), { weight: 2 });
         await reveal();
 
-        expect(requestedSizes[requestedSizes.length - 1]).to.deep.equal([0.25, 0.75]);
+        expect(appliedSizes).to.deep.equal([[0.25, 0.75]]);
     });
 
 });
