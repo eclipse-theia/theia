@@ -426,7 +426,7 @@ const ConfirmationUI: React.FC<ConfirmationUIProps> = ({
                 {input.cwd && (
                     <span
                         className="shell-execution-tool meta-item"
-                        title={nls.localize('theia/ai-terminal/workingDirectory', 'Working directory')}
+                        title={nls.localizeByDefault('Working directory')}
                     >
                         <span className={codicon('folder')} />
                         {input.cwd}
@@ -834,7 +834,7 @@ const DeniedUI: React.FC<DeniedUIProps> = ({
         }
         return denialReason
             ? nls.localize('theia/ai-terminal/executionDeniedWithReason', 'Denied with reason')
-            : nls.localize('theia/ai-terminal/executionDenied', 'Denied');
+            : nls.localizeByDefault('Denied');
     };
 
     return (
@@ -860,7 +860,7 @@ const DeniedUI: React.FC<DeniedUIProps> = ({
                     )}
                     <CommandDisplay command={input.command} clipboardService={clipboardService} />
                     {input.cwd && (
-                        <MetaRow icon="folder" label={nls.localize('theia/ai-terminal/workingDirectory', 'Working directory')}>
+                        <MetaRow icon="folder" label={nls.localizeByDefault('Working directory')}>
                             {input.cwd}
                         </MetaRow>
                     )}
@@ -920,7 +920,7 @@ const CanceledUI: React.FC<CanceledUIProps> = ({
                     )}
                     <CommandDisplay command={input.command} clipboardService={clipboardService} />
                     {input.cwd && (
-                        <MetaRow icon="folder" label={nls.localize('theia/ai-terminal/workingDirectory', 'Working directory')}>
+                        <MetaRow icon="folder" label={nls.localizeByDefault('Working directory')}>
                             {input.cwd}
                         </MetaRow>
                     )}
@@ -978,7 +978,7 @@ const FinishedUI: React.FC<FinishedUIProps> = ({
                     )}
                     <CommandDisplay command={input.command} clipboardService={clipboardService} />
                     {(result?.cwd || input.cwd) && (
-                        <MetaRow icon="folder" label={nls.localize('theia/ai-terminal/workingDirectory', 'Working directory')}>
+                        <MetaRow icon="folder" label={nls.localizeByDefault('Working directory')}>
                             {result?.cwd || input.cwd}
                         </MetaRow>
                     )}
