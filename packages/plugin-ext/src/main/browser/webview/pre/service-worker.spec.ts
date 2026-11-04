@@ -10,10 +10,9 @@
 
 import { expect } from 'chai';
 import * as fs from 'fs';
-import * as path from 'path';
 import * as vm from 'vm';
 
-const SERVICE_WORKER = fs.readFileSync(path.join(__dirname, '../../../../../src/main/browser/webview/pre/service-worker.js'), 'utf8');
+const SERVICE_WORKER = fs.readFileSync(new URL('../../../../../src/main/browser/webview/pre/service-worker.js', import.meta.url), 'utf8');
 const ORIGIN = 'http://webview.test';
 const RESOURCE = '/file///workspace/plot.png';
 

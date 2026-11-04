@@ -148,8 +148,9 @@ self.addEventListener('message', async (event) => {
                     ? { body: data.data, mime: data.mime }
                     : undefined;
 
-                if (!resourceRequestStore.resolve(webviewId, resourceKey(data.path, data.query), response)) {
-                    console.error('Could not resolve unknown resource', data.path);
+                const key = resourceKey(data.path, data.query);
+                if (!resourceRequestStore.resolve(webviewId, key, response)) {
+                    console.error('Could not resolve unknown resource', key);
                 }
                 return;
             }
