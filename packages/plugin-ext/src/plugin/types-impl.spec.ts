@@ -107,4 +107,19 @@ describe('API Type Implementations:', () => {
             assert.strictEqual(rPattern.baseUri.toString(), testUri.toString());
         });
     });
+
+    describe('Disposable:', () => {
+        // Issue: #13906
+        it('should run its callback when a subclass declares its own disposable field', () => {
+            let disposed = 0;
+            class Subclass extends types.Disposable {
+                disposable = 'not a function';
+                constructor() {
+                    super(() => disposed++);
+                }
+            }
+            new Subclass().dispose();
+            assert.strictEqual(disposed, 1);
+        });
+    });
 });
