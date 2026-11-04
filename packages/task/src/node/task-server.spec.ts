@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { TaskClient, TaskExitedEvent } from '../common';
-import { CustomTask } from './custom/custom-task';
-import { Task } from './task';
-import { TaskServerImpl } from './task-server';
+import { TaskClient, TaskExitedEvent } from '../common/index.js';
+import { CustomTask } from './custom/custom-task.js';
+import { Task } from './task.js';
+import { TaskServerImpl } from './task-server.js';
 
 class TestTaskServer extends TaskServerImpl {
     constructor(client: TaskClient) {
