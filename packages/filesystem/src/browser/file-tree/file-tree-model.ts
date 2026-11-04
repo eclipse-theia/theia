@@ -133,11 +133,14 @@ export class FileTreeModel extends CompressedTreeModel implements LocationServic
         return nodes;
     }
 
-    async copy(source: URI, target: Readonly<FileStatNode>): Promise<URI> {
+    async copy(source: URI, target: Readonly<FileStatNode>): Promise<URI | undefined> {
         /** If the target is a file or if the target is a directory, but is the same as the source, use the parent of the target as a destination. */
         const parentNode = (target.fileStat.isFile || target.uri.isEqual(source)) ? target.parent : target;
         if (!FileStatNode.is(parentNode)) {
             throw new Error('Parent of file has to be a FileStatNode');
+        }
+        if (source.isEqualOrParent(parentNode.uri)) {
+            return undefined;
         }
         let targetUri = parentNode.uri.resolve(source.path.base);
         try {
@@ -156,6 +159,9 @@ export class FileTreeModel extends CompressedTreeModel implements LocationServic
      */
     async move(source: TreeNode, target: TreeNode): Promise<URI | undefined> {
         if (DirNode.is(target) && FileStatNode.is(source)) {
+            if (source.uri.isEqualOrParent(target.uri)) {
+                return undefined;
+            }
             const name = source.fileStat.name;
             const targetUri = target.uri.resolve(name);
             if (source.uri.isEqual(targetUri)) { return; }
