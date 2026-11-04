@@ -23,7 +23,8 @@ import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { PreferenceChange, PreferenceGetOptions, PreferenceInspection, PreferenceScope, PreferenceService } from '@theia/core/lib/common/preferences';
+import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
+import { PreferenceChange, PreferenceGetOptions, PreferenceInspection, PreferenceScope, PreferenceService, PreferenceUtils } from '@theia/core/lib/common/preferences';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { TrustAwarePreferenceReader } from './trust-aware-preference-reader.js';
 import { AiConfigurationChange, AiConfigurationInspection } from '../common/ai-configuration-service.js';
@@ -61,9 +62,14 @@ class StubPreferenceService {
 
     get<T>(preferenceName: string, options?: PreferenceGetOptions<T>): T | undefined {
         const map = this.values.get(preferenceName);
-        const scope = [PreferenceScope.Folder, PreferenceScope.Workspace, PreferenceScope.User, PreferenceScope.Default]
-            .find(candidate => !options?.excludeScopes?.includes(candidate) && map?.get(candidate) !== undefined);
-        return scope === undefined ? options?.fallback : map?.get(scope) as T;
+        let value: JSONValue | undefined;
+        for (const scope of [PreferenceScope.Default, PreferenceScope.User, PreferenceScope.Workspace, PreferenceScope.Folder, PreferenceScope.Session]) {
+            const scopeValue = map?.get(scope) as JSONValue | undefined;
+            if (!options?.excludeScopes?.includes(scope) && scopeValue !== undefined) {
+                value = PreferenceUtils.merge(value, scopeValue);
+            }
+        }
+        return value === undefined ? options?.fallback : value as T;
     }
 
     set(preferenceName: string, value: unknown, scope: PreferenceScope = PreferenceScope.User): Promise<void> {
