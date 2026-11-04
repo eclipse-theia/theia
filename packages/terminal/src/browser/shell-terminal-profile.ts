@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { URI } from '@theia/core';
-import { TerminalService } from './base/terminal-service';
-import { TerminalWidget, TerminalWidgetOptions } from './base/terminal-widget';
-import { TerminalProfile } from './terminal-profile-service';
+import { TerminalService } from './base/terminal-service.js';
+import { TerminalWidget, TerminalWidgetOptions } from './base/terminal-widget.js';
+import { TerminalProfile } from './terminal-profile-service.js';
 
 export class ShellTerminalProfile implements TerminalProfile {
 

@@ -17,7 +17,7 @@
 import { expect } from 'chai';
 import { Emitter } from '@theia/core';
 import { PreferenceDataProperty, PreferenceSchemaService } from '@theia/core/lib/common/preferences/preference-schema';
-import { HideAiPreferencesContribution, AI_CONFIGURATION_OPEN_PREFERENCE_ID } from './hide-ai-preferences-contribution';
+import { HideAiPreferencesContribution, AI_CONFIGURATION_OPEN_PREFERENCE_ID } from './hide-ai-preferences-contribution.js';
 
 interface TestService {
     readonly service: PreferenceSchemaService;

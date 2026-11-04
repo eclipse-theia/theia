@@ -34,8 +34,8 @@ import { flushSync } from '@theia/core/shared/react-dom';
 import { SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { AiSettingsRowService } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row-service';
 import { AiConfigurationCategoryId, AiConfigurationRenderContext } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
-import { PREFERENCE_NAME_ENABLE_AI } from '../../../common/ai-ide-preferences';
-import { GeneralConfigurationCategory } from './general-configuration-category';
+import { PREFERENCE_NAME_ENABLE_AI } from '../../../common/ai-ide-preferences.js';
+import { GeneralConfigurationCategory } from './general-configuration-category.js';
 
 disableJSDOM();
 

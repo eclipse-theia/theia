@@ -18,7 +18,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { LocalFolderCommands } from '@theia/workspace/lib/browser-only/local-folder-frontend-contribution';
-import { GettingStartedWidget } from '../browser/getting-started-widget';
+import { GettingStartedWidget } from '../browser/getting-started-widget.js';
 
 /**
  * Adds an action to open a folder of the local file system, as the browser-only "Open" action only covers the OPFS.

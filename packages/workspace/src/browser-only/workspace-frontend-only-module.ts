@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { BrowserOnlyWorkspaceServer } from './browser-only-workspace-server';
-import { WorkspaceServer } from '../common';
+import { BrowserOnlyWorkspaceServer } from './browser-only-workspace-server.js';
+import { WorkspaceServer } from '../common/index.js';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { LocalFolderFrontendContribution } from './local-folder-frontend-contribution';
+import { LocalFolderFrontendContribution } from './local-folder-frontend-contribution.js';
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bind(BrowserOnlyWorkspaceServer).toSelf().inSingletonScope();

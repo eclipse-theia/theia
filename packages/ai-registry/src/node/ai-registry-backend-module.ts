@@ -17,16 +17,16 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { BackendRequestAllowedContribution } from '@theia/core/lib/node';
-import { AIRegistryConfiguration } from '../common/ai-registry-configuration';
-import { AgentPluginManifestReader } from '../common/plugin/agent-plugin-manifest';
-import { PluginDirectoryNaming, PluginDirectoryNamingImpl } from '../common/plugin/plugin-directory-naming';
-import { PluginInstallBackendService, PluginInstallBackendServicePath, PluginInstallClient } from '../common/plugin/plugin-install-protocol';
-import { SkillInstallBackendService, SkillInstallBackendServicePath, SkillInstallClient } from '../common/skill/skill-install-protocol';
-import { SkillRegistryPreferencesSchema } from '../common/skill/skill-registry-preferences';
-import { AIRegistryRequestAllowedContribution } from './ai-registry-request-allowed-contribution';
-import { GitHubTarballSource, GitHubTarballSourceImpl } from './github-tarball-source';
-import { PluginInstallBackendServiceImpl } from './plugin-install-backend-service';
-import { SkillInstallBackendServiceImpl } from './skill-install-backend-service';
+import { AIRegistryConfiguration } from '../common/ai-registry-configuration.js';
+import { AgentPluginManifestReader } from '../common/plugin/agent-plugin-manifest.js';
+import { PluginDirectoryNaming, PluginDirectoryNamingImpl } from '../common/plugin/plugin-directory-naming.js';
+import { PluginInstallBackendService, PluginInstallBackendServicePath, PluginInstallClient } from '../common/plugin/plugin-install-protocol.js';
+import { SkillInstallBackendService, SkillInstallBackendServicePath, SkillInstallClient } from '../common/skill/skill-install-protocol.js';
+import { SkillRegistryPreferencesSchema } from '../common/skill/skill-registry-preferences.js';
+import { AIRegistryRequestAllowedContribution } from './ai-registry-request-allowed-contribution.js';
+import { GitHubTarballSource, GitHubTarballSourceImpl } from './github-tarball-source.js';
+import { PluginInstallBackendServiceImpl } from './plugin-install-backend-service.js';
+import { SkillInstallBackendServiceImpl } from './skill-install-backend-service.js';
 
 export default new ContainerModule(bind => {
     bind(AIRegistryConfiguration).toSelf().inSingletonScope();

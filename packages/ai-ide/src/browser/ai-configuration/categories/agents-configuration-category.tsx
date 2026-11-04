@@ -33,8 +33,10 @@ import { AGENT_SETTINGS_PREF } from '@theia/ai-core/lib/common/agent-preferences
 import { LanguageModelAlias, LanguageModelAliasRegistry } from '@theia/ai-core/lib/common/language-model-alias';
 import { DEFAULT_CHAT_AGENT_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { isChatAgent } from '@theia/ai-chat/lib/common';
+import { GenericCapabilitiesService } from '@theia/ai-chat-ui/lib/browser/generic-capabilities-service';
+import { ChatCapabilitiesService } from '@theia/ai-chat-ui/lib/browser/chat-capabilities-service';
 import { CommandService, DisposableCollection, Emitter, Event, ILogger, MessageService, nls, URI } from '@theia/core';
-import { codicon, QuickInputService } from '@theia/core/lib/browser';
+import { codicon, HoverService, QuickInputService } from '@theia/core/lib/browser';
 import { SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
@@ -52,11 +54,11 @@ import { CollectionCategoryRenderer, AiConfigurationAddDescriptor } from '@theia
 import { AiConfigurationSection } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-primitives';
 import { AiSettingsRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row';
 import { AiSettingsRowService } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row-service';
-import { PREFERENCE_NAME_AGENT_MODE_ENABLED, PREFERENCE_NAME_ORCHESTRATOR_EXCLUSION_LIST } from '../../../common/ai-ide-preferences';
-import { AgentDetailView } from './agent-detail-view';
-import { PromptSnippetsConfiguration } from './prompt-snippets-configuration-category';
-import { AgentDetailServices } from './agent-detail-model';
-import { getAgentIconClass } from '../agent-icon';
+import { PREFERENCE_NAME_AGENT_MODE_ENABLED, PREFERENCE_NAME_ORCHESTRATOR_EXCLUSION_LIST } from '../../../common/ai-ide-preferences.js';
+import { AgentDetailView } from './agent-detail-view.js';
+import { PromptSnippetsConfiguration } from './prompt-snippets-configuration-category.js';
+import { AgentDetailServices } from './agent-detail-model.js';
+import { getAgentIconClass } from '../agent-icon.js';
 
 /** A candidate location for creating a new custom agent: its scope directory and `agents/` folder. */
 interface CustomAgentScopeOption {
@@ -119,6 +121,15 @@ export class AgentsConfigurationCategory extends CollectionCategoryRenderer impl
     @inject(ILogger) @named('ai-ide:AgentsConfigurationCategory')
     protected readonly logger: ILogger;
 
+    @inject(GenericCapabilitiesService)
+    protected readonly genericCapabilitiesService: GenericCapabilitiesService;
+
+    @inject(ChatCapabilitiesService)
+    protected readonly chatCapabilitiesService: ChatCapabilitiesService;
+
+    @inject(HoverService)
+    protected readonly hoverService: HoverService;
+
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
     protected readonly toDispose = new DisposableCollection(this.onDidChangeEmitter);
@@ -174,7 +185,8 @@ export class AgentsConfigurationCategory extends CollectionCategoryRenderer impl
             this.agentService.onDidChangeAgents(() => this.fireChange()),
             this.promptService.onPromptsChange(() => this.fireChange()),
             this.promptFragmentCustomizationService.onDidChangePromptFragmentCustomization(() => this.fireChange()),
-            this.aiSettingsService.onDidChange(() => this.fireChange())
+            this.aiSettingsService.onDidChange(() => this.fireChange()),
+            this.genericCapabilitiesService.onDidChangeAvailableCapabilities(() => this.fireChange())
         ]);
     }
 
@@ -308,7 +320,10 @@ export class AgentsConfigurationCategory extends CollectionCategoryRenderer impl
             toolInvocationRegistry: this.toolInvocationRegistry,
             commandService: this.commandService,
             settingsRowService: this.settingsRowService,
-            logger: this.logger
+            logger: this.logger,
+            genericCapabilitiesService: this.genericCapabilitiesService,
+            chatCapabilitiesService: this.chatCapabilitiesService,
+            hoverService: this.hoverService
         };
     }
 

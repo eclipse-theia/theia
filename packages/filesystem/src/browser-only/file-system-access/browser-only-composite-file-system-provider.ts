@@ -22,10 +22,10 @@ import {
     FileSystemProviderCapabilities, FileSystemProviderErrorCode, FileSystemProviderWithFileFolderCopyCapability,
     FileSystemProviderWithFileReadWriteCapability, FileSystemProviderWithOpenReadWriteCloseCapability, FileType,
     FileUpdateOptions, FileUpdateResult, FileWriteOptions, Stat, WatchOptions, createFileSystemProviderError
-} from '../../common/files';
-import { OPFSFileSystemProvider } from '../opfs-filesystem-provider';
-import { FileSystemAccessPermissionState } from './file-system-access-types';
-import { LocalDirectoryMount, LocalDirectoryMountService } from './local-directory-mount-service';
+} from '../../common/files.js';
+import { OPFSFileSystemProvider } from '../opfs-filesystem-provider.js';
+import { FileSystemAccessPermissionState } from './file-system-access-types.js';
+import { LocalDirectoryMount, LocalDirectoryMountService } from './local-directory-mount-service.js';
 
 /** The target of an operation: the OPFS, the virtual `/local` directory or a mounted local directory. */
 type Route =

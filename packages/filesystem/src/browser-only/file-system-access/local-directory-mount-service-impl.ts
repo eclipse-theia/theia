@@ -16,10 +16,10 @@
 
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter, Event, ILogger, URI } from '@theia/core';
-import { FileSystemAccessHandle, FileSystemAccessPermissionState, WindowWithFileSystemAccess } from './file-system-access-types';
-import { LocalDirectoryMount, LocalDirectoryMountService } from './local-directory-mount-service';
-import { LocalDirectoryHandleStore } from './local-directory-handle-store';
-import { LocalDirectoryFileSystemProviderFactory } from './local-directory-file-system-provider';
+import { FileSystemAccessHandle, FileSystemAccessPermissionState, WindowWithFileSystemAccess } from './file-system-access-types.js';
+import { LocalDirectoryMount, LocalDirectoryMountService } from './local-directory-mount-service.js';
+import { LocalDirectoryHandleStore } from './local-directory-handle-store.js';
+import { LocalDirectoryFileSystemProviderFactory } from './local-directory-file-system-provider.js';
 
 @injectable()
 export class LocalDirectoryMountServiceImpl implements LocalDirectoryMountService {

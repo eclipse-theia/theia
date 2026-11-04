@@ -20,23 +20,23 @@
 // some code copied and modified from https://github.com/microsoft/vscode/blob/53eac52308c4611000a171cc7bf1214293473c78/src/vs/workbench/api/browser/mainThreadCustomEditors.ts
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { MAIN_RPC_CONTEXT, CustomEditorsMain, CustomEditorsExt, CustomTextEditorCapabilities } from '../../../common/plugin-api-rpc';
-import { RPCProtocol } from '../../../common/rpc-protocol';
-import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
-import { PluginCustomEditorRegistry } from './plugin-custom-editor-registry';
+import { MAIN_RPC_CONTEXT, CustomEditorsMain, CustomEditorsExt, CustomTextEditorCapabilities } from '../../../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../../../common/rpc-protocol.js';
+import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin.js';
+import { PluginCustomEditorRegistry } from './plugin-custom-editor-registry.js';
 import { Emitter } from '@theia/core';
-import { UriComponents } from '../../../common/uri-components';
+import { UriComponents } from '../../../common/uri-components.js';
 import { URI } from '@theia/core/shared/vscode-uri';
 import TheiaURI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Reference } from '@theia/core/lib/common/reference';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
-import { EditorModelService } from '../text-editor-model-service';
-import { CustomEditorService } from './custom-editor-service';
+import { EditorModelService } from '../text-editor-model-service.js';
+import { CustomEditorService } from './custom-editor-service.js';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { UndoRedoService } from '@theia/editor/lib/browser/undo-redo-service';
-import { WebviewsMainImpl } from '../webviews-main';
+import { WebviewsMainImpl } from '../webviews-main.js';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { ApplicationShell, LabelProvider, Saveable, SaveAsOptions, SaveOptions } from '@theia/core/lib/browser';
 import { WebviewPanelOptions } from '@theia/plugin';

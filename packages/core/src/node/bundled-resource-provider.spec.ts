@@ -21,12 +21,12 @@ import * as os from 'os';
 import * as path from 'path';
 import * as temp from 'temp';
 import { Container } from 'inversify';
-import { EnvVariablesServer } from '../common/env-variables';
-import { ILogger } from '../common/logger';
-import { MockLogger } from '../common/test/mock-logger';
-import { FileUri } from '../common/file-uri';
-import { BundledResourceProvider, BundledResourceProviderImpl } from './bundled-resource-provider';
-import { FileSystemLocking, FileSystemLockingImpl } from './filesystem-locking';
+import { EnvVariablesServer } from '../common/env-variables/index.js';
+import { ILogger } from '../common/logger.js';
+import { MockLogger } from '../common/test/mock-logger.js';
+import { FileUri } from '../common/file-uri.js';
+import { BundledResourceProvider, BundledResourceProviderImpl } from './bundled-resource-provider.js';
+import { FileSystemLocking, FileSystemLockingImpl } from './filesystem-locking.js';
 
 /**
  * The provider recognizes archives by their `.asar` path segment and reads them through `fs`, which Electron

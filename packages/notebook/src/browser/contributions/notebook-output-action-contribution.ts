@@ -16,9 +16,9 @@
 
 import { Command, CommandContribution, CommandRegistry } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-service';
-import { CellOutput, CellUri } from '../../common';
-import { NotebookCellModel } from '../view-model/notebook-cell-model';
+import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-service.js';
+import { CellOutput, CellUri } from '../../common/index.js';
+import { NotebookCellModel } from '../view-model/notebook-cell-model.js';
 import { EditorManager } from '@theia/editor/lib/browser';
 
 export namespace NotebookOutputCommands {

@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { PluginMetrics, METRICS_TIMEOUT } from '../common/metrics-protocol';
-import { AnalyticsFromRequests, DataFromRequest, createRequestData, createDefaultAnalytics, MetricsMap } from '../common/plugin-metrics-types';
+import { PluginMetrics, METRICS_TIMEOUT } from '../common/metrics-protocol.js';
+import { AnalyticsFromRequests, DataFromRequest, createRequestData, createDefaultAnalytics, MetricsMap } from '../common/plugin-metrics-types.js';
 
 @injectable()
 export class PluginMetricsCreator {

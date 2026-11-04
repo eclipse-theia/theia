@@ -18,7 +18,7 @@ import { interfaces, Container, injectable } from '@theia/core/shared/inversify'
 import { MenuPath } from '@theia/core';
 import { TreeProps } from '@theia/core/lib/browser/tree';
 import { SourceTreeWidget, TreeElementNode } from '@theia/core/lib/browser/source-tree';
-import { ConsoleItem } from './console-session';
+import { ConsoleItem } from './console-session.js';
 import { Severity } from '@theia/core/lib/common/severity';
 
 @injectable()

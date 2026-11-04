@@ -118,7 +118,8 @@ describe('Explorer and Editor - open and close', function () {
     }
     async function closeExplorer() {
         await navigatorContribution.closeView();
-        assert.isUndefined(await shell.revealWidget(EXPLORER_VIEW_CONTAINER_ID), 'Explorer widget should not exist');
+        const widget = shell.getWidgets('left').find(w => w.id === EXPLORER_VIEW_CONTAINER_ID);
+        assert.isUndefined(widget, 'Explorer widget should not exist');
     }
 
     async function openEditor() {

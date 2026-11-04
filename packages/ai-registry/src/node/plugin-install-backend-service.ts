@@ -20,12 +20,12 @@ import * as path from 'path';
 import { AsyncSubscription, subscribe } from '@theia/core/shared/@parcel/watcher';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { Disposable, ILogger, nls } from '@theia/core';
-import { computeContentHash, FileContent } from '../common/content-hash';
-import { AgentPluginManifest, AgentPluginManifestReader, AgentPluginRejectedError, SkippedPluginComponent } from '../common/plugin/agent-plugin-manifest';
-import { PluginDirectoryNaming } from '../common/plugin/plugin-directory-naming';
-import { PluginInstallBackendService, PluginInstallClient } from '../common/plugin/plugin-install-protocol';
-import { InstalledPluginInfo, PluginRegistryMetadata, ResolvedPluginEntry, StagedPluginInstall } from '../common/plugin/plugin-registry-types';
-import { GitHubTarballSource } from './github-tarball-source';
+import { computeContentHash, FileContent } from '../common/content-hash.js';
+import { AgentPluginManifest, AgentPluginManifestReader, AgentPluginRejectedError, SkippedPluginComponent } from '../common/plugin/agent-plugin-manifest.js';
+import { PluginDirectoryNaming } from '../common/plugin/plugin-directory-naming.js';
+import { PluginInstallBackendService, PluginInstallClient } from '../common/plugin/plugin-install-protocol.js';
+import { InstalledPluginInfo, PluginRegistryMetadata, ResolvedPluginEntry, StagedPluginInstall } from '../common/plugin/plugin-registry-types.js';
+import { GitHubTarballSource } from './github-tarball-source.js';
 
 /** Dot-prefixed so it is excluded from the content hash. */
 const REGISTRY_METADATA_FILE = '.registry.json';

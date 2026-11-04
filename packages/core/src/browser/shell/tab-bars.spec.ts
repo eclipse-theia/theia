@@ -14,14 +14,28 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '../test/jsdom';
+import { enableJSDOM } from '../test/jsdom.js';
 let disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
 
-import { Title, Widget } from '@lumino/widgets';
-import { TabBarRenderer } from './tab-bars';
+import { MessageLoop } from '@lumino/messaging';
+import { TabBar, Title, Widget } from '@lumino/widgets';
+import { BreadcrumbsRenderer } from '../breadcrumbs/breadcrumbs-renderer.js';
+import { NativeTabDragService } from './native-tab-drag-service.js';
+import { TabBarToolbar, TabBarToolbarRegistry } from './tab-bar-toolbar/index.js';
+import { SideTabBar, TabBarRenderer, ToolbarAwareTabBar } from './tab-bars.js';
 
 disableJSDOM();
+
+/** A toolbar without items, it does not need the services that it would get injected otherwise */
+class EmptyTabBarToolbar extends TabBarToolbar {
+    override updateTarget(): void { }
+}
+
+/** Breadcrumbs that are never shown, they do not need the services that they would get injected otherwise */
+class EmptyBreadcrumbsRenderer extends BreadcrumbsRenderer {
+    override async refresh(): Promise<void> { }
+}
 
 describe('tab bar', () => {
 
@@ -59,5 +73,140 @@ describe('tab bar', () => {
         expect(pathMap.get(tabPaths[4])).to.be.equal('root1/aaa/bbb');
         expect(pathMap.get(tabPaths[5])).to.be.equal('.../ccc');
         expect(pathMap.get(tabPaths[6])).to.be.equal(undefined);
+    });
+
+    describe('side tab bar', () => {
+
+        class TestSideTabBar extends SideTabBar {
+            render(): void {
+                this.renderTabs(this.contentNode);
+            }
+            renderedClasses(): string[] {
+                return Array.from(this.contentNode.children, tab => tab.className);
+            }
+            overflowFrom(startIndex: number): void {
+                this.hideOverflowingTabs = () => startIndex;
+                this.computeOverflowingTabsData();
+            }
+            firstOverflowingIndex(): number {
+                return this.hideOverflowingTabs();
+            }
+            setOverflowData(): void {
+                this.tabsOverflowData = { titles: [], startIndex: 0 };
+            }
+        }
+
+        function createSideTabBar(hiddenIds: string[]): { bar: TestSideTabBar, titles: Title<Widget>[] } {
+            const renderer = new TabBarRenderer();
+            const bar = new TestSideTabBar({ orientation: 'vertical', renderer });
+            const titles = ['explorer', 'debug', 'search'].map(id => {
+                const owner = new Widget();
+                owner.id = id;
+                owner.title.label = id;
+                return bar.addTab(owner.title);
+            });
+            bar.shouldHideTitle = title => hiddenIds.includes(title.owner.id);
+            return { bar, titles };
+        }
+
+        it('keeps a hidden tab in the DOM at its title index, hidden unless it is current', () => {
+            const { bar, titles } = createSideTabBar(['debug']);
+
+            bar.currentTitle = titles[0];
+            bar.render();
+            expect(bar.renderedClasses().map(c => c.includes('lm-mod-hidden'))).to.deep.equal([false, true, false]);
+
+            bar.currentTitle = titles[1];
+            bar.render();
+            expect(bar.renderedClasses().map(c => c.includes('lm-mod-hidden'))).to.deep.equal([false, false, false]);
+            expect(bar.isHiddenTab(titles[1])).to.be.false;
+        });
+
+        it('refuses to hide the last title that is not hidden', () => {
+            const { bar, titles } = createSideTabBar(['debug', 'search']);
+            expect(bar.canHideTitle(titles[0])).to.be.false;
+            expect(bar.canHideTitle(titles[1])).to.be.false;
+            bar.shouldHideTitle = title => title.owner.id === 'debug';
+            expect(bar.canHideTitle(titles[0])).to.be.true;
+        });
+
+        it('leaves hidden tabs out of the overflow menu', () => {
+            const { bar, titles } = createSideTabBar(['debug']);
+            bar.currentTitle = titles[0];
+            const overflowing: string[][] = [];
+            bar.tabsOverflowChanged.connect((_, { titles: overflow }) => overflowing.push(overflow.map(title => title.owner.id)));
+            const requestAnimationFrame = window.requestAnimationFrame;
+            window.requestAnimationFrame = callback => {
+                callback(0);
+                return 0;
+            };
+            try {
+                bar.overflowFrom(1);
+            } finally {
+                window.requestAnimationFrame = requestAnimationFrame;
+            }
+            expect(overflowing).to.deep.equal([['search']]);
+        });
+
+        it('keeps the last shown tab when it fits beside the overflow menu, even with hidden tabs after it', () => {
+            const { bar, titles } = createSideTabBar(['search']);
+            bar.currentTitle = titles[0];
+            bar.render();
+            const parent = document.createElement('div');
+            const overflowMenu = document.createElement('div');
+            overflowMenu.className = 'theia-additional-views-menu';
+            Object.defineProperty(overflowMenu, 'offsetHeight', { value: 20 });
+            parent.append(bar.node, overflowMenu);
+            Object.defineProperty(bar.node, 'clientHeight', { value: 70 });
+            // explorer and debug stack 40px each; search is hidden, so it measures 0 like a `display: none` tab.
+            const tabs = Array.from(bar.contentNode.children);
+            [[0, 40], [40, 40], [0, 0]].forEach(([offsetTop, offsetHeight], i) => {
+                Object.defineProperty(tabs[i], 'offsetTop', { value: offsetTop });
+                Object.defineProperty(tabs[i], 'offsetHeight', { value: offsetHeight });
+            });
+            bar.setOverflowData();
+
+            expect(bar.firstOverflowingIndex()).to.equal(-1);
+        });
+    });
+
+    describe('native tab drag', () => {
+
+        function addTab(tabBar: TabBar<Widget>): HTMLElement {
+            tabBar.addTab(new Widget().title);
+            MessageLoop.sendMessage(tabBar, Widget.Msg.UpdateRequest);
+            const tab = tabBar.contentNode.children[0] as HTMLElement;
+            tab.getBoundingClientRect = () => new DOMRect(0, 0, 100, 20);
+            return tab;
+        }
+
+        function pressTab(tabBar: TabBar<Widget>, tab: HTMLElement): MouseEvent {
+            const event = new MouseEvent('pointerdown', { button: 0, clientX: 10, clientY: 10, cancelable: true });
+            Object.defineProperty(event, 'target', { value: tab });
+            tabBar.handleEvent(event);
+            return event;
+        }
+
+        // Native tab drags rely on skipping Lumino's `preventDefault`, see `ToolbarAwareTabBar.handleNativeTabDragEvent`.
+        // If Lumino stops preventing the default action of tab presses, that override can be removed.
+        it('Lumino should prevent the default action of a press on a tab', () => {
+            const tabBar = new TabBar<Widget>();
+            try {
+                expect(pressTab(tabBar, addTab(tabBar)).defaultPrevented).to.be.true;
+            } finally {
+                tabBar.dispose();
+            }
+        });
+
+        it('should not prevent the default action of a press on a tab when native tab drag is enabled', () => {
+            const tabBar = new ToolbarAwareTabBar(new TabBarToolbarRegistry(), () => new EmptyTabBarToolbar(), () => new EmptyBreadcrumbsRenderer());
+            try {
+                tabBar.nativeTabDragService = {} as NativeTabDragService;
+                tabBar.enableNativeTabDrag();
+                expect(pressTab(tabBar, addTab(tabBar)).defaultPrevented).to.be.false;
+            } finally {
+                tabBar.dispose();
+            }
+        });
     });
 });

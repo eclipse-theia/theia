@@ -18,10 +18,10 @@ import { KeybindingRegistry, QuickPickItem, QuickPickSeparator } from '@theia/co
 import { QuickAccessProviderDescriptor, QuickAccessRegistry } from '@theia/core/lib/browser/quick-input/quick-access';
 import { CancellationToken, Disposable } from '@theia/core/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { MonacoQuickPickItem } from './monaco-quick-input-service';
+import { MonacoQuickPickItem } from './monaco-quick-input-service.js';
 import {
     IPickerQuickAccessProviderOptions, PickerQuickAccessProvider, Picks, Pick, IPickerQuickAccessItem
-} from '@theia/monaco-editor-core/esm/vs/platform/quickinput/browser/pickerQuickAccess';
+} from '@theia/monaco-editor-core/esm/vs/platform/quickinput/browser/pickerQuickAccess.js';
 import {
     Extensions,
     IQuickAccessProvider,
@@ -29,9 +29,9 @@ import {
     IQuickAccessProviderHelp,
     IQuickAccessRegistry,
     QuickAccessRegistry as VSCodeQuickAccessRegistry,
-} from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickAccess';
-import { IQuickPickItem, IQuickPickItemWithResource } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickInput';
-import { Registry } from '@theia/monaco-editor-core/esm/vs/platform/registry/common/platform';
+} from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickAccess.js';
+import { IQuickPickItem, IQuickPickItemWithResource } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickInput.js';
+import { Registry } from '@theia/monaco-editor-core/esm/vs/platform/registry/common/platform.js';
 
 interface IAnythingQuickPickItem extends IPickerQuickAccessItem, IQuickPickItemWithResource { }
 

@@ -14,17 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContextKeyService, ContextMatcher } from '../../context-key-service';
-import { ReactTabBarToolbarAction, RenderedToolbarAction, TabBarToolbarActionBase } from './tab-bar-toolbar-types';
+import { ContextKeyService, ContextMatcher } from '../../context-key-service.js';
+import { ReactTabBarToolbarAction, RenderedToolbarAction, TabBarToolbarActionBase } from './tab-bar-toolbar-types.js';
 import { Widget } from '@lumino/widgets';
-import { LabelIcon, LabelParser } from '../../label-parser';
-import { CommandRegistry, Event, Disposable, Emitter, DisposableCollection } from '../../../common';
-import { KeybindingRegistry } from '../../keybinding';
-import { ACTION_ITEM } from '../../widgets';
-import { TabBarToolbar } from './tab-bar-toolbar';
+import { LabelIcon, LabelParser } from '../../label-parser.js';
+import { CommandRegistry, Event, Disposable, Emitter, DisposableCollection } from '../../../common/index.js';
+import { KeybindingRegistry } from '../../keybinding.js';
+import { ACTION_ITEM } from '../../widgets/index.js';
+import { TabBarToolbar } from './tab-bar-toolbar.js';
 import * as React from 'react';
-import { buttonKeyboardProps, isActivationKey } from '../../keyboard/keyboard-utils';
-import { ActionMenuNode, GroupImpl, MenuNode } from '../../../common/menu';
+import { buttonKeyboardProps, isActivationKey } from '../../keyboard/keyboard-utils.js';
+import { ActionMenuNode, GroupImpl, MenuNode } from '../../../common/menu/index.js';
 
 export interface TabBarToolbarItem {
     id: string;

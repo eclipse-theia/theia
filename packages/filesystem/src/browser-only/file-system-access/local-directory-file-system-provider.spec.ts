@@ -18,9 +18,9 @@ import { Container } from '@theia/core/shared/inversify';
 import { URI } from '@theia/core';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { expect } from 'chai';
-import { FileChange, FileChangeType, FileSystemProviderError, FileSystemProviderErrorCode, FileType } from '../../common/files';
-import { LocalDirectoryFileSystemProvider, LocalDirectoryFileSystemProviderOptions } from './local-directory-file-system-provider';
-import { addInMemoryFile, createInMemoryDirectoryHandle } from './test/in-memory-directory-handle';
+import { FileChange, FileChangeType, FileSystemProviderError, FileSystemProviderErrorCode, FileType } from '../../common/files.js';
+import { LocalDirectoryFileSystemProvider, LocalDirectoryFileSystemProviderOptions } from './local-directory-file-system-provider.js';
+import { addInMemoryFile, createInMemoryDirectoryHandle } from './test/in-memory-directory-handle.js';
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();

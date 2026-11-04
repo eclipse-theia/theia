@@ -21,15 +21,15 @@
 // copied and modified from https://github.com/microsoft/vscode/blob/1.65.0/src/vs/workbench/api/common/extHostLanguageFeatures.ts#L1178-L1288
 
 import * as theia from '@theia/plugin';
-import * as Converter from '../type-converters';
-import { Cache } from '../../common/cache';
-import { ChainedCacheId, InlayHint, InlayHintLabelPart, Range } from '../../common/plugin-api-rpc-model';
-import { CommandRegistryImpl } from '../command-registry';
+import * as Converter from '../type-converters.js';
+import { Cache } from '../../common/cache.js';
+import { ChainedCacheId, InlayHint, InlayHintLabelPart, Range } from '../../common/plugin-api-rpc-model.js';
+import { CommandRegistryImpl } from '../command-registry.js';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
-import { DocumentsExtImpl } from '../documents';
-import { InlayHintDto, InlayHintsDto } from '../../common';
+import { DocumentsExtImpl } from '../documents.js';
+import { InlayHintDto, InlayHintsDto } from '../../common/index.js';
 import { URI } from '@theia/core/shared/vscode-uri';
-import { isLocationArray } from './util';
+import { isLocationArray } from './util.js';
 
 export class InlayHintsAdapter {
 

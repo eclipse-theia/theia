@@ -20,8 +20,8 @@ import { CommandMenu, CompoundMenuNode, MenuModelRegistry, MenuPath, ILogger } f
 import { KeybindingRegistry } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ReactWidget } from '@theia/core/lib/browser/widgets';
-import { DebugViewModel } from './debug-view-model';
-import { DebugAction } from './debug-action';
+import { DebugViewModel } from './debug-view-model.js';
+import { DebugAction } from './debug-action.js';
 
 @injectable()
 export class DebugToolBar extends ReactWidget {

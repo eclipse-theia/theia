@@ -16,11 +16,11 @@
 
 import { expect } from 'chai';
 import { Emitter, Event, URI } from '@theia/core';
-import { FileChange, FileChangeType, FileSystemProviderErrorCode, FileType, Stat } from '../../common/files';
-import { OPFSFileSystemProvider } from '../opfs-filesystem-provider';
-import { BrowserOnlyCompositeFileSystemProvider } from './browser-only-composite-file-system-provider';
-import { LocalDirectoryMount, LocalDirectoryMountService } from './local-directory-mount-service';
-import { FileSystemAccessPermissionState } from './file-system-access-types';
+import { FileChange, FileChangeType, FileSystemProviderErrorCode, FileType, Stat } from '../../common/files.js';
+import { OPFSFileSystemProvider } from '../opfs-filesystem-provider.js';
+import { BrowserOnlyCompositeFileSystemProvider } from './browser-only-composite-file-system-provider.js';
+import { LocalDirectoryMount, LocalDirectoryMountService } from './local-directory-mount-service.js';
+import { FileSystemAccessPermissionState } from './file-system-access-types.js';
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();

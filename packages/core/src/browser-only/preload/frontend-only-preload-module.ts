@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { LocalizationServer } from '../../common/i18n/localization-server';
-import { OS, OSBackendProvider } from '../../common/os';
-import { Localization } from '../../common/i18n/localization';
+import { LocalizationServer } from '../../common/i18n/localization-server.js';
+import { OS, OSBackendProvider } from '../../common/os.js';
+import { Localization } from '../../common/i18n/localization.js';
 
 // loaded after regular preload module
 export default new ContainerModule((bind, unbind, isBound, rebind) => {

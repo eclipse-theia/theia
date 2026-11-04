@@ -27,7 +27,7 @@ import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { expect } from 'chai';
 import { ExternalApiTestSupport } from '@theia/external-api/lib/node/test/external-api-test-support';
-import { FrontendExternalChatSessionProvider } from './frontend-external-chat-session-provider';
+import { FrontendExternalChatSessionProvider } from './frontend-external-chat-session-provider.js';
 
 disableJSDOM();
 

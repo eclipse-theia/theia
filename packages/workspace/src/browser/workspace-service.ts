@@ -16,21 +16,22 @@
 
 import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { WorkspaceServer, UntitledWorkspaceService, WorkspaceFileService } from '../common';
+import { Path } from '@theia/core/lib/common/path';
+import { WorkspaceServer, UntitledWorkspaceService, WorkspaceFileService } from '../common/index.js';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { DEFAULT_WINDOW_HASH } from '@theia/core/lib/common/window';
 import { FrontendApplicationContribution, LabelProvider, OnWillStopAction } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { ILogger, Disposable, DisposableCollection, Emitter, environment, Event, MaybePromise, MessageService, nls, ContributionProvider } from '@theia/core';
-import { WorkspacePreferences } from '../common/workspace-preferences';
+import { WorkspacePreferences } from '../common/workspace-preferences.js';
 import * as jsoncparser from 'jsonc-parser';
-import * as Ajv from '@theia/core/shared/ajv';
+import Ajv from '@theia/core/shared/ajv';
 import { FileStat, BaseStat } from '@theia/filesystem/lib/common/files';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WindowTitleService } from '@theia/core/lib/browser/window/window-title-service';
 import { FileSystemPreferences } from '@theia/filesystem/lib/common';
-import { workspaceSchema, WorkspaceSchemaUpdater } from './workspace-schema-updater';
+import { workspaceSchema, WorkspaceSchemaUpdater } from './workspace-schema-updater.js';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { StopReason } from '@theia/core/lib/common/frontend-application-state';
 import { PreferenceSchemaService, PreferenceScope, PreferenceService } from '@theia/core/lib/common/preferences';
@@ -57,6 +58,10 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     protected _workspace: FileStat | undefined;
 
     protected _roots: FileStat[] = [];
+    /** The names of the roots, published together with `_roots` when `onWorkspaceChanged` fires. */
+    protected configuredRootNames = new Map<string, string>();
+    /** The names of the roots read by the last `computeRoots`, not yet published. */
+    protected computedRootNames = new Map<string, string>();
     protected deferredRoots = new Deferred<FileStat[]>();
 
     @inject(FileService)
@@ -299,7 +304,9 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
 
     protected async updateRoots(): Promise<void> {
         const newRoots = await this.computeRoots();
-        let rootsChanged = false;
+        const newRootNames = this.computedRootNames;
+        // Compare against the published names, so that overlapping calls fire only once for a rename
+        let rootsChanged = !this.areConfiguredRootNamesEqual(this.configuredRootNames, newRootNames);
         if (newRoots.length !== this._roots.length || newRoots.length === 0) {
             rootsChanged = true;
         } else {
@@ -312,6 +319,8 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         }
         if (rootsChanged) {
             this._roots = newRoots;
+            this.configuredRootNames = newRootNames;
+            this.rootNamesCache = undefined;
             this.deferredRoots.resolve(this._roots); // in order to resolve first
             this.deferredRoots = new Deferred<FileStat[]>();
             this.deferredRoots.resolve(this._roots);
@@ -319,26 +328,42 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         }
     }
 
+    /**
+     * Computes the workspace roots. Also sets `computedRootNames` to the names given to the roots in the workspace file,
+     * which `updateRoots` publishes with the roots, see `getConfiguredRootName`.
+     * An override that does not call `super` has to set `computedRootNames` itself, otherwise the names of the previous roots remain.
+     */
     protected async computeRoots(): Promise<FileStat[]> {
         const roots: FileStat[] = [];
+        const rootNames = new Map<string, string>();
         if (this._workspace) {
             if (this._workspace.isDirectory) {
+                this.computedRootNames = rootNames;
                 return [this._workspace];
             }
 
             const workspaceData = await this.getWorkspaceDataFromFile();
             if (workspaceData) {
-                for (const { path } of workspaceData.folders) {
+                for (const { path, name } of workspaceData.folders) {
                     const valid = await this.toValidRoot(path);
                     if (valid) {
                         roots.push(valid);
                     } else {
                         roots.push(FileStat.dir(path));
                     }
+                    // `getWorkspaceDataFromFile` already drops invalid names, but an override of it may not
+                    if (typeof name === 'string' && name) {
+                        rootNames.set(WorkspaceData.normalizeFolderUri(path), name);
+                    }
                 }
             }
         }
+        this.computedRootNames = rootNames;
         return roots;
+    }
+
+    protected areConfiguredRootNamesEqual(names: Map<string, string>, otherNames: Map<string, string>): boolean {
+        return names.size === otherNames.size && Array.from(names).every(([root, name]) => otherNames.get(root) === name);
     }
 
     protected async getWorkspaceDataFromFile(): Promise<WorkspaceData | undefined> {
@@ -535,7 +560,12 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         }
     }
 
-    async spliceRoots(start: number, deleteCount?: number, ...rootsToAdd: URI[]): Promise<URI[]> {
+    /**
+     * Removes `deleteCount` roots starting at `start` and inserts the given roots there, and writes the result to the workspace file.
+     * A root to add can be given a name, which is written to the workspace file as the `name` of its folder entry.
+     * @returns the URIs of the removed roots
+     */
+    async spliceRoots(start: number, deleteCount?: number, ...rootsToAdd: (URI | WorkspaceRootToAdd)[]): Promise<URI[]> {
         if (!this._workspace || this._workspace.isDirectory) {
             const untitledWorkspace = await this.getUntitledWorkspace();
             await this.save(untitledWorkspace);
@@ -543,23 +573,35 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
                 throw new Error('Could not create new untitled workspace');
             }
         }
-        const dedup = new Set<string>();
-        const roots = this._roots.map(root => (dedup.add(root.resource.toString()), root.resource.toString()));
+        const roots = this._roots.map(root => root.resource.toString());
+        const toRemove = roots.splice(start, deleteCount || 0);
+        // Deduplicate against the remaining roots only, so that a root removed by this call can be added again, e.g. to rename it.
+        const dedup = new Set<string>(roots);
         const toAdd: string[] = [];
+        const namesToAdd = new Map<string, string>();
         for (const root of rootsToAdd) {
-            const uri = root.toString();
-            if (!dedup.has(uri)) {
-                dedup.add(uri);
-                toAdd.push(uri);
+            const { uri, name } = root instanceof URI ? { uri: root, name: undefined } : root;
+            const uriString = uri.toString();
+            if (!dedup.has(uriString)) {
+                dedup.add(uriString);
+                toAdd.push(uriString);
+                if (name) {
+                    namesToAdd.set(uriString, name);
+                }
             }
         }
-        const toRemove = roots.splice(start, deleteCount || 0, ...toAdd);
+        roots.splice(start, 0, ...toAdd);
         if (!toRemove.length && !toAdd.length) {
             return [];
         }
 
         const currentData = await this.getWorkspaceDataFromFile();
-        const newData = WorkspaceData.buildWorkspaceData(roots, currentData);
+        if (currentData) {
+            // A root added by this call only gets the name it is added with, so that adding a root again without a name resets its name
+            const added = new Set(toAdd.map(root => WorkspaceData.normalizeFolderUri(root)));
+            currentData.folders = currentData.folders.filter(folder => !added.has(WorkspaceData.normalizeFolderUri(folder.path)));
+        }
+        const newData = WorkspaceData.buildWorkspaceData(roots.map(path => ({ path, name: namesToAdd.get(path) })), currentData);
         await this.writeWorkspaceFile(this._workspace, newData);
         await this.updateWorkspace();
         return toRemove.map(root => new URI(root));
@@ -596,6 +638,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
             this.windowService.setSafeToShutDown();
             this._workspace = undefined;
             this._roots.length = 0;
+            this.rootNamesCache = undefined;
 
             if (!this.isRemoteSession()) {
                 await this.server.setMostRecentlyUsedWorkspace('');
@@ -622,12 +665,8 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         if (!uri) {
             return undefined;
         }
-        let uriStr = uri.toString();
         try {
-            if (uriStr.endsWith('/')) {
-                uriStr = uriStr.slice(0, -1);
-            }
-            const normalizedUri = new URI(uriStr).normalizePath();
+            const normalizedUri = new URI(WorkspaceData.normalizeFolderUri(uri.toString()));
             return await this.fileService.resolve(normalizedUri);
         } catch (error) {
             return undefined;
@@ -801,6 +840,35 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     }
 
     /**
+     * Returns the name given to the workspace root by the `name` property of its folder entry in the workspace file.
+     * This is the name shown for the root, as `WorkspaceFolder.name` in VS Code. Unlike the unique names of {@link getRootNames},
+     * it is chosen by the user and not used to address files.
+     * @param rootUri URI of the workspace root
+     * @returns the name of the root, or `undefined` if the root has no name or is not a workspace root
+     */
+    getConfiguredRootName(rootUri: URI): string | undefined {
+        if (this.configuredRootNames.size === 0) {
+            return undefined;
+        }
+        // Called for every file label, e.g. by `getDetails`, so normalize each root URI only once per set of names
+        if (this.configuredRootNamesByUri?.names !== this.configuredRootNames) {
+            this.configuredRootNamesByUri = { names: this.configuredRootNames, byUri: new Map() };
+        }
+        const key = rootUri.toString();
+        const { byUri } = this.configuredRootNamesByUri;
+        if (!byUri.has(key)) {
+            byUri.set(key, this.configuredRootNames.get(WorkspaceData.normalizeFolderUri(key)));
+        }
+        return byUri.get(key);
+    }
+
+    /**
+     * The configured root names by the string of a root URI as passed to `getConfiguredRootName`,
+     * for the `configuredRootNames` they were looked up in.
+     */
+    protected configuredRootNamesByUri: { names: Map<string, string>; byUri: Map<string, string | undefined> } | undefined;
+
+    /**
      * Returns the relative path of the given file to the workspace root.
      * @param uri URI of the file
      * @see getWorkspaceRootUri(uri)
@@ -833,12 +901,223 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         if (!rootUri) {
             return uri.path.fsPath();
         }
-        const rootName = rootUri.path.base;
+        const rootName = this.getRootName(rootUri) ?? rootUri.path.base;
         const relative = rootUri.relative(uri);
         if (!relative || relative.toString() === '') {
             return rootName;
         }
         return `${rootName}/${relative.toString()}`;
+    }
+
+    /**
+     * Returns a unique name for each workspace root, in workspace order.
+     *
+     * A root is named after its directory basename, e.g. `backend`. Roots that share a basename are
+     * treated as peers: each of them is named after the shortest tail of its path that tells them
+     * apart, e.g. `alice/app` and `bob/app`. A name that another name starts with, e.g. `alice` next to
+     * `alice/app`, is qualified in the same way, e.g. `work/alice`, so that every path resolves to the root
+     * it came from. The names are thus always the ending of the real path, so they match what appears in
+     * terminal output, compiler errors and the like.
+     *
+     * These are the root names used by {@link getRootPrefixedPath} and resolved by {@link resolveRootPrefixedPath}.
+     */
+    getRootNames(): ReadonlyMap<string, URI> {
+        return this.getRootNamesCache().names;
+    }
+
+    /**
+     * The root names, and the names by root URI, which depend on each other. Reset whenever the roots change.
+     */
+    protected rootNamesCache: { names: ReadonlyMap<string, URI>; namesByRoot: ReadonlyMap<string, string> } | undefined;
+
+    protected getRootNamesCache(): { names: ReadonlyMap<string, URI>; namesByRoot: ReadonlyMap<string, string> } {
+        if (!this.rootNamesCache) {
+            const names = this.computeRootNames(this.tryGetRoots());
+            const namesByRoot = new Map(Array.from(names, ([name, uri]) => [uri.toString(), name]));
+            this.rootNamesCache = { names, namesByRoot };
+        }
+        return this.rootNamesCache;
+    }
+
+    protected computeRootNames(workspaceRoots: FileStat[]): Map<string, URI> {
+        const roots: URI[] = [];
+        for (const root of workspaceRoots) {
+            if (!roots.some(other => other.isEqual(root.resource))) {
+                roots.push(root.resource);
+            }
+        }
+        const byBasename = new Map<string, URI[]>();
+        for (const root of roots) {
+            const peers = byBasename.get(root.path.base) ?? [];
+            peers.push(root);
+            byBasename.set(root.path.base, peers);
+        }
+        const names = new Map<string, URI>();
+        for (const root of roots) {
+            names.set(this.computeRootName(root, byBasename.get(root.path.base)!), root);
+        }
+        return this.qualifyRootNames(names);
+    }
+
+    /**
+     * Returns the name of the given workspace root, as assigned by {@link getRootNames}, or
+     * `undefined` if the URI is not a workspace root.
+     */
+    getRootName(rootUri: URI): string | undefined {
+        return this.getRootNamesCache().namesByRoot.get(rootUri.toString());
+    }
+
+    /**
+     * Resolves a path in the format of {@link getRootPrefixedPath}, i.e. `<rootName>/<relativePath>`
+     * or a bare `<rootName>`, to a URI. If more than one root name is a prefix of the path, which is
+     * the case when a root named `a` has a subfolder `b` and another root is named `a/b`, the longest
+     * one wins.
+     *
+     * @returns `undefined` if the path is absolute, does not start with a root name or leaves its root.
+     */
+    resolveRootPrefixedPath(rootPrefixedPath: string): URI | undefined {
+        const path = new Path(Path.normalizePathSeparator(rootPrefixedPath)).normalize();
+        if (path.isAbsolute || Path.isDrive(path.toString().split('/')[0])) {
+            return undefined;
+        }
+        const segments = path.toString().split('/').filter(segment => segment.length > 0);
+        if (segments.includes('..')) {
+            return undefined;
+        }
+        const match = this.splitRootPrefixedPath(segments.join('/'));
+        if (!match) {
+            return undefined;
+        }
+        return match.rest ? match.rootUri.resolve(match.rest) : match.rootUri;
+    }
+
+    /**
+     * Resolves a path that contains the basename of a workspace root, preceded by nothing or by the
+     * trailing segments of the root's parent path, e.g. `bob/app/src` for the root `/home/bob/app`.
+     * Unlike {@link resolveRootPrefixedPath}, this does not depend on the current root names, so it
+     * also resolves paths that were prefixed with a root name before the workspace roots changed.
+     *
+     * @returns the distinct candidates in workspace order, which are several if the path is ambiguous,
+     * or none if the path is absolute, leaves its root or does not contain the basename of a root.
+     */
+    resolveSupraRelativePath(supraRelativePath: string): URI[] {
+        const path = new Path(Path.normalizePathSeparator(supraRelativePath)).normalize();
+        const segments = path.toString().split('/').filter(segment => segment.length > 0);
+        if (path.isAbsolute || Path.isDrive(segments[0] ?? '') || segments.includes('..')) {
+            return [];
+        }
+        const candidates: URI[] = [];
+        for (const root of this.tryGetRoots()) {
+            const candidate = this.resolveSupraRelativeSegments(root.resource, segments);
+            if (candidate && !candidates.some(other => other.isEqual(candidate))) {
+                candidates.push(candidate);
+            }
+        }
+        return candidates;
+    }
+
+    /**
+     * Resolves `segments` against the given root as described in {@link resolveSupraRelativePath}.
+     */
+    protected resolveSupraRelativeSegments(rootUri: URI, segments: string[]): URI | undefined {
+        const rootBasename = rootUri.path.base;
+        const rootPathSegments = rootUri.path.toString().split('/').filter(segment => segment.length > 0);
+        const rootPrecedingSegments = rootPathSegments.slice(0, rootPathSegments.length - 1);
+        for (let i = 0; i < segments.length; i++) {
+            if (segments[i] !== rootBasename) {
+                continue;
+            }
+            const pathPrecedingSegments = segments.slice(0, i);
+            if (pathPrecedingSegments.length > rootPrecedingSegments.length) {
+                continue;
+            }
+            const rootTail = rootPrecedingSegments.slice(rootPrecedingSegments.length - pathPrecedingSegments.length);
+            if (pathPrecedingSegments.every((segment, j) => segment === rootTail[j])) {
+                const rest = segments.slice(i + 1).join('/');
+                return rest ? rootUri.resolve(rest) : rootUri;
+            }
+        }
+        return undefined;
+    }
+
+    /**
+     * Splits a `/`-separated path that starts with a root name, as in {@link getRootPrefixedPath}, into
+     * that root and the rest of the path, which is empty for a bare root name. The rest is not normalized,
+     * so it may as well be a glob. If more than one root name is a prefix of the path, the longest one wins.
+     *
+     * @returns `undefined` if the path does not start with a root name.
+     */
+    splitRootPrefixedPath(rootPrefixedPath: string): { rootName: string; rootUri: URI; rest: string } | undefined {
+        const segments = rootPrefixedPath.split('/');
+        let match: { rootName: string; rootUri: URI; length: number } | undefined;
+        for (const [rootName, rootUri] of this.getRootNames()) {
+            const nameSegments = rootName.split('/');
+            const matches = nameSegments.length <= segments.length && nameSegments.every((segment, i) => segment === segments[i]);
+            if (matches && (!match || nameSegments.length > match.length)) {
+                match = { rootName, rootUri, length: nameSegments.length };
+            }
+        }
+        return match && { rootName: match.rootName, rootUri: match.rootUri, rest: segments.slice(match.length).join('/') };
+    }
+
+    /**
+     * Computes the name of a root from the roots that share its basename (including itself).
+     */
+    protected computeRootName(root: URI, peers: URI[]): string {
+        if (peers.length === 1) {
+            return root.path.base || root.path.toString();
+        }
+        const segmentsOf = (uri: URI): string[] => uri.path.toString().split('/').filter(segment => segment.length > 0);
+        const rootSegments = segmentsOf(root);
+        const peerSegments = peers.filter(peer => !peer.isEqual(root)).map(segmentsOf);
+        // A root with a shorter path than a peer, e.g. `/app` next to `/x/app`, is named by its whole path, `app`.
+        const maxLength = Math.max(rootSegments.length, ...peerSegments.map(segments => segments.length));
+        for (let length = 2; length <= maxLength; length++) {
+            const tail = rootSegments.slice(-length).join('/');
+            if (peerSegments.every(segments => segments.slice(-length).join('/') !== tail)) {
+                return tail;
+            }
+        }
+        // The paths are the same, e.g. in different URI schemes, so only the full URI tells them apart.
+        return root.toString();
+    }
+
+    /**
+     * Qualifies a root name that another root name starts with, e.g. `alice` next to `alice/app`, by more
+     * segments of its path, as a path in the one root would otherwise resolve to the other. If the root
+     * named `alice/app` is the `app` folder of the root named `alice`, the names are left as they are:
+     * the nested root is then also the one that {@link getRootPrefixedPath} names its files after.
+     */
+    protected qualifyRootNames(names: Map<string, URI>): Map<string, URI> {
+        const entries = Array.from(names, ([name, root]) => ({ name, root }));
+        let qualified = true;
+        while (qualified) {
+            qualified = false;
+            for (const shorter of entries) {
+                for (const longer of entries) {
+                    if (longer.name.startsWith(shorter.name + '/')
+                        && !shorter.root.resolve(longer.name.substring(shorter.name.length + 1)).isEqual(longer.root)) {
+                        qualified = this.qualifyRootName(shorter) || this.qualifyRootName(longer) || qualified;
+                    }
+                }
+            }
+        }
+        return new Map(entries.map(({ name, root }) => [name, root]));
+    }
+
+    /**
+     * Adds the next parent segment to the name of a root, unless the name is its whole path or its URI already.
+     *
+     * @returns whether the name was qualified
+     */
+    protected qualifyRootName(entry: { name: string; root: URI }): boolean {
+        const segments = entry.root.path.toString().split('/').filter(segment => segment.length > 0);
+        const length = entry.name.split('/').length;
+        if (entry.name === entry.root.toString() || length >= segments.length) {
+            return false;
+        }
+        entry.name = segments.slice(-(length + 1)).join('/');
+        return true;
     }
 
     areWorkspaceRoots(uris: URI[]): boolean {
@@ -885,6 +1164,12 @@ export interface WorkspaceInput {
 
 }
 
+export interface WorkspaceRootToAdd {
+    uri: URI;
+    /** The name of the root, written to the workspace file as the `name` of its folder entry. */
+    name?: string;
+}
+
 export interface WorkspaceData {
     folders: Array<{ path: string, name?: string }>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -892,23 +1177,52 @@ export interface WorkspaceData {
 }
 
 export namespace WorkspaceData {
-    const validateSchema = new Ajv().compile(workspaceSchema);
+    // The `name` of a folder is not validated when loading, so that a workspace file with an invalid name still loads,
+    // and the folder falls back to its folder name, as in VS Code. The editor still validates it against `workspaceSchema`.
+    const validateSchema = new Ajv().compile(withoutFolderName(workspaceSchema));
+
+    function withoutFolderName(schema: IJSONSchema): IJSONSchema {
+        const copy: IJSONSchema = structuredClone(schema);
+        delete (copy.properties?.folders.items as IJSONSchema | undefined)?.properties?.name;
+        return copy;
+    }
+
+    function isValidFolderName(name: unknown): name is string {
+        return typeof name === 'string' && name.length > 0;
+    }
 
     export function is(data: unknown): data is WorkspaceData {
         return !!validateSchema(data);
     }
 
-    export function buildWorkspaceData(folders: string[] | FileStat[], additionalFields?: Partial<WorkspaceData>): WorkspaceData {
-        const roots = new Set<string>();
-        if (folders.length > 0) {
-            if (typeof folders[0] !== 'string') {
-                (<FileStat[]>folders).forEach(folder => roots.add(folder.resource.toString()));
-            } else {
-                (<string[]>folders).forEach(folder => roots.add(folder));
+    /**
+     * Normalizes the given folder URI the same way as the URIs of the workspace roots, so that they can be compared.
+     */
+    export function normalizeFolderUri(folderUri: string): string {
+        return new URI(folderUri.endsWith('/') ? folderUri.slice(0, -1) : folderUri).normalizePath().toString();
+    }
+
+    /**
+     * Builds the workspace data for the given folders. A folder given as an entry with a `name` keeps that name,
+     * any other folder keeps the `name` of its entry in `additionalFields.folders`. Names that are not strings are dropped.
+     */
+    export function buildWorkspaceData(folders: string[] | FileStat[] | WorkspaceData['folders'], additionalFields?: Partial<WorkspaceData>): WorkspaceData {
+        const currentNames = new Map<string, string>();
+        for (const { path, name } of additionalFields?.folders ?? []) {
+            if (isValidFolderName(name)) {
+                currentNames.set(normalizeFolderUri(path), name);
+            }
+        }
+        const roots = new Map<string, string | undefined>();
+        for (const folder of folders) {
+            const path = typeof folder === 'string' ? folder : FileStat.is(folder) ? folder.resource.toString() : folder.path;
+            if (!roots.has(path)) {
+                const name = typeof folder === 'string' || FileStat.is(folder) ? undefined : folder.name;
+                roots.set(path, isValidFolderName(name) ? name : currentNames.get(normalizeFolderUri(path)));
             }
         }
         const data: WorkspaceData = {
-            folders: Array.from(roots, folder => ({ path: folder }))
+            folders: Array.from(roots, ([path, name]) => name ? { path, name } : { path })
         };
         if (additionalFields) {
             delete additionalFields.folders;
@@ -918,36 +1232,31 @@ export namespace WorkspaceData {
     }
 
     export function transformToRelative(data: WorkspaceData, workspaceFile?: FileStat): WorkspaceData {
-        const folderUris: string[] = [];
+        const folders: WorkspaceData['folders'] = [];
         const workspaceFileUri = new URI(workspaceFile ? workspaceFile.resource.toString() : '').withScheme('file');
-        for (const { path } of data.folders) {
+        for (const { path, name } of data.folders) {
             const folderUri = new URI(path).withScheme('file');
             const rel = workspaceFileUri.parent.relative(folderUri);
-            if (rel) {
-                folderUris.push(rel.toString());
-            } else {
-                folderUris.push(folderUri.toString());
-            }
+            folders.push({ path: rel ? rel.toString() : folderUri.toString(), name });
         }
-        return buildWorkspaceData(folderUris, data);
+        return buildWorkspaceData(folders, { ...data, folders: [] });
     }
 
     export function transformToAbsolute(data: WorkspaceData, workspaceFile?: BaseStat): WorkspaceData {
         if (workspaceFile) {
-            const folders: string[] = [];
-            for (const folder of data.folders) {
-                const path = folder.path;
+            const folders: WorkspaceData['folders'] = [];
+            for (const { path, name } of data.folders) {
                 if (path.startsWith('file:///')) {
-                    folders.push(path);
+                    folders.push({ path, name });
                 } else {
                     const absolutePath = workspaceFile.resource.withScheme('file').parent.resolveToAbsolute(path)?.toString();
                     if (absolutePath) {
-                        folders.push(absolutePath.toString());
+                        folders.push({ path: absolutePath.toString(), name });
                     }
                 }
 
             }
-            return Object.assign(data, buildWorkspaceData(folders, data));
+            return Object.assign(data, buildWorkspaceData(folders, { ...data, folders: [] }));
         }
         return data;
     }

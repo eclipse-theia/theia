@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './metrics-backend-application-contribution';
-export * from './metrics-contribution';
-export * from './node-metrics-contribution';
-export * from './extensions-metrics-contribution';
-export * from './prometheus';
+export * from './metrics-backend-application-contribution.js';
+export * from './metrics-contribution.js';
+export * from './node-metrics-contribution.js';
+export * from './extensions-metrics-contribution.js';
+export * from './prometheus.js';

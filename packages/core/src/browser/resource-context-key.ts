@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from 'inversify';
-import URI from '../common/uri';
-import { ContextKeyService, ContextKey } from './context-key-service';
-import { LanguageService } from './language-service';
+import URI from '../common/uri.js';
+import { ContextKeyService, ContextKey } from './context-key-service.js';
+import { LanguageService } from './language-service.js';
 
 /**
  * The context key values describing a resource. Each property name is the context key identifier itself, so

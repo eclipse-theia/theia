@@ -26,8 +26,8 @@ import {
     FileSystemProviderWithFileFolderCopyCapability, FileSystemProviderWithFileReadWriteCapability,
     FileSystemProviderWithOpenReadWriteCloseCapability, FileType, FileUpdateOptions, FileUpdateResult,
     FileWriteOptions, Stat, WatchOptions, createFileSystemProviderError
-} from '../../common/files';
-import { FileSystemAccessHandle, FileSystemObserverConstructor, FileSystemObserverRecord, WindowWithFileSystemAccess } from './file-system-access-types';
+} from '../../common/files.js';
+import { FileSystemAccessHandle, FileSystemObserverConstructor, FileSystemObserverRecord, WindowWithFileSystemAccess } from './file-system-access-types.js';
 
 export const LocalDirectoryFileSystemProviderOptions = Symbol('LocalDirectoryFileSystemProviderOptions');
 export interface LocalDirectoryFileSystemProviderOptions {

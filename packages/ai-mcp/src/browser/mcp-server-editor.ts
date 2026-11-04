@@ -25,11 +25,11 @@ import {
     MCPRegistryMetadata,
     MCPServerDescription,
     RemoteMCPServerDescription
-} from '../common/mcp-server-manager';
-import { MCP_SERVERS_PREF } from '../common/mcp-preferences';
-import { MCPOAuthConfig } from '../common/mcp-oauth';
+} from '../common/mcp-server-manager.js';
+import { MCP_SERVERS_PREF } from '../common/mcp-preferences.js';
+import { MCPOAuthConfig } from '../common/mcp-oauth.js';
 import type { DialogProps } from '@theia/core/lib/browser/dialogs';
-import type { MCPServerEditDialog, MCPServerFormData } from './mcp-server-edit-dialog';
+import type { MCPServerEditDialog, MCPServerFormData } from './mcp-server-edit-dialog.js';
 
 /**
  * Parameters consumed by {@link MCPServerEditDialogFactory}. `initialData` is omitted for

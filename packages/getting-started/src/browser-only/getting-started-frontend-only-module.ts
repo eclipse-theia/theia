@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { GettingStartedWidget } from '../browser/getting-started-widget';
-import { BrowserOnlyGettingStartedWidget } from './browser-only-getting-started-widget';
+import { GettingStartedWidget } from '../browser/getting-started-widget.js';
+import { BrowserOnlyGettingStartedWidget } from './browser-only-getting-started-widget.js';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(BrowserOnlyGettingStartedWidget).toSelf();

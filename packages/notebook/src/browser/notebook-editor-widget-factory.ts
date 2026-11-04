@@ -17,11 +17,11 @@
 import { nls, URI } from '@theia/core';
 import { WidgetFactory, NavigatableWidgetOptions, LabelProvider } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { NotebookEditorWidget, NotebookEditorWidgetContainerFactory, NotebookEditorProps, NOTEBOOK_EDITOR_ID_PREFIX } from './notebook-editor-widget';
-import { NotebookService } from './service/notebook-service';
-import { NotebookModelResolverService } from './service/notebook-model-resolver-service';
+import { NotebookEditorWidget, NotebookEditorWidgetContainerFactory, NotebookEditorProps, NOTEBOOK_EDITOR_ID_PREFIX } from './notebook-editor-widget.js';
+import { NotebookService } from './service/notebook-service.js';
+import { NotebookModelResolverService } from './service/notebook-model-resolver-service.js';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { NotebookModel } from './view-model/notebook-model';
+import { NotebookModel } from './view-model/notebook-model.js';
 
 export interface NotebookEditorWidgetOptions extends NavigatableWidgetOptions {
     notebookType: string;

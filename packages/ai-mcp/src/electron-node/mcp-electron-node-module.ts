@@ -16,8 +16,8 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
-import { MCPOAuthCallbackEndpoint } from '../node/mcp-oauth-callback-endpoint';
-import { MCPOAuthLoopbackCallbackServer } from './mcp-oauth-loopback-callback-server';
+import { MCPOAuthCallbackEndpoint } from '../node/mcp-oauth-callback-endpoint.js';
+import { MCPOAuthLoopbackCallbackServer } from './mcp-oauth-loopback-callback-server.js';
 
 /**
  * Electron-only backend module. Binds the RFC 8252 loopback callback server as the

@@ -20,6 +20,14 @@
   ],
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "scripts": {
     "build": "theiaext build",
     "clean": "theiaext clean",
@@ -38,7 +46,7 @@
     "glob": "^7.2.3",
     "limiter": "^2.1.0",
     "tslib": "^2.8.1",
-    "typescript": "~5.9.3"
+    "typescript": "~6.0.3"
   },
   "devDependencies": {
     "@theia/ext-scripts": "1.76.0"

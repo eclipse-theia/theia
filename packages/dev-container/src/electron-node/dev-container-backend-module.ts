@@ -16,22 +16,22 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
-import { DevContainerCliContribution } from './dev-container-cli-contribution';
+import { DevContainerCliContribution } from './dev-container-cli-contribution.js';
 import { CliContribution } from '@theia/core/lib/node';
-import { DevContainerConnectionProvider } from './remote-container-connection-provider';
-import { RemoteContainerConnectionProvider, RemoteContainerConnectionProviderPath } from '../electron-common/remote-container-connection-provider';
-import { ContainerCreationContribution, DockerContainerService } from './docker-container-service';
+import { DevContainerConnectionProvider } from './remote-container-connection-provider.js';
+import { RemoteContainerConnectionProvider, RemoteContainerConnectionProviderPath } from '../electron-common/remote-container-connection-provider.js';
+import { ContainerCreationContribution, DockerContainerService } from './docker-container-service.js';
 import { bindContributionProvider, ConnectionHandler, RpcConnectionHandler } from '@theia/core';
-import { registerContainerCreationContributions } from './devcontainer-contributions/main-container-creation-contributions';
-import { DevContainerFileService } from './dev-container-file-service';
-import { ContainerOutputProvider } from '../electron-common/container-output-provider';
-import { ExtensionsContribution, registerTheiaStartOptionsContributions, SettingsContribution } from './devcontainer-contributions/cli-enhancing-creation-contributions';
+import { registerContainerCreationContributions } from './devcontainer-contributions/main-container-creation-contributions.js';
+import { DevContainerFileService } from './dev-container-file-service.js';
+import { ContainerOutputProvider } from '../electron-common/container-output-provider.js';
+import { ExtensionsContribution, registerTheiaStartOptionsContributions, SettingsContribution } from './devcontainer-contributions/cli-enhancing-creation-contributions.js';
 import { RemoteCliContribution } from '@theia/core/lib/node/remote/remote-cli-contribution';
-import { ProfileFileModificationContribution } from './devcontainer-contributions/profile-file-modification-contribution';
-import { DevContainerWorkspaceHandler } from './dev-container-workspace-handler';
+import { ProfileFileModificationContribution } from './devcontainer-contributions/profile-file-modification-contribution.js';
+import { DevContainerWorkspaceHandler } from './dev-container-workspace-handler.js';
 import { WorkspaceHandlerContribution } from '@theia/workspace/lib/node/default-workspace-server';
-import { registerVariableResolverContributions, VariableResolverContribution } from './devcontainer-contributions/variable-resolver-contribution';
-import { DockerComposeService } from './docker-compose/compose-service';
+import { registerVariableResolverContributions, VariableResolverContribution } from './devcontainer-contributions/variable-resolver-contribution.js';
+import { DockerComposeService } from './docker-compose/compose-service.js';
 
 export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bindContributionProvider(bind, ContainerCreationContribution);

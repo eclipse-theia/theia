@@ -18,7 +18,7 @@ import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common/chat-a
 import { LanguageModelRequirement } from '@theia/ai-core/lib/common';
 import { ILogger, nls } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { codeReviewerSystemPrompt, CODE_REVIEWER_SYSTEM_PROMPT_ID } from './code-reviewer-prompt-template';
+import { codeReviewerSystemPrompt, CODE_REVIEWER_SYSTEM_PROMPT_ID } from './code-reviewer-prompt-template.js';
 
 export const CodeReviewerAgentId = 'code-reviewer';
 

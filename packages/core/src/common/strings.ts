@@ -20,7 +20,7 @@
 
 // based on https://github.com/microsoft/vscode/blob/04c36be045a94fee58e5f8992d3e3fd980294a84/src/vs/base/common/strings.ts
 
-import { CharCode } from './char-code';
+import { CharCode } from './char-code.js';
 
 /**
  * Determines if haystack ends with needle.
@@ -76,11 +76,8 @@ function doEqualsIgnoreCase(a: string, b: string, stopAt = a.length): boolean {
             if (diff !== 0 && diff !== 32) {
                 return false;
             }
-        }
-
-        // Any other charcode
-        // tslint:disable-next-line:one-line
-        else {
+        } else {
+            // Any other charcode
             if (String.fromCharCode(codeA).toLowerCase() !== String.fromCharCode(codeB).toLowerCase()) {
                 return false;
             }

@@ -18,10 +18,10 @@ import { injectable, postConstruct, inject, interfaces, Container } from '@theia
 import {
     BaseWidget, PanelLayout, Message, ApplicationShell, Widget, StatefulWidget, ViewContainer, codicon
 } from '@theia/core/lib/browser';
-import { DebugSessionWidget } from './debug-session-widget';
-import { DebugConfigurationWidget } from './debug-configuration-widget';
-import { DebugViewModel } from './debug-view-model';
-import { DebugSessionManager } from '../debug-session-manager';
+import { DebugSessionWidget } from './debug-session-widget.js';
+import { DebugConfigurationWidget } from './debug-configuration-widget.js';
+import { DebugViewModel } from './debug-view-model.js';
+import { DebugSessionManager } from '../debug-session-manager.js';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { nls } from '@theia/core/lib/common/nls';
 

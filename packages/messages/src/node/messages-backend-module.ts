@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { bindNotificationPreferences } from '../common/notification-preferences';
+import { bindNotificationPreferences } from '../common/notification-preferences.js';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindNotificationPreferences(bind);

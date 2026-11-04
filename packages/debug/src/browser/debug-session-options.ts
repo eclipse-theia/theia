@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { Emitter } from '@theia/core';
-import { DebugConfiguration } from '../common/debug-common';
-import { DebugCompound } from '../common/debug-compound';
+import { DebugConfiguration } from '../common/debug-common.js';
+import { DebugCompound } from '../common/debug-compound.js';
 
 export class DebugCompoundRoot {
     private stopped = false;
@@ -113,7 +113,7 @@ export namespace InternalDebugSessionOptions {
     }
 
     /** @deprecated Please use `JSON.parse` to restore previously serialized debug session options. */
-    // eslint-disable-next-line deprecation/deprecation
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     export function parseValue(value: string): DebugSessionOptionsData {
         const split = value.split(SEPARATOR);
         if (split.length === 5) {

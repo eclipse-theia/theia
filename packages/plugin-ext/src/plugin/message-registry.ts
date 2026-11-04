@@ -16,8 +16,8 @@
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import {
     PLUGIN_RPC_CONTEXT as Ext, MessageRegistryMain, MainMessageOptions, MainMessageType
-} from '../common/plugin-api-rpc';
-import { RPCProtocol } from '../common/rpc-protocol';
+} from '../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../common/rpc-protocol.js';
 import { MessageItem, MessageOptions } from '@theia/plugin';
 
 @injectable()

@@ -15,14 +15,14 @@
 // *****************************************************************************
 
 import { injectable, inject, named, interfaces, Container } from 'inversify';
-import { ContributionProvider, ConnectionHandler, bindContributionProvider, servicesPath } from '../../common';
-import { MessagingService } from './messaging-service';
-import { ConnectionContainerModule } from './connection-container-module';
-import Route = require('route-parser');
-import { Channel, ChannelMultiplexer } from '../../common/message-rpc/channel';
-import { FrontendConnectionService } from './frontend-connection-service';
-import { BackendApplicationContribution } from '../backend-application';
-import { ILogger } from '../../common/logger';
+import { ContributionProvider, ConnectionHandler, bindContributionProvider, servicesPath } from '../../common/index.js';
+import { MessagingService } from './messaging-service.js';
+import { ConnectionContainerModule } from './connection-container-module.js';
+import Route from 'route-parser';
+import { Channel, ChannelMultiplexer } from '../../common/message-rpc/channel.js';
+import { FrontendConnectionService } from './frontend-connection-service.js';
+import { BackendApplicationContribution } from '../backend-application.js';
+import { ILogger } from '../../common/logger.js';
 
 export const MessagingContainer = Symbol('MessagingContainer');
 export const MainChannel = Symbol('MainChannel');

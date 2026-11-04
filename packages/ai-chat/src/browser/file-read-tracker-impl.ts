@@ -21,7 +21,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent, FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { FileReadTracker } from '../common/file-read-tracker';
+import { FileReadTracker } from '../common/file-read-tracker.js';
 
 /** The content an agent saw, and whether anything has since signalled a possible change. */
 interface TrackedFile {
@@ -167,15 +167,7 @@ export class FileReadTrackerImpl implements FileReadTracker {
 
     /** A path the agent can pass back to `getFileContent`, which takes `<rootName>/<relativePath>` as well as a uri. */
     protected getLabel(uri: URI): string {
-        const roots = this.workspaceService.tryGetRoots().map(root => root.resource);
-        for (const root of roots) {
-            const relativePath = root.relative(uri)?.toString();
-            // A basename shared with another root would resolve to that other root.
-            if (relativePath && !roots.some(other => other.path.base === root.path.base && !other.isEqual(root))) {
-                return `${root.path.base}/${relativePath}`;
-            }
-        }
-        return uri.toString();
+        return this.workspaceService.getWorkspaceRootUri(uri) ? this.workspaceService.getRootPrefixedPath(uri) : uri.toString();
     }
 
     protected invalidate(uriString: string): void {

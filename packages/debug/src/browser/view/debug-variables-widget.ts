@@ -17,17 +17,17 @@
 import { injectable, inject, postConstruct, interfaces, Container } from '@theia/core/shared/inversify';
 import { MenuPath, Disposable, CommandRegistry, MenuModelRegistry, DisposableCollection, Command } from '@theia/core/lib/common';
 import { SourceTreeWidget, TreeElementNode } from '@theia/core/lib/browser/source-tree';
-import { DebugVariablesSource } from './debug-variables-source';
-import { DebugViewModel } from './debug-view-model';
+import { DebugVariablesSource } from './debug-variables-source.js';
+import { DebugViewModel } from './debug-view-model.js';
 import { nls } from '@theia/core/lib/common/nls';
 import { MouseEvent } from '@theia/core/shared/react';
 import { SelectableTreeNode, TreeNode, TreeSelection } from '@theia/core/lib/browser';
-import { DebugVariable } from '../console/debug-console-items';
-import { BreakpointManager } from '../breakpoint/breakpoint-manager';
-import { DataBreakpoint, DataBreakpointSource, DataBreakpointSourceType } from '../breakpoint/breakpoint-marker';
-import { DebugSessionManager } from '../debug-session-manager';
-import { DebugSession } from '../debug-session';
-import { DebugStackFrame } from '../model/debug-stack-frame';
+import { DebugVariable } from '../console/debug-console-items.js';
+import { BreakpointManager } from '../breakpoint/breakpoint-manager.js';
+import { DataBreakpoint, DataBreakpointSource, DataBreakpointSourceType } from '../breakpoint/breakpoint-marker.js';
+import { DebugSessionManager } from '../debug-session-manager.js';
+import { DebugSession } from '../debug-session.js';
+import { DebugStackFrame } from '../model/debug-stack-frame.js';
 
 @injectable()
 export class DebugVariablesWidget extends SourceTreeWidget {
@@ -118,6 +118,12 @@ export class DebugVariablesWidget extends SourceTreeWidget {
 
     protected handleDidDestroyDebugSession(session: DebugSession): void {
         this.statePerSession.delete(session.id);
+        if (this.stackFrame?.session.id === session.id) {
+            // Release the frame, which holds its session: this widget outlives every session, and no stack frame is
+            // focused when the session it belongs to is gone. `onDidFocusStackFrame` does not announce that, as the
+            // session manager stops forwarding the event as soon as the session is no longer the current one.
+            this.stackFrame = undefined;
+        }
     }
 
     protected override handleContextMenuEvent(node: TreeNode | undefined, event: MouseEvent<HTMLElement>): void {

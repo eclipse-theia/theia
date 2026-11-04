@@ -18,7 +18,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { RemoteCliArgsContribution } from '@theia/core/lib/common/remote-cli-args-contribution';
 import { LaunchArguments } from '@theia/core/lib/common/launch-arguments';
 import { WindowLaunchArgs } from '@theia/core/lib/browser/window/window-launch-args';
-import { CliPreferenceEntry } from '../common/cli-preferences';
+import { CliPreferenceEntry } from '../common/cli-preferences.js';
 
 /**
  * Re-applies `--session-preference` values on a remote backend that is started for a *forwarded*

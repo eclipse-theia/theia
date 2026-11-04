@@ -16,8 +16,8 @@
 
 import { expect } from 'chai';
 import { ContextMenuRenderer, RenderContextMenuOptions } from '@theia/core/lib/browser';
-import { AI_REGISTRY_ENTRY_CONTEXT_MENU, RegistryEntryContext } from './registry-entry-context';
-import { RegistryEntryMenuEvent, showEntryMenu } from './registry-entry-menu';
+import { AI_REGISTRY_ENTRY_CONTEXT_MENU, RegistryEntryContext } from './registry-entry-context.js';
+import { RegistryEntryMenuEvent, showEntryMenu } from './registry-entry-menu.js';
 
 const entry: RegistryEntryContext = {
     artifactKind: 'skill',

@@ -16,10 +16,10 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Widget } from '@theia/core/lib/browser';
-import { TestResultViewContribution } from './view/test-result-view-contribution';
-import { TestOutputViewContribution } from './view/test-output-view-contribution';
-import { TestViewContribution } from './view/test-view-contribution';
-import { TestPreferences } from '../common/test-preferences';
+import { TestResultViewContribution } from './view/test-result-view-contribution.js';
+import { TestOutputViewContribution } from './view/test-output-view-contribution.js';
+import { TestViewContribution } from './view/test-view-contribution.js';
+import { TestPreferences } from '../common/test-preferences.js';
 
 export interface TestExecutionProgressService {
     onTestRunRequested(preserveFocus: boolean): Promise<void>;

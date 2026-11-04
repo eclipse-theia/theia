@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as fuzzy from 'fuzzy';
-import { Event } from './event';
-import { KeySequence } from './keys';
-import { CancellationToken } from './cancellation';
-import { Severity } from './severity';
-import { findSubstringIndex, matchRank } from './fuzzy-match-utils';
+import * as fuzzy from '../../shared/fuzzy/index.cjs';
+import { Event } from './event.js';
+import { KeySequence } from './keys.js';
+import { CancellationToken } from './cancellation.js';
+import { Severity } from './severity.js';
+import { findSubstringIndex, matchRank } from './fuzzy-match-utils.js';
 
 export const quickPickServicePath = '/services/quickPick';
 export const QuickPickService = Symbol('QuickPickService');
@@ -282,6 +282,11 @@ export interface QuickInputService {
     readonly backButton: QuickInputButton;
     readonly onShow: Event<void>;
     readonly onHide: Event<void>;
+    /**
+     * The element that had focus when the quick input was shown, while the quick input is showing.
+     * Items whose state depends on context keys should be evaluated against this element rather than the quick input itself.
+     */
+    readonly previousFocusElement?: HTMLElement;
     open(filter: string): void;
     createInputBox(): InputBox;
     input(options?: InputOptions, token?: CancellationToken): Promise<string | undefined>;

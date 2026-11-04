@@ -21,8 +21,8 @@ import * as fs from '@theia/core/shared/fs-extra';
 import * as assert from 'assert';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node';
-import { ParcelFileSystemWatcherService } from './parcel-filesystem-service';
-import { DidFilesChangedParams, FileChange, FileChangeType } from '../../common/filesystem-watcher-protocol';
+import { FileSystemWatcherServiceImpl } from '../filesystem-watcher-service-impl.js';
+import { DidFilesChangedParams, FileChange, FileChangeType } from '../../common/filesystem-watcher-protocol.js';
 
 const expect = chai.expect;
 const track = temp.track();
@@ -30,7 +30,7 @@ const track = temp.track();
 describe('parcel-filesystem-watcher', function (): void {
 
     let root: URI;
-    let watcherService: ParcelFileSystemWatcherService;
+    let watcherService: FileSystemWatcherServiceImpl;
     let watcherId: number;
 
     this.timeout(100000);
@@ -163,8 +163,8 @@ describe('parcel-filesystem-watcher', function (): void {
         }
     });
 
-    function createParcelFileSystemWatcherService(): ParcelFileSystemWatcherService {
-        return new ParcelFileSystemWatcherService({
+    function createParcelFileSystemWatcherService(): FileSystemWatcherServiceImpl {
+        return new FileSystemWatcherServiceImpl({
             verbose: true
         });
     }

@@ -17,9 +17,9 @@
 import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, nls } from '@theia/core';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { AutoUpdateMode } from '../common/ai-registry-preferences';
-import { RegistryAutoUpdatePolicy } from './auto-update/registry-auto-update-policy';
-import { AIRegistryEntryContextMenu, RegistryEntryContext } from './registry-entry-context';
+import { AutoUpdateMode } from '../common/ai-registry-preferences.js';
+import { RegistryAutoUpdatePolicy } from './auto-update/registry-auto-update-policy.js';
+import { AIRegistryEntryContextMenu, RegistryEntryContext } from './registry-entry-context.js';
 
 export namespace AIRegistryCommands {
     export const AUTO_UPDATE_OFF: Command = { id: 'ai-registry.auto-update.off' };

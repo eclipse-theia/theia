@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { DefaultSecondaryWindowService } from '../../browser/window/default-secondary-window-service';
-import { ApplicationShell, ExtractableWidget } from '../../browser';
-import { ElectronWindowService } from './electron-window-service';
-import { Deferred, timeout } from '../../common/promise-util';
-import { ElectronWindowPreferences, PREF_WINDOW_ZOOM_LEVEL } from '../../electron-common/electron-window-preferences';
+import { DefaultSecondaryWindowService } from '../../browser/window/default-secondary-window-service.js';
+import { ApplicationShell, ExtractableWidget } from '../../browser/index.js';
+import { ElectronWindowService } from './electron-window-service.js';
+import { Deferred, timeout } from '../../common/promise-util.js';
+import { ElectronWindowPreferences, PREF_WINDOW_ZOOM_LEVEL } from '../../electron-common/electron-window-preferences.js';
 
 @injectable()
 export class ElectronSecondaryWindowService extends DefaultSecondaryWindowService {
@@ -56,6 +56,7 @@ export class ElectronSecondaryWindowService extends DefaultSecondaryWindowServic
     override registerShutdownListeners(): void {
         // Close all open windows when the main window is closed.
         (this.windowService as ElectronWindowService).onWillShutDown(() => {
+            this.shuttingDown = true;
             const promises = [];
             // Iterate backwards because calling window.close might remove the window from the array
             for (let i = this.secondaryWindows.length - 1; i >= 0; i--) {

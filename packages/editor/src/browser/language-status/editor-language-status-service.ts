@@ -18,16 +18,16 @@ import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { codicon, HoverService, StatusBar, StatusBarAlignment, StatusBarEntry } from '@theia/core/lib/browser';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
 import { CommandRegistry, DisposableCollection, MessageService, nls } from '@theia/core';
-import { TextEditor } from '../editor';
-import { EditorCommands } from '../editor-command';
-import { LanguageSelector, score } from '../../common/language-selector';
+import { TextEditor } from '../editor.js';
+import { EditorCommands } from '../editor-command.js';
+import { LanguageSelector, score } from '../../common/language-selector.js';
 import { AccessibilityInformation } from '@theia/core/lib/common/accessibility';
 import URI from '@theia/core/lib/common/uri';
-import { CurrentEditorAccess } from '../editor-manager';
+import { CurrentEditorAccess } from '../editor-manager.js';
 import { Severity } from '@theia/core/lib/common/severity';
 import { LabelParser } from '@theia/core/lib/browser/label-parser';
-import { FormatterService } from '../editor-formatter-service';
-import { EditorFormatterStatusContribution } from './editor-formatter-status-contribution';
+import { FormatterService } from '../editor-formatter-service.js';
+import { EditorFormatterStatusContribution } from './editor-formatter-status-contribution.js';
 
 /**
  * Represents the severity of a language status item.

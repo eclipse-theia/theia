@@ -120,7 +120,9 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
             - specify `useResponseApi: true` to use the newer OpenAI Response API instead of the Chat Completion API (requires compatible endpoint).\
             \n\
             - specify `reasoningSupport` to opt in to the chat reasoning selector. Provide an object with\
-            `supportedLevels` (e.g. `["off", "low", "medium", "high", "auto"]`) and an optional `defaultLevel`.\
+            `supportedLevels` (choices: `off`, `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`, `auto`) and an optional `defaultLevel`.\
+            `none` sends an explicit no-reasoning effort; `off` omits generated reasoning settings; `auto` uses the provider default effort.\
+            Only declare levels supported by your endpoint.\
             \n\
             - specify `headers` to send additional HTTP headers with every request to the endpoint, e.g. headers required by a gateway in front of the API.\
             \n\
@@ -190,12 +192,12 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
                                 type: 'array',
                                 items: {
                                     type: 'string',
-                                    enum: ['off', 'minimal', 'low', 'medium', 'high', 'auto']
+                                    enum: ['off', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max', 'auto']
                                 }
                             },
                             defaultLevel: {
                                 type: 'string',
-                                enum: ['off', 'minimal', 'low', 'medium', 'high', 'auto']
+                                enum: ['off', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max', 'auto']
                             }
                         }
                     },

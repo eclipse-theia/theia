@@ -17,8 +17,8 @@
 import { MessageService, nls, PreferenceChange, PreferenceScope, PreferenceService } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ApiKeySource, DiscoveredModel, ModelDiscoveryResult } from '../common/model-discovery-status';
-import { ModelDiscoveryStatusService } from './model-discovery-status-service';
+import { ApiKeySource, DiscoveredModel, ModelDiscoveryResult } from '../common/model-discovery-status.js';
+import { ModelDiscoveryStatusService } from './model-discovery-status-service.js';
 
 /** The part of a provider's language model manager that a discovery run drives. */
 export interface DiscoveringLanguageModelsManager<T> {

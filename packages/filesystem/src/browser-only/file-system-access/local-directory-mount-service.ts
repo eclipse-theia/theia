@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { Event, Path, URI } from '@theia/core';
-import { FileSystemAccessPermissionState } from './file-system-access-types';
-import { LocalDirectoryFileSystemProvider } from './local-directory-file-system-provider';
+import { FileSystemAccessPermissionState } from './file-system-access-types.js';
+import { LocalDirectoryFileSystemProvider } from './local-directory-file-system-provider.js';
 
 export const LocalDirectoryMountService = Symbol('LocalDirectoryMountService');
 

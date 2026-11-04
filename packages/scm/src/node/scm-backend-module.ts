@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { bindScmPreferences } from '../common/scm-preferences';
+import { bindScmPreferences } from '../common/scm-preferences.js';
 export default new ContainerModule(bind => {
     bindScmPreferences(bind);
 });

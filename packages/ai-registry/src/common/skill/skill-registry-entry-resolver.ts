@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { RegistrySkill, ResolvedSkillEntry } from './skill-registry-types';
+import { RegistrySkill, ResolvedSkillEntry } from './skill-registry-types.js';
 
 export const SkillRegistryEntryResolver = Symbol('SkillRegistryEntryResolver');
 export interface SkillRegistryEntryResolver {

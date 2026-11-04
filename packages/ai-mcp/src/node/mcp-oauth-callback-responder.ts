@@ -16,8 +16,8 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { nls } from '@theia/core/lib/common/nls';
-import { MCPOAuthCallback } from '../common/mcp-oauth';
-import { MCPOAuthCallbackService } from './mcp-oauth-callback-service';
+import { MCPOAuthCallback } from '../common/mcp-oauth.js';
+import { MCPOAuthCallbackService } from './mcp-oauth-callback-service.js';
 
 const MAX_OAUTH_ERROR_MESSAGE_LENGTH = 500;
 

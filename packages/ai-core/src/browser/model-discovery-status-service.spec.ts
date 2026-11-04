@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { ModelDiscoveryStatus } from '../common/model-discovery-status';
-import { ModelDiscoveryStatusService } from './model-discovery-status-service';
+import { ModelDiscoveryStatus } from '../common/model-discovery-status.js';
+import { ModelDiscoveryStatusService } from './model-discovery-status-service.js';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 /** The service logs a failed run, so a bare instance would have no logger to do it with. */

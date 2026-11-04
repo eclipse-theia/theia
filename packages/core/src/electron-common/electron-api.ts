@@ -14,13 +14,36 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { NativeKeyboardLayout } from '../common/keyboard/keyboard-layout-provider';
-import { Disposable } from '../common';
-import { FrontendApplicationState, StopReason } from '../common/frontend-application-state';
-import { ThemeMode } from '../common/theme';
-import { LaunchArguments } from '../common/launch-arguments';
+import { NativeKeyboardLayout } from '../common/keyboard/keyboard-layout-provider.js';
+import { Disposable } from '../common/index.js';
+import { FrontendApplicationState, StopReason } from '../common/frontend-application-state.js';
+import { ThemeMode } from '../common/theme.js';
+import { LaunchArguments } from '../common/launch-arguments.js';
 
 export type MenuRole = ('undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'selectAll' | 'about' | 'services' | 'hide' | 'hideOthers' | 'unhide' | 'quit');
+
+export function isElectronAcceleratorRepresentable(accelerator: string | undefined): accelerator is string {
+    if (!accelerator || /altgr/i.test(accelerator) || /\s/.test(accelerator) || accelerator.split('+').some(token => !token)) {
+        return false;
+    }
+    for (let i = 0; i < accelerator.length; i++) {
+        if (accelerator.charCodeAt(i) > 127) {
+            return false;
+        }
+    }
+    return true;
+}
+
+export type ElectronMenuAccelerator = Pick<MenuDto, 'accelerator'>;
+
+export function electronMenuAcceleratorMetadata(acceleratorSequence: string[]): ElectronMenuAccelerator {
+    return { accelerator: acceleratorSequence.join(' ') || undefined };
+}
+
+/** Return an Electron accelerator only when the rendered single chord is representable. */
+export function electronMenuAccelerator(dto: ElectronMenuAccelerator): ElectronMenuAccelerator {
+    return isElectronAcceleratorRepresentable(dto.accelerator) ? { accelerator: dto.accelerator } : {};
+}
 
 export interface MenuDto {
     id?: string,
@@ -107,7 +130,7 @@ export interface TheiaCoreAPI {
 
     applicationStateChanged(state: FrontendApplicationState): void;
 
-    readClipboard(): string;
+    readClipboard(): Promise<string>;
     writeClipboard(text: string): void;
 
     onKeyboardLayoutChanged(handler: (newLayout: NativeKeyboardLayout) => void): Disposable;

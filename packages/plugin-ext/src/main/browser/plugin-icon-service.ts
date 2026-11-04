@@ -20,7 +20,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { MonacoIconRegistry } from '@theia/monaco/lib/browser/monaco-icon-registry';
 import * as path from 'path';
-import { IconContribution, DeployedPlugin, IconDefinition } from '../../common/plugin-protocol';
+import { IconContribution, DeployedPlugin, IconDefinition } from '../../common/plugin-protocol.js';
 import { PLUGINS_BASE_PATH, PLUGINS_SCHEME } from '@theia/plugin-utils/lib/common/constants';
 import { encodePluginAssetPath } from '@theia/plugin-utils/lib/common/plugin-model';
 

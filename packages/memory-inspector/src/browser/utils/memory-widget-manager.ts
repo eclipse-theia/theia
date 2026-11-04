@@ -16,12 +16,12 @@
 import { Disposable, DisposableCollection, Emitter, MessageService } from '@theia/core';
 import { ApplicationShell, OpenViewArguments, WidgetManager } from '@theia/core/lib/browser';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { MemoryDiffTableWidget, MemoryDiffWidget } from '../diff-widget/memory-diff-table-widget';
-import { MemoryWidget } from '../memory-widget/memory-widget';
-import { RegisterWidget } from '../register-widget/register-widget-types';
-import { MemoryDiffWidgetData, MemoryWidgetOptions } from './memory-widget-utils';
+import { MemoryDiffTableWidget, MemoryDiffWidget } from '../diff-widget/memory-diff-table-widget.js';
+import { MemoryWidget } from '../memory-widget/memory-widget.js';
+import { RegisterWidget } from '../register-widget/register-widget-types.js';
+import { MemoryDiffWidgetData, MemoryWidgetOptions } from './memory-widget-utils.js';
 import { nls } from '@theia/core/lib/common/nls';
-import { EditableMemoryWidget } from '../editable-widget/memory-editable-table-widget';
+import { EditableMemoryWidget } from '../editable-widget/memory-editable-table-widget.js';
 
 @injectable()
 export class MemoryWidgetManager implements Disposable {

@@ -19,7 +19,7 @@ import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuMo
 import { CommonCommands, CommonMenus, FrontendApplicationContribution, QuickInputService, QuickPickItem } from '@theia/core/lib/browser';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { LocalDirectoryMount, LocalDirectoryMountService } from '@theia/filesystem/lib/browser-only/file-system-access/local-directory-mount-service';
-import { WorkspaceService } from '../browser/workspace-service';
+import { WorkspaceService } from '../browser/workspace-service.js';
 
 export namespace LocalFolderCommands {
     export const OPEN_LOCAL_FOLDER = Command.toDefaultLocalizedCommand({

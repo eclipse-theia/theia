@@ -17,7 +17,7 @@
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MaybePromise } from '@theia/core';
-import { WorkspaceFileService } from './workspace-file-service';
+import { WorkspaceFileService } from './workspace-file-service.js';
 
 @injectable()
 export class UntitledWorkspaceService {

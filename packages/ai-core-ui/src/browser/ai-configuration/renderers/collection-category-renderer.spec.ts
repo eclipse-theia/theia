@@ -24,8 +24,8 @@ import { expect } from 'chai';
 import * as React from '@theia/core/shared/react';
 import { flushSync } from '@theia/core/shared/react-dom';
 import { createRoot } from '@theia/core/shared/react-dom/client';
-import { AiConfigurationRenderContext, AiConfigurationTreeItem } from '../ai-configuration-category';
-import { CollectionCategoryRenderer } from './collection-category-renderer';
+import { AiConfigurationRenderContext, AiConfigurationTreeItem } from '../ai-configuration-category.js';
+import { CollectionCategoryRenderer } from './collection-category-renderer.js';
 
 disableJSDOM();
 

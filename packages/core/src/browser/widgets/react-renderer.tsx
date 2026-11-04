@@ -17,7 +17,7 @@
 import { inject, injectable, optional } from 'inversify';
 import * as React from 'react';
 import { createRoot, Root } from 'react-dom/client';
-import { Disposable, DisposableCollection } from '../../common';
+import { Disposable, DisposableCollection } from '../../common/index.js';
 
 export type RendererHost = HTMLElement;
 export const RendererHost = Symbol('RendererHost');

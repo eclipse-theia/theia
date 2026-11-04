@@ -16,8 +16,8 @@
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { OLLAMA_REASONING_SUPPORT, OllamaLanguageModelsManager, OllamaModelDescription } from '../common';
-import { HOST_PREF, MODELS_PREF } from '../common/ollama-preferences';
+import { OLLAMA_REASONING_SUPPORT, OllamaLanguageModelsManager, OllamaModelDescription } from '../common/index.js';
+import { HOST_PREF, MODELS_PREF } from '../common/ollama-preferences.js';
 import { PreferenceService } from '@theia/core';
 
 const OLLAMA_PROVIDER_ID = 'ollama';

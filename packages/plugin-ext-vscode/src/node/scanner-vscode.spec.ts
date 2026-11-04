@@ -20,7 +20,7 @@ import { expect } from 'chai';
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
-import { VsCodePluginScanner } from './scanner-vscode';
+import { VsCodePluginScanner } from './scanner-vscode.js';
 import { PluginPackage } from '@theia/plugin-ext';
 import URI from '@theia/core/lib/common/uri';
 

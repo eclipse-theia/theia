@@ -18,10 +18,10 @@ import { expect } from 'chai';
 import { Command, CommandHandler, CommandRegistry, PreferenceService } from '@theia/core';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { Container } from '@theia/core/shared/inversify';
-import { AUTO_UPDATE_OVERRIDES_PREF, AUTO_UPDATE_PREF } from '../common/ai-registry-preferences';
-import { AIRegistryCommands, AIRegistryMenuContribution } from './ai-registry-menu-contribution';
-import { RegistryAutoUpdatePolicy, RegistryAutoUpdatePolicyImpl } from './auto-update/registry-auto-update-policy';
-import { RegistryEntryContext } from './registry-entry-context';
+import { AUTO_UPDATE_OVERRIDES_PREF, AUTO_UPDATE_PREF } from '../common/ai-registry-preferences.js';
+import { AIRegistryCommands, AIRegistryMenuContribution } from './ai-registry-menu-contribution.js';
+import { RegistryAutoUpdatePolicy, RegistryAutoUpdatePolicyImpl } from './auto-update/registry-auto-update-policy.js';
+import { RegistryEntryContext } from './registry-entry-context.js';
 
 /** Collects the handlers the contribution registers so the tests can invoke them directly. */
 class StubCommandRegistry {

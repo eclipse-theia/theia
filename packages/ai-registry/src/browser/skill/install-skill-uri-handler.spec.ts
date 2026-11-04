@@ -26,11 +26,11 @@ try {
 import { expect } from 'chai';
 import { MessageService } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
-import { RegistryFetchService } from '../../common/registry-fetch-service';
-import { ResolvedSkillEntry } from '../../common/skill/skill-registry-types';
-import { InstallSkillUriConfiguration } from './install-skill-uri-configuration';
-import { InstallSkillUriHandler } from './install-skill-uri-handler';
-import { SkillInstallService } from './skill-install-service';
+import { RegistryFetchService } from '../../common/registry-fetch-service.js';
+import { ResolvedSkillEntry } from '../../common/skill/skill-registry-types.js';
+import { InstallSkillUriConfiguration } from './install-skill-uri-configuration.js';
+import { InstallSkillUriHandler } from './install-skill-uri-handler.js';
+import { SkillInstallService } from './skill-install-service.js';
 
 disableJSDOM();
 

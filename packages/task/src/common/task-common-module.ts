@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { TaskWatcher } from './task-watcher';
+import { TaskWatcher } from './task-watcher.js';
 
 /**
  * Create the bindings common to node and browser.

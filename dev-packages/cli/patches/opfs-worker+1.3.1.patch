@@ -1,0 +1,90 @@
+diff --git a/node_modules/opfs-worker/dist/facade.d.ts b/node_modules/opfs-worker/dist/facade.d.ts
+index 574d506..6f2e7ba 100644
+--- a/node_modules/opfs-worker/dist/facade.d.ts
++++ b/node_modules/opfs-worker/dist/facade.d.ts
+@@ -1,4 +1,4 @@
+-import type { BinaryEncoding, DirentData, Encoding, FileOpenOptions, FileStat, OPFSOptions, PathLike, RenameOptions, StringEncoding, WatchOptions } from './types';
++import type { BinaryEncoding, DirentData, Encoding, FileOpenOptions, FileStat, OPFSOptions, PathLike, RenameOptions, StringEncoding, WatchOptions } from './types.js';
+ /**
+  * Facade class that provides a clean interface for communicating with the OPFS worker
+  * while hiding Comlink implementation details.
+diff --git a/node_modules/opfs-worker/dist/index.d.ts b/node_modules/opfs-worker/dist/index.d.ts
+index a1301f6..46c43b7 100644
+--- a/node_modules/opfs-worker/dist/index.d.ts
++++ b/node_modules/opfs-worker/dist/index.d.ts
+@@ -1,10 +1,10 @@
+-import { OPFSFileSystem } from './facade';
+-import type { OPFSOptions } from './types';
+-export * from './types';
+-export * from './utils/errors';
+-export * from './utils/helpers';
+-export * from './utils/encoder';
+-export * from './facade';
++import { OPFSFileSystem } from './facade.js';
++import type { OPFSOptions } from './types.js';
++export * from './types.js';
++export * from './utils/errors.js';
++export * from './utils/helpers.js';
++export * from './utils/encoder.js';
++export * from './facade.js';
+ /**
+  * Creates a new file system instance with inline worker
+  * @param options - Optional configuration options
+diff --git a/node_modules/opfs-worker/dist/raw.d.ts b/node_modules/opfs-worker/dist/raw.d.ts
+index 9b2886d..d93400b 100644
+--- a/node_modules/opfs-worker/dist/raw.d.ts
++++ b/node_modules/opfs-worker/dist/raw.d.ts
+@@ -1,8 +1,8 @@
+-import type { OPFSOptions, RemoteOPFSWorker } from './types';
+-export * from './types';
+-export * from './utils/errors';
+-export * from './utils/helpers';
+-export * from './utils/encoder';
++import type { OPFSOptions, RemoteOPFSWorker } from './types.js';
++export * from './types.js';
++export * from './utils/errors.js';
++export * from './utils/helpers.js';
++export * from './utils/encoder.js';
+ /**
+  * Creates a new file system instance with inline worker
+  * Returns the raw Comlink-wrapped worker for advanced use cases
+diff --git a/node_modules/opfs-worker/dist/types.d.ts b/node_modules/opfs-worker/dist/types.d.ts
+index a46a87f..b7ec048 100644
+--- a/node_modules/opfs-worker/dist/types.d.ts
++++ b/node_modules/opfs-worker/dist/types.d.ts
+@@ -1,4 +1,4 @@
+-import type { OPFSWorker } from './worker';
++import type { OPFSWorker } from './worker.js';
+ import type { Remote } from 'comlink';
+ /**
+  * Type for paths that can be either a string or URI
+diff --git a/node_modules/opfs-worker/dist/utils/encoder.d.ts b/node_modules/opfs-worker/dist/utils/encoder.d.ts
+index 2e8bcb0..d9d3fb0 100644
+--- a/node_modules/opfs-worker/dist/utils/encoder.d.ts
++++ b/node_modules/opfs-worker/dist/utils/encoder.d.ts
+@@ -1,4 +1,4 @@
+-import type { Encoding } from '../types';
++import type { Encoding } from '../types.js';
+ /**
+  * Common binary file extensions
+  */
+diff --git a/node_modules/opfs-worker/dist/utils/helpers.d.ts b/node_modules/opfs-worker/dist/utils/helpers.d.ts
+index 702fa85..2446427 100644
+--- a/node_modules/opfs-worker/dist/utils/helpers.d.ts
++++ b/node_modules/opfs-worker/dist/utils/helpers.d.ts
+@@ -1,4 +1,4 @@
+-import type { Encoding } from '../types';
++import type { Encoding } from '../types.js';
+ /**
+  * Check if the browser supports the OPFS API
+  *
+diff --git a/node_modules/opfs-worker/dist/worker.d.ts b/node_modules/opfs-worker/dist/worker.d.ts
+index db9a66a..d890586 100644
+--- a/node_modules/opfs-worker/dist/worker.d.ts
++++ b/node_modules/opfs-worker/dist/worker.d.ts
+@@ -1,4 +1,4 @@
+-import type { DirentData, FileOpenOptions, FileStat, OPFSOptions, RenameOptions, WatchOptions } from './types';
++import type { DirentData, FileOpenOptions, FileStat, OPFSOptions, RenameOptions, WatchOptions } from './types.js';
+ /**
+  * OPFS (Origin Private File System) File System implementation
+  *

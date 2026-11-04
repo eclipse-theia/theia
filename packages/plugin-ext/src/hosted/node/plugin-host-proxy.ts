@@ -14,13 +14,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as http from 'http';
-import * as https from 'https';
-import * as tls from 'tls';
+// Default imports resolve to the real Node module objects. With `esModuleInterop`, a namespace
+// import (`import * as http`) is a read-only copy with getter-only properties, and the
+// `Object.assign(http, …)` patches below would throw "Cannot set property … which has only a getter".
+import http from 'http';
+import https from 'https';
+import tls from 'tls';
 
 import { createHttpPatch, createProxyResolver, createTlsPatch, ProxySupportSetting } from '@vscode/proxy-agent';
-import { PreferenceRegistryExtImpl } from '../../plugin/preference-registry';
-import { WorkspaceExtImpl } from '../../plugin/workspace';
+import { PreferenceRegistryExtImpl } from '../../plugin/preference-registry.js';
+import { WorkspaceExtImpl } from '../../plugin/workspace.js';
+import Module, { syncBuiltinESMExports } from 'node:module';
 
 export function connectProxyResolver(workspaceExt: WorkspaceExtImpl, configProvider: PreferenceRegistryExtImpl): void {
     const resolveProxy = createProxyResolver({
@@ -56,15 +60,19 @@ function createPatchedModules(configProvider: PreferenceRegistryExtImpl, resolve
         certSetting.config = !!httpConfig?.get<boolean>('systemCertificates');
     });
 
-    return {
+    const patchedModules = {
         http: Object.assign(http, createHttpPatch(http, resolveProxy, proxySetting, certSetting, true)),
         https: Object.assign(https, createHttpPatch(https, resolveProxy, proxySetting, certSetting, true)),
         tls: Object.assign(tls, createTlsPatch(tls))
     };
+    // Updates the named exports of the patched modules for ES modules, e.g. plugins that are ES modules.
+    syncBuiltinESMExports();
+    return patchedModules;
 }
 
 function configureModuleLoading(lookup: PatchedModules): void {
-    const node_module = require('module');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const node_module: any = Module;
     const original = node_module._load;
     node_module._load = function (request: string): typeof tls | typeof http | typeof https {
         if (request === 'tls') {

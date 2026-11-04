@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { inject, injectable, named, postConstruct } from 'inversify';
-import { escapeRegExpCharacters } from '../../common/strings';
-import { Emitter, Event } from '../../common/event';
-import { CorePreferences } from '../../common/core-preferences';
-import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
-import { ContributionProvider } from '../../common';
+import { escapeRegExpCharacters } from '../../common/strings.js';
+import { Emitter, Event } from '../../common/event.js';
+import { CorePreferences } from '../../common/core-preferences.js';
+import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider.js';
+import { ContributionProvider } from '../../common/index.js';
 
 export const WindowTitleContribution = Symbol('WindowTitleAddOnContribution');
 export interface WindowTitleContribution {
@@ -37,7 +37,10 @@ export const InitialWindowTitleParts = {
     folderPath: undefined,
     rootName: undefined,
     rootPath: undefined,
-    appName: FrontendApplicationConfigProvider.get().applicationName,
+    // A getter, so that the configuration is read when the title is created rather than when this module is loaded.
+    get appName(): string {
+        return FrontendApplicationConfigProvider.get().applicationName;
+    },
     remoteName: undefined,
     dirty: undefined,
     developmentHost: undefined

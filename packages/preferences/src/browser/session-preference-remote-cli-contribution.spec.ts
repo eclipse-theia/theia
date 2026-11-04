@@ -18,8 +18,8 @@ import { expect } from 'chai';
 import { LaunchArguments } from '@theia/core/lib/common/launch-arguments';
 
 const launchArgs = (values: Record<string, string[]>): LaunchArguments => ({ values, negated: [] });
-import { CliPreferenceEntry } from '../common/cli-preferences';
-import { SessionPreferenceRemoteCliContribution } from './session-preference-remote-cli-contribution';
+import { CliPreferenceEntry } from '../common/cli-preferences.js';
+import { SessionPreferenceRemoteCliContribution } from './session-preference-remote-cli-contribution.js';
 
 class TestContribution extends SessionPreferenceRemoteCliContribution {
     set forwardedArgs(args: LaunchArguments | undefined) {
