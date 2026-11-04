@@ -98,7 +98,10 @@ export class FileTreeWidget extends CompressedTreeWidget {
     }
 
     protected getNodeTooltip(node: TreeNode): string | undefined {
-        const operativeNode = this.compressionService.getCompressionChain(node)?.tail() ?? node;
+        const operativeNode = this.compressionToggle.compress
+            ? this.compressionService.getCompressionChain(node)?.tail() ?? node
+            : node;
+
         const uri = UriSelection.getUri(operativeNode);
         return uri ? uri.path.fsPath() : undefined;
     }
