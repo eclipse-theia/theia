@@ -21,9 +21,9 @@ import { CancellationToken, URI } from '@theia/core';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { OPFSFacade, OPFSSync, type OPFSOptions } from 'opfs-worker';
-import { FileSystemProviderErrorCode, toFileSystemProviderErrorCode } from '../common/files';
-import { OPFSFileSystemProvider } from './opfs-filesystem-provider';
-import { OPFSInitialization } from './opfs-filesystem-initialization';
+import { FileSystemProviderErrorCode, toFileSystemProviderErrorCode } from '../common/files.js';
+import { OPFSFileSystemProvider } from './opfs-filesystem-provider.js';
+import { OPFSInitialization } from './opfs-filesystem-initialization.js';
 
 function settle(): Promise<void> {
     return new Promise(resolve => setImmediate(resolve));
