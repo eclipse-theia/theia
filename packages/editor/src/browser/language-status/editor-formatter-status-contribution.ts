@@ -18,9 +18,9 @@ import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { QuickInputService, QuickPickItem, StatusBarEntry, StatusBarAlignment } from '@theia/core/lib/browser';
 import { nls, PreferenceScope } from '@theia/core';
 import { Severity } from '@theia/core/lib/common/severity';
-import { TextEditor } from '../editor';
-import { FormatterService, FormatterSettingScope, FormatterStatus, FormatterInfo } from '../editor-formatter-service';
-import { LanguageStatus } from './editor-language-status-service';
+import { TextEditor } from '../editor.js';
+import { FormatterService, FormatterSettingScope, FormatterStatus, FormatterInfo } from '../editor-formatter-service.js';
+import { LanguageStatus } from './editor-language-status-service.js';
 
 interface ScopeDisplayInfo {
     icon: string;

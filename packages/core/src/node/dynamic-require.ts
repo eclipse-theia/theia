@@ -14,9 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-declare const __non_webpack_require__: NodeJS.Require;
+import { createRequire } from 'node:module';
 
-const nodeRequire = typeof __non_webpack_require__ !== 'undefined' ? __non_webpack_require__ : require;
+// A `require` function that is not processed by bundlers, so that it loads modules at runtime.
+const nodeRequire = createRequire(import.meta.url);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function dynamicRequire<T = any>(id: string): T {

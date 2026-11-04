@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/tslint/config */
+/* eslint-disable @theia/file-header */
 // *****************************************************************************
 // Copyright (C) 2025 EclipseSource GmbH and others.
 //
@@ -9,7 +9,7 @@
 // SPDX-License-Identifier: MIT
 // *****************************************************************************
 
-import { AGENT_DELEGATION_FUNCTION_ID, BasePromptFragment } from '@theia/ai-core/lib/common';
+import { AGENT_DELEGATION_FUNCTION_ID, AGENTS_MD_PROMPT_FRAGMENT_ID, BasePromptFragment } from '@theia/ai-core/lib/common';
 import { CHANGE_SET_SUMMARY_VARIABLE_ID } from '@theia/ai-chat';
 import {
     GET_WORKSPACE_FILE_LIST_FUNCTION_ID,
@@ -22,10 +22,10 @@ import {
     LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID,
     RUN_LAUNCH_CONFIGURATION_FUNCTION_ID,
     STOP_LAUNCH_CONFIGURATION_FUNCTION_ID
-} from './workspace-functions';
-import { TODO_WRITE_FUNCTION_ID } from './todo-tool';
-import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID } from './context-variables';
-import { UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions';
+} from './workspace-functions.js';
+import { TODO_WRITE_FUNCTION_ID } from './todo-tool.js';
+import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID } from './context-variables.js';
+import { UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions.js';
 import {
     SUGGEST_FILE_CONTENT_ID,
     WRITE_FILE_CONTENT_ID,
@@ -33,10 +33,10 @@ import {
     WRITE_FILE_REPLACEMENTS_ID,
     CLEAR_FILE_CHANGES_ID,
     GET_PROPOSED_CHANGES_ID
-} from './file-changeset-function-ids';
-import { GET_TASK_CONTEXT_FUNCTION_ID } from './task-context-function-ids';
-import { ArchitectAgentId, ExploreAgentId } from './agent-ids';
-import { OPEN_EDITORS_HINT_FRAGMENT_ID } from './open-editors-hint-fragment-id';
+} from './file-changeset-function-ids.js';
+import { GET_TASK_CONTEXT_FUNCTION_ID } from './task-context-function-ids.js';
+import { ArchitectAgentId, ExploreAgentId } from './agent-ids.js';
+import { OPEN_EDITORS_HINT_FRAGMENT_ID } from './open-editors-hint-fragment-id.js';
 
 export const CODER_SYSTEM_PROMPT_ID = 'coder-system';
 
@@ -256,8 +256,7 @@ Always retrieve relevant files using ~{${FILE_CONTENT_FUNCTION_ID}} to understan
 ## Previously Changed Files
 {{changeSetSummary}}
 
-## Project Info
-{{prompt:project-info}}
+{{prompt:${AGENTS_MD_PROMPT_FRAGMENT_ID}}}
 
 {{prompt:${OPEN_EDITORS_HINT_FRAGMENT_ID}}}
 
@@ -540,8 +539,7 @@ Always retrieve relevant files using ~{${FILE_CONTENT_FUNCTION_ID}} to understan
 ## Previously Changed Files
 {{${CHANGE_SET_SUMMARY_VARIABLE_ID}}}
 
-## Project Info
-{{prompt:project-info}}
+{{prompt:${AGENTS_MD_PROMPT_FRAGMENT_ID}}}
 
 {{prompt:${OPEN_EDITORS_HINT_FRAGMENT_ID}}}
 
@@ -643,7 +641,7 @@ Always look at the relevant files to understand your task using the function ~{$
 You have previously proposed changes for the following files. Some suggestions may have been accepted by the user, while others may still be pending.
 {{${CHANGE_SET_SUMMARY_VARIABLE_ID}}}
 
-{{prompt:project-info}}
+{{prompt:${AGENTS_MD_PROMPT_FRAGMENT_ID}}}
 
 {{prompt:${OPEN_EDITORS_HINT_FRAGMENT_ID}}}
 

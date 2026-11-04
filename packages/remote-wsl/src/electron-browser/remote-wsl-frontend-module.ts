@@ -16,8 +16,8 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { RemoteRegistryContribution } from '@theia/remote/lib/electron-browser/remote-registry-contribution';
-import { RemoteWslConnectionProvider, RemoteWslConnectionProviderPath } from '../electron-common/remote-wsl-connection-provider';
-import { WslConnectionContribution } from './wsl-connection-contribution';
+import { RemoteWslConnectionProvider, RemoteWslConnectionProviderPath } from '../electron-common/remote-wsl-connection-provider.js';
+import { WslConnectionContribution } from './wsl-connection-contribution.js';
 import { ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { WorkspaceOpenHandlerContribution } from '@theia/workspace/lib/browser/workspace-service';
 

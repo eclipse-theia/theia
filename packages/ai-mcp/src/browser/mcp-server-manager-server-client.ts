@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { MCPServerDescription } from '../common';
+import { MCPServerDescription } from '../common/index.js';
 import { generateUuid } from '@theia/core/lib/common/uuid';
-import { cleanServerDescription, MCPServerDescriptionRCP, MCPServerManagerServerClient } from '../common/mcp-protocol';
+import { cleanServerDescription, MCPServerDescriptionRCP, MCPServerManagerServerClient } from '../common/mcp-protocol.js';
 import { ILogger } from '@theia/core';
 
 type StoredServerInfo = Pick<MCPServerDescription, 'name' | 'resolve'>;

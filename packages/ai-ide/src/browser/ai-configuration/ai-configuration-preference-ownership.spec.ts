@@ -40,12 +40,12 @@ import { AgentSettingsPreferenceSchema } from '@theia/ai-core/lib/common/agent-p
 import { aiChatPreferences } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { chatToolPreferences } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { shellCommandPreferences } from '@theia/ai-terminal/lib/common/shell-command-preferences';
-import { aiIdePreferenceSchema } from '../../common/ai-ide-preferences';
-import { GeneralConfigurationCategory } from './categories/general-configuration-category';
-import { AgentsConfigurationCategory } from './categories/agents-configuration-category';
-import { ToolsConfigurationCategory } from './categories/tools-configuration-category';
-import { ModelAliasesConfigurationCategory } from './categories/model-aliases-configuration-category';
-import { PromptsAndSkillsConfigurationCategory } from './categories/prompts-and-skills-configuration-category';
+import { aiIdePreferenceSchema } from '../../common/ai-ide-preferences.js';
+import { GeneralConfigurationCategory } from './categories/general-configuration-category.js';
+import { AgentsConfigurationCategory } from './categories/agents-configuration-category.js';
+import { ToolsConfigurationCategory } from './categories/tools-configuration-category.js';
+import { ModelAliasesConfigurationCategory } from './categories/model-aliases-configuration-category.js';
+import { PromptsAndSkillsConfigurationCategory } from './categories/prompts-and-skills-configuration-category.js';
 
 disableJSDOM();
 

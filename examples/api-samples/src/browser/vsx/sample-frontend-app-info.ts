@@ -16,7 +16,7 @@
 
 import { Endpoint } from '@theia/core/lib/browser';
 import { injectable, interfaces } from '@theia/core/shared/inversify';
-import { SampleAppInfo } from '../../common/vsx/sample-app-info';
+import { SampleAppInfo } from '../../common/vsx/sample-app-info.js';
 
 @injectable()
 export class SampleFrontendAppInfo implements SampleAppInfo {

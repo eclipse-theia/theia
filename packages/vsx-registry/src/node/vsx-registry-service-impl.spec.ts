@@ -21,10 +21,10 @@ import { ILogger } from '@theia/core/lib/common/logger';
 import { RequestService } from '@theia/core/shared/@theia/request';
 import { OVSXApiFilterProvider, OVSXApiFilter, OVSXRouterConfig } from '@theia/ovsx-client';
 import { OVSXClient, VSXExtensionRaw, VSXQueryResult, VSXSearchResult } from '@theia/ovsx-client/lib/ovsx-types';
-import { OVSXClientProvider } from '../common/ovsx-client-provider';
-import { VSXEnvironment } from '../common/vsx-environment';
-import { VSXRegistryService } from '../common/vsx-registry-service';
-import { VSXRegistryServiceImpl } from './vsx-registry-service-impl';
+import { OVSXClientProvider } from '../common/ovsx-client-provider.js';
+import { VSXEnvironment } from '../common/vsx-environment.js';
+import { VSXRegistryService } from '../common/vsx-registry-service.js';
+import { VSXRegistryServiceImpl } from './vsx-registry-service-impl.js';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 describe('VSXRegistryServiceImpl', () => {

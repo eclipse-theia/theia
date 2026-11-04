@@ -23,12 +23,12 @@ import {
     BaseWidget, Widget, StatefulWidget, Panel, PanelLayout, MessageLoop, CompositeTreeNode, SelectableTreeNode, ApplicationShell, NavigatableWidget,
     BadgeService,
 } from '@theia/core/lib/browser';
-import { ScmCommitWidget } from './scm-commit-widget';
-import { ScmActionButtonWidget } from './scm-action-button-widget';
-import { ScmAmendWidget } from './scm-amend-widget';
-import { ScmService } from './scm-service';
-import { ScmTreeWidget } from './scm-tree-widget';
-import { ScmPreferences } from '../common/scm-preferences';
+import { ScmCommitWidget } from './scm-commit-widget.js';
+import { ScmActionButtonWidget } from './scm-action-button-widget.js';
+import { ScmAmendWidget } from './scm-amend-widget.js';
+import { ScmService } from './scm-service.js';
+import { ScmTreeWidget } from './scm-tree-widget.js';
+import { ScmPreferences } from '../common/scm-preferences.js';
 import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()

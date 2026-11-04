@@ -18,8 +18,8 @@ import { ChatAgentLocation, ChatService } from '@theia/ai-chat/lib/common';
 import { CommandContribution, CommandRegistry, CommandService, ILogger } from '@theia/core';
 import { TaskContextStorageService, TaskContextService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { AI_EXECUTE_PLAN_WITH_CODER } from '../common/summarize-session-commands';
-import { CoderAgent } from './coder-agent';
+import { AI_EXECUTE_PLAN_WITH_CODER } from '../common/summarize-session-commands.js';
+import { CoderAgent } from './coder-agent.js';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
 
 import { FILE_VARIABLE } from '@theia/ai-core/lib/browser/file-variable-contribution';

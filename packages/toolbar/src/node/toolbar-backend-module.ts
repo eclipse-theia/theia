@@ -15,7 +15,7 @@
 
 import { PreferenceContribution } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { ToolbarPreferencesSchema } from '../common/toolbar-preference-contribution';
+import { ToolbarPreferencesSchema } from '../common/toolbar-preference-contribution.js';
 
 // *****************************************************************************
 export default new ContainerModule(bind => {

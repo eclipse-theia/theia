@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { DebugAdapter } from './debug-model';
+import { DebugAdapter } from './debug-model.js';
 import * as theia from '@theia/plugin';
 
 /**

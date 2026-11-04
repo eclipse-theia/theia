@@ -17,7 +17,7 @@
 import URI from '@theia/core/lib/common/uri';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { TaskCustomization, TaskConfiguration, TaskConfigurationScope } from '../common/task-protocol';
+import { TaskCustomization, TaskConfiguration, TaskConfigurationScope } from '../common/task-protocol.js';
 import { PreferenceProviderDataChanges, PreferenceProviderDataChange, isObject } from '@theia/core/lib/common';
 import { PreferenceProvider } from '@theia/core/lib/common/preferences/preference-provider';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';

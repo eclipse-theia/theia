@@ -14,21 +14,26 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as ssh2 from 'ssh2';
+// A CommonJS module whose exports cannot be detected statically, so it is imported as a whole.
+import ssh2 from 'ssh2';
 import * as net from 'net';
 import * as fs from '@theia/core/shared/fs-extra';
-import SftpClient = require('ssh2-sftp-client');
-import SshConfig from 'ssh-config';
+import SftpClient from 'ssh2-sftp-client';
+import SshConfigModule from 'ssh-config';
 import { Emitter, Event, MessageService, QuickInputService, ILogger } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { RemoteSSHConnectionProvider, RemoteSSHConnectionProviderOptions, SSHConfig } from '../../electron-common/remote-ssh-connection-provider';
-import { RemoteConnectionService } from '../remote-connection-service';
-import { RemoteProxyServerProvider } from '../remote-proxy-server-provider';
-import { RemoteConnection, RemoteExecOptions, RemoteExecResult, RemoteExecTester, RemoteStatusReport } from '../remote-types';
+import { RemoteSSHConnectionProvider, RemoteSSHConnectionProviderOptions, SSHConfig } from '../../electron-common/remote-ssh-connection-provider.js';
+import { RemoteConnectionService } from '../remote-connection-service.js';
+import { RemoteProxyServerProvider } from '../remote-proxy-server-provider.js';
+import { RemoteConnection, RemoteExecOptions, RemoteExecResult, RemoteExecTester, RemoteStatusReport } from '../remote-types.js';
 import { Deferred, timeout } from '@theia/core/lib/common/promise-util';
-import { SSHIdentityFileCollector, SSHKey } from './ssh-identity-file-collector';
-import { RemoteSetupService } from '../setup/remote-setup-service';
+import { SSHIdentityFileCollector, SSHKey } from './ssh-identity-file-collector.js';
+import { RemoteSetupService } from '../setup/remote-setup-service.js';
 import { generateUuid } from '@theia/core/lib/common/uuid';
+
+// `ssh-config` is a CommonJS module that provides the class as `default` export of `module.exports`.
+const SshConfig = SshConfigModule.default;
+type SshConfig = SshConfigModule.default;
 
 @injectable()
 export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvider {

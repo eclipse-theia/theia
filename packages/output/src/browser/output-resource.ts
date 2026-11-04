@@ -18,7 +18,7 @@ import URI from '@theia/core/lib/common/uri';
 import { Event, Resource, ResourceReadOptions, DisposableCollection, Emitter } from '@theia/core/lib/common';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
-import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
+import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle.js';
 import * as monaco from '@theia/monaco-editor-core';
 
 export class OutputResource implements Resource {

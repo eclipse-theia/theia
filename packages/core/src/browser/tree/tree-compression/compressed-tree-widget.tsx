@@ -17,15 +17,15 @@
 import '../../../../src/browser/tree/tree-compression/tree-compression.css';
 import { injectable, inject } from 'inversify';
 import * as React from 'react';
-import { ArrayUtils } from '../../../common/types';
-import { ContextMenuRenderer } from '../../context-menu-renderer';
-import { CompressionToggle, TreeCompressionService } from './tree-compression-service';
-import { CompositeTreeNode, TreeNode } from '../tree';
-import { NodeProps, TreeProps, TreeWidget } from '../tree-widget';
-import { SelectableTreeNode, TreeSelection } from '../tree-selection';
-import { ExpandableTreeNode } from '../tree-expansion';
-import { TreeViewWelcomeWidget } from '../tree-view-welcome-widget';
-import { CompressedTreeModel } from './compressed-tree-model';
+import { ArrayUtils } from '../../../common/types.js';
+import { ContextMenuRenderer } from '../../context-menu-renderer.js';
+import { CompressionToggle, TreeCompressionService } from './tree-compression-service.js';
+import { CompositeTreeNode, TreeNode } from '../tree.js';
+import { NodeProps, TreeProps, TreeWidget } from '../tree-widget.js';
+import { SelectableTreeNode, TreeSelection } from '../tree-selection.js';
+import { ExpandableTreeNode } from '../tree-expansion.js';
+import { TreeViewWelcomeWidget } from '../tree-view-welcome-widget.js';
+import { CompressedTreeModel } from './compressed-tree-model.js';
 
 export interface CompressedChildren {
     compressionChain?: ArrayUtils.HeadAndTail<TreeNode>;

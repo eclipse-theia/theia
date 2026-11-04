@@ -20,10 +20,10 @@ import { RecursivePartial, Emitter, Event, CommandService, nls, ContributionProv
 import {
     WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, CommonCommands, getDefaultHandler, defaultHandlerPriority, DiffUris
 } from '@theia/core/lib/browser';
-import { EditorWidget } from './editor-widget';
-import { Range, Position, Location, TextEditor } from './editor';
-import { EditorWidgetFactory } from './editor-widget-factory';
-import { NavigationLocationService } from './navigation/navigation-location-service';
+import { EditorWidget } from './editor-widget.js';
+import { Range, Position, Location, TextEditor } from './editor.js';
+import { EditorWidgetFactory } from './editor-widget-factory.js';
+import { NavigationLocationService } from './navigation/navigation-location-service.js';
 import { PreferenceService } from '@theia/core/lib/common/preferences';
 import { ILogger } from '@theia/core';
 
@@ -227,7 +227,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         this.navigationLocationService.startNavigation();
         try {
             if (options?.counter === undefined) {
-                const insertionOptions = this.shell.getInsertionOptions(options?.widgetOptions);
+                const insertionOptions = this.shell.getInsertionOptions(options?.widgetOptions ?? this.getDefaultWidgetOptions());
                 // Definitely creating a new tabbar - no widget can match.
                 if (insertionOptions.addOptions.mode?.startsWith('split')) {
                     return await super.open(uri, { counter: this.nextCounter(), ...options });

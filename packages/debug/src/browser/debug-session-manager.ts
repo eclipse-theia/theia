@@ -26,18 +26,18 @@ import { TaskEndedInfo, TaskEndedTypes, TaskService } from '@theia/task/lib/brow
 import { TaskIdentifier } from '@theia/task/lib/common';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser';
-import { DebugConfiguration } from '../common/debug-common';
-import { DebugPreferences } from '../common/debug-preferences';
-import { DebugError, DebugService } from '../common/debug-service';
-import { BreakpointManager } from './breakpoint/breakpoint-manager';
-import { DebugVariable } from './console/debug-console-items';
-import { DebugConfigurationManager } from './debug-configuration-manager';
-import { DebugSession, DebugState, debugStateContextValue } from './debug-session';
-import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider';
-import { DebugSessionContributionRegistry, DebugSessionFactory } from './debug-session-contribution';
-import { DebugCompoundRoot, DebugCompoundSessionOptions, DebugConfigurationSessionOptions, DebugSessionOptions, InternalDebugSessionOptions } from './debug-session-options';
-import { DebugStackFrame } from './model/debug-stack-frame';
-import { DebugThread } from './model/debug-thread';
+import { DebugConfiguration } from '../common/debug-common.js';
+import { DebugPreferences } from '../common/debug-preferences.js';
+import { DebugError, DebugService } from '../common/debug-service.js';
+import { BreakpointManager } from './breakpoint/breakpoint-manager.js';
+import { DebugVariable } from './console/debug-console-items.js';
+import { DebugConfigurationManager } from './debug-configuration-manager.js';
+import { DebugSession, DebugState, debugStateContextValue } from './debug-session.js';
+import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider.js';
+import { DebugSessionContributionRegistry, DebugSessionFactory } from './debug-session-contribution.js';
+import { DebugCompoundRoot, DebugCompoundSessionOptions, DebugConfigurationSessionOptions, DebugSessionOptions, InternalDebugSessionOptions } from './debug-session-options.js';
+import { DebugStackFrame } from './model/debug-stack-frame.js';
+import { DebugThread } from './model/debug-thread.js';
 
 export interface WillStartDebugSession extends WaitUntilEvent {
 }
@@ -107,6 +107,8 @@ export class DebugSessionManager {
         this.debugTypeKey.set(current?.configuration.type);
         this.inDebugModeKey.set(this.inDebugMode);
         this.debugStateKey.set(debugStateContextValue(this.state));
+        this.restartFrameSupportedKey.set(!!this.currentSession?.capabilities.supportsRestartFrame);
+        this.stackFrameSupportsRestartKey.set(!!this.currentFrame?.isRestartable);
         this.onDidChangeEmitter.fire(current);
     }
 
@@ -167,12 +169,18 @@ export class DebugSessionManager {
     protected debugTypeKey: ContextKey<string>;
     protected inDebugModeKey: ContextKey<boolean>;
     protected debugStateKey: ContextKey<string>;
+    /** Whether the current session supports `restartFrame` requests, as in VS Code. */
+    protected restartFrameSupportedKey: ContextKey<boolean>;
+    /** Whether the current stack frame can be restarted, as in VS Code. */
+    protected stackFrameSupportsRestartKey: ContextKey<boolean>;
 
     @postConstruct()
     protected init(): void {
         this.debugTypeKey = this.contextKeyService.createKey<string>('debugType', undefined);
         this.inDebugModeKey = this.contextKeyService.createKey<boolean>('inDebugMode', this.inDebugMode);
         this.debugStateKey = this.contextKeyService.createKey<string>('debugState', debugStateContextValue(this.state));
+        this.restartFrameSupportedKey = this.contextKeyService.createKey<boolean>('restartFrameSupported', false);
+        this.stackFrameSupportsRestartKey = this.contextKeyService.createKey<boolean>('stackFrameSupportsRestart', false);
     }
 
     get inDebugMode(): boolean {
@@ -437,6 +445,12 @@ export class DebugSessionManager {
             // The selection logic in widgets will handle not jumping to non-stopped threads
             this.fireDidChange(session);
         });
+        // e.g. for the `restartFrameSupported` context key, which is only read from the current session
+        session.onDidChangeCapabilities(() => {
+            if (session === this.currentSession) {
+                this.fireDidChange(session);
+            }
+        });
         session.on('terminated', async event => {
             const restart = event.body && event.body.restart;
             if (restart) {
@@ -568,9 +582,12 @@ export class DebugSessionManager {
             this.disposeOnCurrentSessionChanged.push(current.onDidResolveLazyVariable(variable => this.onDidResolveLazyVariableEmitter.fire({ session: current, variable })));
             this.disposeOnCurrentSessionChanged.push(current.onDidFocusStackFrame(frame => this.onDidFocusStackFrameEmitter.fire(frame)));
             this.disposeOnCurrentSessionChanged.push(current.onDidFocusThread(thread => this.onDidFocusThreadEmitter.fire(thread)));
-            const { currentThread } = current;
-            this.onDidFocusThreadEmitter.fire(currentThread);
         }
+        // Announce what is focused now, also when nothing is: the forwarding above is torn down with the previous
+        // session, so without this the last thread and frame of a session that has ended stay the focused ones.
+        const { currentThread, currentFrame } = this;
+        this.onDidFocusThreadEmitter.fire(currentThread);
+        this.onDidFocusStackFrameEmitter.fire(currentFrame);
         this.open();
         this.fireDidChange(current);
     }

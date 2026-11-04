@@ -24,16 +24,16 @@ import {
     SessionCreatedEvent,
     SessionDeletedEvent,
     SessionRenamedEvent
-} from './chat-service';
-import { ChatAgentService } from './chat-agent-service';
-import { ChatRequestParser } from './chat-request-parser';
+} from './chat-service.js';
+import { ChatAgentService } from './chat-agent-service.js';
+import { ChatRequestParser } from './chat-request-parser.js';
 import { AIVariableService, ToolInvocationRegistry } from '@theia/ai-core';
 import { ILogger } from '@theia/core';
-import { ChatContentDeserializerRegistry, ChatContentDeserializerRegistryImpl, DefaultChatContentDeserializerContribution } from './chat-content-deserializer';
-import { ChangeSetElementDeserializerRegistry, ChangeSetElementDeserializerRegistryImpl } from './change-set-element-deserializer';
-import { ChatAgent, ChatAgentLocation } from './chat-agents';
-import { ChatRequest } from './chat-model';
-import { ParsedChatRequest, ParsedChatRequestTextPart } from './parsed-chat-request';
+import { ChatContentDeserializerRegistry, ChatContentDeserializerRegistryImpl, DefaultChatContentDeserializerContribution } from './chat-content-deserializer.js';
+import { ChangeSetElementDeserializerRegistry, ChangeSetElementDeserializerRegistryImpl } from './change-set-element-deserializer.js';
+import { ChatAgent, ChatAgentLocation } from './chat-agents.js';
+import { ChatRequest } from './chat-model.js';
+import { ParsedChatRequest, ParsedChatRequestTextPart } from './parsed-chat-request.js';
 
 describe('ChatService session events', () => {
     let chatService: ChatServiceImpl;

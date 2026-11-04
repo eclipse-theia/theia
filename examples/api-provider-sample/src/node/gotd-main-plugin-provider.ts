@@ -16,7 +16,7 @@
 import { MainPluginApiProvider } from '@theia/plugin-ext/lib/common/plugin-ext-api-contribution';
 import { RPCProtocol } from '@theia/plugin-ext/lib/common/rpc-protocol';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { GreetingMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
+import { GreetingMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc.js';
 
 @injectable()
 export class GotdMainPluginApiProvider implements MainPluginApiProvider {

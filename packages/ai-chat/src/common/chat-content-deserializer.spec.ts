@@ -21,7 +21,7 @@ import { ILogger } from '@theia/core/lib/common';
 import {
     ChatContentDeserializerRegistryImpl,
     DefaultChatContentDeserializerContribution
-} from './chat-content-deserializer';
+} from './chat-content-deserializer.js';
 import {
     CodeChatResponseContentImpl,
     ErrorChatResponseContentImpl,
@@ -34,7 +34,7 @@ import {
     ThinkingChatResponseContentImpl,
     ToolCallChatResponseContent,
     ToolCallChatResponseContentImpl
-} from './chat-model';
+} from './chat-model.js';
 
 class MockLogger {
     error(): void { }

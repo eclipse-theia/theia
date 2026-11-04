@@ -16,8 +16,8 @@
 
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { ToolCallChatResponseContent, ToolCallChatResponseContentImpl } from './chat-model';
-import { raceConfirmationWithTimeout } from './chat-tool-confirmation-timeout';
+import { ToolCallChatResponseContent, ToolCallChatResponseContentImpl } from './chat-model.js';
+import { raceConfirmationWithTimeout } from './chat-tool-confirmation-timeout.js';
 
 describe('ToolCallChatResponseContentImpl', () => {
     let consoleWarnStub: sinon.SinonStub;

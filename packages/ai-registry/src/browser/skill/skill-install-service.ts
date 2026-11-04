@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { SkillInstallBackendService } from '../../common/skill/skill-install-protocol';
-import { InstalledSkillInfo, ResolvedSkillEntry, SkillClassificationResult } from '../../common/skill/skill-registry-types';
-import { RegistryAutoUpdatePolicy } from '../auto-update/registry-auto-update-policy';
+import { SkillInstallBackendService } from '../../common/skill/skill-install-protocol.js';
+import { InstalledSkillInfo, ResolvedSkillEntry, SkillClassificationResult } from '../../common/skill/skill-registry-types.js';
+import { RegistryAutoUpdatePolicy } from '../auto-update/registry-auto-update-policy.js';
 
 export const SkillInstallService = Symbol('SkillInstallService');
 export interface SkillInstallService {

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/tslint/config */
+/* eslint-disable @theia/file-header */
 // *****************************************************************************
 // Copyright (C) 2025 EclipseSource GmbH and others.
 //
@@ -11,7 +11,7 @@
 
 import { BasePromptFragment } from '@theia/ai-core/lib/common';
 import { CHAT_CONTEXT_DETAILS_VARIABLE_ID } from '@theia/ai-chat';
-import { OPEN_EDITORS_HINT_FRAGMENT_ID } from './open-editors-hint-fragment-id';
+import { OPEN_EDITORS_HINT_FRAGMENT_ID } from './open-editors-hint-fragment-id.js';
 
 export const universalTemplate: BasePromptFragment = {
    id: 'universal-system-default',

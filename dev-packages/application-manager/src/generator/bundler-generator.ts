@@ -148,11 +148,16 @@ export const browserOptions = {
         'secondary-window': './src-gen/frontend/secondary-index.js',
         ${this.ifMonaco(() => "'editor.worker': '@theia/monaco-editor-core/esm/vs/editor/common/services/editorWebWorkerMain.js',")}
         ${this.ifPackage('@theia/plugin-ext', "'plugin-worker': '@theia/plugin-ext/lib/hosted/browser/worker/worker-main.js',")}
+        ${this.ifPackage('@theia/plugin-ext-vscode', `// frontend plugin host initialization, which the plugin worker loads with \`importScripts\`:
+        'context/plugin-vscode-init-fe': '@theia/plugin-ext-vscode/lib/node/context/plugin-vscode-init-fe.js',`)}
     },
     assetNames: '[name]',
     bundle: true,
     outdir: 'lib/frontend',
     platform: 'browser',
+    // ES modules are bundled into a single scope, where classes with the same name are renamed.
+    // Keep their names, which appear in logs, as long as the bundle isn't minified anyway.
+    keepNames: !minify,
     // Support UMD libraries
     // but ensure that we also prioritize browser exports where possible
     mainFields: ['browser', 'module', 'main'],
@@ -179,11 +184,6 @@ export const browserOptions = {
                     // copy webview files to lib folder
                     from: join(resolvePackagePath('@theia/plugin-ext', __dirname), '..', 'src', 'main', 'browser', 'webview', 'pre', '*'),
                     to: join(__dirname, 'lib', 'webview', 'pre')
-                }`)}${this.ifPackage('@theia/plugin-ext-vscode', `,
-                {
-                    // copy frontend plugin host files
-                    from: join(resolvePackagePath('@theia/plugin-ext-vscode', __dirname), '..', 'lib', 'node', 'context', 'plugin-vscode-init-fe.js'),
-                    to: join(__dirname, 'lib', 'frontend', 'context')
                 }`)}
             ]
         }),
@@ -204,6 +204,34 @@ import { nativeDependenciesPlugin, problemMatcherPlugin, sourceMapPathsPlugin } 
 import { watch, loader, minify, sourcemap, join, __dirname } from './gen-esbuild.browser.mjs';
 import { copy } from 'esbuild-plugin-copy';
 import resolvePackagePath from 'resolve-package-path';
+import fs from 'node:fs';
+
+/**
+ * Bundled CommonJS modules use \`require\`, \`__filename\` and \`__dirname\`, which ES modules don't provide.
+ */
+export const esmBanner = [
+    "import { createRequire as __theiaCreateRequire } from 'node:module';",
+    "import { fileURLToPath as __theiaFileURLToPath } from 'node:url';",
+    "import { dirname as __theiaDirname } from 'node:path';",
+    'const require = __theiaCreateRequire(import.meta.url);',
+    'const __filename = __theiaFileURLToPath(import.meta.url);',
+    'const __dirname = __theiaDirname(__filename);'
+].join(' ');
+
+/**
+ * Marks the output directory as containing ES modules, so that Node loads the bundles as such.
+ * @type {import('esbuild').Plugin}
+ */
+export const esmOutputPlugin = {
+    name: 'theia-esm-output',
+    setup(build) {
+        build.onEnd(async () => {
+            const outdir = build.initialOptions.outdir;
+            await fs.promises.mkdir(outdir, { recursive: true });
+            await fs.promises.writeFile(join(outdir, 'package.json'), '{\\n    "type": "module"\\n}\\n');
+        });
+    }
+};
 
 /**
  * @type {Record<string, string>}
@@ -239,6 +267,11 @@ export const nodeOptions = {
     bundle: true,
     outdir: 'lib/backend',
     platform: 'node',
+    format: 'esm',
+    // ES modules are bundled into a single scope, where classes with the same name are renamed.
+    // Keep their names, which appear in logs, as long as the bundle isn't minified anyway.
+    keepNames: !minify,
+    banner: { js: esmBanner },
     mainFields: ['node', 'module', 'main'],
     external: ['electron'],
     loader,
@@ -246,6 +279,7 @@ export const nodeOptions = {
     sourcemap,
     plugins: [
         problemMatcherPlugin(watch, 'node'),
+        esmOutputPlugin,
         nativeDependenciesPlugin({
             pty: ${this.ifPackage('@theia/process', 'true', 'false')},
             ripgrep: ${this.ifPackage(['@theia/search-in-workspace', '@theia/file-search'], 'true', 'false')},

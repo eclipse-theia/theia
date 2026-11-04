@@ -26,8 +26,8 @@ if (!(global as any).DragEvent) {
 }
 
 import { expect } from 'chai';
-import { getColorRegistry } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/colorRegistry';
-import { MonacoQuickInputImplementation } from './monaco-quick-input-service';
+import { getColorRegistry } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/colorRegistry.js';
+import { MonacoQuickInputImplementation } from './monaco-quick-input-service.js';
 
 disableJSDOM();
 

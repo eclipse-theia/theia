@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { createRoot } from 'react-dom/client';
-import * as React from '../../../shared/react';
-import { ACTION_ITEM, codicon, CommonCommands, KeybindingRegistry } from '../../browser';
-import { Command, CommandRegistry, nls } from '../../common';
-import { PREF_WINDOW_ZOOM_LEVEL, ZoomLevel } from '../../electron-common/electron-window-preferences';
-import { ElectronCommands } from '../menu/electron-menu-contribution';
+import * as React from '../../../shared/react/index.cjs';
+import { ACTION_ITEM, codicon, CommonCommands, KeybindingRegistry } from '../../browser/index.js';
+import { Command, CommandRegistry, nls } from '../../common/index.js';
+import { PREF_WINDOW_ZOOM_LEVEL, ZoomLevel } from '../../electron-common/electron-window-preferences.js';
+import { ElectronCommands } from '../menu/electron-menu-contribution.js';
 
 export interface WindowZoomActionBarProps {
     container: HTMLElement

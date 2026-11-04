@@ -19,8 +19,8 @@ import { inject, injectable, named, postConstruct } from '@theia/core/shared/inv
 import { AgentPluginUiBridge, InstalledAgentPluginInfo } from '@theia/ai-core/lib/browser/agent-plugin-ui-bridge';
 import { VSXExtensionsContribution } from '@theia/vsx-registry/lib/browser/vsx-extensions-contribution';
 import { VSXExtensionsSearchModel } from '@theia/vsx-registry/lib/browser/vsx-extensions-search-model';
-import { PluginInstallClientImpl } from './plugin-install-client';
-import { PluginInstallService } from './plugin-install-service';
+import { PluginInstallClientImpl } from './plugin-install-client.js';
+import { PluginInstallService } from './plugin-install-service.js';
 
 /**
  * Lets the AI configuration widgets label and reveal the plugin that supplied a skill or server,

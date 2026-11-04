@@ -16,7 +16,7 @@
 
 import { Emitter, Event, ILogger } from '@theia/core';
 import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
-import { PluginIdentifiers } from '../../common';
+import { PluginIdentifiers } from '../../common/index.js';
 import { SettingService } from '@theia/core/lib/node';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 

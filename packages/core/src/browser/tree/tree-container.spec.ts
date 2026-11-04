@@ -14,13 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as assert from 'assert';
+import assert from 'assert';
 import { Container } from 'inversify';
-import { createTreeContainer, isTreeServices } from './tree-container';
-import { TreeSearch } from './tree-search';
-import { defaultTreeProps, TreeProps } from './tree-widget';
-import { ILogger } from '../../common/logger';
-import { MockLogger } from '../../common/test/mock-logger';
+import { createTreeContainer, isTreeServices } from './tree-container.js';
+import { TreeSearch } from './tree-search.js';
+import { defaultTreeProps, TreeProps } from './tree-widget.js';
+import { ILogger } from '../../common/logger.js';
+import { MockLogger } from '../../common/test/mock-logger.js';
 
 describe('TreeContainer', () => {
     describe('IsTreeServices should accurately distinguish TreeProps from TreeContainerProps', () => {

@@ -21,7 +21,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Event, Emitter, DisposableCollection, Disposable, MaybePromise } from '@theia/core';
 import { OutputChannel } from '@theia/output/lib/browser/output-channel';
 
-import { DebugChannel } from '../common/debug-service';
+import { DebugChannel } from '../common/debug-service.js';
 
 export type DebugRequestHandler = (request: DebugProtocol.Request) => MaybePromise<any>;
 
@@ -149,6 +149,15 @@ export class DebugSessionConnection implements Disposable {
 
     get disposed(): boolean {
         return this.toDispose.disposed;
+    }
+
+    /**
+     * Whether the underlying channel has been closed, so that no further request can be sent.
+     *
+     * This becomes `true` as soon as the channel closes, which is before the connection itself is disposed.
+     */
+    get closed(): boolean {
+        return this.isClosed;
     }
 
     protected checkDisposed(): void {

@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { inject, injectable, optional } from 'inversify';
-import { isOSX } from '../../common/os';
-import { CommandContribution, CommandRegistry, Command } from '../../common/command';
-import { BrowserKeyboardLayoutProvider, KeyboardLayoutData } from './browser-keyboard-layout-provider';
-import { QuickPickValue, QuickInputService, QuickPickItemOrSeparator } from '../quick-input';
-import { nls } from '../../common/nls';
+import { isOSX } from '../../common/os.js';
+import { CommandContribution, CommandRegistry, Command } from '../../common/command.js';
+import { BrowserKeyboardLayoutProvider, KeyboardLayoutData } from './browser-keyboard-layout-provider.js';
+import { QuickPickValue, QuickInputService, QuickPickItemOrSeparator } from '../quick-input/index.js';
+import { nls } from '../../common/nls.js';
 
 export namespace KeyboardCommands {
 
@@ -53,7 +53,7 @@ export class BrowserKeyboardFrontendContribution implements CommandContribution 
         const current = this.layoutProvider.currentLayoutData;
         const autodetect: QuickPickValue<'autodetect'> = {
             label: nls.localizeByDefault('Auto Detect'),
-            description: this.layoutProvider.currentLayoutSource !== 'user-choice' ? nls.localize('theia/core/keyboard/current', '(current: {0})', current.name) : undefined,
+            description: this.layoutProvider.layoutSource !== 'user-choice' ? nls.localize('theia/core/keyboard/current', '(current: {0})', current.name) : undefined,
             detail: nls.localize('theia/core/keyboard/tryDetect', 'Try to detect the keyboard layout from browser information and pressed keys.'),
             value: 'autodetect'
         };

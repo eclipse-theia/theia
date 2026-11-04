@@ -17,7 +17,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { UserWorkingDirectoryProvider } from '@theia/core/lib/browser/user-working-directory-provider';
 import URI from '@theia/core/lib/common/uri';
-import { WorkspaceService } from './workspace-service';
+import { WorkspaceService } from './workspace-service.js';
 import { MaybePromise } from '@theia/core';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 

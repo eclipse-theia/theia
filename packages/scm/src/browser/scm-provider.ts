@@ -62,6 +62,8 @@ export interface ScmResourceGroup extends Disposable {
 export interface ScmResource {
     /** The uri of the underlying resource inside the workspace. */
     readonly sourceUri: URI;
+    readonly multiDiffEditorOriginalUri?: URI;
+    readonly multiDiffEditorModifiedUri?: URI;
     readonly decorations?: ScmResourceDecorations;
     open(): Promise<void>;
 

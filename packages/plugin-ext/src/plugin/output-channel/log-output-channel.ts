@@ -18,9 +18,9 @@
 import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
 import * as theia from '@theia/plugin';
 
-import { OutputChannelRegistryMain, PluginInfo } from '../../common/plugin-api-rpc';
-import { OutputChannelImpl } from './output-channel-item';
-import { LogLevel } from '../types-impl';
+import { OutputChannelRegistryMain, PluginInfo } from '../../common/plugin-api-rpc.js';
+import { OutputChannelImpl } from './output-channel-item.js';
+import { LogLevel } from '../types-impl.js';
 import { isArray, isObject } from '@theia/core';
 
 export class LogOutputChannelImpl extends OutputChannelImpl implements theia.LogOutputChannel {

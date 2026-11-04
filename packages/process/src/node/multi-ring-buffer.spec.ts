@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as chai from 'chai';
-import { MultiRingBuffer } from './multi-ring-buffer';
+import { MultiRingBuffer } from './multi-ring-buffer.js';
 
 const expect = chai.expect;
 

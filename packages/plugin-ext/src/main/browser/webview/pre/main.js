@@ -35,6 +35,23 @@
     'use strict';
 
     /**
+     * @param {KeyboardEvent} event
+     */
+    const toNormalizedKeyboardInput = event => ({
+        key: event.key,
+        keyCode: event.keyCode,
+        code: event.code,
+        shiftKey: event.shiftKey,
+        altKey: event.altKey,
+        ctrlKey: event.ctrlKey,
+        metaKey: event.metaKey,
+        altGraph: event.getModifierState('AltGraph'),
+        repeat: event.repeat,
+        isComposing: event.isComposing,
+        location: event.location
+    });
+
+    /**
      * Use polling to track focus of main webview and iframes within the webview
      *
      * @param {Object} handlers
@@ -300,16 +317,7 @@ window.frameElement = null;
         const handleInnerKeydown = (e) => {
             preventDefaultBrowserHotkeys(e);
 
-            host.postMessage('did-keydown', {
-                key: e.key,
-                keyCode: e.keyCode,
-                code: e.code,
-                shiftKey: e.shiftKey,
-                altKey: e.altKey,
-                ctrlKey: e.ctrlKey,
-                metaKey: e.metaKey,
-                repeat: e.repeat
-            });
+            host.postMessage('did-keydown', toNormalizedKeyboardInput(e));
         };
 
         /**
@@ -678,6 +686,7 @@ window.frameElement = null;
 
     if (typeof module !== 'undefined') {
         module.exports = createWebviewManager;
+        module.exports.toNormalizedKeyboardInput = toNormalizedKeyboardInput;
     } else {
         window.createWebviewManager = createWebviewManager;
     }

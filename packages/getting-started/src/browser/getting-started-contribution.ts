@@ -21,7 +21,7 @@ import {
 } from '@theia/core/lib/common';
 import { CommonCommands, CommonMenus, AbstractViewContribution, FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
-import { GettingStartedWidget } from './getting-started-widget';
+import { GettingStartedWidget } from './getting-started-widget.js';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -30,8 +30,8 @@ import { URI as VSCodeURI } from '@theia/core/shared/vscode-uri';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { Color } from '@theia/core/lib/common/color';
-import { WalkthroughService } from './walkthrough-service';
-import { WalkthroughCommands } from '../common/walkthrough-commands';
+import { WalkthroughService } from './walkthrough-service.js';
+import { WalkthroughCommands } from '../common/walkthrough-commands.js';
 
 /**
  * Triggers opening the `GettingStartedWidget`.
@@ -106,7 +106,7 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
 
     async onStart(app: FrontendApplication): Promise<void> {
         this.stateService.reachedState('ready').then(async () => {
-            if (this.editorManager.all.length === 0) {
+            if (!this.hasRestoredEditors()) {
                 await this.preferenceService.ready;
                 const startupEditor = this.preferenceService.get('workbench.startupEditor');
                 switch (startupEditor) {
@@ -127,6 +127,16 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
                 }
             }
         });
+    }
+
+    /**
+     * Whether the restored layout already shows an editor, in which case the startup editor is not applied.
+     * Like in VS Code, any widget in the main area counts, not only text editors: custom editors, webviews,
+     * notebooks, previews etc. The Welcome page itself does not count, so that it is still revealed when restored.
+     */
+    protected hasRestoredEditors(): boolean {
+        return this.editorManager.all.length > 0
+            || this.shell.getWidgets('main').some(widget => widget.id !== this.viewId);
     }
 
     protected async openReadme(): Promise<void> {

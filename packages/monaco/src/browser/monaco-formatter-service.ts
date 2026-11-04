@@ -19,12 +19,12 @@ import { Emitter, Event, PreferenceInspection, PreferenceLanguageOverrideService
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FormatterInfo, FormatterService, FormatterSettingScope, FormatterStatus } from '@theia/editor/lib/browser/editor-formatter-service';
 import { TextEditor } from '@theia/editor/lib/browser';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
-import { DocumentFormattingEditProvider, DocumentRangeFormattingEditProvider } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
-import { ExtensionIdentifier } from '@theia/monaco-editor-core/esm/vs/platform/extensions/common/extensions';
-import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
-import { MonacoEditor } from './monaco-editor';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures.js';
+import { DocumentFormattingEditProvider, DocumentRangeFormattingEditProvider } from '@theia/monaco-editor-core/esm/vs/editor/common/languages.js';
+import { ExtensionIdentifier } from '@theia/monaco-editor-core/esm/vs/platform/extensions/common/extensions.js';
+import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model.js';
+import { MonacoEditor } from './monaco-editor.js';
 
 /**
  * Extended formatter provider interface that includes extension metadata.

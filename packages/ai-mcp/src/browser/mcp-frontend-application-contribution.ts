@@ -16,9 +16,9 @@
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { isRemoteMCPServerDescription, MCPOAuthFrontendDelegate, MCPServerDescription, MCPServerManager, MCPServerStatus } from '../common';
-import { MCP_SERVERS_PREF, MCP_USE_WORKSPACE_AS_ROOT_PREF } from '../common/mcp-preferences';
-import { MCPFrontendNotificationService, MCPFrontendService } from '../common/mcp-server-manager';
+import { isRemoteMCPServerDescription, MCPOAuthFrontendDelegate, MCPServerDescription, MCPServerManager, MCPServerStatus } from '../common/index.js';
+import { MCP_SERVERS_PREF, MCP_USE_WORKSPACE_AS_ROOT_PREF } from '../common/mcp-preferences.js';
+import { MCPFrontendNotificationService, MCPFrontendService } from '../common/mcp-server-manager.js';
 import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
 import { MessageService, PreferenceService, PreferenceUtils, Progress, ILogger } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
@@ -28,7 +28,7 @@ import {
     WorkspaceRestriction
 } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { filterValidValues, MCPServersPreference } from '../common/mcp-server-preference-validator';
+import { filterValidValues, MCPServersPreference } from '../common/mcp-server-preference-validator.js';
 
 @injectable()
 export class McpFrontendApplicationContribution implements FrontendApplicationContribution, WorkspaceRestrictionContribution {

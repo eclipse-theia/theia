@@ -28,19 +28,19 @@ import {
     AI_CHAT_OPEN_SESSION,
     AI_CHAT_SHOW_CHATS_COMMAND,
     ChatCommands
-} from './chat-view-commands';
+} from './chat-view-commands.js';
 import { ChatAgent, ChatAgentLocation, ChatService, ChatSessionMetadata, isActiveSessionChangedEvent } from '@theia/ai-chat';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { ChatViewWidget } from './chat-view-widget';
+import { ChatViewWidget } from './chat-view-widget.js';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { SecondaryWindowHandler } from '@theia/core/lib/browser/secondary-window-handler';
-import { formatTimeAgo } from './chat-date-utils';
+import { formatTimeAgo } from './chat-date-utils.js';
 import { AI_SHOW_SETTINGS_COMMAND, AIActivationService, ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
-import { ChatNodeToolbarCommands } from './chat-node-toolbar-action-contribution';
-import { isEditableRequestNode, isResponseNode, type EditableRequestNode, type ResponseNode } from './chat-tree-view';
+import { ChatNodeToolbarCommands } from './chat-node-toolbar-action-contribution.js';
+import { isEditableRequestNode, isResponseNode, type EditableRequestNode, type ResponseNode } from './chat-tree-view/index.js';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
 import { TaskContextService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { SESSION_STORAGE_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
@@ -270,7 +270,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         });
         registry.registerCommand(ChatCommands.AI_CHAT_OPEN_SUMMARY_FOR_CURRENT_SESSION, {
             execute: async () => {
-                const id = await this.summarizeActiveSession();
+                const id = await this.summarizeActiveSession(false);
                 if (!id) { return; }
                 await this.taskContextService.open(id);
             },
@@ -675,10 +675,14 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         return !chatView.secondaryWindow;
     }
 
-    protected async summarizeActiveSession(): Promise<string | undefined> {
+    /**
+     * Summarizes the active session and returns the summary ID.
+     * @param override Whether to regenerate the summary if one already exists for the session.
+     */
+    protected async summarizeActiveSession(override = true): Promise<string | undefined> {
         const activeSession = this.chatService.getActiveSession();
         if (!activeSession) { return; }
-        return this.taskContextService.summarize(activeSession).catch(err => {
+        return this.taskContextService.summarize(activeSession, undefined, undefined, override).catch(err => {
             this.logger.warn('Error while summarizing session:', err);
             this.messageService.error(nls.localize('theia/ai/chat-ui/unableToSummarizeCurrentSession',
                 'Unable to summarize current session. Please confirm that the summary agent is not disabled.'));

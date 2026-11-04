@@ -24,7 +24,7 @@ import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
-import { NavigatorFileClipboard } from './navigator-file-clipboard';
+import { NavigatorFileClipboard } from './navigator-file-clipboard.js';
 
 disableJSDOM();
 

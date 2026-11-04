@@ -16,19 +16,21 @@
 
 import { injectable, inject, named } from 'inversify';
 import { Widget } from '@lumino/widgets';
-import { FrontendApplication } from '../frontend-application';
-import { WidgetManager, WidgetConstructionOptions } from '../widget-manager';
-import { StorageService } from '../storage-service';
-import { ILogger } from '../../common/logger';
-import { CommandContribution, CommandRegistry, Command } from '../../common/command';
-import { ThemeService } from '../theming';
-import { ContributionProvider } from '../../common/contribution-provider';
-import { ApplicationShell, applicationShellLayoutVersion, ApplicationShellLayoutVersion } from './application-shell';
-import { CommonCommands } from '../common-commands';
-import { WindowService } from '../window/window-service';
-import { StopReason } from '../../common/frontend-application-state';
-import { isFunction, isObject, MaybePromise } from '../../common';
-import { PerspectiveServiceInternal } from '../perspective-service';
+import { FrontendApplication } from '../frontend-application.js';
+import { WidgetManager, WidgetConstructionOptions } from '../widget-manager.js';
+import { StorageService } from '../storage-service.js';
+import { SidePanelItemVisibility } from './side-panel-item-visibility.js';
+import { ILogger } from '../../common/logger.js';
+import { CommandContribution, CommandRegistry, Command } from '../../common/command.js';
+import { ThemeService } from '../theming.js';
+import { ContributionProvider } from '../../common/contribution-provider.js';
+import { ApplicationShell, applicationShellLayoutVersion, ApplicationShellLayoutVersion } from './application-shell.js';
+import { CommonCommands } from '../common-commands.js';
+import { WindowService } from '../window/window-service.js';
+import { StopReason } from '../../common/frontend-application-state.js';
+import { isFunction, isObject, MaybePromise } from '../../common/index.js';
+import { PerspectiveServiceInternal } from '../perspective-service.js';
+import { SecondaryWindowHandler } from '../secondary-window-handler.js';
 
 /**
  * A contract for widgets that want to store and restore their inner state, between sessions.
@@ -152,6 +154,12 @@ export class ShellLayoutRestorer implements CommandContribution {
     @inject(PerspectiveServiceInternal)
     protected readonly perspectiveService: PerspectiveServiceInternal;
 
+    @inject(SidePanelItemVisibility)
+    protected readonly sidePanelItemVisibility: SidePanelItemVisibility;
+
+    @inject(SecondaryWindowHandler)
+    protected readonly secondaryWindowHandler: SecondaryWindowHandler;
+
     constructor(
         @inject(WidgetManager) protected widgetManager: WidgetManager,
         @inject(ILogger) @named('core:ShellLayoutRestorer')
@@ -172,6 +180,7 @@ export class ShellLayoutRestorer implements CommandContribution {
             this.perspectiveService.clearSavedLayouts();
             this.storageService.setData(PERSPECTIVE_LAYOUTS_STORAGE_KEY, undefined);
             this.themeService.reset();
+            this.sidePanelItemVisibility.reset();
             this.logger.info('<<< The layout has been successfully reset.');
             this.windowService.reload();
         }
@@ -197,6 +206,10 @@ export class ShellLayoutRestorer implements CommandContribution {
         // Snapshot current shell as the active perspective's layout
         try {
             const currentLayout = app.shell.getLayoutData();
+            const secondaryWindows = this.secondaryWindowHandler.getLayoutData();
+            if (secondaryWindows.length) {
+                currentLayout.secondaryWindows = secondaryWindows;
+            }
             layouts[activeId] = this.deflate(currentLayout);
         } catch (error) {
             this.logger.warn(`Could not deflate layout for active perspective '${activeId}'`, error);
@@ -302,6 +315,7 @@ export class ShellLayoutRestorer implements CommandContribution {
 
         if (activeLayout) {
             await app.shell.setLayoutData(activeLayout);
+            this.restoreSecondaryWindows(activeLayout);
             const restoredId = this.perspectiveService.getActivePerspectiveId();
             this.perspectiveService.onLayoutRestored(restoredId);
             this.logger.info('<<< The layout has been successfully restored.');
@@ -312,6 +326,17 @@ export class ShellLayoutRestorer implements CommandContribution {
         this.perspectiveService.onLayoutRestored(this.perspectiveService.getActivePerspectiveId());
         this.logger.info('<<< Nothing to restore.');
         return false;
+    }
+
+    protected restoreSecondaryWindows(layout: ApplicationShell.LayoutData): void {
+        const { secondaryWindows } = layout;
+        if (secondaryWindows) {
+            // the windows are restored on startup only, not when switching to the perspective later on
+            delete layout.secondaryWindows;
+            this.secondaryWindowHandler.setLayoutData(secondaryWindows).catch(error => {
+                this.logger.warn('Could not restore the secondary windows', error);
+            });
+        }
     }
 
     protected isWidgetProperty(propertyName: string): boolean {

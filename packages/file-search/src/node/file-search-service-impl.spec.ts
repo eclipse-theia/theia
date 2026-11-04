@@ -17,13 +17,13 @@
 import { expect } from 'chai';
 import * as assert from 'assert';
 import * as path from 'path';
-import { FileSearchServiceImpl } from './file-search-service-impl';
+import { FileSearchServiceImpl } from './file-search-service-impl.js';
 import { BundledResourceProvider, FileUri } from '@theia/core/lib/node';
 import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { CancellationTokenSource } from '@theia/core';
 import { bindLogger } from '@theia/core/lib/node/logger-backend-module';
 import URI from '@theia/core/lib/common/uri';
-import { FileSearchService } from '../common/file-search-service';
+import { FileSearchService } from '../common/file-search-service.js';
 import { RawProcessFactory } from '@theia/process/lib/node';
 
 const testContainer = new Container();
@@ -48,15 +48,15 @@ describe('search-service', function (): void {
     });
 
     it('should fuzzy search this spec file', async () => {
-        const rootUri = FileUri.create(path.resolve(__dirname, '..')).toString();
+        const rootUri = FileUri.create(path.resolve(import.meta.dirname, '..')).toString();
         const matches = await service.find('spc', { rootUris: [rootUri] });
-        const expectedFile = FileUri.create(__filename).path.base;
+        const expectedFile = FileUri.create(import.meta.filename).path.base;
         const testFile = matches.find(e => e.endsWith(expectedFile));
         expect(testFile).to.not.be.undefined;
     });
 
     it.skip('should respect nested .gitignore', async () => {
-        const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources')).toString();
+        const rootUri = FileUri.create(path.resolve(import.meta.dirname, '../../test-resources')).toString();
         const matches = await service.find('foo', { rootUris: [rootUri], fuzzyMatch: false });
 
         expect(matches.find(match => match.endsWith('subdir1/sub-bar/foo.txt'))).to.be.undefined;
@@ -65,7 +65,7 @@ describe('search-service', function (): void {
     });
 
     it('should cancel searches', async () => {
-        const rootUri = FileUri.create(path.resolve(__dirname, '../../../../..')).toString();
+        const rootUri = FileUri.create(path.resolve(import.meta.dirname, '../../../../..')).toString();
         const cancelTokenSource = new CancellationTokenSource();
         cancelTokenSource.cancel();
         const matches = await service.find('foo', { rootUris: [rootUri], fuzzyMatch: false }, cancelTokenSource.token);
@@ -74,8 +74,8 @@ describe('search-service', function (): void {
     });
 
     it('should perform file search across all folders in the workspace', async () => {
-        const dirA = FileUri.create(path.resolve(__dirname, '../../test-resources/subdir1/sub-bar')).toString();
-        const dirB = FileUri.create(path.resolve(__dirname, '../../test-resources/subdir1/sub2')).toString();
+        const dirA = FileUri.create(path.resolve(import.meta.dirname, '../../test-resources/subdir1/sub-bar')).toString();
+        const dirB = FileUri.create(path.resolve(import.meta.dirname, '../../test-resources/subdir1/sub2')).toString();
 
         const matches = await service.find('foo', { rootUris: [dirA, dirB] });
         expect(matches).to.not.be.undefined;
@@ -84,7 +84,7 @@ describe('search-service', function (): void {
 
     describe('search with glob', () => {
         it('should support file searches with globs', async () => {
-            const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources/subdir1/sub2')).toString();
+            const rootUri = FileUri.create(path.resolve(import.meta.dirname, '../../test-resources/subdir1/sub2')).toString();
 
             const matches = await service.find('', { rootUris: [rootUri], includePatterns: ['**/*oo.*'] });
             expect(matches).to.not.be.undefined;
@@ -92,7 +92,7 @@ describe('search-service', function (): void {
         });
 
         it('should NOT support file searches with globs without the prefixed or trailing star (*)', async () => {
-            const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources/subdir1/sub2')).toString();
+            const rootUri = FileUri.create(path.resolve(import.meta.dirname, '../../test-resources/subdir1/sub2')).toString();
 
             const trailingMatches = await service.find('', { rootUris: [rootUri], includePatterns: ['*oo'] });
             expect(trailingMatches).to.not.be.undefined;
@@ -106,14 +106,14 @@ describe('search-service', function (): void {
 
     describe('search with ignored patterns', () => {
         it('should NOT ignore strings passed through the search options', async () => {
-            const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources/subdir1/sub2')).toString();
+            const rootUri = FileUri.create(path.resolve(import.meta.dirname, '../../test-resources/subdir1/sub2')).toString();
 
             const matches = await service.find('', { rootUris: [rootUri], includePatterns: ['**/*oo.*'], excludePatterns: ['foo'] });
             expect(matches).to.not.be.undefined;
             expect(matches.length).to.eq(1);
         });
 
-        const ignoreGlobsUri = FileUri.create(path.resolve(__dirname, '../../test-resources/subdir1/sub2')).toString();
+        const ignoreGlobsUri = FileUri.create(path.resolve(import.meta.dirname, '../../test-resources/subdir1/sub2')).toString();
         it('should ignore globs passed through the search options #1', () => assertIgnoreGlobs({
             rootUris: [ignoreGlobsUri],
             includePatterns: ['**/*oo.*'],
@@ -159,7 +159,7 @@ describe('search-service', function (): void {
     });
 
     describe('irrelevant absolute results', () => {
-        const rootUri = FileUri.create(path.resolve(__dirname, '../../../..'));
+        const rootUri = FileUri.create(path.resolve(import.meta.dirname, '../../../..'));
 
         it('not fuzzy', async () => {
             const searchPattern = 'package'; // package.json should produce a result.
@@ -196,7 +196,7 @@ describe('search-service', function (): void {
     });
 
     describe('search with whitespaces', () => {
-        const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources')).toString();
+        const rootUri = FileUri.create(path.resolve(import.meta.dirname, '../../test-resources')).toString();
 
         it('should support file searches with whitespaces', async () => {
             const matches = await service.find('foo sub', { rootUris: [rootUri], fuzzyMatch: true, useGitIgnore: true, limit: 200 });

@@ -16,7 +16,7 @@
 
 import { isWindows } from '@theia/core';
 import * as assert from 'assert';
-import * as types from './types-impl';
+import * as types from './types-impl.js';
 
 describe('API Type Implementations:', () => {
 
@@ -65,6 +65,31 @@ describe('API Type Implementations:', () => {
                 types.URI.joinPath(types.URI.from({ scheme: 'myScheme', authority: 'authority', path: '/path', query: 'query', fragment: 'fragment' }), '/file.js').toString(),
                 'myScheme://authority/path/file.js?query#fragment');
         });
+
+        // Issue: #14976
+        it('should return an instance of the API URI class from every factory', () => {
+            const components = { scheme: 'file', authority: '', path: '/foo/bar.js', query: '', fragment: '' };
+            assert.ok(types.URI.parse('file:///foo/bar.js') instanceof types.URI, 'parse');
+            assert.ok(types.URI.file('/foo/bar.js') instanceof types.URI, 'file');
+            assert.ok(types.URI.revive(components) instanceof types.URI, 'revive');
+            assert.ok(types.URI.from(components) instanceof types.URI, 'from');
+            assert.ok(types.URI.joinPath(types.URI.file('/foo'), 'bar.js') instanceof types.URI, 'joinPath');
+            assert.ok(types.URI.file('/foo/bar.js').with({ fragment: 'baz' }) instanceof types.URI, 'with');
+        });
+
+        it('should build an equivalent URI with from()', () => {
+            const uriString = 'scheme://authority.com/foo/bar/zoz?query#fragment';
+            const uri = types.URI.parse(uriString);
+            const from = types.URI.from({
+                scheme: uri.scheme,
+                authority: uri.authority,
+                path: uri.path,
+                query: uri.query,
+                fragment: uri.fragment
+            });
+
+            assert.strictEqual(from.toString(), uriString);
+        });
     });
 
     describe('RelativePattern:', () => {
@@ -80,6 +105,21 @@ describe('API Type Implementations:', () => {
             const rPattern = new types.RelativePattern('/initial/unrelated/path', 'not relevant');
             rPattern.base = testUri.fsPath;
             assert.strictEqual(rPattern.baseUri.toString(), testUri.toString());
+        });
+    });
+
+    describe('Disposable:', () => {
+        // Issue: #13906
+        it('should run its callback when a subclass declares its own disposable field', () => {
+            let disposed = 0;
+            class Subclass extends types.Disposable {
+                disposable = 'not a function';
+                constructor() {
+                    super(() => disposed++);
+                }
+            }
+            new Subclass().dispose();
+            assert.strictEqual(disposed, 1);
         });
     });
 });

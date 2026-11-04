@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { Disposable, Emitter, Event } from '@theia/core';
-import { ToolCallChatResponseContent } from '../common';
+import { ToolCallChatResponseContent } from '../common/index.js';
 
 export interface PendingToolConfirmation {
     readonly chatId: string;

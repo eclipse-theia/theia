@@ -25,9 +25,9 @@ import {
     ResolvedAIVariable,
     AIVariableResolverWithVariableDependencies,
     AIVariableArg
-} from '../common/variable-service';
-import { isCustomizedPromptFragment, PromptService } from '../common/prompt-service';
-import { PromptText } from '../common/prompt-text';
+} from '../common/variable-service.js';
+import { isCustomizedPromptFragment, PromptService } from '../common/prompt-service.js';
+import { PromptText } from '../common/prompt-text.js';
 
 export const PROMPT_VARIABLE: AIVariable = {
     id: 'prompt-provider',

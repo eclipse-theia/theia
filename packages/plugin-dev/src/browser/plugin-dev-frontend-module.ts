@@ -14,16 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { HostedPluginLogViewer } from './hosted-plugin-log-viewer';
-import { HostedPluginManagerClient } from './hosted-plugin-manager-client';
-import { HostedPluginInformer } from './hosted-plugin-informer';
-import { bindHostedPluginPreferences } from '../common/hosted-plugin-preferences';
-import { HostedPluginController } from './hosted-plugin-controller';
+import { HostedPluginLogViewer } from './hosted-plugin-log-viewer.js';
+import { HostedPluginManagerClient } from './hosted-plugin-manager-client.js';
+import { HostedPluginInformer } from './hosted-plugin-informer.js';
+import { bindHostedPluginPreferences } from '../common/hosted-plugin-preferences.js';
+import { HostedPluginController } from './hosted-plugin-controller.js';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution, WebSocketConnectionProvider } from '@theia/core/lib/browser';
-import { HostedPluginFrontendContribution } from './hosted-plugin-frontend-contribution';
+import { HostedPluginFrontendContribution } from './hosted-plugin-frontend-contribution.js';
 import { CommandContribution } from '@theia/core/lib/common/command';
-import { PluginDevServer, pluginDevServicePath } from '../common/plugin-dev-protocol';
+import { PluginDevServer, pluginDevServicePath } from '../common/plugin-dev-protocol.js';
 import { DebugContribution } from '@theia/debug/lib/browser/debug-contribution';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {

@@ -35,6 +35,12 @@ export const debugPreferencesSchema: PreferenceSchema = {
             default: 'openOnFirstSessionStart',
             description: nls.localizeByDefault('Controls when the internal Debug Console should open.')
         },
+        'debug.console.maximumLines': {
+            type: 'number',
+            default: 10000,
+            minimum: 1,
+            description: nls.localizeByDefault('Controls the maximum number of lines in the Debug Console.')
+        },
         'debug.inlineValues': {
             type: 'boolean',
             default: false,
@@ -92,6 +98,7 @@ export class DebugConfiguration {
     'debug.trace': boolean;
     'debug.openDebug': 'neverOpen' | 'openOnSessionStart' | 'openOnFirstSessionStart' | 'openOnDebugBreak';
     'debug.internalConsoleOptions': 'neverOpen' | 'openOnSessionStart' | 'openOnFirstSessionStart';
+    'debug.console.maximumLines': number;
     'debug.inlineValues': boolean;
     'debug.showInStatusBar': 'never' | 'always' | 'onFirstSessionStart';
     'debug.confirmOnExit': 'never' | 'always';

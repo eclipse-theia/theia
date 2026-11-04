@@ -18,9 +18,9 @@ import * as http from 'http';
 import { AddressInfo } from 'net';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
-import { MCP_OAUTH_CALLBACK_PATH } from '../common/mcp-oauth';
-import { MCPOAuthCallbackEndpoint } from '../node/mcp-oauth-callback-endpoint';
-import { MCPOAuthCallbackResponder } from '../node/mcp-oauth-callback-responder';
+import { MCP_OAUTH_CALLBACK_PATH } from '../common/mcp-oauth.js';
+import { MCPOAuthCallbackEndpoint } from '../node/mcp-oauth-callback-endpoint.js';
+import { MCPOAuthCallbackResponder } from '../node/mcp-oauth-callback-responder.js';
 import { ILogger } from '@theia/core';
 
 /** RFC 8252 loopback host. `127.0.0.1` (not `localhost`) so the bound address is unambiguous and unreachable off-host. */

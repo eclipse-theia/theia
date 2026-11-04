@@ -22,8 +22,8 @@ import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Message, BaseWidget, DockPanel, Widget, MessageLoop, StatefulWidget, codicon, StorageService } from '@theia/core/lib/browser';
-import { OutputUri } from '../common/output-uri';
-import { OutputChannelManager, OutputChannel } from './output-channel';
+import { OutputUri } from '../common/output-uri.js';
+import { OutputChannelManager, OutputChannel } from './output-channel.js';
 import { Emitter, Event, deepClone } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
 import * as monaco from '@theia/monaco-editor-core';
@@ -194,7 +194,11 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
         this.onStateChangedEmitter.fire(this._state);
     }
 
-    protected async refreshEditorWidget({ preserveFocus }: { preserveFocus: boolean } = { preserveFocus: false }): Promise<void> {
+    /**
+     * Only an explicit `OutputChannel.show()` activates the widget: channel selection, creation and
+     * deletion refresh it in the background, and a selection change precedes even a `preserveFocus` show.
+     */
+    protected async refreshEditorWidget({ preserveFocus }: { preserveFocus: boolean } = { preserveFocus: true }): Promise<void> {
         const { selectedChannel } = this;
         const editorWidget = this.editorWidget;
         if (selectedChannel && editorWidget) {

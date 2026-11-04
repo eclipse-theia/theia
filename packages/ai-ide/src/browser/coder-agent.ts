@@ -26,14 +26,14 @@ import {
     getCoderAgentModePromptTemplate,
     getCoderAgentModeNextPromptTemplate,
     getCoderPromptTemplateEdit
-} from '../common/coder-replace-prompt-template';
+} from '../common/coder-replace-prompt-template.js';
 import { LanguageModelRequirement, PromptVariantSet } from '@theia/ai-core';
 import { ILogger, nls } from '@theia/core';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { AI_CHAT_HOME, ChatCommands } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
-import { AbstractModeAwareChatAgent } from './mode-aware-chat-agent';
-import { AgentModeConfirmationService } from './agent-mode-confirmation-service';
+import { AbstractModeAwareChatAgent } from './mode-aware-chat-agent.js';
+import { AgentModeConfirmationService } from './agent-mode-confirmation-service.js';
 
 export const CoderAgentId = 'Coder';
 

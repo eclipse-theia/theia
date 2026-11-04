@@ -15,14 +15,14 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
+import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol.js';
 import URI from '@theia/core/lib/common/uri';
 import { CommandService } from '@theia/core/lib/common';
 import { LabelProvider, DISABLED_CLASS, OpenerService, TreeWidget } from '@theia/core/lib/browser';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { SelectableTreeNode } from '@theia/core/lib/browser/tree/tree-selection';
-import { BaseBreakpoint } from '../breakpoint/breakpoint-marker';
-import { BreakpointManager } from '../breakpoint/breakpoint-manager';
+import { BaseBreakpoint } from '../breakpoint/breakpoint-marker.js';
+import { BreakpointManager } from '../breakpoint/breakpoint-manager.js';
 import { nls } from '@theia/core';
 
 export interface DebugBreakpointOptions {

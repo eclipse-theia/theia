@@ -216,20 +216,16 @@ export class GetGitChangesTool extends PredefinedShellTool {
     }
 
     /**
-     * Identifies a repository by the path of its root relative to the workspace, so that the label
-     * is usable as the `repository` argument of a follow-up call. Workspace roots sharing a folder
-     * name produce identical labels, which {@link findRepositories} reports as ambiguous.
+     * Identifies a repository by the path of its root relative to the workspace, in the format of the
+     * workspace tools (`<rootName>/<relativePath>`), so that the label is usable as the `repository`
+     * argument of a follow-up call. Root names are unique, also for roots sharing a folder name.
      */
     protected repositoryLabel(repository: ScmRepository): string {
         const root = new URI(repository.provider.rootUri);
-        for (const workspaceRoot of this.workspaceService.tryGetRoots()) {
-            if (!workspaceRoot.resource.isEqualOrParent(root)) {
-                continue;
-            }
-            const relative = workspaceRoot.resource.relative(root)?.toString();
-            return relative ? `${workspaceRoot.resource.path.base}/${relative}` : workspaceRoot.resource.path.base;
+        if (!this.workspaceService.getWorkspaceRootUri(root)) {
+            return root.path.base;
         }
-        return root.path.base;
+        return this.workspaceService.getRootPrefixedPath(root);
     }
 
     /** Path separators and case differ across platforms and between user phrasings. */

@@ -14,17 +14,27 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { GOOGLE_LANGUAGE_MODELS_MANAGER_PATH, GoogleLanguageModelsManager } from '../common/google-language-models-manager';
+import { Container, ContainerModule } from '@theia/core/shared/inversify';
+import { GOOGLE_LANGUAGE_MODELS_MANAGER_PATH, GoogleLanguageModelsManager } from '../common/google-language-models-manager.js';
 import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
-import { GoogleLanguageModelsManagerImpl } from './google-language-models-manager-impl';
+import { GoogleLanguageModelsManagerImpl } from './google-language-models-manager-impl.js';
+import { GoogleLanguageModelFactory, GoogleModel, GoogleModelParams } from './google-language-model.js';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
-import { GooglePreferencesSchema } from '../common/google-preferences';
+import { GooglePreferencesSchema } from '../common/google-preferences.js';
 
 // We use a connection module to handle AI services separately for each frontend.
 const geminiConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
     bind(GoogleLanguageModelsManagerImpl).toSelf().inSingletonScope();
     bind(GoogleLanguageModelsManager).toService(GoogleLanguageModelsManagerImpl);
+    bind(GoogleModel).toSelf().inTransientScope();
+    bind(GoogleLanguageModelFactory).toFactory<GoogleModel, [GoogleModelParams]>(
+        ({ container }) => params => {
+            const child = new Container();
+            child.parent = container;
+            child.bind(GoogleModelParams).toConstantValue(params);
+            return child.get(GoogleModel);
+        }
+    );
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler(GOOGLE_LANGUAGE_MODELS_MANAGER_PATH, () => ctx.container.get(GoogleLanguageModelsManager))
     ).inSingletonScope();

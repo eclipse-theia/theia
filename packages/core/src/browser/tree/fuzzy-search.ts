@@ -15,4 +15,4 @@
 // *****************************************************************************
 
 // Re-export from common location for backward compatibility.
-export { FuzzySearch } from '../../common/fuzzy-search';
+export { FuzzySearch } from '../../common/fuzzy-search.js';

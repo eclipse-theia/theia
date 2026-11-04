@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { JSONExt, JSONObject, JSONValue } from '@lumino/coreutils';
-import { Event } from '../event';
-import { PreferenceScope } from '../preferences/preference-scope';
-import { URI } from '../uri';
+import { Event } from '../event.js';
+import { PreferenceScope } from '../preferences/preference-scope.js';
+import { URI } from '../uri.js';
 import { Disposable } from 'vscode-languageserver-protocol';
 
 export interface PreferenceProviderDataChange {

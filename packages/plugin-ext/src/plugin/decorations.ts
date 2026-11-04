@@ -22,11 +22,11 @@ import {
     DecorationsExt,
     DecorationsMain,
     PLUGIN_RPC_CONTEXT, PluginInfo
-} from '../common/plugin-api-rpc';
-import { RPCProtocol } from '../common/rpc-protocol';
-import { Disposable, FileDecoration, URI } from './types-impl';
+} from '../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../common/rpc-protocol.js';
+import { Disposable, FileDecoration, URI } from './types-impl.js';
 import { CancellationToken } from '@theia/core/lib/common';
-import { PluginLogger } from './logger';
+import { PluginLogger } from './logger.js';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.

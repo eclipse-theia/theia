@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { WorkspaceServer } from '../common/workspace-protocol';
+import { WorkspaceServer } from '../common/workspace-protocol.js';
 import { ILogger, isStringArray } from '@theia/core';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 

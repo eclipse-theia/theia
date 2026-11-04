@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import URI from '../common/uri';
-import { MaybePromise, SelectionService, UNTITLED_SCHEME, UriSelection } from '../common';
-import { EnvVariablesServer } from '../common/env-variables';
-import { FrontendApplication } from './frontend-application';
-import { FrontendApplicationContribution } from './frontend-application-contribution';
-import { Widget } from './widgets';
-import { Navigatable } from './navigatable-types';
+import URI from '../common/uri.js';
+import { MaybePromise, SelectionService, UNTITLED_SCHEME, UriSelection } from '../common/index.js';
+import { EnvVariablesServer } from '../common/env-variables/index.js';
+import { FrontendApplication } from './frontend-application.js';
+import { FrontendApplicationContribution } from './frontend-application-contribution.js';
+import { Widget } from './widgets/index.js';
+import { Navigatable } from './navigatable-types.js';
 
 @injectable()
 export class UserWorkingDirectoryProvider implements FrontendApplicationContribution {

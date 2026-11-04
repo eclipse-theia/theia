@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import * as http from 'http';
-import { MiniBrowserWsRequestValidator } from './mini-browser-ws-validator';
+import { MiniBrowserWsRequestValidator } from './mini-browser-ws-validator.js';
 
 describe('MiniBrowserWsRequestValidator', () => {
 

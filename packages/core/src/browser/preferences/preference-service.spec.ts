@@ -16,20 +16,21 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { enableJSDOM } from '../test/jsdom';
+import { enableJSDOM } from '../test/jsdom.js';
 
 let disableJSDOM = enableJSDOM();
 
 import * as assert from 'assert';
 import { Container } from 'inversify';
-import { PreferenceChange, PreferenceChanges, PreferenceProvider, PreferenceScope, PreferenceService, PreferenceServiceImpl } from '../../common/preferences';
-import { PreferenceSchema, PreferenceSchemaService } from '../../common/preferences/preference-schema';
-import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
-import { bindMockPreferenceProviders, MockPreferenceProvider } from './test';
-import { PreferenceChangeEvent, createPreferenceProxy } from '../../common/preferences/preference-proxy';
-import { bindPreferenceService } from '../frontend-application-bindings';
-import { ILogger } from '../../common/logger';
-import { MockLogger } from '../../common/test/mock-logger';
+import { PreferenceChange, PreferenceChanges, PreferenceProvider, PreferenceScope, PreferenceService, PreferenceServiceImpl } from '../../common/preferences/index.js';
+import { PreferenceSchema, PreferenceSchemaService } from '../../common/preferences/preference-schema.js';
+import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider.js';
+import { bindMockPreferenceProviders, MockPreferenceProvider } from './test/index.js';
+import { PreferenceChangeEvent, createPreferenceProxy } from '../../common/preferences/preference-proxy.js';
+import { bindPreferenceService } from '../frontend-application-bindings.js';
+import { ILogger } from '../../common/logger.js';
+import { MockLogger } from '../../common/test/mock-logger.js';
+import { expect } from 'chai';
 
 disableJSDOM();
 
@@ -38,7 +39,6 @@ process.on('unhandledRejection', (reason, promise) => {
     throw reason;
 });
 
-const { expect } = require('chai');
 let testContainer: Container;
 
 function createTestContainer(): Container {

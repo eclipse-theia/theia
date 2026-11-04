@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as undici from 'undici';
-import { shouldBypassProxy } from '../common/proxy-util';
+import { shouldBypassProxy } from '../common/proxy-util.js';
 
 /**
  * Creates a custom fetch function that routes requests through the given HTTP proxy.

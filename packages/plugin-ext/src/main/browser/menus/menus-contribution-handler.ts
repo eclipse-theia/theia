@@ -17,10 +17,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { inject, injectable, optional, named } from '@theia/core/shared/inversify';
-import { MenuPath, CommandRegistry, Disposable, DisposableCollection, nls, CommandMenu, AcceleratorSource, ContextExpressionMatcher, environment, ILogger } from '@theia/core';
+import {
+    MenuPath, CommandRegistry, Disposable, DisposableCollection, nls, CommandMenu, AcceleratorSource, AcceleratorForm,
+    ContextExpressionMatcher, ILogger
+} from '@theia/core';
 import { MenuModelRegistry } from '@theia/core/lib/common';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { DeployedPlugin, IconUrl, Menu } from '../../../common';
+import { DeployedPlugin, IconUrl, Menu } from '../../../common/index.js';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { ScmRepositoriesWidget, SCM_SOURCE_CONTROL_TITLE_MENU } from '@theia/scm/lib/browser/scm-repositories-widget';
 import { ScmHistoryGraphWidget, SCM_HISTORY_TITLE_MENU } from '@theia/scm/lib/browser/scm-history-graph-widget';
@@ -28,11 +31,11 @@ import { KeybindingRegistry, QuickCommandService, codicon } from '@theia/core/li
 import {
     CodeEditorWidgetUtil, codeToTheiaMappings, ContributionPoint,
     PLUGIN_EDITOR_TITLE_MENU, PLUGIN_EDITOR_TITLE_RUN_MENU, PLUGIN_SCM_TITLE_MENU, PLUGIN_VIEW_TITLE_MENU
-} from './vscode-theia-menu-mappings';
-import { PluginMenuCommandAdapter } from './plugin-menu-command-adapter';
+} from './vscode-theia-menu-mappings.js';
+import { PluginMenuCommandAdapter } from './plugin-menu-command-adapter.js';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { PluginSharedStyle } from '../plugin-shared-style';
-import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
+import { PluginSharedStyle } from '../plugin-shared-style.js';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables.js';
 
 @injectable()
 export class MenusContributionPointHandler {
@@ -137,18 +140,8 @@ export class MenusContributionPointHandler {
                                     run: (effeciveMenuPath: MenuPath, ...args: any[]): Promise<void> =>
                                         this.commandRegistry.executeCommand(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(effeciveMenuPath)(...args)),
                                     isToggled: (effectiveMenuPath: MenuPath) => false,
-                                    getAccelerator: (context: HTMLElement | undefined): string[] => {
-                                        const bindings = this.keybindingRegistry.getKeybindingsForCommand(command);
-                                        // Only consider the first active keybinding.
-                                        if (bindings.length) {
-                                            const binding = bindings.find(b => this.keybindingRegistry.isEnabledInScope(b, context));
-                                            if (binding) {
-                                                const asciiOnly = environment.electron.is();
-                                                return this.keybindingRegistry.acceleratorFor(binding, '+', asciiOnly);
-                                            }
-                                        }
-                                        return [];
-                                    }
+                                    getAccelerator: (context: HTMLElement | undefined, form: AcceleratorForm): string[] =>
+                                        this.keybindingRegistry.acceleratorForCommand(command, context, form)
                                 };
                                 toDispose.push(this.menuRegistry.registerCommandMenu(menuPath, action));
                             });

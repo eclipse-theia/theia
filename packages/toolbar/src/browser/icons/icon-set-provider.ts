@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { injectable, postConstruct } from '@theia/core/shared/inversify';
-import { IconSet } from '../toolbar-interfaces';
-import { fontAwesomeMapping } from './font-awesome-icons';
-import { codiconsMapping } from './codicons';
+import { IconSet } from '../toolbar-interfaces.js';
+import { fontAwesomeMapping } from './font-awesome-icons.js';
+import { codiconsMapping } from './codicons.js';
 
 /**
  * Provider for icon set information including:

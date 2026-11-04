@@ -19,10 +19,10 @@ import { nls, ILogger } from '@theia/core';
 import { ObservableUtils } from '@theia/core/lib/common/observable';
 import { codicon, DiffUris, LabelProvider, open, OpenerService } from '@theia/core/lib/browser';
 import { EditorDecoration, EditorOpenerOptions, Range } from '@theia/editor/lib/browser';
-import { MergeRange, MergeRangeAcceptedState, MergeSide } from '../../model/merge-range';
-import { MergeEditorPane } from './merge-editor-pane';
-import { MergeEditorPaneToolbarItem } from './merge-editor-pane-header';
-import { LineRange } from '../../model/line-range';
+import { MergeRange, MergeRangeAcceptedState, MergeSide } from '../../model/merge-range.js';
+import { MergeEditorPane } from './merge-editor-pane.js';
+import { MergeEditorPaneToolbarItem } from './merge-editor-pane-header.js';
+import { LineRange } from '../../model/line-range.js';
 
 @injectable()
 export abstract class MergeEditorSidePane extends MergeEditorPane {

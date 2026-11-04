@@ -27,8 +27,8 @@ import { expect } from 'chai';
 import URI from '@theia/core/lib/common/uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { PLUGINS_SCHEME } from '@theia/plugin-utils/lib/common/constants';
-import { DeployedPlugin, GrammarsContribution } from '../../common';
-import { PluginContributionHandler } from './plugin-contribution-handler';
+import { DeployedPlugin, GrammarsContribution } from '../../common/index.js';
+import { PluginContributionHandler } from './plugin-contribution-handler.js';
 
 disableJSDOM();
 

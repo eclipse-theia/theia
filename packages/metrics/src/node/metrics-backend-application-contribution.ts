@@ -20,7 +20,7 @@ import * as https from 'https';
 import * as express from '@theia/core/shared/express';
 import { ContributionProvider } from '@theia/core/lib/common';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import { MetricsContribution } from './metrics-contribution';
+import { MetricsContribution } from './metrics-contribution.js';
 
 @injectable()
 export class MetricsBackendApplicationContribution implements BackendApplicationContribution {
@@ -45,7 +45,9 @@ export class MetricsBackendApplicationContribution implements BackendApplication
     }
 
     fetchMetricsFromProviders(): string {
-        return this.metricsProviders.getContributions().reduce((total, contribution) =>
-            total += contribution.getMetrics() + '\n', '');
+        return this.metricsProviders.getContributions().reduce((total, contribution) => {
+            const metrics = contribution.getMetrics();
+            return metrics ? total + metrics + '\n' : total;
+        }, '');
     }
 }

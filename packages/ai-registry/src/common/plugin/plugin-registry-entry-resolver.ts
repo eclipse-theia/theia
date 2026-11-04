@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { PluginEndorsement, RegistryPlugin, RegistryPluginApproval, ResolvedPluginEntry } from './plugin-registry-types';
+import { PluginEndorsement, RegistryPlugin, RegistryPluginApproval, ResolvedPluginEntry } from './plugin-registry-types.js';
 
 // Narrower than what the feed might publish: the identifier is encoded into the directory name, and
 // that name becomes the qualifier inside a `/`-command. Restricting it once here is what stops two

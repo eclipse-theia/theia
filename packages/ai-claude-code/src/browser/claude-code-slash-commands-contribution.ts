@@ -21,7 +21,7 @@ import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangeType } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { CLAUDE_CHAT_AGENT_ID } from './claude-code-chat-agent';
+import { CLAUDE_CHAT_AGENT_ID } from './claude-code-chat-agent.js';
 
 const CLAUDE_COMMANDS = '.claude/commands';
 const COMMAND_FRAGMENT_PREFIX = 'claude-code-slash-';

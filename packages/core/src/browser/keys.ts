@@ -17,5 +17,5 @@
 // Reexporting here for backwards compatibility.
 // Please import from '@theia/core/lib/browser' or '@theia/core/lib/browser/keyboard' instead of this module.
 // This module might be removed in future releases.
-import { KeySequence, Keystroke, KeyCode, KeyModifier, Key, SpecialCases, KeysOrKeyCodes } from './keyboard/keys';
+import { KeySequence, Keystroke, KeyCode, KeyModifier, Key, SpecialCases, KeysOrKeyCodes } from './keyboard/keys.js';
 export { KeySequence, Keystroke, KeyCode, KeyModifier, Key, SpecialCases, KeysOrKeyCodes };

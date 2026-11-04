@@ -14,15 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './diff-navigator';
-export * from './editor';
-export * from './editor-widget';
-export * from './editor-manager';
-export * from './editor-command';
-export * from './editor-menu';
-export * from './editor-frontend-module';
-export * from './decorations';
-export * from './editor-linenumber-contribution';
-export * from './split-editor-contribution';
-export * from './text-editor-split-contribution';
-export * from './editor-formatter-service';
+export * from './diff-navigator.js';
+export * from './editor.js';
+export * from './editor-widget.js';
+export * from './editor-manager.js';
+export * from './editor-command.js';
+export * from './editor-menu.js';
+export * from './editor-frontend-module.js';
+export * from './decorations/index.js';
+export * from './editor-linenumber-contribution.js';
+export * from './split-editor-contribution.js';
+export * from './text-editor-split-contribution.js';
+export * from './editor-formatter-service.js';

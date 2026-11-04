@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as assert from 'assert';
-import { Prioritizeable, RecursivePartial } from './types';
+import { Prioritizeable, RecursivePartial } from './types.js';
 
 describe('types', () => {
 

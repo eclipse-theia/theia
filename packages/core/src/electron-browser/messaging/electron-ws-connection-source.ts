@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { FrontendApplicationContribution } from '../../browser/frontend-application-contribution';
-import { WebSocketConnectionSource } from '../../browser/messaging/ws-connection-source';
+import { FrontendApplicationContribution } from '../../browser/frontend-application-contribution.js';
+import { WebSocketConnectionSource } from '../../browser/messaging/ws-connection-source.js';
 
 /**
  * Customized connection provider between the frontend and the backend in electron environment.

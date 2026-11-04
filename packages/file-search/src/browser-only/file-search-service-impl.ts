@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service';
+import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service.js';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import * as fuzzy from '@theia/core/shared/fuzzy';
 import { CancellationTokenSource, CancellationToken, ILogger, URI } from '@theia/core';

@@ -14,28 +14,27 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '../test/jsdom';
+import { enableJSDOM } from '../test/jsdom.js';
 
 let disableJSDOM = enableJSDOM();
 
 import { Container, injectable } from 'inversify';
 import type { IMacKeyboardLayoutInfo } from 'native-keymap';
 import * as chai from 'chai';
-import * as sinon from 'sinon';
-import * as os from '../../common/os';
-import { ILogger, Loggable } from '../../common/logger';
-import { LocalStorageService } from '../storage-service';
-import { MessageService } from '../../common/message-service';
-import { WindowService } from '../window/window-service';
-import { BrowserKeyboardLayoutProvider } from './browser-keyboard-layout-provider';
-import { Key } from './keys';
+import { ILogger, Loggable } from '../../common/logger.js';
+import { LocalStorageService } from '../storage-service.js';
+import { MessageService } from '../../common/message-service.js';
+import { WindowService } from '../window/window-service.js';
+import { BrowserKeyboardLayoutProvider, KeyboardLayoutData, KeyboardLayoutSource, KeyboardTester } from './browser-keyboard-layout-provider.js';
+import { Key } from './keys.js';
+import { OSStub, stubOS } from '../../common/test/stub-os.js';
 
 disableJSDOM();
 
 describe('browser keyboard layout provider', function (): void {
 
-    let stubOSX: sinon.SinonStub;
-    let stubWindows: sinon.SinonStub;
+    let stubOSX: OSStub;
+    let stubWindows: OSStub;
 
     before(() => disableJSDOM = enableJSDOM());
     after(() => disableJSDOM());
@@ -43,16 +42,16 @@ describe('browser keyboard layout provider', function (): void {
     const setup = (system: 'mac' | 'win' | 'linux') => {
         switch (system) {
             case 'mac':
-                stubOSX = sinon.stub(os, 'isOSX').value(true);
-                stubWindows = sinon.stub(os, 'isWindows').value(false);
+                stubOSX = stubOS('isOSX', true);
+                stubWindows = stubOS('isWindows', false);
                 break;
             case 'win':
-                stubOSX = sinon.stub(os, 'isOSX').value(false);
-                stubWindows = sinon.stub(os, 'isWindows').value(true);
+                stubOSX = stubOS('isOSX', false);
+                stubWindows = stubOS('isWindows', true);
                 break;
             default:
-                stubOSX = sinon.stub(os, 'isOSX').value(false);
-                stubWindows = sinon.stub(os, 'isWindows').value(false);
+                stubOSX = stubOS('isOSX', false);
+                stubWindows = stubOS('isWindows', false);
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const container = new Container();
@@ -132,6 +131,57 @@ describe('browser keyboard layout provider', function (): void {
         chai.expect(service2).to.not.equal(service);
         const currentLayout = await service2.getNativeLayout();
         chai.expect((currentLayout.info as IMacKeyboardLayoutInfo).id).to.equal('com.apple.keylayout.French');
+    });
+
+    it('scores AltGraph evidence independently from command Alt', () => {
+        const { service } = setup('linux');
+        const german = service.allLayoutData.find(data => data.name === 'German' && data.hardware === 'pc')!;
+        const tester = new KeyboardTester([german]);
+
+        tester.updateScores({ code: Key.DIGIT8.code, character: '[', altGraph: true });
+        chai.expect(tester.topScore).to.equal(1);
+
+        tester.reset();
+        tester.updateScores({ code: Key.DIGIT8.code, character: '[', altKey: true });
+        chai.expect(tester.topScore).to.equal(0);
+    });
+
+    it('can correct a wrong layout score from raw AltGraph evidence', () => {
+        const { service } = setup('linux');
+        const us = service.allLayoutData.find(data => data.name === 'US' && data.hardware === 'pc')!;
+        const german = service.allLayoutData.find(data => data.name === 'German' && data.hardware === 'pc')!;
+        const tester = new KeyboardTester([us, german]);
+
+        tester.updateScores({ code: Key.KEY_Y.code, character: 'y' });
+        chai.expect(tester.scores[0]).to.be.greaterThan(tester.scores[1]);
+        tester.updateScores({ code: Key.DIGIT8.code, character: '[', altGraph: true });
+        chai.expect(tester.scores[1]).to.equal(tester.scores[0]);
+        tester.updateScores({ code: Key.DIGIT7.code, character: '{', altGraph: true });
+        chai.expect(tester.scores[1]).to.be.greaterThan(tester.scores[0]);
+    });
+
+    it('changes the provider layout from raw AltGraph evidence', async () => {
+        const { service } = setup('linux');
+        await service.getNativeLayout();
+        const us = service.allLayoutData.find(data => data.name === 'US' && data.hardware === 'pc')!;
+        const german = service.allLayoutData.find(data => data.name === 'German' && data.hardware === 'pc')!;
+        const internal = service as unknown as {
+            tester: KeyboardTester;
+            currentLayout: KeyboardLayoutData;
+            source: KeyboardLayoutSource;
+        };
+        internal.tester = new KeyboardTester([us, german]);
+        internal.tester.updateScores({ code: Key.KEY_Y.code, character: 'y' });
+        internal.currentLayout = us;
+        internal.source = 'pressed-keys';
+        let changedLayout: KeyboardLayoutData['raw'] | undefined;
+        service.onDidChangeNativeLayout(layout => changedLayout = layout);
+
+        service.validateKey({ code: Key.DIGIT8.code, character: '[', altGraph: true });
+        service.validateKey({ code: Key.DIGIT7.code, character: '{', altGraph: true });
+
+        chai.expect(changedLayout?.info).to.deep.equal(german.raw.info);
+        chai.expect(service.currentLayoutData).to.equal(german);
     });
 
     it('restores user selection from last session', async () => {

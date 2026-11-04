@@ -30,9 +30,9 @@ import {
     AiConfigurationCategoryId,
     AiConfigurationSelection
 } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
-import { AiConfigurationTreeModel } from './ai-configuration-tree-model';
-import { AiConfigurationCategoryNode, AiConfigurationItemNode, AiConfigurationSeparatorNode, AiConfigurationTree } from './ai-configuration-tree-nodes';
-import { AiConfigurationSearch } from './ai-configuration-search';
+import { AiConfigurationTreeModel } from './ai-configuration-tree-model.js';
+import { AiConfigurationCategoryNode, AiConfigurationItemNode, AiConfigurationSeparatorNode, AiConfigurationTree } from './ai-configuration-tree-nodes.js';
+import { AiConfigurationSearch } from './ai-configuration-search.js';
 
 @injectable()
 export class AiConfigurationTreeWidget extends TreeWidget {

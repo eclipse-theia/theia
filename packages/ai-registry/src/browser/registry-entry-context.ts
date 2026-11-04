@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { MenuPath } from '@theia/core';
-import { RegistryArtifactKind } from '../common/ai-registry-preferences';
+import { RegistryArtifactKind } from '../common/ai-registry-preferences.js';
 
 export const AI_REGISTRY_ENTRY_CONTEXT_MENU: MenuPath = ['ai_registry_entry_context_menu'];
 

@@ -27,7 +27,7 @@ import {
     AIVariableService,
     DefaultAIVariableService,
     PromptText
-} from '../common';
+} from '../common/index.js';
 import * as monaco from '@theia/monaco-editor-core';
 
 export type AIVariableDropHandler = (event: DragEvent, context: AIVariableContext) => Promise<AIVariableDropResult | undefined>;

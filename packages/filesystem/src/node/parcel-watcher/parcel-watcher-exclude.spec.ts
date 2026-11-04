@@ -20,14 +20,10 @@ import * as temp from 'temp';
 import * as fs from '@theia/core/shared/fs-extra';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node';
-import { Options } from '@theia/core/shared/@parcel/watcher';
-import { ParcelFileSystemWatcherService } from './parcel-filesystem-service';
-
-// We require the *same* module object that the production code imports from, so that
-// stubbing its `subscribe` export is observed by `ParcelWatcher`. The `@theia/core/shared`
-// shim simply re-exports `require('@parcel/watcher')`, so this is the identical reference.
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const parcel = require('@theia/core/shared/@parcel/watcher');
+// The default export is the same module object that the production code calls `subscribe` on,
+// so that stubbing its `subscribe` export is observed by `ParcelWatcher`.
+import parcel, { Options } from '@theia/core/shared/@parcel/watcher';
+import { FileSystemWatcherServiceImpl } from '../filesystem-watcher-service-impl.js';
 
 const expect = chai.expect;
 const track = temp.track();
@@ -36,7 +32,7 @@ const track = temp.track();
  * Reproduces the `files.watcherExclude` / exclude leak:
  *
  * Excludes flow `files.watcherExclude` -> `WatchOptions.excludes`
- * -> `disk-file-system-provider` (`{ ignored }`) -> `ParcelWatcherOptions.ignored`.
+ * -> `disk-file-system-provider` (`{ ignored }`) -> `ParcelWatcherExcludes.ignored`.
  * However `ParcelWatcher.createWatcher()` only uses `ignored` to *filter events after they
  * arrive* (`isIgnored`/`pushFileChange`). It never passes them to the native `@parcel/watcher`
  * `subscribe(..., { ignore })` option, so excluded directories are STILL crawled and given
@@ -49,7 +45,7 @@ describe('parcel-filesystem-watcher exclude handling', function (): void {
     this.timeout(20000);
 
     let root: URI;
-    let service: ParcelFileSystemWatcherService;
+    let service: FileSystemWatcherServiceImpl;
     let subscribeStub: sinon.SinonStub;
     let capturedOptions: Options[];
 
@@ -65,7 +61,7 @@ describe('parcel-filesystem-watcher exclude handling', function (): void {
                 capturedOptions.push(opts);
                 return { unsubscribe: async () => undefined };
             });
-        service = new ParcelFileSystemWatcherService({ verbose: false });
+        service = new FileSystemWatcherServiceImpl({ verbose: false });
     });
 
     afterEach(() => {

@@ -16,11 +16,11 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { SelectionService } from '../common/selection-service';
-import { UriSelection } from '../common/selection';
-import { CommandHandler } from './command';
-import URI from './uri';
-import { isArray, MaybeArray } from './types';
+import { SelectionService } from '../common/selection-service.js';
+import { UriSelection } from '../common/selection.js';
+import { CommandHandler } from './command.js';
+import URI from './uri.js';
+import { isArray, MaybeArray } from './types.js';
 
 export interface UriCommandHandler<T extends MaybeArray<URI>> extends CommandHandler {
 
@@ -133,7 +133,7 @@ export namespace UriAwareCommandHandler {
      * @returns a command handler for mono-select contexts that expects a `URI` as the first parameter of its methods.
      */
     export function MonoSelect(selectionService: SelectionService, handler: UriCommandHandler<URI>): UriAwareCommandHandler<URI> {
-        /* eslint-disable-next-line deprecation/deprecation*/ // Safe to use when the generic and the options agree.
+        /* eslint-disable-next-line @typescript-eslint/no-deprecated */ // Safe to use when the generic and the options agree.
         return new UriAwareCommandHandler<URI>(selectionService, handler, { multi: false });
     }
 
@@ -141,7 +141,7 @@ export namespace UriAwareCommandHandler {
      * @returns a command handler for multi-select contexts that expects a `URI[]` as the first parameter of its methods.
      */
     export function MultiSelect(selectionService: SelectionService, handler: UriCommandHandler<URI[]>): UriAwareCommandHandler<URI[]> {
-        /* eslint-disable-next-line deprecation/deprecation*/ // Safe to use when the generic and the options agree.
+        /* eslint-disable-next-line @typescript-eslint/no-deprecated */ // Safe to use when the generic and the options agree.
         return new UriAwareCommandHandler<URI[]>(selectionService, handler, { multi: true });
     }
 }

@@ -16,10 +16,10 @@
 
 import * as chai from 'chai';
 import * as theia from '@theia/plugin';
-import { TerminalServiceMain, Plugin, TerminalOptions } from '../common/plugin-api-rpc';
-import { RPCProtocol, ProxyIdentifier } from '../common/rpc-protocol';
-import { TerminalServiceExtImpl, TerminalExtImpl } from './terminal-ext';
-import { TerminalExitReason } from './types-impl';
+import { TerminalServiceMain, Plugin, TerminalOptions } from '../common/plugin-api-rpc.js';
+import { RPCProtocol, ProxyIdentifier } from '../common/rpc-protocol.js';
+import { TerminalServiceExtImpl, TerminalExtImpl } from './terminal-ext.js';
+import { TerminalExitReason } from './types-impl.js';
 
 const expect = chai.expect;
 

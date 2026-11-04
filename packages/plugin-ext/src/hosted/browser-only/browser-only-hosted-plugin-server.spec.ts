@@ -21,8 +21,8 @@ let disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { DeployedPlugin, PluginType } from '../../common';
-import { BrowserOnlyHostedPluginServer, BrowserOnlyPluginOptions } from './browser-only-hosted-plugin-server';
+import { DeployedPlugin, PluginType } from '../../common/index.js';
+import { BrowserOnlyHostedPluginServer, BrowserOnlyPluginOptions } from './browser-only-hosted-plugin-server.js';
 
 disableJSDOM();
 
