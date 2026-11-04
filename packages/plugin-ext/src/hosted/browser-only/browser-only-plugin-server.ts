@@ -24,7 +24,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { PluginDeployOptions, PluginIdentifiers, PluginServer, PluginStorageKind, PluginType } from '../../common';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
-import { PluginPaths } from '../../main/common/paths/const';
+import { PluginPaths } from '../../main/common/paths/const.js';
 import { PluginPathsService } from '../../main/common/plugin-paths-protocol';
 
 const LOCK_NAME_PREFIX = 'theia:plugin-storage:';
