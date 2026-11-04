@@ -23,8 +23,8 @@ try { FrontendApplicationConfigProvider.set({}); } catch { /* another spec in th
 import { expect } from 'chai';
 import * as types from 'open-collaboration-protocol';
 import { MessageService } from '@theia/core';
-import { CollaborationInstance, CollaborationInstanceOptions } from './collaboration-instance';
-import { CollaborationWorkspaceService } from './collaboration-workspace-service';
+import { CollaborationInstance, CollaborationInstanceOptions } from './collaboration-instance.js';
+import { CollaborationWorkspaceService } from './collaboration-workspace-service.js';
 
 disableJSDOM();
 
