@@ -25,8 +25,8 @@ import * as Y from 'yjs';
 import * as awarenessProtocol from 'y-protocols/awareness';
 import { Emitter, URI } from '@theia/core';
 import { EditorWidget, Range } from '@theia/editor/lib/browser';
-import { CollaborationInstance, CollaborationInstanceOptions } from './collaboration-instance';
-import { CollaborationUtils } from './collaboration-utils';
+import { CollaborationInstance, CollaborationInstanceOptions } from './collaboration-instance.js';
+import { CollaborationUtils } from './collaboration-utils.js';
 
 disableJSDOM();
 
