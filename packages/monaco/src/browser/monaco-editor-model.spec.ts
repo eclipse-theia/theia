@@ -21,11 +21,11 @@ import { expect } from 'chai';
 import URI from '@theia/core/lib/common/uri';
 import { Resource } from '@theia/core/lib/common/resource';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
-import type { MonacoEditorModel as MonacoEditorModelType } from './monaco-editor-model';
-import type { MonacoToProtocolConverter as MonacoToProtocolConverterType } from './monaco-to-protocol-converter';
-import type { ProtocolToMonacoConverter as ProtocolToMonacoConverterType } from './protocol-to-monaco-converter';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation.js';
+import type { MonacoEditorModel as MonacoEditorModelType } from './monaco-editor-model.js';
+import type { MonacoToProtocolConverter as MonacoToProtocolConverterType } from './monaco-to-protocol-converter.js';
+import type { ProtocolToMonacoConverter as ProtocolToMonacoConverterType } from './protocol-to-monaco-converter.js';
 
 disableJSDOM();
 
@@ -37,9 +37,9 @@ describe('MonacoEditorModel save', () => {
     before(async () => {
         disableJSDOM = enableJSDOM();
         StandaloneServices.get(IInstantiationService);
-        ({ MonacoEditorModel } = await import('./monaco-editor-model'));
-        ({ MonacoToProtocolConverter } = await import('./monaco-to-protocol-converter'));
-        ({ ProtocolToMonacoConverter } = await import('./protocol-to-monaco-converter'));
+        ({ MonacoEditorModel } = await import('./monaco-editor-model.js'));
+        ({ MonacoToProtocolConverter } = await import('./monaco-to-protocol-converter.js'));
+        ({ ProtocolToMonacoConverter } = await import('./protocol-to-monaco-converter.js'));
     });
     after(() => disableJSDOM());
 
