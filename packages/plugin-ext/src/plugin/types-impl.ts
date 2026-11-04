@@ -114,7 +114,7 @@ export class URI extends CodeURI implements theia.Uri {
 
 @es5ClassCompat
 export class Disposable {
-    private disposable: undefined | (() => void);
+    #disposable: undefined | (() => void);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static from(...disposables: { dispose(): any }[]): Disposable {
@@ -130,15 +130,15 @@ export class Disposable {
     }
 
     constructor(func: () => void) {
-        this.disposable = func;
+        this.#disposable = func;
     }
     /**
      * Dispose this object.
      */
     dispose(): void {
-        if (this.disposable) {
-            this.disposable();
-            this.disposable = undefined;
+        if (this.#disposable) {
+            this.#disposable();
+            this.#disposable = undefined;
         }
     }
 
