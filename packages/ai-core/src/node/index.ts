@@ -14,6 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './proxy-util';
-export * from './model-snapshot-store';
-export * from './model-discovery-fetcher';
+export * from './proxy-util.js';
+export * from './model-snapshot-store.js';
+export * from './model-discovery-fetcher.js';

@@ -2,6 +2,7 @@
   "name": "@theia/scanoss",
   "version": "1.76.0",
   "description": "Theia - SCANOSS Integration",
+  "type": "module",
   "dependencies": {
     "@theia/core": "1.76.0",
     "scanoss": "^0.40.2",
@@ -33,6 +34,15 @@
     "src"
   ],
   "main": "lib/common",
+  "exports": {
+    ".": "./lib/common/index.js",
+    "./package.json": "./package.json",
+    "./lib/common": "./lib/common/index.js",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "scripts": {
     "build": "theiaext build",
     "clean": "theiaext clean",

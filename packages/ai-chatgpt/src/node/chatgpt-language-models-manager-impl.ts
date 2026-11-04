@@ -20,11 +20,11 @@ import { ILogger, nls } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-model-utils';
 import { getOpenAiModelDefaults } from '@theia/ai-openai/lib/node/openai-model-defaults';
-import { CHATGPT_RESPONSES_BASE_URL, ChatGptLanguageModelsManager, ChatGptModelDescription } from '../common';
-import { ChatGptBackendAuthService } from './chatgpt-auth-service';
-import { ChatGptModel } from './chatgpt-language-model';
-import { ChatGptModelCatalog } from './chatgpt-model-catalog';
-import { ChatGptResponseApiUtils } from './chatgpt-response-api-utils';
+import { CHATGPT_RESPONSES_BASE_URL, ChatGptLanguageModelsManager, ChatGptModelDescription } from '../common/index.js';
+import { ChatGptBackendAuthService } from './chatgpt-auth-service.js';
+import { ChatGptModel } from './chatgpt-language-model.js';
+import { ChatGptModelCatalog } from './chatgpt-model-catalog.js';
+import { ChatGptResponseApiUtils } from './chatgpt-response-api-utils.js';
 
 @injectable()
 export class ChatGptLanguageModelsManagerImpl implements ChatGptLanguageModelsManager {

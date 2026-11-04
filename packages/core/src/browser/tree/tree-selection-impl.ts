@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { Tree, TreeNode } from './tree';
-import { Event, Emitter } from '../../common';
-import { TreeSelectionState, FocusableTreeSelection } from './tree-selection-state';
-import { TreeSelectionService, SelectableTreeNode, TreeSelection } from './tree-selection';
-import { TreeFocusService } from './tree-focus-service';
+import { Tree, TreeNode } from './tree.js';
+import { Event, Emitter } from '../../common/index.js';
+import { TreeSelectionState, FocusableTreeSelection } from './tree-selection-state.js';
+import { TreeSelectionService, SelectableTreeNode, TreeSelection } from './tree-selection.js';
+import { TreeFocusService } from './tree-focus-service.js';
 
 @injectable()
 export class TreeSelectionServiceImpl implements TreeSelectionService {

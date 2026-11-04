@@ -16,9 +16,9 @@
 
 import { interfaces, Container } from '@theia/core/shared/inversify';
 import { createTreeContainer } from '@theia/core/lib/browser';
-import { CallHierarchyTree } from './callhierarchy-tree';
-import { CallHierarchyTreeModel } from './callhierarchy-tree-model';
-import { CallHierarchyTreeWidget } from './callhierarchy-tree-widget';
+import { CallHierarchyTree } from './callhierarchy-tree.js';
+import { CallHierarchyTreeModel } from './callhierarchy-tree-model.js';
+import { CallHierarchyTreeWidget } from './callhierarchy-tree-widget.js';
 
 function createHierarchyTreeContainer(parent: interfaces.Container): Container {
     const child = createTreeContainer(parent, {

@@ -1,1 +1,1 @@
-module.exports = require('vscode-languageserver-types');
+export * from 'vscode-languageserver-types';

@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 
-import { DeltaKind, TreeDelta, TreeDeltaBuilderImpl } from './tree-delta';
+import { DeltaKind, TreeDelta, TreeDeltaBuilderImpl } from './tree-delta.js';
 import * as chai from 'chai';
 
 const expect = chai.expect;

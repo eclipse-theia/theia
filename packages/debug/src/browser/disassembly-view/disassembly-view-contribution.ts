@@ -16,15 +16,15 @@
 
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { AbstractViewContribution, bindViewContribution, WidgetFactory } from '@theia/core/lib/browser';
-import { DisassemblyViewWidget } from './disassembly-view-widget';
+import { DisassemblyViewWidget } from './disassembly-view-widget.js';
 import { Command, CommandRegistry, MenuModelRegistry, nls } from '@theia/core';
-import { DebugService } from '../../common/debug-service';
+import { DebugService } from '../../common/debug-service.js';
 import { EditorManager, EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { DebugSessionManager } from '../debug-session-manager';
-import { DebugStackFrame } from '../model/debug-stack-frame';
-import { DebugSession, DebugState } from '../debug-session';
-import { DebugStackFramesWidget } from '../view/debug-stack-frames-widget';
+import { DebugSessionManager } from '../debug-session-manager.js';
+import { DebugStackFrame } from '../model/debug-stack-frame.js';
+import { DebugSession, DebugState } from '../debug-session.js';
+import { DebugStackFramesWidget } from '../view/debug-stack-frames-widget.js';
 
 export const OPEN_DISASSEMBLY_VIEW_COMMAND: Command = {
     id: 'open-disassembly-view',

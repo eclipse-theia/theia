@@ -27,9 +27,9 @@ import {
     PreferenceRegistryMain,
     PreferenceData,
     PreferenceChangeExt,
-} from '../../common/plugin-api-rpc';
-import { RPCProtocol } from '../../common/rpc-protocol';
-import { ConfigurationTarget } from '../../plugin/types-impl';
+} from '../../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
+import { ConfigurationTarget } from '../../plugin/types-impl.js';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';

@@ -2,6 +2,7 @@
   "name": "@theia/dev-container",
   "version": "1.76.0",
   "description": "Theia - Dev Container Extension",
+  "type": "module",
   "dependencies": {
     "@theia/core": "1.76.0",
     "@theia/output": "1.76.0",
@@ -52,5 +53,12 @@
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "21358137e41342742707f660b8e222f940a27652",
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  }
 }

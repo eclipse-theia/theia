@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { nls } from '../nls';
-import { isOSX, isWindows } from '../os';
+import { nls } from '../nls.js';
+import { isOSX, isWindows } from '../os.js';
 
 /**
  * Hint appended to API key preference descriptions on Linux, where environment variables

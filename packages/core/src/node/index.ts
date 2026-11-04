@@ -14,14 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './backend-application';
-export * from './backend-global';
-export * from './debug';
-export * from '../common/file-uri';
-export * from './messaging';
-export * from './cli';
-export * from './setting-service';
-export { FileSystemLocking } from './filesystem-locking';
-export { BundledResourceProvider } from './bundled-resource-provider';
-export { BackendRequestAllowedContribution } from './request/backend-request-facade';
-export { HttpConnectionValidator } from './hosting/browser-connection-token';
+export * from './backend-application.js';
+export * from './backend-global.js';
+export * from './debug.js';
+export * from '../common/file-uri.js';
+export * from './messaging/index.js';
+export * from './cli.js';
+export * from './setting-service.js';
+export { FileSystemLocking } from './filesystem-locking.js';
+export { BundledResourceProvider } from './bundled-resource-provider.js';
+export { BackendRequestAllowedContribution } from './request/backend-request-facade.js';
+export { HttpConnectionValidator } from './hosting/browser-connection-token.js';

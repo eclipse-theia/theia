@@ -19,10 +19,10 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { inject, injectable, interfaces, named } from 'inversify';
-import { EnvVariablesServer } from '../common/env-variables';
-import { FileUri } from '../common/file-uri';
-import { ILogger } from '../common/logger';
-import { FileSystemLocking } from './filesystem-locking';
+import { EnvVariablesServer } from '../common/env-variables/index.js';
+import { FileUri } from '../common/file-uri.js';
+import { ILogger } from '../common/logger.js';
+import { FileSystemLocking } from './filesystem-locking.js';
 
 export const BundledResourceProvider = Symbol('BundledResourceProvider') as symbol & interfaces.Abstract<BundledResourceProvider>;
 /**

@@ -16,11 +16,11 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { register } from 'node:module';
+import Module, { register } from 'node:module';
 import * as theia from '@theia/plugin';
 import { isEqualOrParent } from '@theia/core/lib/common/paths';
 import { BackendInitializationFn, PluginAPIFactory, Plugin, emptyPlugin } from '@theia/plugin-ext';
-import { VSCODE_DEFAULT_API_VERSION } from '../common/plugin-vscode-types';
+import { VSCODE_DEFAULT_API_VERSION } from '../common/plugin-vscode-types.js';
 
 process.env['VSCODE_PID'] = process.env['THEIA_PARENT_PID'];
 
@@ -50,7 +50,8 @@ function createVSCodeAPI(apiFactory: PluginAPIFactory, plugin: Plugin): typeof t
 }
 
 function overrideInternalLoad(): void {
-    const module = require('module');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const module: any = Module;
     const vscodeModuleName = 'vscode';
     // save original load method
     const internalLoad = module._load;

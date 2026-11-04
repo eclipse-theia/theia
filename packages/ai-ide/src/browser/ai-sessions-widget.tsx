@@ -17,10 +17,10 @@
 import { ChatAgentService, ChatService, ChatSessionMetadata } from '@theia/ai-chat';
 import { AI_CHAT_OPEN_SESSION } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 import { formatTimeAgo } from '@theia/ai-chat-ui/lib/browser/chat-date-utils';
-import { ChatSessionItemAction, ChatSessionItemActionContribution } from './chat-session-item-action-contribution';
-import { ChatSessionListService } from './chat-session-list-service';
-import { SessionRow, SessionsList } from './chat-session-list-components';
-import { ChatSessionItem } from './chat-session-item';
+import { ChatSessionItemAction, ChatSessionItemActionContribution } from './chat-session-item-action-contribution.js';
+import { ChatSessionListService } from './chat-session-list-service.js';
+import { SessionRow, SessionsList } from './chat-session-list-components.js';
+import { ChatSessionItem } from './chat-session-item.js';
 import { CommandRegistry, ContributionProvider, nls } from '@theia/core';
 import { codicon, HoverService, ReactWidget } from '@theia/core/lib/browser';
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';

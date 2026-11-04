@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import URI from '../../common/uri';
-import { Resource } from '../resource';
+import URI from '../../common/uri.js';
+import { Resource } from '../resource.js';
 
 @injectable()
 export class MockResourceProvider {

@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { ContainerCreationContribution } from '../docker-container-service';
+import { ContainerCreationContribution } from '../docker-container-service.js';
 import { MaybePromise } from '@theia/core';
 import { ContainerCreateOptions } from 'dockerode';
-import { ContainerOutputProvider } from '../../electron-common/container-output-provider';
-import { DevContainerConfiguration } from '../devcontainer-file';
+import { ContainerOutputProvider } from '../../electron-common/container-output-provider.js';
+import { DevContainerConfiguration } from '../devcontainer-file.js';
 import * as Docker from 'dockerode';
-import { parseWorkspaceMount } from '../dockerode-utils';
+import { parseWorkspaceMount } from '../dockerode-utils.js';
 
 @injectable()
 export class WorkspaceCreationContribution implements ContainerCreationContribution {

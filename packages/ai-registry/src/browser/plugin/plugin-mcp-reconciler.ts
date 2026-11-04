@@ -17,9 +17,9 @@
 import { Disposable, DisposableCollection, ILogger } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
-import { PluginInstallClientImpl } from './plugin-install-client';
-import { PluginInstallService } from './plugin-install-service';
-import { PluginMcpRegistrar } from './plugin-mcp-registrar';
+import { PluginInstallClientImpl } from './plugin-install-client.js';
+import { PluginInstallService } from './plugin-install-service.js';
+import { PluginMcpRegistrar } from './plugin-mcp-registrar.js';
 
 /**
  * Keeps `ai-features.mcp.mcpServers` in step with what is actually in the plugins root, so that an

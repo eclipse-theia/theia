@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { CustomAgentPromptVariant } from '@theia/ai-core';
-import { CustomChatAgent } from '../common';
+import { CustomChatAgent } from '../common/index.js';
 
 export const CustomAgentFactory = Symbol('CustomAgentFactory');
 export type CustomAgentFactory = (

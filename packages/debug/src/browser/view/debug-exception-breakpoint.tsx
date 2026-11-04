@@ -16,13 +16,13 @@
 
 import * as React from '@theia/core/shared/react';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
-import { BreakpointManager } from '../breakpoint/breakpoint-manager';
-import { ExceptionBreakpoint } from '../breakpoint/breakpoint-marker';
+import { BreakpointManager } from '../breakpoint/breakpoint-manager.js';
+import { ExceptionBreakpoint } from '../breakpoint/breakpoint-marker.js';
 import { SingleTextInputDialog } from '@theia/core/lib/browser/dialogs';
 import { TREE_NODE_INFO_CLASS, codicon, TreeWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core';
-import { DebugBreakpoint, DebugBreakpointDecoration, DebugBreakpointOptions } from '../model/debug-breakpoint';
-import { DebugCommands } from '../debug-commands';
+import { DebugBreakpoint, DebugBreakpointDecoration, DebugBreakpointOptions } from '../model/debug-breakpoint.js';
+import { DebugCommands } from '../debug-commands.js';
 
 export class DebugExceptionBreakpoint extends DebugBreakpoint<ExceptionBreakpoint> implements TreeElement {
 

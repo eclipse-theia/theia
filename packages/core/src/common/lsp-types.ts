@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Range } from 'vscode-languageserver-protocol';
-import { isNumber, isObject, isString, isUndefined } from './types';
+import { isNumber, isObject, isString, isUndefined } from './types.js';
 
 export interface TextDocumentContentChangeDelta {
     readonly range: Range;

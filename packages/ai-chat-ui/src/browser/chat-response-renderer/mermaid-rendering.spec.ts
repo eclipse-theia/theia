@@ -19,7 +19,7 @@ const disableJSDOM = enableJSDOM();
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
-import { sanitizeDiagram, splitMermaidSegments } from './mermaid-rendering';
+import { sanitizeDiagram, splitMermaidSegments } from './mermaid-rendering.js';
 disableJSDOM();
 
 describe('sanitizeDiagram', () => {

@@ -16,7 +16,7 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { TextReplacementContribution } from '@theia/core/lib/browser/preload/text-replacement-contribution';
-import { TextSampleReplacementContribution } from './preload/text-replacement-sample';
+import { TextSampleReplacementContribution } from './preload/text-replacement-sample.js';
 
 export default new ContainerModule(bind => {
     bind(TextReplacementContribution).to(TextSampleReplacementContribution).inSingletonScope();

@@ -19,7 +19,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { PromptService } from '@theia/ai-core/lib/common';
 import { nls } from '@theia/core';
 import { AGENT_DELEGATION_FUNCTION_ID } from '@theia/ai-core';
-import { GitHubChatAgentId } from './github-chat-agent';
+import { GitHubChatAgentId } from './github-chat-agent.js';
 
 @injectable()
 export class AddressGhReviewCommandContribution implements FrontendApplicationContribution {

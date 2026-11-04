@@ -21,12 +21,12 @@ import express from '@theia/core/shared/express';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as crypto from 'crypto';
 import * as http from 'http';
-import { ExternalApiConfigService, ExternalApiServerConfig } from '../common/external-api-configuration';
-import { EXTERNAL_API_DEFAULT_HOSTNAME, EXTERNAL_API_PORT_PREF, EXTERNAL_API_TOKEN_PREF } from '../common/external-api-preferences';
-import { ExternalApiContribution } from './external-api-contribution';
-import { ExternalApiResponseWriter } from './external-api-response-writer';
-import { ExternalApiRouterFactory } from './external-api-router';
-import { OpenApiDocumentBuilder, OpenApiDocumentSource } from './openapi-document-builder';
+import { ExternalApiConfigService, ExternalApiServerConfig } from '../common/external-api-configuration.js';
+import { EXTERNAL_API_DEFAULT_HOSTNAME, EXTERNAL_API_PORT_PREF, EXTERNAL_API_TOKEN_PREF } from '../common/external-api-preferences.js';
+import { ExternalApiContribution } from './external-api-contribution.js';
+import { ExternalApiResponseWriter } from './external-api-response-writer.js';
+import { ExternalApiRouterFactory } from './external-api-router.js';
+import { OpenApiDocumentBuilder, OpenApiDocumentSource } from './openapi-document-builder.js';
 
 /**
  * Serves the {@link ExternalApiContribution}s, either on a dedicated HTTP server or on

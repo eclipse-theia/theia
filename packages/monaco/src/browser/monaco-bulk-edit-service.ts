@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { MonacoWorkspace } from './monaco-workspace';
+import { MonacoWorkspace } from './monaco-workspace.js';
 import {
     IBulkEditOptions, IBulkEditPreviewHandler, IBulkEditResult, IBulkEditService, ResourceEdit
-} from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
-import { IDisposable } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
-import { WorkspaceEdit } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
+} from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService.js';
+import { IDisposable } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle.js';
+import { WorkspaceEdit } from '@theia/monaco-editor-core/esm/vs/editor/common/languages.js';
 
 @injectable()
 export class MonacoBulkEditService implements IBulkEditService {

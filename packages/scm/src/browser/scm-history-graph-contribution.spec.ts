@@ -20,9 +20,9 @@ const disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
 import { Command, CommandHandler, CommandRegistry } from '@theia/core/lib/common/command';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { ScmHistoryGraphContribution, ScmHistoryGraphCommands } from './scm-history-graph-contribution';
-import { ScmHistoryGraphModel, ScmHistoryViewMode } from './scm-history-graph-model';
-import { ScmHistoryProvider } from './scm-provider';
+import { ScmHistoryGraphContribution, ScmHistoryGraphCommands } from './scm-history-graph-contribution.js';
+import { ScmHistoryGraphModel, ScmHistoryViewMode } from './scm-history-graph-model.js';
+import { ScmHistoryProvider } from './scm-provider.js';
 
 disableJSDOM();
 

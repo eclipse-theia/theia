@@ -20,7 +20,7 @@ import { isArray, isObject, nls } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import URI from '@theia/core/lib/common/uri';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { WorkspaceFileService } from '../common';
+import { WorkspaceFileService } from '../common/index.js';
 
 export interface SchemaUpdateMessage {
     key: string,
@@ -139,6 +139,10 @@ export const workspaceSchema: IJSONSchema = {
                 properties: {
                     path: {
                         type: 'string',
+                    },
+                    name: {
+                        type: 'string',
+                        description: nls.localize('theia/workspace/schema/folders/name/description', 'An optional name for the folder, shown instead of the folder name')
                     }
                 },
                 required: ['path']

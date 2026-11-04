@@ -25,24 +25,24 @@ import {
     CLAUDE_CODE_SERVICE_PATH,
     ClaudeCodeClient,
     ClaudeCodeService
-} from '../common/claude-code-service';
-import { ClaudeCodePreferencesSchema } from '../common/claude-code-preferences';
-import { ClaudeCodeChatAgent } from './claude-code-chat-agent';
-import { ClaudeCodeEditToolService, ClaudeCodeEditToolServiceImpl } from './claude-code-edit-tool-service';
-import { FileEditBackupService, FileEditBackupServiceImpl } from './claude-code-file-edit-backup-service';
-import { ClaudeCodeClientImpl, ClaudeCodeFrontendService } from './claude-code-frontend-service';
-import { BashToolRenderer } from './renderers/bash-tool-renderer';
-import { EditToolRenderer } from './renderers/edit-tool-renderer';
-import { GlobToolRenderer } from './renderers/glob-tool-renderer';
-import { GrepToolRenderer } from './renderers/grep-tool-renderer';
-import { LSToolRenderer } from './renderers/ls-tool-renderer';
-import { MultiEditToolRenderer } from './renderers/multiedit-tool-renderer';
-import { ReadToolRenderer } from './renderers/read-tool-renderer';
-import { TodoWriteRenderer } from './renderers/todo-write-renderer';
-import { WebFetchToolRenderer } from './renderers/web-fetch-tool-renderer';
-import { WriteToolRenderer } from './renderers/write-tool-renderer';
-import { ClaudeCodeSlashCommandsContribution } from './claude-code-slash-commands-contribution';
-import { ClaudeCodeCommandContribution } from './claude-code-command-contribution';
+} from '../common/claude-code-service.js';
+import { ClaudeCodePreferencesSchema } from '../common/claude-code-preferences.js';
+import { ClaudeCodeChatAgent } from './claude-code-chat-agent.js';
+import { ClaudeCodeEditToolService, ClaudeCodeEditToolServiceImpl } from './claude-code-edit-tool-service.js';
+import { FileEditBackupService, FileEditBackupServiceImpl } from './claude-code-file-edit-backup-service.js';
+import { ClaudeCodeClientImpl, ClaudeCodeFrontendService } from './claude-code-frontend-service.js';
+import { BashToolRenderer } from './renderers/bash-tool-renderer.js';
+import { EditToolRenderer } from './renderers/edit-tool-renderer.js';
+import { GlobToolRenderer } from './renderers/glob-tool-renderer.js';
+import { GrepToolRenderer } from './renderers/grep-tool-renderer.js';
+import { LSToolRenderer } from './renderers/ls-tool-renderer.js';
+import { MultiEditToolRenderer } from './renderers/multiedit-tool-renderer.js';
+import { ReadToolRenderer } from './renderers/read-tool-renderer.js';
+import { TodoWriteRenderer } from './renderers/todo-write-renderer.js';
+import { WebFetchToolRenderer } from './renderers/web-fetch-tool-renderer.js';
+import { WriteToolRenderer } from './renderers/write-tool-renderer.js';
+import { ClaudeCodeSlashCommandsContribution } from './claude-code-slash-commands-contribution.js';
+import { ClaudeCodeCommandContribution } from './claude-code-command-contribution.js';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: ClaudeCodePreferencesSchema });

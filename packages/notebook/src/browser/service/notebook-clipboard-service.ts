@@ -16,9 +16,9 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
-import { NotebookCellModel } from '../view-model/notebook-cell-model';
+import { NotebookCellModel } from '../view-model/notebook-cell-model.js';
 import { environment } from '@theia/core';
-import { CellData } from '../../common';
+import { CellData } from '../../common/index.js';
 
 @injectable()
 export class NotebookClipboardService {

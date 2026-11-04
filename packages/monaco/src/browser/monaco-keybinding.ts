@@ -18,15 +18,15 @@ import { injectable, inject, postConstruct, named } from '@theia/core/shared/inv
 import {
     KeybindingContribution, KeybindingRegistry, KeybindingScope, KeyCode, layoutModifiersIncludeAltGraph, layoutModifiersIncludeShift
 } from '@theia/core/lib/browser';
-import { MonacoCommands } from './monaco-command';
-import { MonacoCommandRegistry } from './monaco-command-registry';
+import { MonacoCommands } from './monaco-command.js';
+import { MonacoCommandRegistry } from './monaco-command-registry.js';
 import { CommandRegistry, DisposableCollection, environment, isOSX, ILogger } from '@theia/core';
-import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
-import { KeybindingsRegistry } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/keybindingsRegistry';
-import { StandaloneKeybindingService, StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { IKeybindingService } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/keybinding';
-import { MonacoContextKeyService } from './monaco-context-key-service';
-import { KEY_CODE_MAP } from './monaco-keycode-map';
+import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding.js';
+import { KeybindingsRegistry } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/keybindingsRegistry.js';
+import { StandaloneKeybindingService, StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { IKeybindingService } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/keybinding.js';
+import { MonacoContextKeyService } from './monaco-context-key-service.js';
+import { KEY_CODE_MAP } from './monaco-keycode-map.js';
 import * as monaco from '@theia/monaco-editor-core';
 
 @injectable()

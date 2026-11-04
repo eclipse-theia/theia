@@ -16,18 +16,18 @@
 
 import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import { MarkdownRendererService as CodeMarkdownRenderer }
-    from '@theia/monaco-editor-core/esm/vs/platform/markdown/browser/markdownRenderer';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+    from '@theia/monaco-editor-core/esm/vs/platform/markdown/browser/markdownRenderer.js';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
 import * as monaco from '@theia/monaco-editor-core';
 import { OpenerService, WidgetOpenerOptions, open } from '@theia/core/lib/browser';
-import { IOpenerService, OpenExternalOptions, OpenInternalOptions } from '@theia/monaco-editor-core/esm/vs/platform/opener/common/opener';
+import { IOpenerService, OpenExternalOptions, OpenInternalOptions } from '@theia/monaco-editor-core/esm/vs/platform/opener/common/opener.js';
 import { HttpOpenHandlerOptions } from '@theia/core/lib/browser/http-open-handler';
 import { URI } from '@theia/core/lib/common/uri';
 import { MarkdownRenderer, MarkdownRenderOptions, MarkdownRenderResult } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { markMarkdownLinksWired } from '@theia/core/lib/browser/markdown-rendering/markdown-link-handler';
-import { MarkdownRenderOptions as MonacoMarkdownRenderOptions } from '@theia/monaco-editor-core/esm/vs/base/browser/markdownRenderer';
+import { MarkdownRenderOptions as MonacoMarkdownRenderOptions } from '@theia/monaco-editor-core/esm/vs/base/browser/markdownRenderer.js';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
-import { DisposableStore } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
+import { DisposableStore } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle.js';
 import { DisposableCollection, DisposableGroup, ILogger } from '@theia/core';
 
 @injectable()

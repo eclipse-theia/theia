@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './typehierarchy';
-export * from './typehierarchy-contribution';
-export * from './typehierarchy-frontend-module';
-export * from './typehierarchy-service';
+export * from './typehierarchy.js';
+export * from './typehierarchy-contribution.js';
+export * from './typehierarchy-frontend-module.js';
+export * from './typehierarchy-service.js';

@@ -26,12 +26,12 @@ import { Severity } from '@theia/core/lib/common/severity';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
-import { DebugSession } from '../debug-session';
-import { DebugSessionManager, DidChangeActiveDebugSession } from '../debug-session-manager';
-import { DebugConsoleSession, DebugConsoleSessionFactory } from './debug-console-session';
+import { DebugSession } from '../debug-session.js';
+import { DebugSessionManager, DidChangeActiveDebugSession } from '../debug-session-manager.js';
+import { DebugConsoleSession, DebugConsoleSessionFactory } from './debug-console-session.js';
 import { Disposable, DisposableCollection, Emitter, Event, InMemoryResources } from '@theia/core';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
-import debounce = require('@theia/core/shared/lodash.debounce');
+import debounce from '@theia/core/shared/lodash.debounce';
 
 export type InDebugReplContextKey = ContextKey<boolean>;
 export const InDebugReplContextKey = Symbol('inDebugReplContextKey');

@@ -17,19 +17,19 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container, ContainerModule, injectable, preDestroy } from 'inversify';
-import { bindContributionProvider, ILogger, Stopwatch } from '../common';
-import { Deferred } from '../common/promise-util';
-import { NodeStopwatch } from './performance/node-stopwatch';
-import { ProcessUtils } from './process-utils';
+import { bindContributionProvider, ILogger, Stopwatch } from '../common/index.js';
+import { Deferred } from '../common/promise-util.js';
+import { NodeStopwatch } from './performance/node-stopwatch.js';
+import { ProcessUtils } from './process-utils.js';
 import {
     BackendApplication,
     BackendApplicationCliContribution,
     BackendApplicationContribution,
     EarlyExpressMiddleware,
     RootContainer
-} from './backend-application';
-import { CliContribution } from './cli';
-import { MockLogger } from '../common/test/mock-logger';
+} from './backend-application.js';
+import { CliContribution } from './cli.js';
+import { MockLogger } from '../common/test/mock-logger.js';
 
 /**
  * Test subclass that exposes the protected `gracefulShutdown` for direct testing.

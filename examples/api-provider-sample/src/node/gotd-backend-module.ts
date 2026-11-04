@@ -15,11 +15,11 @@
 // *****************************************************************************
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ExtPluginApiProvider } from '@theia/plugin-ext';
-import { ExtPluginGotdApiProvider } from './ext-plugin-gotd-api-provider';
+import { ExtPluginGotdApiProvider } from './ext-plugin-gotd-api-provider.js';
 import { MainPluginApiProvider } from '@theia/plugin-ext/lib/common/plugin-ext-api-contribution';
-import { GotdMainPluginApiProvider } from './gotd-main-plugin-provider';
-import { GreetingMain } from '../common/plugin-api-rpc';
-import { GreetingMainImpl } from './greeting-main-impl';
+import { GotdMainPluginApiProvider } from './gotd-main-plugin-provider.js';
+import { GreetingMain } from '../common/plugin-api-rpc.js';
+import { GreetingMainImpl } from './greeting-main-impl.js';
 
 export default new ContainerModule(bind => {
     bind(Symbol.for(ExtPluginApiProvider)).to(ExtPluginGotdApiProvider).inSingletonScope();

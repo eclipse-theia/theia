@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import * as chai from 'chai';
-import { Path } from './path';
-import URI from './uri';
+import { Path } from './path.js';
+import URI from './uri.js';
 
 const expect = chai.expect;
 

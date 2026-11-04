@@ -16,8 +16,8 @@
 
 import * as http from 'http';
 import { inject, injectable } from 'inversify';
-import { BackendRemoteService } from '../../node/remote/backend-remote-service';
-import { WsRequestValidatorContribution } from '../../node/ws-request-validators';
+import { BackendRemoteService } from '../../node/remote/backend-remote-service.js';
+import { WsRequestValidatorContribution } from '../../node/ws-request-validators.js';
 
 @injectable()
 export class ElectronWsOriginValidator implements WsRequestValidatorContribution {

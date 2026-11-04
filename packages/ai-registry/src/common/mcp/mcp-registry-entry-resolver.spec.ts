@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { AIRegistryConfiguration } from '../ai-registry-configuration';
-import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from './mcp-registry-entry-resolver';
-import { RegistryMCPServer } from './mcp-registry-types';
+import { AIRegistryConfiguration } from '../ai-registry-configuration.js';
+import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from './mcp-registry-entry-resolver.js';
+import { RegistryMCPServer } from './mcp-registry-types.js';
 import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import * as sinon from 'sinon';

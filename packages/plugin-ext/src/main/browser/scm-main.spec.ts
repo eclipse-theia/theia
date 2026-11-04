@@ -16,8 +16,8 @@
 
 import { expect } from 'chai';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
-import { ScmMainImpl } from './scm-main';
-import { ScmRawResource } from '../../common/plugin-api-rpc';
+import { ScmMainImpl } from './scm-main.js';
+import { ScmRawResource } from '../../common/plugin-api-rpc.js';
 import URI from '@theia/core/lib/common/uri';
 import { URI as vscodeURI } from '@theia/core/shared/vscode-uri';
 

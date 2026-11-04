@@ -19,11 +19,11 @@
 import { injectable, decorate, unmanaged } from 'inversify';
 import { Title, Widget } from '@lumino/widgets';
 import { Message, MessageLoop } from '@lumino/messaging';
-import { Emitter, Event, Disposable, DisposableCollection, MaybePromise, isObject } from '../../common';
-import { KeyCode, KeysOrKeyCodes } from '../keyboard/keys';
+import { Emitter, Event, Disposable, DisposableCollection, MaybePromise, isObject } from '../../common/index.js';
+import { KeyCode, KeysOrKeyCodes } from '../keyboard/keys.js';
 
-import PerfectScrollbar from 'perfect-scrollbar';
-import { PreviewableWidget } from '../widgets/previewable-widget';
+import { PerfectScrollbar } from './perfect-scrollbar.js';
+import { PreviewableWidget } from '../widgets/previewable-widget.js';
 import { Slot } from '@lumino/signaling';
 
 decorate(injectable(), Widget);

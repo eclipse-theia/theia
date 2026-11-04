@@ -14,9 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import Module, { register } from 'node:module';
 import * as theia from '@theia/plugin';
-import { BackendInitializationFn } from '../../../common/plugin-protocol';
-import { PluginAPIFactory, Plugin, emptyPlugin } from '../../../common/plugin-api-rpc';
+import { BackendInitializationFn } from '../../../common/plugin-protocol.js';
+import { PluginAPIFactory, Plugin, emptyPlugin } from '../../../common/plugin-api-rpc.js';
 
 const pluginsApiImpl = new Map<string, typeof theia>();
 const plugins = new Array<Plugin>();
@@ -40,7 +41,8 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
 };
 
 function overrideInternalLoad(): void {
-    const module = require('module');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const module: any = Module;
     // save original load method
     const internalLoad = module._load;
 
@@ -64,8 +66,66 @@ function overrideInternalLoad(): void {
 
         return defaultApi;
     };
+
+    registerESMLoaderHook();
 }
 
 function findPlugin(filePath: string): Plugin | undefined {
     return plugins.find(plugin => filePath.startsWith(plugin.pluginFolder));
+}
+
+/**
+ * Register an ESM loader hook so that `import '@theia/plugin'` from an ESM plugin
+ * resolves through the same `module._load` patch above.
+ *
+ * Mirrors the mechanism used for the `vscode` specifier in `plugin-vscode-init.ts`:
+ * a unique synthetic CommonJS module is emitted per importing parent so each ESM
+ * plugin receives its own API instance, and the API's top-level namespace is copied
+ * into `exports.<name>` so named ESM imports (e.g. `import { commands } from '@theia/plugin'`)
+ * work via `cjs-module-lexer`.
+ */
+function registerESMLoaderHook(): void {
+    const sampleApi = plugins.length > 0 ? pluginsApiImpl.get(plugins[0].model.id) : undefined;
+    const apiKeys = sampleApi ? Object.keys(sampleApi) : [];
+    const loaderSource = `
+import { fileURLToPath } from 'node:url';
+const SHIM_URL_PREFIX = 'theia-plugin-shim:///theia.cjs?parent=';
+const API_KEYS = ${JSON.stringify(apiKeys)};
+
+export async function resolve(specifier, context, nextResolve) {
+    if (specifier === '@theia/plugin' && context.parentURL && context.parentURL.startsWith('file:')) {
+        return {
+            shortCircuit: true,
+            url: SHIM_URL_PREFIX + encodeURIComponent(context.parentURL),
+            format: 'commonjs'
+        };
+    }
+    return nextResolve(specifier, context);
+}
+
+export async function load(url, context, nextLoad) {
+    if (url.startsWith(SHIM_URL_PREFIX)) {
+        const parentURL = decodeURIComponent(url.slice(SHIM_URL_PREFIX.length));
+        let parentPath = '';
+        if (parentURL.startsWith('file:')) {
+            try { parentPath = fileURLToPath(parentURL); } catch { parentPath = ''; }
+        }
+        const namedExports = API_KEYS
+            .map(k => 'exports[' + JSON.stringify(k) + '] = __api[' + JSON.stringify(k) + '];')
+            .join('\\n');
+        const source =
+            "const Module = require('module');\\n" +
+            "const __api = Module._load('@theia/plugin', { filename: " + JSON.stringify(parentPath) + " }, false);\\n" +
+            namedExports;
+        return { format: 'commonjs', shortCircuit: true, source };
+    }
+    return nextLoad(url, context);
+}
+`;
+    try {
+        const dataUrl = 'data:text/javascript;base64,' + Buffer.from(loaderSource, 'utf8').toString('base64');
+        register(dataUrl);
+    } catch (e) {
+        console.error('Failed to register Theia plugin ESM loader hook; ESM Theia plugins will not load:', e);
+    }
 }

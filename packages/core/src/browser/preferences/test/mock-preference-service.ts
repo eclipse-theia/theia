@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { Emitter, Event, OverridePreferenceName, PreferenceChange, PreferenceChanges, PreferenceInspection, PreferenceScope, PreferenceService } from '../../../common';
-import URI from '../../../common/uri';
+import { Emitter, Event, OverridePreferenceName, PreferenceChange, PreferenceChanges, PreferenceInspection, PreferenceScope, PreferenceService } from '../../../common/index.js';
+import URI from '../../../common/uri.js';
 
 @injectable()
 export class MockPreferenceService implements PreferenceService {

@@ -20,7 +20,7 @@ import {
     isValidTelemetryTopic,
     isValidTelemetryTopicPattern,
     matchesTelemetryTopic
-} from './telemetry-topic';
+} from './telemetry-topic.js';
 
 describe('telemetry topic contract', () => {
     const validNames = ['company/metric', 'Company/Metric', 'company/product/metric', 'company-1/metric_2', 'company.name/metric'];

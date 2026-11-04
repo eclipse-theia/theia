@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { DisposableCollection, Disposable } from '../common/disposable';
-import { Emitter } from '../common/event';
-import { ColorDefinition, ColorCssVariable } from '../common/color';
+import { DisposableCollection, Disposable } from '../common/disposable.js';
+import { Emitter } from '../common/event.js';
+import { ColorDefinition, ColorCssVariable } from '../common/color.js';
 
 @injectable()
 export class ColorRegistry {

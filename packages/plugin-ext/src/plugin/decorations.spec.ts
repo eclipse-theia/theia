@@ -17,10 +17,10 @@
 import { Emitter } from '@theia/core/lib/common/event';
 import * as chai from 'chai';
 import * as theia from '@theia/plugin';
-import { PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
-import { ProxyIdentifier, RPCProtocol } from '../common/rpc-protocol';
-import { DecorationsExtImpl } from './decorations';
-import { URI } from './types-impl';
+import { PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc.js';
+import { ProxyIdentifier, RPCProtocol } from '../common/rpc-protocol.js';
+import { DecorationsExtImpl } from './decorations.js';
+import { URI } from './types-impl.js';
 
 const expect = chai.expect;
 

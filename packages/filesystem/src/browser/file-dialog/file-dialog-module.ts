@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { LocationListRenderer, LocationListRendererFactory, LocationListRendererOptions } from '../location';
-import { FileDialogHiddenFilesToggleRenderer, HiddenFilesToggleRendererFactory } from './file-dialog-hidden-files-renderer';
-import { DefaultFileDialogService, FileDialogService } from './file-dialog-service';
-import { FileDialogTree } from './file-dialog-tree';
-import { FileDialogTreeFiltersRenderer, FileDialogTreeFiltersRendererFactory, FileDialogTreeFiltersRendererOptions } from './file-dialog-tree-filters-renderer';
+import { LocationListRenderer, LocationListRendererFactory, LocationListRendererOptions } from '../location/index.js';
+import { FileDialogHiddenFilesToggleRenderer, HiddenFilesToggleRendererFactory } from './file-dialog-hidden-files-renderer.js';
+import { DefaultFileDialogService, FileDialogService } from './file-dialog-service.js';
+import { FileDialogTree } from './file-dialog-tree.js';
+import { FileDialogTreeFiltersRenderer, FileDialogTreeFiltersRendererFactory, FileDialogTreeFiltersRendererOptions } from './file-dialog-tree-filters-renderer.js';
 export default new ContainerModule(bind => {
     bind(DefaultFileDialogService).toSelf().inSingletonScope();
     bind(FileDialogService).toService(DefaultFileDialogService);

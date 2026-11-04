@@ -10,7 +10,7 @@
 // *****************************************************************************
 
 import { PromptVariantSet } from '@theia/ai-core/lib/common';
-import { FILE, LANGUAGE, PREFIX, SUFFIX } from './code-completion-variables';
+import { FILE, LANGUAGE, PREFIX, SUFFIX } from './code-completion-variables.js';
 
 export const codeCompletionPrompts: PromptVariantSet[] = [{
     id: 'code-completion-system',

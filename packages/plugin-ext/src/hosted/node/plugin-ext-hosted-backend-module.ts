@@ -20,25 +20,25 @@ import { bindContributionProvider } from '@theia/core/lib/common/contribution-pr
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
-import { MetadataScanner } from './metadata-scanner';
-import { BackendPluginHostableFilter, HostedPluginServerImpl } from './plugin-service';
-import { HostedPluginReader } from './plugin-reader';
-import { HostedPluginSupport } from './hosted-plugin';
-import { TheiaPluginScanner } from './scanners/scanner-theia';
-import { HostedPluginServer, PluginScanner, HostedPluginClient, hostedServicePath, PluginDeployerHandler, PluginHostEnvironmentVariable } from '../../common/plugin-protocol';
-import { GrammarsReader } from './scanners/grammars-reader';
-import { HostedPluginProcess, HostedPluginProcessConfiguration } from './hosted-plugin-process';
-import { ExtPluginApiProvider } from '../../common/plugin-ext-api-contribution';
-import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
-import { PluginDeployerHandlerImpl } from './plugin-deployer-handler-impl';
-import { PluginUriFactory } from './scanners/plugin-uri-factory';
-import { FilePluginUriFactory } from './scanners/file-plugin-uri-factory';
-import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
-import { LanguagePackService, languagePackServicePath } from '../../common/language-pack-service';
-import { PluginLanguagePackService } from './plugin-language-pack-service';
+import { MetadataScanner } from './metadata-scanner.js';
+import { BackendPluginHostableFilter, HostedPluginServerImpl } from './plugin-service.js';
+import { HostedPluginReader } from './plugin-reader.js';
+import { HostedPluginSupport } from './hosted-plugin.js';
+import { TheiaPluginScanner } from './scanners/scanner-theia.js';
+import { HostedPluginServer, PluginScanner, HostedPluginClient, hostedServicePath, PluginDeployerHandler, PluginHostEnvironmentVariable } from '../../common/plugin-protocol.js';
+import { GrammarsReader } from './scanners/grammars-reader.js';
+import { HostedPluginProcess, HostedPluginProcessConfiguration } from './hosted-plugin-process.js';
+import { ExtPluginApiProvider } from '../../common/plugin-ext-api-contribution.js';
+import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution.js';
+import { PluginDeployerHandlerImpl } from './plugin-deployer-handler-impl.js';
+import { PluginUriFactory } from './scanners/plugin-uri-factory.js';
+import { FilePluginUriFactory } from './scanners/file-plugin-uri-factory.js';
+import { HostedPluginLocalizationService } from './hosted-plugin-localization-service.js';
+import { LanguagePackService, languagePackServicePath } from '../../common/language-pack-service.js';
+import { PluginLanguagePackService } from './plugin-language-pack-service.js';
 import { RpcConnectionHandler } from '@theia/core/lib/common/messaging/proxy-factory';
 import { ConnectionHandler } from '@theia/core/lib/common/messaging/handler';
-import { isConnectionScopedBackendPlugin } from '../common/hosted-plugin';
+import { isConnectionScopedBackendPlugin } from '../common/hosted-plugin.js';
 
 const commonHostedConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bind(HostedPluginProcess).toSelf().inSingletonScope();
@@ -80,7 +80,7 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
 
     bind(GrammarsReader).toSelf().inSingletonScope();
     bind(HostedPluginProcessConfiguration).toConstantValue({
-        path: path.join(__dirname, 'plugin-host'),
+        path: path.join(import.meta.dirname, 'plugin-host'),
     });
 
     bind(ConnectionContainerModule).toConstantValue(commonHostedConnectionModule);

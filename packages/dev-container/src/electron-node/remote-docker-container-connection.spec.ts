@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { RemoteDockerContainerConnection } from './remote-docker-container-connection';
-import { DevContainerConfiguration } from './devcontainer-file';
+import { RemoteDockerContainerConnection } from './remote-docker-container-connection.js';
+import { DevContainerConfiguration } from './devcontainer-file.js';
 import { ILogger } from '@theia/core';
 import * as Docker from 'dockerode';
 

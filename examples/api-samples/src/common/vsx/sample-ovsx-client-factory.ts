@@ -16,7 +16,7 @@
 
 import { interfaces } from '@theia/core/shared/inversify';
 import { OVSXUrlResolver } from '@theia/vsx-registry/lib/common';
-import { SampleAppInfo } from './sample-app-info';
+import { SampleAppInfo } from './sample-app-info.js';
 
 export function rebindOVSXClientFactory(rebind: interfaces.Rebind): void {
     // rebind the OVSX client factory so that we can replace patterns like "${self}" in the configs:

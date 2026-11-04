@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { nls, PreferenceContribution, PreferenceSchema, PreferenceSchemaService } from '@theia/core';
-import { AI_CORE_PREFERENCES_TITLE } from '../common/ai-core-preferences';
+import { AI_CORE_PREFERENCES_TITLE } from '../common/ai-core-preferences.js';
 
 /** Prefix shared by all AI preferences. */
 const AI_PREFERENCE_PREFIX = 'ai-features.';

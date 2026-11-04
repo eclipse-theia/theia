@@ -16,13 +16,13 @@
 
 import URI from '@theia/core/lib/common/uri';
 import * as React from '@theia/core/shared/react';
-import { DebugConfigurationManager } from '../debug-configuration-manager';
-import { DebugSessionOptions } from '../debug-session-options';
+import { DebugConfigurationManager } from '../debug-configuration-manager.js';
+import { DebugSessionOptions } from '../debug-session-options.js';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { QuickInputService } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
-import { DebugSessionConfigurationLabelProvider } from '../debug-session-configuration-label-provider';
-import { DynamicDebugConfigurationProvider } from '../../common/debug-service';
+import { DebugSessionConfigurationLabelProvider } from '../debug-session-configuration-label-provider.js';
+import { DynamicDebugConfigurationProvider } from '../../common/debug-service.js';
 
 interface DynamicPickItem { label: string, configurationType: string, request: string, providerType: string, workspaceFolderUri?: string }
 

@@ -14,5 +14,5 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './default-workspace-server';
-export * from './workspace-backend-module';
+export * from './default-workspace-server.js';
+export * from './workspace-backend-module.js';

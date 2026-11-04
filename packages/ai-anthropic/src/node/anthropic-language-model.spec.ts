@@ -21,7 +21,7 @@ import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import {
     ANTHROPIC_RESULT_BLOCK_DATA_KEY, AnthropicModel, AnthropicModelParams, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage,
     createAnthropicClient, mergeConsecutiveSameRoleMessages, transformToAnthropicParams
-} from './anthropic-language-model';
+} from './anthropic-language-model.js';
 import {
     CompactionMessage, isServerToolCallResponsePart, isUsageResponsePart, LanguageModelMessage, LanguageModelRequest,
     LanguageModelStreamResponsePart, LanguageModelTextResponse, ReasoningApi, ReasoningLevel, ReasoningSupport, ToolCallExecutor, ToolCallExecutorImpl,

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { listByKeywords } from './keyword-list';
+import { listByKeywords } from './keyword-list.js';
 
 describe('listByKeywords', () => {
     const entries = [

@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { ElectronFileDialogService } from './electron-file-dialog-service';
-import { FileDialogService } from '../../browser';
+import { ElectronFileDialogService } from './electron-file-dialog-service.js';
+import { FileDialogService } from '../../browser/index.js';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ElectronFileDialogService).toSelf().inSingletonScope();

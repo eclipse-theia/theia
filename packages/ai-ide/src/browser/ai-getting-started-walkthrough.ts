@@ -26,14 +26,14 @@ import { WalkthroughProvider } from '@theia/getting-started/lib/common/walkthrou
 import { WalkthroughDefinition, WalkthroughStepDefinition } from '@theia/getting-started/lib/common/walkthrough-types';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
-import { AI_SET_DEFAULT_CHAT_AGENT } from './ai-getting-started-commands';
-import { OPEN_AI_CONFIG_VIEW, OPEN_AI_CONFIG_VIEW_TOOLS } from './ai-configuration/ai-configuration-view-contribution';
+import { AI_SET_DEFAULT_CHAT_AGENT } from './ai-getting-started-commands.js';
+import { OPEN_AI_CONFIG_VIEW, OPEN_AI_CONFIG_VIEW_TOOLS } from './ai-configuration/ai-configuration-view-contribution.js';
 import {
     AI_CHAT_USED_CONTEXT_KEY,
     AI_DEFAULT_AGENT_CONTEXT_KEY,
     AI_MODEL_READY_CONTEXT_KEY,
     AI_TOOL_CONFIRMATION_CONFIGURED_CONTEXT_KEY
-} from './ai-walkthrough-context-keys';
+} from './ai-walkthrough-context-keys.js';
 
 /**
  * Id of the walkthrough that guides a new user through setting up and using the AI features.

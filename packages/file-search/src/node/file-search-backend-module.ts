@@ -16,8 +16,8 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ConnectionHandler, RpcConnectionHandler } from '@theia/core/lib/common';
-import { FileSearchServiceImpl } from './file-search-service-impl';
-import { fileSearchServicePath, FileSearchService } from '../common/file-search-service';
+import { FileSearchServiceImpl } from './file-search-service-impl.js';
+import { fileSearchServicePath, FileSearchService } from '../common/file-search-service.js';
 
 export default new ContainerModule(bind => {
 

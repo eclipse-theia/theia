@@ -16,15 +16,15 @@
 
 import * as React from 'react';
 import { inject, injectable, postConstruct } from 'inversify';
-import { Dialog, DialogProps } from './dialogs';
-import { ReactDialog } from './dialogs/react-dialog';
-import { ApplicationServer, ApplicationInfo, ExtensionInfo } from '../common/application-protocol';
-import { Message } from './widgets/widget';
-import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
+import { Dialog, DialogProps } from './dialogs.js';
+import { ReactDialog } from './dialogs/react-dialog.js';
+import { ApplicationServer, ApplicationInfo, ExtensionInfo } from '../common/application-protocol.js';
+import { Message } from './widgets/widget.js';
+import { FrontendApplicationConfigProvider } from './frontend-application-config-provider.js';
 import { DEFAULT_SUPPORTED_API_VERSION, DEFAULT_SUPPORTED_MONACO_VERSION } from '@theia/application-package/lib/api';
-import { WindowService } from './window/window-service';
-import { Key, KeyCode } from './keys';
-import { nls } from '../common/nls';
+import { WindowService } from './window/window-service.js';
+import { Key, KeyCode } from './keys.js';
+import { nls } from '../common/nls.js';
 
 export const ABOUT_CONTENT_CLASS = 'theia-aboutDialog';
 export const ABOUT_EXTENSIONS_CLASS = 'theia-aboutExtensions';

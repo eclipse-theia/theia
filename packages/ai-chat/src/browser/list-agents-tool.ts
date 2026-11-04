@@ -16,7 +16,7 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AGENT_DELEGATION_FUNCTION_ID, LIST_AGENTS_FUNCTION_ID, listByKeywords, ToolProvider, ToolRequest } from '@theia/ai-core';
-import { ChatAgentService, ChatAgentServiceFactory } from '../common';
+import { ChatAgentService, ChatAgentServiceFactory } from '../common/index.js';
 
 @injectable()
 export class ListAgentsTool implements ToolProvider {

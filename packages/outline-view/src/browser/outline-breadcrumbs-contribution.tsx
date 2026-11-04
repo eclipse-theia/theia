@@ -17,8 +17,8 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { LabelProvider, BreadcrumbsService, Widget, TreeNode, OpenerService, open, SelectableTreeNode, BreadcrumbsContribution, Breadcrumb } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
-import { OutlineViewService } from './outline-view-service';
-import { OutlineSymbolInformationNode, OutlineViewWidget } from './outline-view-widget';
+import { OutlineViewService } from './outline-view-service.js';
+import { OutlineSymbolInformationNode, OutlineViewWidget } from './outline-view-widget.js';
 import { Disposable, DisposableCollection, Emitter, Event, UriSelection } from '@theia/core/lib/common';
 
 export const OutlineBreadcrumbType = Symbol('OutlineBreadcrumb');

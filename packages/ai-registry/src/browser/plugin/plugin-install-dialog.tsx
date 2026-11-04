@@ -17,7 +17,7 @@
 import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core';
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
-import { PluginEndorsement, PluginHashMismatch, ResolvedPluginEntry } from '../../common/plugin/plugin-registry-types';
+import { PluginEndorsement, PluginHashMismatch, ResolvedPluginEntry } from '../../common/plugin/plugin-registry-types.js';
 
 export interface PluginInstallDialogOptions {
     readonly entry: ResolvedPluginEntry;

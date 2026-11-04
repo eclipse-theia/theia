@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { UUID } from '@theia/core/shared/@lumino/coreutils';
-import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
+import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol.js';
 import { isObject, isString, URI } from '@theia/core/lib/common';
 
 export const DEBUG_BREAKPOINT_SCHEME = 'debug-breakpoint';

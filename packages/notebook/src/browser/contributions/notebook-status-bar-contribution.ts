@@ -17,9 +17,9 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { StatusBar, StatusBarAlignment, Widget, WidgetStatusBarContribution } from '@theia/core/lib/browser';
 import { Disposable } from '@theia/core/lib/common';
-import { NotebookEditorWidget } from '../notebook-editor-widget';
+import { NotebookEditorWidget } from '../notebook-editor-widget.js';
 import { nls } from '@theia/core';
-import { NotebookCommands } from './notebook-actions-contribution';
+import { NotebookCommands } from './notebook-actions-contribution.js';
 
 export const NOTEBOOK_CELL_SELECTION_STATUS_BAR_ID = 'notebook-cell-selection-position';
 

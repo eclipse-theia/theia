@@ -19,7 +19,7 @@ import { ApplicationShell, KeybindingContribution, KeybindingRegistry } from '@t
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { PendingToolConfirmation, PendingToolConfirmationTracker } from '@theia/ai-chat/lib/browser/pending-tool-confirmation-tracker';
-import { ChatViewWidget } from './chat-view-widget';
+import { ChatViewWidget } from './chat-view-widget.js';
 
 export const HAS_PENDING_TOOL_CONFIRMATION_CONTEXT_KEY = 'theiaAi.hasPendingToolConfirmation';
 

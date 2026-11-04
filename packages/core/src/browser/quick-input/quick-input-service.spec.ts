@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as chai from 'chai';
-import { filterItems, findMatches, QuickPickItem } from './quick-input-service';
+import { filterItems, findMatches, QuickPickItem } from './quick-input-service.js';
 
 const expect = chai.expect;
 
