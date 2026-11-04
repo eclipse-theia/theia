@@ -15,14 +15,20 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { LanguageModelMessage, LanguageModelRequest, LanguageModelResponse, ReasoningSupport, UserRequest } from '@theia/ai-core';
-import { OpenAI } from 'openai';
-import { MistralFixedOpenAI, OpenAiModel, OpenAiModelUtils } from './openai-language-model';
-import { OpenAiResponseApiUtils } from './openai-response-api-utils';
-import { OPENAI_WEB_SEARCH } from './openai-server-tools';
-import type { FinalRequestOptions } from 'openai/internal/request-options';
+import { Container, injectable } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { LanguageModelRequest, LanguageModelResponse, ReasoningSupport, ToolCallExecutor, ToolCallExecutorImpl, UserRequest } from '@theia/ai-core';
+import { AzureOpenAI, OpenAI } from 'openai';
+import { createOpenAiClient, MistralFixedOpenAI, OpenAiClientOptions, OpenAiModel, OpenAiModelParams } from './openai-language-model.js';
+import { OpenAiModelUtils } from './openai-model-utils.js';
+import { OpenAiResponseApiUtils } from './openai-response-api-utils.js';
+import { OpenAiStreamingRetry } from './openai-streaming-retry.js';
+import { ChatCompletionStreamingAsyncIteratorFactory } from './openai-chat-completion-stream.js';
+import { getOpenAiModelDefaults } from './openai-model-defaults.js';
+import { OPENAI_WEB_SEARCH } from './openai-server-tools.js';
 
-const GPT5_REASONING_SUPPORT: ReasoningSupport = {
+const LEGACY_GPT5_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
     defaultLevel: 'auto'
 };
@@ -32,11 +38,19 @@ const O_SERIES_REASONING_SUPPORT: ReasoningSupport = {
     defaultLevel: 'auto'
 };
 
+@injectable()
 class TestableOpenAiModel extends OpenAiModel {
     chatCompletionsRequests = 0;
 
+    public callInitializeOpenAi(): OpenAI {
+        return this.initializeOpenAi();
+    }
+
     public callGetSettings(request: LanguageModelRequest, forResponseApi: boolean = false): Record<string, unknown> {
         return this.getSettings(request, forResponseApi);
+    }
+    public callCreateTools(request: LanguageModelRequest): unknown {
+        return this.createTools(request);
     }
     public callApplyResponseApiCompaction(settings: Record<string, unknown>, request: LanguageModelRequest): Record<string, unknown> {
         return this.applyResponseApiCompaction(settings, request);
@@ -50,14 +64,44 @@ class TestableOpenAiModel extends OpenAiModel {
     }
 }
 
+function buildModel<T extends OpenAiModel>(
+    modelType: new (...args: never[]) => T,
+    params: Partial<OpenAiModelParams> & Pick<OpenAiModelParams, 'model'>,
+    responseApiUtils?: OpenAiResponseApiUtils
+): T {
+    const parent = new Container();
+    parent.bind(OpenAiModelUtils).toSelf();
+    parent.bind(OpenAiStreamingRetry).toSelf();
+    if (responseApiUtils) {
+        parent.bind(OpenAiResponseApiUtils).toConstantValue(responseApiUtils);
+    } else {
+        parent.bind(OpenAiResponseApiUtils).toSelf();
+    }
+    parent.bind(ToolCallExecutor).to(ToolCallExecutorImpl);
+    parent.bind(ILogger).to(MockLogger);
+    // These tests never issue a streaming request, so the iterator factory is never invoked.
+    const iteratorFactory: ChatCompletionStreamingAsyncIteratorFactory = () => { throw new Error('iterator not used in these tests'); };
+    parent.bind(ChatCompletionStreamingAsyncIteratorFactory).toConstantValue(iteratorFactory);
+    parent.bind(modelType).toSelf().inTransientScope();
+
+    const child = new Container();
+    child.parent = parent;
+    child.bind(OpenAiModelParams).toConstantValue({
+        id: 'test-id',
+        status: { status: 'ready' },
+        enableStreaming: true,
+        apiKey: () => 'test-key',
+        apiVersion: () => undefined,
+        supportsStructuredOutput: false,
+        url: undefined,
+        deployment: undefined,
+        ...params
+    });
+    return child.get(modelType);
+}
+
 function createModel(modelId: string, reasoningSupport?: ReasoningSupport): TestableOpenAiModel {
-    return new TestableOpenAiModel(
-        'test-id', modelId, { status: 'ready' }, true,
-        () => 'test-key', () => undefined,
-        false, undefined, undefined,
-        new OpenAiModelUtils(), new OpenAiResponseApiUtils(),
-        'developer', 3, false, undefined, reasoningSupport
-    );
+    return buildModel(TestableOpenAiModel, { model: modelId, reasoningSupport });
 }
 
 function createCompactionModel(
@@ -65,48 +109,127 @@ function createCompactionModel(
     useResponseApi: boolean = true,
     serverSideCompactionTokenThresholdByDefault?: number
 ): TestableOpenAiModel {
-    return new TestableOpenAiModel(
-        'test-id', 'gpt-5', { status: 'ready' }, true,
-        () => 'test-key', () => undefined,
-        false, undefined, undefined,
-        new OpenAiModelUtils(), new OpenAiResponseApiUtils(),
-        'developer', 3, useResponseApi, undefined, undefined, undefined, undefined, useResponseApi, serverSideCompactionEnabledByDefault,
+    return buildModel(TestableOpenAiModel, {
+        model: 'gpt-5',
+        useResponseApi,
+        serverSideCompactionSupport: useResponseApi,
+        serverSideCompactionEnabledByDefault,
         serverSideCompactionTokenThresholdByDefault
-    );
+    });
 }
+
+describe('OpenAI client retry configuration', () => {
+    for (const azure of [false, true]) {
+        const apiVersion = azure ? '2024-10-21' : undefined;
+        const baseURL = azure ? 'https://test.openai.azure.com' : undefined;
+
+        for (const maxRetries of [undefined, 0, 5]) {
+            it(`keeps ${maxRetries ?? 'SDK default'} retries for ${azure ? 'Azure' : 'OpenAI'} clients`, () => {
+                const client = createOpenAiClient({ apiKey: 'test-key', apiVersion, baseURL, maxRetries });
+                expect(client).to.be.instanceOf(azure ? AzureOpenAI : MistralFixedOpenAI);
+                expect(client.maxRetries).to.equal(maxRetries ?? new OpenAI({ apiKey: 'test-key' }).maxRetries);
+            });
+
+            it(`passes ${maxRetries ?? 'default model'} retries from the model to its ${azure ? 'Azure' : 'OpenAI'} client`, () => {
+                const model = buildModel(TestableOpenAiModel, {
+                    model: 'gpt-5', apiVersion: () => apiVersion, url: baseURL, maxRetries
+                });
+                const client = model.callInitializeOpenAi();
+                expect(client).to.be.instanceOf(azure ? AzureOpenAI : MistralFixedOpenAI);
+                expect(client.maxRetries).to.equal(maxRetries ?? 3);
+            });
+        }
+    }
+});
 
 describe('OpenAiModel reasoning translation', () => {
 
+    for (const forResponseApi of [false, true]) {
+        it(`clamps unsupported levels for direct calls using ${forResponseApi ? 'Responses' : 'Chat Completions'}`, async () => {
+            const model = buildModel(OpenAiModel, {
+                model: 'gpt-5', enableStreaming: false, useResponseApi: forResponseApi, reasoningSupport: LEGACY_GPT5_REASONING_SUPPORT
+            });
+            const captured: Record<string, unknown>[] = [];
+            const fetch = async (_input: unknown, init?: RequestInit): Promise<Response> => {
+                captured.push(JSON.parse(init?.body as string));
+                return new Response(JSON.stringify(forResponseApi
+                    ? { id: 'r', output: [{ type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'ok' }] }] }
+                    : { choices: [{ message: { content: 'ok' } }] }), { headers: { 'content-type': 'application/json' } });
+            };
+            const client = new OpenAI({ apiKey: 'test-key', fetch });
+            Object.assign(model, { initializeOpenAi: () => client });
+            for (const level of ['none', 'max'] as const) {
+                await model.request({ messages: [], sessionId: 's', requestId: level, reasoning: { level } });
+            }
+            expect(captured).to.have.length(2);
+            expect(forResponseApi ? captured[0].reasoning : captured[0].reasoning_effort).to.equal(undefined);
+            expect(forResponseApi ? captured[1].reasoning : captured[1].reasoning_effort)
+                .to.deep.equal(forResponseApi ? { effort: 'high', summary: 'auto' } : 'high');
+        });
+    }
+
+    describe('family reasoning presets', () => {
+        for (const modelId of ['gpt-5.1', 'gpt-5.5-pro', 'gpt-5.6-sol', 'gpt-6-astra', 'gpt-6.1-sol', 'gpt-6-luna']) {
+            const reasoningSupport = getOpenAiModelDefaults(modelId).reasoningSupport;
+            for (const level of reasoningSupport?.supportedLevels ?? []) {
+                it(`passes ${level} for ${modelId} through both APIs`, () => {
+                    const model = createModel(modelId, reasoningSupport);
+                    const request = { messages: [], reasoning: { level } };
+                    expect(model.callGetSettings(request, true).reasoning).to.deep.equal(
+                        level === 'off' ? undefined : level === 'auto' ? { summary: 'auto' } : { effort: level, summary: 'auto' }
+                    );
+                    expect(model.callGetSettings(request, false).reasoning_effort).to.equal(level === 'off' || level === 'auto' ? undefined : level);
+                });
+            }
+        }
+
+        it('preserves raw request settings when off is selected for a family preset', () => {
+            const model = createModel('gpt-6-astra', getOpenAiModelDefaults('gpt-6-astra').reasoningSupport);
+            const settings = { reasoning: { effort: 'high', summary: 'concise' }, reasoning_effort: 'medium' };
+            for (const forResponseApi of [false, true]) {
+                expect(model.callGetSettings({ messages: [], settings, reasoning: { level: 'off' } }, forResponseApi)).to.deep.equal(settings);
+            }
+        });
+
+        it('keeps configured summaries while overriding effort with none', () => {
+            const model = createModel('gpt-6-luna', getOpenAiModelDefaults('gpt-6-luna').reasoningSupport);
+            const result = model.callGetSettings({
+                messages: [], reasoning: { level: 'none' }, settings: { reasoning: { effort: 'high', summary: 'concise' } }
+            }, true);
+            expect(result.reasoning).to.deep.equal({ effort: 'none', summary: 'concise' });
+        });
+    });
+
     describe('Responses API (GPT-5)', () => {
         it('maps level=minimal to reasoning.effort=minimal', () => {
-            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const model = createModel('gpt-5', LEGACY_GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'minimal' } }, true);
             expect(result.reasoning).to.deep.equal({ effort: 'minimal', summary: 'auto' });
         });
         it('maps level=high to reasoning.effort=high', () => {
-            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const model = createModel('gpt-5', LEGACY_GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'high' } }, true);
             expect(result.reasoning).to.deep.equal({ effort: 'high', summary: 'auto' });
         });
         it('omits reasoning entirely when level=off', () => {
-            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const model = createModel('gpt-5', LEGACY_GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'off' } }, true);
             expect(result.reasoning).to.equal(undefined);
         });
         it('requests reasoning summaries for level=auto without constraining effort', () => {
-            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const model = createModel('gpt-5', LEGACY_GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'auto' } }, true);
             expect(result.reasoning).to.deep.equal({ summary: 'auto' });
         });
         it('keeps user-configured reasoning fields but lets the selected level decide effort', () => {
-            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const model = createModel('gpt-5', LEGACY_GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({
                 messages: [], reasoning: { level: 'high' }, settings: { reasoning: { effort: 'low', summary: 'concise' } }
             }, true);
             expect(result.reasoning).to.deep.equal({ effort: 'high', summary: 'concise' });
         });
         it('keeps a user-configured reasoning.summary for level=auto', () => {
-            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const model = createModel('gpt-5', LEGACY_GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'auto' }, settings: { reasoning: { summary: 'detailed' } } }, true);
             expect(result.reasoning).to.deep.equal({ summary: 'detailed' });
         });
@@ -119,7 +242,7 @@ describe('OpenAiModel reasoning translation', () => {
             expect(result.reasoning_effort).to.equal('medium');
         });
         it('passes minimal through (GPT-5 accepts it; models that do not exclude it from their supportedLevels)', () => {
-            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const model = createModel('gpt-5', LEGACY_GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'minimal' } }, false);
             expect(result.reasoning_effort).to.equal('minimal');
         });
@@ -143,6 +266,22 @@ describe('OpenAiModel reasoning translation', () => {
             expect(result.reasoning_effort).to.equal(undefined);
         });
     });
+
+    describe('createTools', () => {
+        it('produces plain function tool definitions without an embedded handler function', () => {
+            const model = createModel('gpt-4o', undefined);
+            const tools = model.callCreateTools({
+                messages: [],
+                tools: [{ id: 't', name: 't', parameters: { type: 'object', properties: {} }, handler: async () => 'x' }]
+            }) as Array<{ type: string; function: Record<string, unknown> }>;
+
+            expect(tools).to.have.lengthOf(1);
+            expect(tools[0].type).to.equal('function');
+            expect(tools[0].function.name).to.equal('t');
+            // The SDK runTools() runner is no longer used, so no executable function is embedded.
+            expect('function' in tools[0].function).to.equal(false);
+        });
+    });
 });
 
 describe('OpenAiModel Response API fallback', () => {
@@ -150,13 +289,7 @@ describe('OpenAiModel Response API fallback', () => {
         const responseApiUtils = {
             handleRequest: async () => { throw new Error('Response API unavailable'); }
         } as unknown as OpenAiResponseApiUtils;
-        return new TestableOpenAiModel(
-            'test-id', 'gpt-5', { status: 'ready' }, true,
-            () => 'test-key', () => undefined,
-            false, undefined, undefined,
-            new OpenAiModelUtils(), responseApiUtils,
-            'developer', 3, true
-        );
+        return buildModel(TestableOpenAiModel, { model: 'gpt-5', useResponseApi: true }, responseApiUtils);
     }
 
     it('does not fall back to Chat Completions when a server tool is selected', async () => {
@@ -193,7 +326,7 @@ describe('OpenAiModel Response API fallback', () => {
 });
 
 class TestableMistralFixedOpenAI extends MistralFixedOpenAI {
-    callPrepareOptions(options: FinalRequestOptions): Promise<void> {
+    callPrepareOptions(options: OpenAI.RequestOptions): Promise<void> {
         return this.prepareOptions(options);
     }
 }
@@ -204,13 +337,13 @@ describe('MistralFixedOpenAI request preparation', () => {
 
     it('leaves a request without a body alone', async () => {
         // `GET /models`, which model discovery issues, carries no body at all.
-        const options = { method: 'get', path: '/models' } as FinalRequestOptions;
+        const options = { method: 'get', path: '/models' } as OpenAI.RequestOptions;
         await client.callPrepareOptions(options);
         expect(options.body).to.equal(undefined);
     });
 
     it('leaves a body without messages alone', async () => {
-        const options = { method: 'post', path: '/embeddings', body: { input: 'hello' } } as FinalRequestOptions;
+        const options = { method: 'post', path: '/embeddings', body: { input: 'hello' } } as OpenAI.RequestOptions;
         await client.callPrepareOptions(options);
         expect(options.body).to.deep.equal({ input: 'hello' });
     });
@@ -225,34 +358,11 @@ describe('MistralFixedOpenAI request preparation', () => {
                     { role: 'assistant', tool_calls: [{ id: 't1' }], refusal: null, parsed: null }
                 ]
             }
-        } as FinalRequestOptions;
+        } as OpenAI.RequestOptions;
         await client.callPrepareOptions(options);
         const message = (options.body as { messages: Array<Record<string, unknown>> }).messages[0];
         expect(message.refusal).to.equal(undefined);
         expect(message.parsed).to.equal(undefined);
-    });
-});
-
-describe('OpenAiModelUtils Chat Completions processMessages', () => {
-    it('drops a CompactionMessage without throwing when useResponseApi is off', () => {
-        const utils = new OpenAiModelUtils();
-        const messages: LanguageModelMessage[] = [
-            { actor: 'user', type: 'text', text: 'hello' },
-            { actor: 'ai', type: 'compaction', provider: 'openai-responses', data: { id: 'c1', encrypted_content: 'enc' } },
-            { actor: 'ai', type: 'text', text: 'world' }
-        ];
-
-        let result: ReturnType<OpenAiModelUtils['processMessages']> | undefined;
-        expect(() => { result = utils.processMessages(messages, 'developer'); }).to.not.throw();
-
-        // The compaction marker must not appear in the output
-        const hasCompaction = result?.some(m => 'content' in m && typeof m.content === 'string' && m.content.includes('enc'));
-        expect(hasCompaction).to.equal(false);
-
-        // The surrounding real messages must still be present
-        const texts = result?.map(m => typeof m.content === 'string' ? m.content : '').join(' ');
-        expect(texts).to.contain('hello');
-        expect(texts).to.contain('world');
     });
 });
 
@@ -301,5 +411,52 @@ describe('OpenAiModel server-side compaction (Response API)', () => {
         const result = model.callApplyResponseApiCompaction({ stream: true }, { messages: [], compaction: { enabled: true } });
         expect(result.context_management).to.equal(undefined);
         expect(result).to.deep.equal({ stream: true });
+    });
+});
+
+describe('createOpenAiClient', () => {
+
+    const AZURE: OpenAiClientOptions = { apiKey: undefined, baseURL: 'https://gateway.example.com/openai', apiVersion: '2024-10-21', deployment: 'gpt-test' };
+
+    async function sentHeaders(options: OpenAiClientOptions): Promise<{ url: string, headers: Headers }> {
+        const { url, req } = await createOpenAiClient(options).buildRequest({
+            method: 'post', path: '/chat/completions', body: { model: 'gpt-test', messages: [] }
+        });
+        return { url, headers: new Headers(req.headers) };
+    }
+
+    it('sends no placeholder api-key to Azure when the headers authenticate the request', async () => {
+        const { url, headers } = await sentHeaders({ ...AZURE, headers: { Authorization: 'Bearer entra-token' } });
+        expect(url).to.equal('https://gateway.example.com/openai/deployments/gpt-test/chat/completions?api-version=2024-10-21');
+        expect(headers.get('authorization')).to.equal('Bearer entra-token');
+        expect(headers.has('api-key')).to.equal(false);
+    });
+
+    it('sends no placeholder api-key to an Azure endpoint that authenticates with another header', async () => {
+        const { headers } = await sentHeaders({ ...AZURE, headers: { 'Ocp-Apim-Subscription-Key': 'subscription-key' } });
+        expect(headers.get('ocp-apim-subscription-key')).to.equal('subscription-key');
+        expect(headers.has('api-key')).to.equal(false);
+    });
+
+    it('sends no placeholder api-key to a keyless Azure endpoint without headers', async () => {
+        const { headers } = await sentHeaders(AZURE);
+        expect(headers.has('api-key')).to.equal(false);
+    });
+
+    it('sends a configured Azure key next to an Authorization header', async () => {
+        const { headers } = await sentHeaders({ ...AZURE, apiKey: 'azure-key', headers: { Authorization: 'Bearer entra-token' } });
+        expect(headers.get('api-key')).to.equal('azure-key');
+        expect(headers.get('authorization')).to.equal('Bearer entra-token');
+    });
+
+    it('keeps an api-key header the configuration sets explicitly', async () => {
+        const { headers } = await sentHeaders({ ...AZURE, headers: { authorization: 'Bearer entra-token', 'Api-Key': 'from-headers' } });
+        expect(headers.get('api-key')).to.equal('from-headers');
+    });
+
+    it('lets the headers replace the key-based Authorization of a non-Azure endpoint', async () => {
+        const { headers } = await sentHeaders({ apiKey: undefined, baseURL: 'https://gateway.example.com/v1', headers: { Authorization: 'Bearer gateway-token' } });
+        expect(headers.get('authorization')).to.equal('Bearer gateway-token');
+        expect(headers.has('api-key')).to.equal(false);
     });
 });

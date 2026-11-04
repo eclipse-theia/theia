@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { FileSystemProvider } from '../common/files';
-import { OPFSFileSystemProvider } from './opfs-filesystem-provider';
-import { RemoteFileSystemProvider, RemoteFileSystemServer } from '../common/remote-file-system-provider';
-import { OPFSInitialization, DefaultOPFSInitialization } from './opfs-filesystem-initialization';
-import { BrowserOnlyFileSystemProviderServer } from './browser-only-filesystem-provider-server';
-import { FileUploadService } from '../common/upload/file-upload';
-import { FileUploadServiceImpl } from './upload/file-upload-service-impl';
+import { FileSystemProvider } from '../common/files.js';
+import { OPFSFileSystemProvider } from './opfs-filesystem-provider.js';
+import { RemoteFileSystemProvider, RemoteFileSystemServer } from '../common/remote-file-system-provider.js';
+import { OPFSInitialization, DefaultOPFSInitialization } from './opfs-filesystem-initialization.js';
+import { BrowserOnlyFileSystemProviderServer } from './browser-only-filesystem-provider-server.js';
+import { FileUploadService } from '../common/upload/file-upload.js';
+import { FileUploadServiceImpl } from './upload/file-upload-service-impl.js';
 
 export default new ContainerModule((bind, _unbind, isBound, rebind) => {
     bind(DefaultOPFSInitialization).toSelf();

@@ -16,7 +16,7 @@
 
 import URI from '@theia/core/lib/common/uri';
 import { expect } from 'chai';
-import { TelemetryLevel, isKindAllowedByLevel, isTelemetryData, isTelemetryEventKind, snapshotTelemetryData } from './telemetry-types';
+import { TelemetryLevel, isKindAllowedByLevel, isTelemetryData, isTelemetryEventKind, snapshotTelemetryData } from './telemetry-types.js';
 
 const typedPayload = {
     action: 'open',

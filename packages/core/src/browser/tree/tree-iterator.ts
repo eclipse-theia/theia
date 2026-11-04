@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { TreeNode, CompositeTreeNode } from './tree';
-import { ExpandableTreeNode } from './tree-expansion';
+import { TreeNode, CompositeTreeNode } from './tree.js';
+import { ExpandableTreeNode } from './tree-expansion.js';
 
 export interface TreeIterator extends Iterator<TreeNode> {
 }
@@ -47,7 +47,7 @@ export abstract class AbstractTreeIterator implements TreeIterator, Iterable<Tre
         this.delegate = this.iterator(this.root);
     }
 
-    // tslint:disable-next-line:typedef
+    // eslint-disable-next-line @theia/explicit-return-type
     [Symbol.iterator]() {
         return this.delegate;
     }

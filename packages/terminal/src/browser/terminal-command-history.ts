@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { DisposableCollection, Event, Emitter } from '@theia/core';
-import { TerminalBlock, TerminalCommandHistoryState } from './base/terminal-widget';
+import { TerminalBlock, TerminalCommandHistoryState } from './base/terminal-widget.js';
 import { injectable } from '@theia/core/shared/inversify';
 
 export const TerminalCommandHistoryStateFactory = Symbol('TerminalCommandHistoryStateFactory');

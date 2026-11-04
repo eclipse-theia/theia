@@ -17,8 +17,8 @@
 import * as theia from '@theia/plugin';
 import { Range as R, Position as P, Location as L } from '@theia/core/shared/vscode-languageserver-protocol';
 import { URI as TheiaURI } from '@theia/core/lib/common/uri';
-import { cloneAndChange } from '../common/objects';
-import { Position, Range, Location, CallHierarchyItem, TypeHierarchyItem, URI, TextDocumentShowOptions } from './types-impl';
+import { cloneAndChange } from '../common/objects.js';
+import { Position, Range, Location, CallHierarchyItem, TypeHierarchyItem, URI, TextDocumentShowOptions } from './types-impl.js';
 import {
     fromPosition, fromRange, fromLocation,
     isModelLocation, toLocation,
@@ -26,7 +26,7 @@ import {
     isModelTypeHierarchyItem, fromTypeHierarchyItem, toTypeHierarchyItem,
     isModelCallHierarchyIncomingCall, toCallHierarchyIncomingCall,
     isModelCallHierarchyOutgoingCall, toCallHierarchyOutgoingCall, fromTextDocumentShowOptions
-} from './type-converters';
+} from './type-converters.js';
 
 // Here is a mapping of VSCode commands to monaco commands with their conversions
 export namespace KnownCommands {
@@ -366,9 +366,9 @@ export namespace KnownCommands {
         return L.create(l.uri.toString(), fromRangeToR(l.range));
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/tslint/config
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @theia/explicit-return-type
     function vscodeToMonacoArgsConverter(args: any[]) {
-        // tslint:disable-next-line:typedef
+        // eslint-disable-next-line @theia/explicit-return-type
         return cloneAndChange(args, function (value) {
             if (CallHierarchyItem.isCallHierarchyItem(value)) {
                 return fromCallHierarchyItem(value);
@@ -394,9 +394,9 @@ export namespace KnownCommands {
         });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/tslint/config
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @theia/explicit-return-type
     function monacoToVscodeArgsConverter(args: any[]) {
-        // tslint:disable-next-line:typedef
+        // eslint-disable-next-line @theia/explicit-return-type
         return cloneAndChange(args, function (value) {
             if (isModelCallHierarchyItem(value)) {
                 return toCallHierarchyItem(value);
@@ -422,7 +422,7 @@ export namespace KnownCommands {
 }
 
 function toArrayConversion<T, U>(f: (a: T) => U): (a: T[]) => U[] {
-    // tslint:disable-next-line:typedef
+    // eslint-disable-next-line @theia/explicit-return-type
     return function (a: T[]) {
         return a.map(f);
     };

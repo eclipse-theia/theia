@@ -14,11 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-// Do not "fix" this to `filenamify/browser`: TypeScript's `moduleResolution: node` cannot read the
-// package's `exports` map, and the sub-path that does type-resolve fails at runtime with
-// ERR_PACKAGE_PATH_NOT_EXPORTED. The entry point pulls Node's `path` into the browser graph, which
-// both bundlers already polyfill.
-import * as filenamify from 'filenamify';
+// `filenamify/browser` would also resolve now that `moduleResolution: bundler` reads the package's
+// `exports` map; we keep the main entry point to leave the browser bundle unchanged (it only adds
+// Node's `path`, which the bundler already polyfills).
+import filenamify from 'filenamify';
 import { nls } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 

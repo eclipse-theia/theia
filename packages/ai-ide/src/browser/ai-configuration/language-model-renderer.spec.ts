@@ -26,7 +26,7 @@ import { flushSync } from '@theia/core/shared/react-dom';
 import { createRoot } from '@theia/core/shared/react-dom/client';
 import { ReasoningSupport } from '@theia/ai-core/lib/common';
 import { AiSettingsRowService } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row-service';
-import { ReasoningRow } from './language-model-renderer';
+import { ReasoningRow } from './language-model-renderer.js';
 
 disableJSDOM();
 
@@ -70,6 +70,44 @@ describe('ReasoningRow', () => {
             inherited.dispose();
         }
     });
+
+    for (const [level, label] of [['none', 'None'], ['xhigh', 'Extra High'], ['max', 'Max']] as const) {
+        it(`labels the native ${level} effort and marks its glyph`, () => {
+            const rendered = render({ support: { supportedLevels: [level] }, inheritedLevel: level });
+            try {
+                expect(rendered.container.textContent).to.include(label);
+                expect(rendered.container.querySelector('.theia-ReasoningLevelSelector')?.classList.contains(`reasoning-level-${level}`)).to.equal(true);
+            } finally {
+                rendered.dispose();
+            }
+        });
+    }
+
+    for (const origin of ['saved', 'inherited'] as const) {
+        it(`clamps an unsupported ${origin} level without changing the preference`, () => {
+            let writes = 0;
+            const props: Partial<React.ComponentProps<typeof ReasoningRow>> = {
+                support: { supportedLevels: ['off', 'low', 'medium', 'high', 'xhigh', 'auto'], defaultLevel: 'auto' },
+                ...(origin === 'saved' ? { savedLevel: 'max' } : { inheritedLevel: 'max' }),
+                onSelect: () => { writes++; }
+            };
+            const rendered = render(props);
+            try {
+                const select = rendered.container.querySelector('.theia-ReasoningLevelSelector');
+                expect(select?.querySelector('.theia-select-component-label')?.textContent).to.equal('Extra High');
+                expect(select?.classList.contains('reasoning-level-xhigh')).to.equal(true);
+                expect(select?.classList.contains('reasoning-level-max')).to.equal(false);
+                expect(Boolean(rendered.container.querySelector('.ai-settings-row.modified'))).to.equal(origin === 'saved');
+                expect(props.savedLevel ?? props.inheritedLevel).to.equal('max');
+                expect(writes).to.equal(0);
+                if (origin === 'inherited') {
+                    expect(rendered.container.textContent).to.include('so "Extra High" applies').and.not.include('Maximum');
+                }
+            } finally {
+                rendered.dispose();
+            }
+        });
+    }
 
     it('offers a reset only once a level is stored for the agent', () => {
         const stored = render({ savedLevel: 'high' });

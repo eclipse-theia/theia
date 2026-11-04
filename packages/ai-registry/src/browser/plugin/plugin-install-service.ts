@@ -15,15 +15,15 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { PluginDirectoryNaming } from '../../common/plugin/plugin-directory-naming';
-import { RegistryAutoUpdatePolicy } from '../auto-update/registry-auto-update-policy';
-import { PluginInstallBackendService } from '../../common/plugin/plugin-install-protocol';
+import { PluginDirectoryNaming } from '../../common/plugin/plugin-directory-naming.js';
+import { RegistryAutoUpdatePolicy } from '../auto-update/registry-auto-update-policy.js';
+import { PluginInstallBackendService } from '../../common/plugin/plugin-install-protocol.js';
 import {
     InstalledPluginInfo,
     PluginClassificationResult,
     ResolvedPluginEntry,
     StagedPluginInstall
-} from '../../common/plugin/plugin-registry-types';
+} from '../../common/plugin/plugin-registry-types.js';
 
 export const PluginInstallService = Symbol('PluginInstallService');
 /** Frontend view of {@link PluginInstallBackendService}, plus the classification the cards render from. */

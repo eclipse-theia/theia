@@ -19,9 +19,9 @@ import { Disposable, DisposableCollection, URI } from '@theia/core';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { EditorManager, EditorMouseEvent, MouseTargetType, TextEditor } from '@theia/editor/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import { Change, LineRange } from './diff-computer';
-import { DirtyDiffUpdate } from './dirty-diff-decorator';
-import { DirtyDiffWidget, DirtyDiffWidgetFactory } from './dirty-diff-widget';
+import { Change, LineRange } from './diff-computer.js';
+import { DirtyDiffUpdate } from './dirty-diff-decorator.js';
+import { DirtyDiffWidget, DirtyDiffWidgetFactory } from './dirty-diff-widget.js';
 
 @injectable()
 export class DirtyDiffNavigator {
@@ -137,7 +137,7 @@ export class DirtyDiffController implements Disposable {
         if (dirtyDiff.editor === this.editor) {
             this.dirtyDiff = dirtyDiff;
             if (this.widget) {
-                this.widget.changes = dirtyDiff.changes                ;
+                this.widget.changes = dirtyDiff.changes;
             }
         }
     }

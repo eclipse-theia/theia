@@ -23,7 +23,7 @@ import { expect } from 'chai';
 import { URI } from '@theia/core';
 import { FileSystemProviderErrorCode } from '@theia/filesystem/lib/common/files';
 import { PLUGINS_SCHEME } from '@theia/plugin-utils/lib/common/constants';
-import { BrowserOnlyPluginFileSystemProvider } from './browser-only-plugin-file-system-provider';
+import { BrowserOnlyPluginFileSystemProvider } from './browser-only-plugin-file-system-provider.js';
 
 disableJSDOM();
 

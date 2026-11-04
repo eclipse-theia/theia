@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import * as chai from 'chai';
-import { CancellationToken } from '../../common';
-import { QuickPickItem } from './quick-input-service';
-import { QuickViewService } from './quick-view-service';
+import { CancellationToken } from '../../common/index.js';
+import { QuickPickItem } from './quick-input-service.js';
+import { QuickViewService } from './quick-view-service.js';
 
 const expect = chai.expect;
 

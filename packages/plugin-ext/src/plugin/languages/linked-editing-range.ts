@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import * as theia from '@theia/plugin';
-import * as rpc from '../../common/plugin-api-rpc';
-import { DocumentsExtImpl } from '../documents';
-import { LinkedEditingRanges } from '../../common/plugin-api-rpc-model';
+import * as rpc from '../../common/plugin-api-rpc.js';
+import { DocumentsExtImpl } from '../documents.js';
+import { LinkedEditingRanges } from '../../common/plugin-api-rpc-model.js';
 import { URI } from '@theia/core/shared/vscode-uri';
-import { coalesce } from '../../common/arrays';
-import { fromRange, toPosition } from '../type-converters';
-import { serializeRegExp } from '../languages-utils';
+import { coalesce } from '../../common/arrays.js';
+import { fromRange, toPosition } from '../type-converters.js';
+import { serializeRegExp } from '../languages-utils.js';
 
 export class LinkedEditingRangeAdapter {
 

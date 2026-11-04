@@ -16,19 +16,19 @@
 
 import { inject, injectable, named, optional } from 'inversify';
 import { DockLayout } from '@lumino/widgets';
-import { ApplicationShell, WidgetAreaResolver } from './shell/application-shell';
-import { SidePanel } from './shell/side-panel-handler';
-import { FrontendApplicationContribution } from './frontend-application-contribution';
-import { AbstractViewContribution } from './shell/view-contribution';
-import { WidgetManager } from './widget-manager';
-import { ContributionProvider } from '../common/contribution-provider';
-import { Command, CommandContribution, CommandRegistry } from '../common/command';
-import { Emitter, Event } from '../common/event';
-import { ILogger } from '../common/logger';
-import { QuickInputService, QuickPickItem } from '../common/quick-pick-service';
-import { nls } from '../common/nls';
-import { CommonCommands } from './common-commands';
-import { ContextKeyService } from './context-key-service';
+import { ApplicationShell, WidgetAreaResolver } from './shell/application-shell.js';
+import { SidePanel } from './shell/side-panel-handler.js';
+import { FrontendApplicationContribution } from './frontend-application-contribution.js';
+import { AbstractViewContribution } from './shell/view-contribution.js';
+import { WidgetManager } from './widget-manager.js';
+import { ContributionProvider } from '../common/contribution-provider.js';
+import { Command, CommandContribution, CommandRegistry } from '../common/command.js';
+import { Emitter, Event } from '../common/event.js';
+import { ILogger } from '../common/logger.js';
+import { QuickInputService, QuickPickItem } from '../common/quick-pick-service.js';
+import { nls } from '../common/nls.js';
+import { CommonCommands } from './common-commands.js';
+import { ContextKeyService } from './context-key-service.js';
 
 export const ACTIVE_PERSPECTIVE_CONTEXT_KEY = 'activePerspectiveId';
 

@@ -26,9 +26,9 @@ import { CommandService, ILogger, Logger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { DefaultAIVariableService, PromptService, PromptServiceImpl, ToolInvocationRegistryImpl } from '@theia/ai-core';
 import { PromptVariableContribution } from '@theia/ai-core/lib/browser/prompt-variable-contribution';
-import { ChatAgentServiceImpl } from '../common/chat-agent-service';
-import { ChatAgentLocation } from '../common/chat-agents';
-import { ChatRequestParserImpl } from '../common/chat-request-parser';
+import { ChatAgentServiceImpl } from '../common/chat-agent-service.js';
+import { ChatAgentLocation } from '../common/chat-agents.js';
+import { ChatRequestParserImpl } from '../common/chat-request-parser.js';
 
 disableJSDOM();
 

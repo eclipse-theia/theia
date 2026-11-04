@@ -16,10 +16,10 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
-import { FileDownloadEndpoint } from './file-download-endpoint';
-import { FileDownloadHandler, SingleFileDownloadHandler, MultiFileDownloadHandler, DownloadLinkHandler } from './file-download-handler';
-import { DirectoryArchiver } from './directory-archiver';
-import { FileDownloadCache } from './file-download-cache';
+import { FileDownloadEndpoint } from './file-download-endpoint.js';
+import { FileDownloadHandler, SingleFileDownloadHandler, MultiFileDownloadHandler, DownloadLinkHandler } from './file-download-handler.js';
+import { DirectoryArchiver } from './directory-archiver.js';
+import { FileDownloadCache } from './file-download-cache.js';
 
 export default new ContainerModule(bind => {
     bind(FileDownloadEndpoint).toSelf().inSingletonScope();

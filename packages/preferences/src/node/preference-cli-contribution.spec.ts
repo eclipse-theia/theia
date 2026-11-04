@@ -17,7 +17,7 @@
 import { expect } from 'chai';
 import { OS } from '@theia/core/lib/common/os';
 import { RemoteCliContext } from '@theia/core/lib/node/remote/remote-cli-contribution';
-import { PreferenceCliContribution } from './preference-cli-contribution';
+import { PreferenceCliContribution } from './preference-cli-contribution.js';
 import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 

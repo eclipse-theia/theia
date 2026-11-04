@@ -19,8 +19,8 @@ import { AI_SHOW_SETTINGS_COMMAND, AIViewContribution } from '@theia/ai-core/lib
 import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
 import { codicon, CommonCommands, CommonMenus, KeybindingRegistry } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { AIConfigurationContainerWidget } from './ai-configuration-widget';
-import { AIConfigurationSelectionService } from './ai-configuration-service';
+import { AIConfigurationContainerWidget } from './ai-configuration-widget.js';
+import { AIConfigurationSelectionService } from './ai-configuration-service.js';
 import {
     AiConfigurationCategoryId, AiConfigurationSearchProvider, AiConfigurationSelection
 } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';

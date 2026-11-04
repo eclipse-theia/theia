@@ -16,12 +16,12 @@
 
 import { Event, Emitter, URI, ILogger, DisposableCollection } from '@theia/core';
 import { inject, injectable, optional, postConstruct, named } from '@theia/core/shared/inversify';
-import { AIVariableArg, AIVariableContext, AIVariableService, createAIResolveVariableCache, ResolvedAIVariable } from './variable-service';
-import { ToolInvocationRegistry } from './tool-invocation-registry';
-import { toolRequestToPromptText } from './language-model-util';
-import { ToolRequest } from './language-model';
-import { FRONT_MATTER_REGEX, matchFunctionsRegEx, matchVariablesRegEx, parseFunctionReference, stripFrontMatter } from './prompt-service-util';
-import { AISettingsService } from './settings-service';
+import { AIVariableArg, AIVariableContext, AIVariableService, createAIResolveVariableCache, ResolvedAIVariable } from './variable-service.js';
+import { ToolInvocationRegistry } from './tool-invocation-registry.js';
+import { toolRequestToPromptText } from './language-model-util.js';
+import { ToolRequest } from './language-model.js';
+import { FRONT_MATTER_REGEX, matchFunctionsRegEx, matchVariablesRegEx, parseFunctionReference, stripFrontMatter } from './prompt-service-util.js';
+import { AISettingsService } from './settings-service.js';
 
 export interface CommandPromptFragmentMetadata {
     /** Display name for this prompt fragment (defaults to fragment id if not specified) */
@@ -247,6 +247,13 @@ export interface CustomAgentsLocation {
     kind: 'agents-dir' | 'legacy-yaml';
 }
 
+/** A loaded customization file, including files hidden by a higher-priority override. */
+export interface PromptFragmentCustomizationSource {
+    uri: URI;
+    template: string;
+    active: boolean;
+}
+
 /**
  * Service responsible for customizing prompt fragments
  */
@@ -268,6 +275,13 @@ export interface PromptFragmentCustomizationService {
      * @returns Whether the fragment has any customizations
      */
     isPromptFragmentCustomized(fragmentId: string): boolean;
+
+    /**
+     * Gets every loaded customization file of a prompt fragment, including the ones hidden by a
+     * higher-priority customization, regardless of whether they are active.
+     * @param fragmentId The prompt fragment ID
+     */
+    getPromptFragmentCustomizationSources?(fragmentId: string): PromptFragmentCustomizationSource[];
 
     /**
      * Gets the active customized prompt fragment for a given ID

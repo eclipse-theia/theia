@@ -14,5 +14,5 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './monaco-frontend-module';
-export * from './monaco-code-action-service';
+export * from './monaco-frontend-module.js';
+export * from './monaco-code-action-service.js';

@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { TestController, TestFailure, TestOutputItem, TestRun, TestService, TestState, TestStateChangedEvent } from '../test-service';
+import { TestController, TestFailure, TestOutputItem, TestRun, TestService, TestState, TestStateChangedEvent } from '../test-service.js';
 import { Disposable, Emitter, Event } from '@theia/core';
-import { TestContextKeyService } from './test-context-key-service';
+import { TestContextKeyService } from './test-context-key-service.js';
 
 export interface ActiveRunEvent {
     controller: TestController;

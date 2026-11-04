@@ -18,11 +18,11 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { CommandRegistry, MenuModelRegistry, MenuPath } from '@theia/core/lib/common';
 import { TreeWidget, TreeProps, NodeProps, TREE_NODE_SEGMENT_GROW_CLASS, TREE_NODE_INFO_CLASS } from '@theia/core/lib/browser/tree';
 import { codicon, ContextMenuRenderer, HoverService } from '@theia/core/lib/browser';
-import { TimelineNode, TimelineTreeModel } from './timeline-tree-model';
-import { TimelineService } from './timeline-service';
-import { TimelineContextKeyService } from './timeline-context-key-service';
+import { TimelineNode, TimelineTreeModel } from './timeline-tree-model.js';
+import { TimelineService } from './timeline-service.js';
+import { TimelineContextKeyService } from './timeline-context-key-service.js';
 import * as React from '@theia/core/shared/react';
-import { TimelineItem } from '../common/timeline-model';
+import { TimelineItem } from '../common/timeline-model.js';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { isThemeIcon } from '@theia/core/lib/common/theme';
 

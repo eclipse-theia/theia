@@ -186,9 +186,9 @@ export class CopilotCliLocator {
      * package is found whether the installation hoisted it or nested it below the SDK.
      */
     protected async bundledCandidates(): Promise<string[]> {
-        const candidates = [...this.resolvedCandidates(__filename)];
+        const candidates = [...this.resolvedCandidates(import.meta.filename)];
         try {
-            const resolver = createRequire(__filename);
+            const resolver = createRequire(import.meta.filename);
             candidates.push(...this.resolvedCandidates(resolver.resolve('@github/copilot-sdk')));
             for (const base of resolver.resolve.paths('@github/copilot') ?? []) {
                 candidates.push(...this.toPlatformPackageCandidates(base));

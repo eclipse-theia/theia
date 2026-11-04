@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
-import * as Ajv from '@theia/core/shared/ajv';
-import { DeflatedToolbarTree } from './toolbar-interfaces';
+import Ajv from '@theia/core/shared/ajv';
+import { DeflatedToolbarTree } from './toolbar-interfaces.js';
 
 const toolbarColumnGroup: IJSONSchema = {
     'type': 'array',

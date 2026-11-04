@@ -16,7 +16,7 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { QuickFileOpenService, quickFileOpen } from './quick-file-open';
+import { QuickFileOpenService, quickFileOpen } from './quick-file-open.js';
 import { CommandRegistry, CommandContribution, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
 import { KeybindingRegistry, KeybindingContribution, QuickAccessContribution } from '@theia/core/lib/browser';
 import { EditorMainMenu } from '@theia/editor/lib/browser';

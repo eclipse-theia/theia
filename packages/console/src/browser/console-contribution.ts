@@ -17,9 +17,9 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, CommandHandler } from '@theia/core';
 import { FrontendApplicationContribution, KeybindingContribution, KeybindingRegistry, CommonCommands } from '@theia/core/lib/browser';
-import { ConsoleManager } from './console-manager';
-import { ConsoleWidget } from './console-widget';
-import { ConsoleContentWidget } from './console-content-widget';
+import { ConsoleManager } from './console-manager.js';
+import { ConsoleWidget } from './console-widget.js';
+import { ConsoleContentWidget } from './console-content-widget.js';
 import { nls } from '@theia/core/lib/common/nls';
 
 export namespace ConsoleCommands {

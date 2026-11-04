@@ -16,8 +16,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Disposable, DisposableGroup, DisposableCollection } from './disposable';
-import { MaybePromise } from './types';
+import { Disposable, DisposableGroup, DisposableCollection } from './disposable.js';
+import { MaybePromise } from './types.js';
 
 /**
  * Represents a typed event.
@@ -166,8 +166,7 @@ class CallbackList implements Iterable<Callback> {
         }
     }
 
-    // tslint:disable-next-line:typedef
-    public [Symbol.iterator]() {
+    public [Symbol.iterator](): IterableIterator<Callback> {
         if (!this._callbacks) {
             return [][Symbol.iterator]();
         }
@@ -440,7 +439,7 @@ export namespace WaitUntilEvent {
     }
 }
 
-import { CancellationToken } from './cancellation';
+import { CancellationToken } from './cancellation.js';
 
 export class AsyncEmitter<T extends WaitUntilEvent> extends Emitter<T> {
 

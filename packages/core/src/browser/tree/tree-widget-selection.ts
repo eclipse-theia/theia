@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { TreeWidget } from './tree-widget';
-import { SelectableTreeNode } from './tree-selection';
+import { TreeWidget } from './tree-widget.js';
+import { SelectableTreeNode } from './tree-selection.js';
 
 export type TreeWidgetSelection = ReadonlyArray<Readonly<SelectableTreeNode>> & {
     source: TreeWidget

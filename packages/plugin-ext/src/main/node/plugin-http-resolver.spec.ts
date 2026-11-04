@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { HttpPluginDeployerResolver } from './plugin-http-resolver';
-import { PluginDeployerResolverContext } from '../../common';
+import { HttpPluginDeployerResolver } from './plugin-http-resolver.js';
+import { PluginDeployerResolverContext } from '../../common/index.js';
 
 describe('HttpPluginDeployerResolver', () => {
 

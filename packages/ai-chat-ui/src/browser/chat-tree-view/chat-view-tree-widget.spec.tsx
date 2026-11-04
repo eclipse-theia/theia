@@ -26,9 +26,9 @@ import 'reflect-metadata';
 import { expect } from 'chai';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { OpenerService } from '@theia/core/lib/browser';
-import { MarkdownRender } from '../chat-response-renderer/markdown-part-renderer';
-import { BLOCKED_RESOURCE_CLASS } from '../chat-response-renderer/block-external-resources';
-import { ChatRequestRender, RequestNode } from './chat-view-tree-widget';
+import { MarkdownRender } from '../chat-response-renderer/markdown-part-renderer.js';
+import { BLOCKED_RESOURCE_CLASS } from '../chat-response-renderer/block-external-resources.js';
+import { ChatRequestRender, RequestNode } from './chat-view-tree-widget.js';
 
 disableJSDOM();
 

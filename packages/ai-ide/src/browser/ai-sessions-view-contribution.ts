@@ -20,7 +20,7 @@ import { Command, CommandRegistry, nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { AISessionsWidget } from './ai-sessions-widget';
+import { AISessionsWidget } from './ai-sessions-widget.js';
 
 export const AI_SESSIONS_TOGGLE_COMMAND_ID = 'aiSessions:toggle';
 

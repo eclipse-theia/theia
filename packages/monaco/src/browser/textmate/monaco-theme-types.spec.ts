@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { MonacoThemeColor } from './monaco-theme-types';
+import { MonacoThemeColor } from './monaco-theme-types.js';
 
 describe('MonacoThemeColor', () => {
 

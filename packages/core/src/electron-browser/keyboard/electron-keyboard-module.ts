@@ -15,14 +15,21 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { KeyboardLayoutProvider, keyboardPath, KeyboardLayoutChangeNotifier } from '../../common/keyboard/keyboard-layout-provider';
-import { WebSocketConnectionProvider } from '../../browser/messaging/ws-connection-provider';
-import { ElectronKeyboardLayoutChangeNotifier } from './electron-keyboard-layout-change-notifier';
+import { KeyboardLayoutProvider, keyboardPath, KeyboardLayoutChangeNotifier } from '../../common/keyboard/keyboard-layout-provider.js';
+import { WebSocketConnectionProvider } from '../../browser/messaging/ws-connection-provider.js';
+import { ElectronKeyboardLayoutChangeNotifier } from './electron-keyboard-layout-change-notifier.js';
+
+export function createElectronKeyboardLayoutProvider(delegate: KeyboardLayoutProvider): KeyboardLayoutProvider {
+    return {
+        layoutSource: 'native-keymap',
+        getNativeLayout: () => delegate.getNativeLayout()
+    };
+}
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
-    bind(KeyboardLayoutProvider).toDynamicValue(ctx =>
+    bind(KeyboardLayoutProvider).toDynamicValue(ctx => createElectronKeyboardLayoutProvider(
         WebSocketConnectionProvider.createLocalProxy<KeyboardLayoutProvider>(ctx.container, keyboardPath)
-    ).inSingletonScope();
+    )).inSingletonScope();
     bind(ElectronKeyboardLayoutChangeNotifier).toSelf().inSingletonScope();
     bind(KeyboardLayoutChangeNotifier).toService(ElectronKeyboardLayoutChangeNotifier);
 });

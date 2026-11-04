@@ -33,11 +33,11 @@ import {
 import {
     ShellQuotedString, ShellQuotingFunctions, BashQuotingFunctions, CmdQuotingFunctions, PowershellQuotingFunctions, createShellCommandLine, ShellQuoting,
 } from '@theia/process/lib/common/shell-quoting';
-import { TaskFactory } from './process-task';
-import { TaskRunner } from '../task-runner-protocol';
-import { Task } from '../task';
-import { TaskConfiguration } from '../../common/task-protocol';
-import { ProcessTaskError, CommandOptions } from '../../common/process/task-protocol';
+import { TaskFactory } from './process-task.js';
+import { TaskRunner } from '../task-runner-protocol.js';
+import { Task } from '../task.js';
+import { TaskConfiguration } from '../../common/task-protocol.js';
+import { ProcessTaskError, CommandOptions } from '../../common/process/task-protocol.js';
 import * as fs from 'fs';
 import { ShellProcess } from '@theia/terminal/lib/node/shell-process';
 

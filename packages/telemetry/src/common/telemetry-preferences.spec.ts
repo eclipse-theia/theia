@@ -20,7 +20,7 @@ import {
     TELEMETRY_FILTERS,
     TELEMETRY_LEVEL,
     TelemetryPreferenceSchema
-} from './telemetry-preferences';
+} from './telemetry-preferences.js';
 
 describe('telemetry preferences', () => {
     it('defines only the level and filters preference keys', () => {

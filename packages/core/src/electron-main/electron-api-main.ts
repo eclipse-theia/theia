@@ -21,8 +21,8 @@ import {
 import * as nativeKeymap from '@theia/electron/shared/native-keymap';
 
 import { inject, injectable } from 'inversify';
-import { FrontendApplicationState, StopReason } from '../common/frontend-application-state';
-import { ElectronSecurityToken } from '../electron-common/electron-token';
+import { FrontendApplicationState, StopReason } from '../common/frontend-application-state.js';
+import { ElectronSecurityToken } from '../electron-common/electron-token.js';
 import {
     CHANNEL_GET_SECURITY_TOKEN, CHANNEL_SET_MENU, MenuDto, CHANNEL_INVOKE_MENU, CHANNEL_FOCUS_WINDOW,
     CHANNEL_ATTACH_SECURITY_TOKEN, CHANNEL_OPEN_POPUP, CHANNEL_ON_CLOSE_POPUP, CHANNEL_CLOSE_POPUP,
@@ -57,15 +57,16 @@ import {
     CHANNEL_ABOUT_TO_CLOSE,
     CHANNEL_OPEN_WITH_SYSTEM_APP,
     CHANNEL_OPEN_URL,
+    electronMenuAccelerator,
     CHANNEL_SET_THEME,
     CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW,
     CHANNEL_UPDATE_RECENT_WORKSPACES,
     CHANNEL_SET_AUTO_HIDE_MENU_BAR
-} from '../electron-common/electron-api';
-import { ElectronMainApplication, ElectronMainApplicationContribution } from './electron-main-application';
-import { Disposable, DisposableCollection, isOSX, isWindows, MaybePromise, URI } from '../common';
-import { FileUri } from '../node';
-import { createDisposableListener } from './event-utils';
+} from '../electron-common/electron-api.js';
+import { ElectronMainApplication, ElectronMainApplicationContribution } from './electron-main-application.js';
+import { Disposable, DisposableCollection, isOSX, isWindows, MaybePromise, URI } from '../common/index.js';
+import { FileUri } from '../node/index.js';
+import { createDisposableListener } from './event-utils.js';
 import * as path from 'node:path';
 
 @injectable()
@@ -274,11 +275,12 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
             event.returnValue = BrowserWindow.fromWebContents(event.sender)?.isFullScreen();
         });
 
-        ipcMain.on(CHANNEL_READ_CLIPBOARD, event => {
-            event.returnValue = clipboard.readText();
-        });
+        ipcMain.handle(CHANNEL_READ_CLIPBOARD, () => clipboard.readText().catch(error => {
+            console.warn('Could not read from the clipboard', error);
+            return '';
+        }));
         ipcMain.on(CHANNEL_WRITE_CLIPBOARD, (event, text) => {
-            clipboard.writeText(text);
+            clipboard.writeText(text).catch(error => console.warn('Could not write to the clipboard', error));
         });
 
         nativeKeymap.onDidChangeKeyboardLayout(() => {
@@ -341,18 +343,6 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
         });
     }
 
-    private isASCI(accelerator: string | undefined): boolean {
-        if (typeof accelerator !== 'string') {
-            return false;
-        }
-        for (let i = 0; i < accelerator.length; i++) {
-            if (accelerator.charCodeAt(i) > 127) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     fromMenuDto(sender: WebContents, menuId: number, menuDto: InternalMenuDto[]): MenuItemConstructorOptions[] {
         return menuDto.map(dto => {
             const result: MenuItemConstructorOptions = {
@@ -363,7 +353,7 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
                 enabled: dto.enabled,
                 visible: dto.visible,
                 role: dto.role,
-                accelerator: this.isASCI(dto.accelerator) ? dto.accelerator : undefined
+                ...electronMenuAccelerator(dto)
             };
             if (dto.submenu) {
                 result.submenu = this.fromMenuDto(sender, menuId, dto.submenu);

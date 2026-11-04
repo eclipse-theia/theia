@@ -5,7 +5,7 @@
 *  Licensed under the MIT License. See License.txt in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 
-import { isUndefinedOrNull, isArray, isObject } from './types';
+import { isUndefinedOrNull, isArray, isObject } from './types.js';
 
 const _hasOwnProperty = Object.prototype.hasOwnProperty;
 

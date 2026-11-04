@@ -23,13 +23,13 @@ import { FrontendApplicationContribution, KeybindingContribution, NavigatableWid
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import { MergeEditorModel, MergeEditorModelProps } from './model/merge-editor-model';
-import { MergeEditorBasePane, MergeEditorPaneHeader, MergeEditorResultPane, MergeEditorSide1Pane, MergeEditorSide2Pane } from './view/merge-editor-panes';
-import { DiffSpacerService } from './view/diff-spacers';
-import { MergeEditorViewZoneComputer } from './view/merge-editor-view-zones';
-import { MergeEditor, MergeEditorOpenHandler, MergeEditorSettings, MergeEditorUri, MergeUris } from './merge-editor';
-import { MergeEditorContribution } from './merge-editor-contribution';
-import { MergeEditorDevContribution } from './merge-editor-dev-contribution';
+import { MergeEditorModel, MergeEditorModelProps } from './model/merge-editor-model.js';
+import { MergeEditorBasePane, MergeEditorPaneHeader, MergeEditorResultPane, MergeEditorSide1Pane, MergeEditorSide2Pane } from './view/merge-editor-panes/index.js';
+import { DiffSpacerService } from './view/diff-spacers.js';
+import { MergeEditorViewZoneComputer } from './view/merge-editor-view-zones.js';
+import { MergeEditor, MergeEditorOpenHandler, MergeEditorSettings, MergeEditorUri, MergeUris } from './merge-editor.js';
+import { MergeEditorContribution } from './merge-editor-contribution.js';
+import { MergeEditorDevContribution } from './merge-editor-dev-contribution.js';
 
 export function bindMergeEditor(bind: interfaces.Bind): void {
     bind(MergeEditorSettings).toSelf().inSingletonScope();

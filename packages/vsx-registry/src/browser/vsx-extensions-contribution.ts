@@ -33,18 +33,19 @@ import { FileDialogService, OpenFileDialogProps } from '@theia/filesystem/lib/br
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { VSXExtensionRaw } from '@theia/ovsx-client';
 import { VscodeCommands } from '@theia/plugin-ext-vscode/lib/browser/plugin-vscode-commands-contribution';
+import { DuplicateExtensionError } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { DateTime } from 'luxon';
-import { VSXRegistryService } from '../common/vsx-registry-service';
-import { IGNORE_RECOMMENDATIONS_ID } from '../common/recommended-extensions-preference-contribution';
-import { VSXExtension, VSXExtensionsContextMenu } from './vsx-extension';
-import { VSXExtensionsCommands } from './vsx-extension-commands';
-import { VSXExtensionsModel } from './vsx-extensions-model';
-import { BUILTIN_QUERY, INSTALLED_QUERY, RECOMMENDED_QUERY } from './vsx-extensions-search-model';
-import { VSXExtensionsViewContainer } from './vsx-extensions-view-container';
+import { VSXRegistryService } from '../common/vsx-registry-service.js';
+import { IGNORE_RECOMMENDATIONS_ID } from '../common/recommended-extensions-preference-contribution.js';
+import { VSXExtension, VSXExtensionsContextMenu } from './vsx-extension.js';
+import { VSXExtensionsCommands } from './vsx-extension-commands.js';
+import { VSXExtensionsModel } from './vsx-extensions-model.js';
+import { BUILTIN_QUERY, INSTALLED_QUERY, RECOMMENDED_QUERY } from './vsx-extensions-search-model.js';
+import { VSXExtensionsViewContainer } from './vsx-extensions-view-container.js';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
-import { ExtensionsSourceContribution } from './extensions-source-contribution';
-import debounce = require('@theia/core/shared/lodash.debounce');
+import { ExtensionsSourceContribution } from './extensions-source-contribution.js';
+import debounce from '@theia/core/shared/lodash.debounce';
 import { ILogger } from '@theia/core';
 
 export namespace VSXCommands {
@@ -293,7 +294,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
             await this.commandRegistry.executeCommand(VscodeCommands.INSTALL_EXTENSION_FROM_ID_OR_URI.id, fileURI);
             this.messageService.info(nls.localizeByDefault('Completed installing extension.', extensionName));
         } catch (e) {
-            if (e instanceof Error && e.name === 'DuplicateExtensionError') {
+            if (DuplicateExtensionError.is(e)) {
                 this.messageService.error(
                     nls.localize('theia/vsx-registry/duplicateVSIX',
                         'Failed to install {0} from VSIX. The extension is already installed. Uninstall the existing extension before installing a new version from VSIX.',

@@ -15,7 +15,7 @@
 // *****************************************************************************
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ElectronMainApplicationContribution } from '@theia/core/lib/electron-main/electron-main-application';
-import { ElectronApi } from './electron-api-main';
+import { ElectronApi } from './electron-api-main.js';
 
 export default new ContainerModule(bind => {
     bind(ElectronApi).toSelf().inSingletonScope();

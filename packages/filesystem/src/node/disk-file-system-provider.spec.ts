@@ -27,9 +27,9 @@ import * as os from 'os';
 import { join } from 'path';
 import * as temp from 'temp';
 import { generateUuid } from '@theia/core/lib/common/uuid';
-import { FilePermission, FileSystemProviderCapabilities, FileSystemProviderError, FileSystemProviderErrorCode } from '../common/files';
-import { DiskFileSystemProvider } from './disk-file-system-provider';
-import { bindFileSystemWatcherServer } from './filesystem-backend-module';
+import { FilePermission, FileSystemProviderCapabilities, FileSystemProviderError, FileSystemProviderErrorCode } from '../common/files.js';
+import { DiskFileSystemProvider } from './disk-file-system-provider.js';
+import { bindFileSystemWatcherServer } from './filesystem-backend-module.js';
 
 const tracked = temp.track();
 
@@ -111,6 +111,35 @@ describe('disk-file-system-provider', () => {
                     await fsProvider.mkdir(FileUri.create(join(testFolder, 'subFolder')));
                 }
                 await fsProvider.delete(folderUri, { recursive, useTrash });
+            }
+        });
+
+        it('handles errors during temporary cleanup', async () => {
+            const tempDirPath = tracked.mkdirSync();
+            const provider = fsProvider as unknown as {
+                rimrafMove(path: string): Promise<void>;
+                rimrafUnlink(path: string): Promise<void>;
+                logger: ILogger;
+            };
+            const originalRimrafUnlink = provider.rimrafUnlink;
+            const originalWarn = provider.logger.warn;
+            let resolveWarning!: () => void;
+            const warningHandled = new Promise<void>(resolve => {
+                resolveWarning = resolve;
+            });
+            provider.rimrafUnlink = async path => {
+                await fs.rm(path, { recursive: true, force: true });
+                throw new Error('Cleanup failed');
+            };
+            provider.logger.warn = async () => {
+                resolveWarning();
+            };
+            try {
+                await provider.rimrafMove(tempDirPath);
+                await warningHandled;
+            } finally {
+                provider.rimrafUnlink = originalRimrafUnlink;
+                provider.logger.warn = originalWarn;
             }
         });
 

@@ -13,16 +13,16 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 
-import { MessagingService } from './messaging-service';
+import { MessagingService } from './messaging-service.js';
 import * as http from 'http';
 import * as https from 'https';
 import { inject, injectable, named } from 'inversify';
 import { Server, Socket } from 'socket.io';
-import { WsRequestValidator } from '../ws-request-validators';
-import { MessagingListener } from './messaging-listeners';
-import { ConnectionHandlers } from './default-messaging-service';
-import { BackendApplicationContribution } from '../backend-application';
-import { ILogger } from '../../common/logger';
+import { WsRequestValidator } from '../ws-request-validators.js';
+import { MessagingListener } from './messaging-listeners.js';
+import { ConnectionHandlers } from './default-messaging-service.js';
+import { BackendApplicationContribution } from '../backend-application.js';
+import { ILogger } from '../../common/logger.js';
 
 @injectable()
 export class WebsocketEndpoint implements BackendApplicationContribution {

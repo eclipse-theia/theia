@@ -20,7 +20,7 @@ import { URI } from '@theia/core';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { SkillService } from '@theia/ai-core/lib/browser/skill-service';
 import { parseSkillFile } from '@theia/ai-core/lib/common/skill';
-import { GET_SKILL_FILE_CONTENT_FUNCTION_ID, LIST_SKILLS_FUNCTION_ID } from '../common/workspace-functions';
+import { GET_SKILL_FILE_CONTENT_FUNCTION_ID, LIST_SKILLS_FUNCTION_ID } from '../common/workspace-functions.js';
 
 @injectable()
 export class ListSkills implements ToolProvider {

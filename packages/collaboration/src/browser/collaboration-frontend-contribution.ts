@@ -23,9 +23,9 @@ import {
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { AuthMetadata, AuthProvider, ConnectionProvider, FormAuthProvider, initializeProtocol, SocketIoTransportProvider, WebAuthProvider } from 'open-collaboration-protocol';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
-import { CollaborationInstance, CollaborationInstanceFactory } from './collaboration-instance';
+import { CollaborationInstance, CollaborationInstanceFactory } from './collaboration-instance.js';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { CollaborationWorkspaceService } from './collaboration-workspace-service';
+import { CollaborationWorkspaceService } from './collaboration-workspace-service.js';
 import { StatusBar, StatusBarAlignment, StatusBarEntry } from '@theia/core/lib/browser/status-bar';
 import { codiconArray } from '@theia/core/lib/browser/widgets/widget';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';

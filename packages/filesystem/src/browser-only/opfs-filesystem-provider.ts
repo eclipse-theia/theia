@@ -26,16 +26,16 @@ import {
     FileType, FileWriteOptions, Stat, WatchOptions, createFileSystemProviderError,
     FileOpenOptions, FileUpdateOptions, FileUpdateResult,
     type FileReadStreamOptions
-} from '../common/files';
+} from '../common/files.js';
 import { Emitter, Event, URI, Disposable, DisposableCollection, type CancellationToken } from '@theia/core';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { OPFSFileSystem, WatchEventType, type FileStat, type OPFSError, type WatchEvent } from 'opfs-worker';
-import { OPFSInitialization } from './opfs-filesystem-initialization';
+import { OPFSInitialization } from './opfs-filesystem-initialization.js';
 import { ReadableStreamEvents, newWriteableStream } from '@theia/core/lib/common/stream';
-import { readFileIntoStream } from '../common/io';
+import { readFileIntoStream } from '../common/io.js';
 import { Path } from '@theia/core/lib/common/path';
 
 @injectable()

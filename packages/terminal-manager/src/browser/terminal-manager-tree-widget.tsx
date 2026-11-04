@@ -30,11 +30,11 @@ import {
     TREE_NODE_INDENT_GUIDE_CLASS,
 } from '@theia/core/lib/browser';
 import { CommandRegistry, CompoundMenuNode, Emitter, MenuAction, MenuModelRegistry } from '@theia/core';
-import { TerminalManagerTreeModel } from './terminal-manager-tree-model';
+import { TerminalManagerTreeModel } from './terminal-manager-tree-model.js';
 import {
     ReactInteraction, TerminalManagerCommands,
     TerminalManagerTreeTypes, TERMINAL_MANAGER_TREE_CONTEXT_MENU
-} from './terminal-manager-types';
+} from './terminal-manager-types.js';
 
 /* eslint-disable no-param-reassign */
 @injectable()
@@ -91,7 +91,6 @@ export class TerminalManagerTreeWidget extends TreeWidget {
     protected override renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
         if (TerminalManagerTreeTypes.isTerminalManagerTreeNode(node) && !!node.isEditing) {
             const label = this.toNodeName(node);
-            // eslint-disable-next-line @typescript-eslint/ban-types
             const assignRef = (element: HTMLInputElement | null) => {
                 if (element) {
                     element.selectionStart = 0;

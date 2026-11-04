@@ -32,18 +32,12 @@ export function openAiReasoningFor(
     if (!level || !supportsReasoning || level === 'off') {
         return {};
     }
+    // Both APIs take the same effort values. Models that reject an effort leave it out of their
+    // `supportedLevels`, and the level is clamped to those before it gets here.
+    const effort = level === 'auto' ? undefined : level;
     if (forResponseApi) {
-        const responsesEffort =
-            level === 'minimal' ? 'minimal' :
-                level === 'low' ? 'low' :
-                    level === 'medium' ? 'medium' :
-                        level === 'high' ? 'high' :
-                            undefined;
         // Summaries are opt-in on the Responses API: without `summary` the model still reasons, but nothing is streamed to show.
-        return { reasoning: { ...(responsesEffort ? { effort: responsesEffort } : {}), summary: 'auto' } };
+        return { reasoning: { ...(effort ? { effort } : {}), summary: 'auto' } };
     }
-    // Chat Completions takes the same effort values, `minimal` included. Models that reject it (e.g. o-series)
-    // leave it out of their `supportedLevels`, and the level is clamped to those before it gets here.
-    const chatEffort = level === 'minimal' || level === 'low' || level === 'medium' || level === 'high' ? level : undefined;
-    return chatEffort ? { reasoning_effort: chatEffort } : {};
+    return effort ? { reasoning_effort: effort } : {};
 }

@@ -17,13 +17,13 @@
 import { Disposable, DisposableCollection, Emitter, Resource, URI, ILogger } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { CellKind, NotebookData, TransientOptions } from '../../common';
-import { NotebookModel, NotebookModelFactory, NotebookModelProps } from '../view-model/notebook-model';
+import { CellKind, NotebookData, TransientOptions } from '../../common/index.js';
+import { NotebookModel, NotebookModelFactory, NotebookModelProps } from '../view-model/notebook-model.js';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { NotebookCellModel, NotebookCellModelFactory, NotebookCellModelProps } from '../view-model/notebook-cell-model';
+import { NotebookCellModel, NotebookCellModelFactory, NotebookCellModelProps } from '../view-model/notebook-cell-model.js';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { NotebookMonacoTextModelService } from './notebook-monaco-text-model-service';
-import { CellEditOperation } from '../notebook-types';
+import { NotebookMonacoTextModelService } from './notebook-monaco-text-model-service.js';
+import { CellEditOperation } from '../notebook-types.js';
 
 export const NotebookProvider = Symbol('notebook provider');
 

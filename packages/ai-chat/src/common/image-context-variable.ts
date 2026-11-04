@@ -20,7 +20,7 @@ import {
     ResolvedAIContextVariable
 } from '@theia/ai-core';
 import { nls } from '@theia/core';
-import { ParsedChatRequestPart, ParsedChatRequestVariablePart } from './parsed-chat-request';
+import { ParsedChatRequestPart, ParsedChatRequestVariablePart } from './parsed-chat-request.js';
 
 export const IMAGE_CONTEXT_VARIABLE: AIVariable = {
     id: 'imageContext',

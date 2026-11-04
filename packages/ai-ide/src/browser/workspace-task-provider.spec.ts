@@ -17,18 +17,19 @@
 import { expect } from 'chai';
 import { CancellationTokenSource, PreferenceService, ILogger } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
-import { GLOBAL_SCOPE_TOKEN, TaskListProvider, TaskRunnerProvider, WORKSPACE_SCOPE_TOKEN } from './workspace-task-provider';
+import { GLOBAL_SCOPE_TOKEN, TaskListProvider, TaskRunnerProvider, WORKSPACE_SCOPE_TOKEN } from './workspace-task-provider.js';
 import { AiConfigurationService, ToolInvocationContext } from '@theia/ai-core';
 import { Container } from '@theia/core/shared/inversify';
 import { TaskService } from '@theia/task/lib/browser/task-service';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TaskConfiguration, TaskInfo, TaskScope } from '@theia/task/lib/common';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
-import { WorkspaceFunctionScope } from './workspace-functions';
+import { WorkspaceFunctionScope } from './workspace-functions.js';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { withWorkspaceServiceDefaults } from '@theia/workspace/lib/browser/test/with-workspace-service-defaults';
 
 const makeTrustAwareReader = (): AiConfigurationService => ({
     get: <T>(_name: string, fallback?: T) => fallback,
@@ -127,7 +128,7 @@ describe('Workspace Task Provider Cancellation Tests', () => {
         // Register mocks in the container
         container.bind(TaskService).toConstantValue(mockTaskService);
         container.bind(TerminalService).toConstantValue(mockTerminalService);
-        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
         container.bind(FileService).toConstantValue({} as FileService);
         container.bind(PreferenceService).toConstantValue({ get: () => false } as unknown as PreferenceService);
         container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
@@ -361,7 +362,7 @@ describe('Workspace Task Provider Cancellation Tests', () => {
 
         multiRootContainer.bind(TaskService).toConstantValue(multiRootTaskService);
         multiRootContainer.bind(TerminalService).toConstantValue(mockTerminalService);
-        multiRootContainer.bind(WorkspaceService).toConstantValue(multiRootWorkspaceService);
+        multiRootContainer.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(multiRootWorkspaceService));
         multiRootContainer.bind(FileService).toConstantValue({} as FileService);
         multiRootContainer.bind(PreferenceService).toConstantValue({ get: () => false } as unknown as PreferenceService);
         multiRootContainer.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
@@ -409,7 +410,7 @@ describe('Workspace Task Provider Cancellation Tests', () => {
 
         multiRootContainer.bind(TaskService).toConstantValue(multiRootTaskService);
         multiRootContainer.bind(TerminalService).toConstantValue(mockTerminalService);
-        multiRootContainer.bind(WorkspaceService).toConstantValue(multiRootWorkspaceService);
+        multiRootContainer.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(multiRootWorkspaceService));
         multiRootContainer.bind(FileService).toConstantValue({} as FileService);
         multiRootContainer.bind(PreferenceService).toConstantValue({ get: () => false } as unknown as PreferenceService);
         multiRootContainer.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());

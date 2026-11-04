@@ -29,12 +29,12 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 import { LabelProvider, OpenerService, FrontendApplication } from '@theia/core/lib/browser';
 import { MessageService, OS } from '@theia/core/lib/common';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
-import { WorkspaceCommandContribution } from './workspace-commands';
-import { WorkspaceCompareHandler } from './workspace-compare-handler';
-import { WorkspaceDeleteHandler } from './workspace-delete-handler';
-import { WorkspaceDuplicateHandler } from './workspace-duplicate-handler';
-import { WorkspacePreferences } from '../common/workspace-preferences';
-import { WorkspaceService } from './workspace-service';
+import { WorkspaceCommandContribution } from './workspace-commands.js';
+import { WorkspaceCompareHandler } from './workspace-compare-handler.js';
+import { WorkspaceDeleteHandler } from './workspace-delete-handler.js';
+import { WorkspaceDuplicateHandler } from './workspace-duplicate-handler.js';
+import { WorkspacePreferences } from '../common/workspace-preferences.js';
+import { WorkspaceService } from './workspace-service.js';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 

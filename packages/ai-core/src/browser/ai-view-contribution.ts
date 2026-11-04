@@ -16,8 +16,8 @@
 import { CommandRegistry, MenuModelRegistry, PreferenceService } from '@theia/core';
 import { AbstractViewContribution, CommonMenus, KeybindingRegistry, Widget } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { AIActivationService, ENABLE_AI_CONTEXT_KEY } from './ai-activation-service';
-import { AICommandHandlerFactory } from './ai-command-handler-factory';
+import { AIActivationService, ENABLE_AI_CONTEXT_KEY } from './ai-activation-service.js';
+import { AICommandHandlerFactory } from './ai-command-handler-factory.js';
 
 @injectable()
 export class AIViewContribution<T extends Widget> extends AbstractViewContribution<T> {

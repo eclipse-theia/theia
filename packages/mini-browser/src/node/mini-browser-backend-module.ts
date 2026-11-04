@@ -18,11 +18,11 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import { bindRootContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { ConnectionHandler, RpcConnectionHandler } from '@theia/core/lib/common';
-import { MiniBrowserService, MiniBrowserServicePath } from '../common/mini-browser-service';
-import { MiniBrowserEndpoint, MiniBrowserEndpointHandler, HtmlHandler, ImageHandler, PdfHandler, SvgHandler } from './mini-browser-endpoint';
+import { MiniBrowserService, MiniBrowserServicePath } from '../common/mini-browser-service.js';
+import { MiniBrowserEndpoint, MiniBrowserEndpointHandler, HtmlHandler, ImageHandler, PdfHandler, SvgHandler } from './mini-browser-endpoint.js';
 import { WsRequestValidatorContribution } from '@theia/core/lib/node/ws-request-validators';
-import { MiniBrowserWsRequestValidator } from './mini-browser-ws-validator';
-import { MiniBrowserBackendSecurityWarnings } from './mini-browser-backend-security-warnings';
+import { MiniBrowserWsRequestValidator } from './mini-browser-ws-validator.js';
+import { MiniBrowserBackendSecurityWarnings } from './mini-browser-backend-security-warnings.js';
 
 export default new ContainerModule(bind => {
     bind(MiniBrowserEndpoint).toSelf().inSingletonScope();

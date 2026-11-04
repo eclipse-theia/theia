@@ -20,7 +20,7 @@ import * as temp from 'temp';
 import { extract } from 'tar-fs';
 import { expect } from 'chai';
 import URI from '@theia/core/lib/common/uri';
-import { MockDirectoryArchiver } from './test/mock-directory-archiver';
+import { MockDirectoryArchiver } from './test/mock-directory-archiver.js';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 
 const track = temp.track();

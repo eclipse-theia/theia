@@ -17,13 +17,13 @@
 import { URI } from '@theia/core/shared/vscode-uri';
 import CoreURI from '@theia/core/lib/common/uri';
 import { interfaces } from '@theia/core/shared/inversify';
-import { WindowStateExt, MAIN_RPC_CONTEXT, WindowMain } from '../../common/plugin-api-rpc';
-import { RPCProtocol } from '../../common/rpc-protocol';
-import { UriComponents } from '../../common/uri-components';
+import { WindowStateExt, MAIN_RPC_CONTEXT, WindowMain } from '../../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
+import { UriComponents } from '../../common/uri-components.js';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
 import { ExternalUriService } from '@theia/core/lib/browser/external-uri-service';
-import { WindowActivityTracker } from './window-activity-tracker';
+import { WindowActivityTracker } from './window-activity-tracker.js';
 
 export class WindowStateMain implements WindowMain, Disposable {
 

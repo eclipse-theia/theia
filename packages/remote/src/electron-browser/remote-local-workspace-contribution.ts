@@ -17,9 +17,9 @@
 import { ILogger, MaybePromise, URI } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { WorkspaceHandlingContribution, WorkspaceInput, WorkspaceOpenHandlerContribution } from '@theia/workspace/lib/browser';
-import { LOCAL_FILE_SCHEME } from './local-backend-services';
+import { LOCAL_FILE_SCHEME } from './local-backend-services.js';
 import { CURRENT_PORT_PARAM, LOCAL_PORT_PARAM, getCurrentPort, getLocalPort } from '@theia/core/lib/electron-browser/messaging/electron-local-ws-connection-source';
-import { RemoteStatusService } from '../electron-common/remote-status-service';
+import { RemoteStatusService } from '../electron-common/remote-status-service.js';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { WorkspacePreferences } from '@theia/workspace/lib/common';
 

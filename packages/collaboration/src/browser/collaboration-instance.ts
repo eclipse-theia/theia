@@ -24,22 +24,23 @@ import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shel
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
-import { CollaborationWorkspaceService } from './collaboration-workspace-service';
+import { CollaborationWorkspaceService } from './collaboration-workspace-service.js';
 import { Range as MonacoRange } from '@theia/monaco-editor-core';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EditorDecoration, EditorWidget, Selection, TextEditorDocument, TrackedRangeStickiness } from '@theia/editor/lib/browser';
 import { DecorationStyle, OpenerService, SaveReason } from '@theia/core/lib/browser';
-import { CollaborationFileSystemProvider, CollaborationURI } from './collaboration-file-system-provider';
+import { CollaborationFileSystemProvider, CollaborationURI } from './collaboration-file-system-provider.js';
 import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
-import { CollaborationColorService } from './collaboration-color-service';
+import { CollaborationColorService } from './collaboration-color-service.js';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileChange, FileChangeType, FileOperation } from '@theia/filesystem/lib/common/files';
 import { OpenCollaborationYjsProvider } from 'open-collaboration-yjs';
 import { createMutex } from 'lib0/mutex';
-import { CollaborationUtils } from './collaboration-utils';
-import debounce = require('@theia/core/shared/lodash.debounce');
+import { CollaborationUtils } from './collaboration-utils.js';
+import { yTextDeltaToEdits } from './yjs-delta.js';
+import debounce from '@theia/core/shared/lodash.debounce';
 
 export const CollaborationInstanceFactory = Symbol('CollaborationInstanceFactory');
 export type CollaborationInstanceFactory = (connection: CollaborationInstanceOptions) => CollaborationInstance;
@@ -160,7 +161,10 @@ export class CollaborationInstance implements Disposable {
             this.messageService.error(message);
             this.dispose();
         });
-        this.yjsProvider = new OpenCollaborationYjsProvider(connection, this.yjs, this.yjsAwareness);
+        // Repairs updates this peer missed; the other Open Collaboration Tools clients use the same interval.
+        this.yjsProvider = new OpenCollaborationYjsProvider(connection, this.yjs, this.yjsAwareness, {
+            resyncTimer: 10_000
+        });
         this.yjsProvider.connect();
         this.toDispose.push(Disposable.create(() => this.yjs.destroy()));
         this.toDispose.push(this.yjsProvider);
@@ -735,23 +739,15 @@ export class CollaborationInstance implements Disposable {
             this.yjsMutex(() => {
                 updating = true;
                 try {
-                    let index = 0;
-                    const operations: { range: MonacoRange, text: string }[] = [];
-                    textEvent.delta.forEach(delta => {
-                        if (delta.retain !== undefined) {
-                            index += delta.retain;
-                        } else if (delta.insert !== undefined) {
-                            const pos = model.textEditorModel.getPositionAt(index);
-                            const range = new MonacoRange(pos.lineNumber, pos.column, pos.lineNumber, pos.column);
-                            const insert = delta.insert as string;
-                            operations.push({ range, text: insert });
-                            index += insert.length;
-                        } else if (delta.delete !== undefined) {
-                            const pos = model.textEditorModel.getPositionAt(index);
-                            const endPos = model.textEditorModel.getPositionAt(index + delta.delete);
-                            const range = new MonacoRange(pos.lineNumber, pos.column, endPos.lineNumber, endPos.column);
-                            operations.push({ range, text: '' });
-                        }
+                    const operations = yTextDeltaToEdits(textEvent.delta).map(edit => {
+                        const startPos = model.textEditorModel.getPositionAt(edit.start);
+                        const endPos = edit.end === edit.start
+                            ? startPos
+                            : model.textEditorModel.getPositionAt(edit.end);
+                        return {
+                            range: new MonacoRange(startPos.lineNumber, startPos.column, endPos.lineNumber, endPos.column),
+                            text: edit.text
+                        };
                     });
                     this.pushChangesToModel(model, operations);
                 } catch (err) {

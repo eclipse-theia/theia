@@ -15,21 +15,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { BasePromptFragment } from '@theia/ai-core/lib/common';
-import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID } from '../../common/context-variables';
+import { AGENTS_MD_FILE_NAME, AGENTS_MD_PROMPT_FRAGMENT_ID, BasePromptFragment } from '@theia/ai-core/lib/common';
+import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID } from '../../common/context-variables.js';
 import {
     FILE_CONTENT_FUNCTION_ID,
     GET_FILE_DIAGNOSTICS_ID,
     SEARCH_IN_WORKSPACE_FUNCTION_ID
-} from '../../common/workspace-functions';
+} from '../../common/workspace-functions.js';
 import {
     CREATE_TASK_CONTEXT_FUNCTION_ID,
     GET_TASK_CONTEXT_FUNCTION_ID,
     EDIT_TASK_CONTEXT_FUNCTION_ID,
     LIST_TASK_CONTEXTS_FUNCTION_ID,
     REWRITE_TASK_CONTEXT_FUNCTION_ID
-} from '../../common/task-context-function-ids';
-import { USER_INTERACTION_FUNCTION_ID } from '../../common/user-interaction-tool';
+} from '../../common/task-context-function-ids.js';
+import { USER_INTERACTION_FUNCTION_ID } from '../../common/user-interaction-tool.js';
 
 export const PR_REVIEW_SYSTEM_PROMPT_ID = 'pr-review-system';
 export const PR_REVIEW_GITHUB_INFORMATION_CAPABILITY_ID = 'pr-review-github-information';
@@ -246,7 +246,7 @@ Review with both goals in mind.
 **Second, surface issues (this drives the Findings):**
 - **Correctness:** Does the code do what it claims?
 - **Style consistency:** Does it follow existing patterns from the exploration findings (Phase 5)?
-- **Project guidelines:** Does it adhere to rules from \`{{prompt:project-info}}\` (e.g., coding conventions, preferred APIs, DI patterns)?
+- **Project guidelines:** Does it adhere to the rules in the project's \`${AGENTS_MD_FILE_NAME}\`, if the Project Context section lists one (e.g., coding conventions, preferred APIs, DI patterns)?
 - **Potential bugs:** Race conditions, edge cases, error handling
 - **Missing tests:** Are behavior changes covered by tests?
 - **Security:** Any vulnerabilities introduced?
@@ -493,7 +493,7 @@ Where a Mermaid diagram is genuinely useful, use one, for example to explain arc
 
 {{${CONTEXT_FILES_VARIABLE_ID}}}
 
-{{prompt:project-info}}
+{{prompt:${AGENTS_MD_PROMPT_FRAGMENT_ID}}}
 
 {{${TASK_CONTEXT_SUMMARY_VARIABLE_ID}}}
 `

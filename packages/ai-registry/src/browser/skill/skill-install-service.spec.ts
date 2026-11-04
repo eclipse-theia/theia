@@ -17,11 +17,11 @@
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { PreferenceService } from '@theia/core';
-import { AUTO_UPDATE_OVERRIDES_PREF } from '../../common/ai-registry-preferences';
-import { SkillInstallBackendService } from '../../common/skill/skill-install-protocol';
-import { InstalledSkillInfo, ResolvedSkillEntry } from '../../common/skill/skill-registry-types';
-import { RegistryAutoUpdatePolicy, RegistryAutoUpdatePolicyImpl } from '../auto-update/registry-auto-update-policy';
-import { SkillInstallService, SkillInstallServiceImpl } from './skill-install-service';
+import { AUTO_UPDATE_OVERRIDES_PREF } from '../../common/ai-registry-preferences.js';
+import { SkillInstallBackendService } from '../../common/skill/skill-install-protocol.js';
+import { InstalledSkillInfo, ResolvedSkillEntry } from '../../common/skill/skill-registry-types.js';
+import { RegistryAutoUpdatePolicy, RegistryAutoUpdatePolicyImpl } from '../auto-update/registry-auto-update-policy.js';
+import { SkillInstallService, SkillInstallServiceImpl } from './skill-install-service.js';
 
 const entry: ResolvedSkillEntry = {
     skillId: 'io.github.example/example-skill',

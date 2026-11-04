@@ -14,13 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '../../browser/test/jsdom';
+import { enableJSDOM } from '../../browser/test/jsdom.js';
 let disableJSDOM = enableJSDOM();
 
-import { KeyCode, Key, KeyModifier, KeySequence } from './keys';
-import * as os from '../../common/os';
+import { KeyCode, Key, KeyModifier, KeySequence, NormalizedKeyboardInput, normalizeKeyboardInput, readAltGraph } from './keys.js';
 import * as chai from 'chai';
-import * as sinon from 'sinon';
+import { stubOS } from '../../common/test/stub-os.js';
 
 disableJSDOM();
 
@@ -50,7 +49,7 @@ describe('keys api', () => {
     });
 
     it('should parse a string containing special modifiers to a KeyCode correctly', () => {
-        const stub = sinon.stub(os, 'isOSX').value(false);
+        const stub = stubOS('isOSX', false);
         const keycode = KeyCode.parse('ctrl+b');
         expect(keycode.ctrl).to.be.true;
         expect(keycode.key).is.equal(Key.KEY_B);
@@ -70,7 +69,7 @@ describe('keys api', () => {
 
     it('should parse a string containing special modifiers to a KeyCode correctly (macOS)', () => {
         KeyCode.resetKeyBindings();
-        const stub = sinon.stub(os, 'isOSX').value(true);
+        const stub = stubOS('isOSX', true);
         const keycode = KeyCode.parse('ctrl+b');
         expect(keycode.ctrl).to.be.true;
         expect(keycode.key).is.equal(Key.KEY_B);
@@ -92,14 +91,14 @@ describe('keys api', () => {
     });
 
     it('should serialize a keycode properly with BACKQUOTE + M1', () => {
-        const stub = sinon.stub(os, 'isOSX').value(true);
+        const stub = stubOS('isOSX', true);
         let keyCode = KeyCode.createKeyCode({ first: Key.BACKQUOTE, modifiers: [KeyModifier.CtrlCmd] });
         let keyCodeString = keyCode.toString();
         expect(keyCodeString).to.be.equal('meta+`');
         let parsedKeyCode = KeyCode.parse(keyCodeString);
         expect(equalKeyCode(parsedKeyCode, keyCode)).to.be.true;
 
-        sinon.stub(os, 'isOSX').value(false);
+        stubOS('isOSX', false);
         keyCode = KeyCode.createKeyCode({ first: Key.BACKQUOTE, modifiers: [KeyModifier.CtrlCmd] });
         keyCodeString = keyCode.toString();
         expect(keyCodeString).to.be.equal('ctrl+`');
@@ -115,6 +114,139 @@ describe('keys api', () => {
         expect(keyCodeString).to.be.equal('shift+alt+a');
         const parsedKeyCode = KeyCode.parse(keyCodeString);
         expect(equalKeyCode(parsedKeyCode, keyCode)).to.be.true;
+    });
+
+    it('should keep dispatch strings equivalent to serialized strings', () => {
+        const keyCodes = [
+            ...Array.from({ length: 16 }, (_, modifiers) => new KeyCode({
+                key: Key.KEY_A,
+                ctrl: !!(modifiers & 1),
+                shift: !!(modifiers & 2),
+                alt: !!(modifiers & 4),
+                meta: !!(modifiers & 8)
+            })),
+            new KeyCode({}),
+            KeyCode.parse('ctrl+['),
+            KeyCode.parse('shift+/'),
+            ...KeySequence.parse('ctrlcmd+k ctrlcmd+c')
+        ];
+        for (const keyCode of keyCodes) {
+            expect(keyCode.dispatchString()).to.equal(keyCode.toString());
+        }
+    });
+
+    it('should distinguish layout modifiers in dispatch identity without changing serialization', () => {
+        const command = new KeyCode({ key: Key.DIGIT8, ctrl: true, alt: true });
+        const layout = new KeyCode({ key: Key.DIGIT8, ctrl: true, layoutModifiers: 'altGraph', character: '[' });
+        const shiftedLayout = new KeyCode({ key: Key.SLASH, layoutModifiers: 'shift', character: '/' });
+
+        expect(command.toString()).to.equal('alt+ctrl+8');
+        expect(layout.toString()).to.equal('ctrl+8');
+        expect(layout.dispatchString()).to.equal('ctrl+8@altgraph');
+        expect(shiftedLayout.toString()).to.equal('/');
+        expect(shiftedLayout.dispatchString()).to.equal('/@shift');
+        expect(command.equals(layout)).to.be.false;
+    });
+
+    it('should keep equality and dispatch identity equivalent for layout modifiers', () => {
+        const layers = ['none', 'shift', 'altGraph', 'shiftAltGraph'] as const;
+        const keyCodes = Array.from({ length: 64 }, (_, modifiers) => new KeyCode({
+            key: Key.KEY_A,
+            ctrl: !!(modifiers & 1),
+            shift: !!(modifiers & 2),
+            alt: !!(modifiers & 4),
+            meta: !!(modifiers & 8),
+            layoutModifiers: layers[modifiers >> 4]
+        }));
+        for (const left of keyCodes) {
+            for (const right of keyCodes) {
+                expect(left.equals(right)).to.equal(left.dispatchString() === right.dispatchString());
+            }
+        }
+    });
+
+    it('should keep interpretation provenance outside dispatch identity', () => {
+        const command = new KeyCode({ key: Key.DIGIT8, ctrl: true, interpretation: 'commandModifiers' });
+        const layout = new KeyCode({ key: Key.DIGIT8, ctrl: true, interpretation: 'layoutModifiers' });
+
+        expect(command.dispatchString()).to.equal(layout.dispatchString());
+        expect(command.equals(layout)).to.be.true;
+        expect(command.interpretation).to.equal('commandModifiers');
+        expect(layout.interpretation).to.equal('layoutModifiers');
+    });
+
+    it('should normalize explicit and native AltGraph state', () => {
+        expect(readAltGraph({ altGraph: false, getModifierState: () => true })).to.be.false;
+        expect(readAltGraph({ getModifierState: modifier => modifier === 'AltGraph' })).to.be.true;
+        expect(readAltGraph({ code: 'Digit8' })).to.be.false;
+
+        expect(normalizeKeyboardInput({
+            key: '[',
+            code: 'Digit8',
+            keyCode: 56,
+            ctrlKey: true,
+            altGraph: true,
+            location: 0
+        })).to.deep.equal({
+            key: '[',
+            code: 'Digit8',
+            keyCode: 56,
+            charCode: undefined,
+            ctrlKey: true,
+            shiftKey: undefined,
+            altKey: undefined,
+            metaKey: undefined,
+            altGraph: true,
+            repeat: undefined,
+            isComposing: undefined,
+            location: 0,
+            timeStamp: undefined,
+            keyIdentifier: undefined,
+            getModifierState: undefined
+        });
+    });
+
+    it('should preserve every normalized keyboard input field', () => {
+        const getModifierState = (modifier: string) => modifier === 'AltGraph';
+        const input: Required<NormalizedKeyboardInput> = {
+            key: '[',
+            code: 'Digit8',
+            keyCode: 56,
+            charCode: 91,
+            ctrlKey: true,
+            shiftKey: true,
+            altKey: false,
+            metaKey: true,
+            altGraph: true,
+            repeat: true,
+            isComposing: false,
+            location: 2,
+            timeStamp: 42,
+            keyIdentifier: 'U+005B',
+            getModifierState
+        };
+
+        const normalized = normalizeKeyboardInput(input);
+
+        expect({ ...normalized, getModifierState: undefined }).to.deep.equal({ ...input, getModifierState: undefined });
+        expect(normalized.getModifierState?.('AltGraph')).to.be.true;
+    });
+
+    it('should create key codes from normalized plain data', () => {
+        const keyCode = KeyCode.createKeyCode({
+            key: '[',
+            code: 'Digit8',
+            keyCode: 56,
+            ctrlKey: true
+        });
+        expect(keyCode.key).to.equal(Key.DIGIT8);
+        expect(keyCode.ctrl).to.be.true;
+        expect(keyCode.character).to.equal('[');
+    });
+
+    it('should preserve legacy key identifier fallback in normalized data', () => {
+        const input = normalizeKeyboardInput({ keyIdentifier: Key.F1.code });
+        expect(KeyCode.createKeyCode(input).key).to.equal(Key.F1);
     });
 
     it('the order of the modifiers should not matter when parsing the key code', () => {
@@ -139,9 +271,9 @@ describe('keys api', () => {
             code: Key.BACKQUOTE.code,
             ctrlKey: true,
         });
-        const stub = sinon.stub(os, 'isOSX').value(true);
+        const stub = stubOS('isOSX', true);
         expect(KeyCode.createKeyCode(event).toString()).to.be.equal('ctrl+`');
-        sinon.stub(os, 'isOSX').value(false);
+        stubOS('isOSX', false);
         expect(KeyCode.createKeyCode(event).toString()).to.be.equal('ctrl+`');
         stub.restore();
     });
@@ -156,7 +288,7 @@ describe('keys api', () => {
     });
 
     it('should serialize a keycode properly with a + M4', () => {
-        const stub = sinon.stub(os, 'isOSX').value(true);
+        const stub = stubOS('isOSX', true);
         const keyCode = KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.MacCtrl] });
         const keyCodeString = keyCode.toString();
         expect(keyCodeString).to.be.equal('ctrl+a');
@@ -229,6 +361,78 @@ describe('keys api', () => {
         expect(first.shift).to.be.true;
         expect(first.key).is.equal(Key.F10);
         expect(second.key).is.equal(Key.KEY_B);
+    });
+
+    it('should parse physical scan codes and preserve them when serializing', () => {
+        const keycode = KeyCode.parse('ctrl+[BracketLeft]');
+        expect(keycode.ctrl).to.be.true;
+        expect(keycode.key).to.equal(Key.BRACKET_LEFT);
+        expect(keycode.physical).to.be.true;
+        expect(keycode.toString()).to.equal('ctrl+[BracketLeft]');
+        expect(() => KeyCode.parse('[UnknownPhysicalKey]')).to.throw(/Unknown scan code/);
+    });
+
+    it('should parse bare and escaped logical characters', () => {
+        for (const character of ['^', '§', '²', 'ä']) {
+            const keycode = KeyCode.parse(`ctrl+${character}`);
+            expect(keycode.character).to.equal(character);
+            expect(keycode.toString()).to.equal(`ctrl+${character}`);
+        }
+        expect(KeyCode.parse('ctrl+[char:0x2B]').character).to.equal('+');
+        expect(KeyCode.parse('ctrl+[char:0x20]').character).to.equal(' ');
+        expect(KeyCode.parse('ctrl+[char:0x5D]').character).to.equal(']');
+        expect(KeyCode.parse('ctrl+[char:§]').character).to.equal('§');
+        expect(KeyCode.parse('ctrl+[char:0x2B]').toString()).to.equal('ctrl+[char:0x2B]');
+    });
+
+    it('should keep bracketed separators and whitespace within one key token', () => {
+        expect(KeySequence.parse('ctrl+[char:0x20] ctrl+[BracketLeft]')).to.have.length(2);
+        expect(KeySequence.parse('ctrl+[ ctrl+]')).to.have.length(2);
+        expect(KeySequence.parse('ctrl+] ctrl+[')).to.have.length(2);
+        expect(KeyCode.parse('ctrl+[char:0x2B]').character).to.equal('+');
+        expect(KeyCode.parse('ctrl+[char:0x2D]').character).to.equal('-');
+    });
+
+    it('should reject invalid and multi-code-point logical characters', () => {
+        expect(() => KeyCode.parse('[char:0x110000]')).to.throw(/Invalid Unicode/);
+        expect(() => KeyCode.parse('[char:0xD800]')).to.throw(/Invalid Unicode/);
+        expect(() => KeyCode.parse('[char:ab]')).to.throw(/Invalid Unicode/);
+        expect(() => KeyCode.parse('👨‍👩‍👧‍👦')).to.throw(/Unrecognized key/);
+    });
+
+    it('should serialize recorder strokes as logical characters, named keys, or physical scan codes', () => {
+        expect(new KeyCode({ key: Key.DIGIT8, ctrl: true, character: '[' }).toAuthoredKeybindingString()).to.equal('ctrl+[');
+        expect(new KeyCode({ key: Key.EQUAL, ctrl: true, character: '+' }).toAuthoredKeybindingString()).to.equal('ctrl+[char:0x2B]');
+
+        const namedKeys: Array<[Key, string]> = [
+            [Key.F1, 'f1'],
+            [Key.DELETE, 'delete'],
+            [Key.BACKSPACE, 'backspace'],
+            [Key.ENTER, 'enter'],
+            [Key.ARROW_LEFT, 'left'],
+            [Key.SPACE, 'space'],
+            [Key.ESCAPE, 'escape']
+        ];
+        for (const [key, name] of namedKeys) {
+            const serialized = new KeyCode({ key, ctrl: true }).toAuthoredKeybindingString();
+            expect(serialized).to.equal(`ctrl+${name}`);
+            expect(KeyCode.parse(serialized).key).to.equal(key);
+        }
+
+        const physicalPrintable = new KeyCode({ key: Key.DIGIT8, ctrl: true }).toAuthoredKeybindingString();
+        expect(physicalPrintable).to.equal('ctrl+[Digit8]');
+        expect(KeyCode.parse(physicalPrintable).key).to.equal(Key.DIGIT8);
+
+        const shiftedLetter = new KeyCode({ key: Key.KEY_P, ctrl: true, shift: true, character: 'P' });
+        expect(shiftedLetter.toAuthoredKeybindingString()).to.equal('shift+ctrl+p');
+        expect(KeyCode.parse(shiftedLetter.toAuthoredKeybindingString()).dispatchString()).to.equal('shift+ctrl+p');
+    });
+
+    it('should serialize recorder strokes for Space and numpad keys by name', () => {
+        expect(new KeyCode({ key: Key.SPACE, meta: true, shift: true, character: ' ' }).toAuthoredKeybindingString()).to.equal('meta+shift+space');
+        expect(new KeyCode({ key: Key.ADD, ctrl: true, character: '+' }).toAuthoredKeybindingString()).to.equal('ctrl+add');
+        expect(new KeyCode({ key: Key.DECIMAL, ctrl: true, character: '.' }).toAuthoredKeybindingString()).to.equal('ctrl+decimal');
+        expect(new KeyCode({ key: Key.DIGIT1, ctrl: true, character: '1' }).toAuthoredKeybindingString()).to.equal('ctrl+1');
     });
 
     it('should parse minus as key', () => {

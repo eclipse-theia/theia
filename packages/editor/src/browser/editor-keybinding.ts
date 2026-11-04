@@ -18,7 +18,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { isOSX, isWindows } from '@theia/core/lib/common/os';
 import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
-import { EditorCommands } from './editor-command';
+import { EditorCommands } from './editor-command.js';
 
 @injectable()
 export class EditorKeybindingContribution implements KeybindingContribution {

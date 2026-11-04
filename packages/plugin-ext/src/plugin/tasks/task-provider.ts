@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import * as theia from '@theia/plugin';
-import { TaskDto } from '../../common';
-import * as Converter from '../type-converters';
+import { TaskDto } from '../../common/index.js';
+import * as Converter from '../type-converters.js';
 
 export class TaskProviderAdapter {
 

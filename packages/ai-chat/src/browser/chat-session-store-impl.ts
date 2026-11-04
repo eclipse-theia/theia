@@ -23,14 +23,14 @@ import { DisposableCollection, URI } from '@theia/core';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { ChatModel } from '../common/chat-model';
-import { ChatSessionIndex, ChatSessionStore, ChatModelWithMetadata, ChatSessionMetadata } from '../common/chat-session-store';
+import { ChatModel } from '../common/chat-model.js';
+import { ChatSessionIndex, ChatSessionStore, ChatModelWithMetadata, ChatSessionMetadata } from '../common/chat-session-store.js';
 import {
     PERSISTED_SESSION_LIMIT_PREF,
     SESSION_STORAGE_PREF,
     SessionStorageScope
-} from '../common/ai-chat-preferences';
-import { SerializedChatData, CHAT_DATA_VERSION } from '../common/chat-model-serialization';
+} from '../common/ai-chat-preferences.js';
+import { SerializedChatData, CHAT_DATA_VERSION } from '../common/chat-model-serialization.js';
 
 const INDEX_FILE = 'index.json';
 

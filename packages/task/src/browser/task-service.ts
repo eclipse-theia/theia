@@ -16,7 +16,7 @@
 
 import { ApplicationShell, FrontendApplication, QuickPickValue, WidgetManager, WidgetOpenMode } from '@theia/core/lib/browser';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
-import { CommandService, ILogger, nls } from '@theia/core/lib/common';
+import { CommandService, ILogger, isCancelled, nls } from '@theia/core/lib/common';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { QuickPickItemOrSeparator, QuickPickService } from '@theia/core/lib/common/quick-pick-service';
@@ -51,24 +51,24 @@ import {
     TaskOutputProcessedEvent,
     TaskServer,
     asVariableName
-} from '../common';
-import { TaskWatcher } from '../common/task-watcher';
-import { ProvidedTaskConfigurations } from './provided-task-configurations';
-import { TaskConfigurationClient, TaskConfigurations } from './task-configurations';
-import { TaskResolverRegistry } from './task-contribution';
-import { TaskDefinitionRegistry } from './task-definition-registry';
-import { TaskNameResolver } from './task-name-resolver';
-import { TaskSourceResolver } from './task-source-resolver';
-import { ProblemMatcherRegistry } from './task-problem-matcher-registry';
-import { TaskSchemaUpdater } from './task-schema-updater';
-import { TaskConfigurationManager } from './task-configuration-manager';
+} from '../common/index.js';
+import { TaskWatcher } from '../common/task-watcher.js';
+import { ProvidedTaskConfigurations } from './provided-task-configurations.js';
+import { TaskConfigurationClient, TaskConfigurations } from './task-configurations.js';
+import { TaskResolverRegistry } from './task-contribution.js';
+import { TaskDefinitionRegistry } from './task-definition-registry.js';
+import { TaskNameResolver } from './task-name-resolver.js';
+import { TaskSourceResolver } from './task-source-resolver.js';
+import { ProblemMatcherRegistry } from './task-problem-matcher-registry.js';
+import { TaskSchemaUpdater } from './task-schema-updater.js';
+import { TaskConfigurationManager } from './task-configuration-manager.js';
 import { PROBLEMS_WIDGET_ID, ProblemWidget } from '@theia/markers/lib/browser/problem/problem-widget';
-import { TaskNode } from './task-node';
+import { TaskNode } from './task-node.js';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
-import { TaskTerminalWidgetManager } from './task-terminal-widget-manager';
+import { TaskTerminalWidgetManager } from './task-terminal-widget-manager.js';
 import { ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-terminal-protocol';
 import { Mutex } from 'async-mutex';
-import { TaskContextKeyService } from './task-context-key-service';
+import { TaskContextKeyService } from './task-context-key-service.js';
 import { TerminalPreferences } from '@theia/terminal/lib/common/terminal-preferences';
 
 export interface QuickPickProblemMatcherItem {
@@ -383,7 +383,7 @@ export class TaskService implements TaskConfigurationClient {
     async getConfiguredTasks(token: number): Promise<TaskConfiguration[]> {
         const invalidTaskConfig = this.taskConfigurations.getInvalidTaskConfigurations()[0];
         if (invalidTaskConfig) {
-            const widget = <ProblemWidget>await this.widgetManager.getOrCreateWidget(PROBLEMS_WIDGET_ID);
+            const widget = await this.widgetManager.getOrCreateWidget(PROBLEMS_WIDGET_ID) as ProblemWidget;
             const isProblemsWidgetVisible = widget && widget.isVisible;
             const currentEditorUri = this.editorManager.currentEditor && this.editorManager.currentEditor.editor.getResourceUri();
             let isInvalidTaskConfigFileOpen = false;
@@ -862,6 +862,9 @@ export class TaskService implements TaskConfigurationClient {
             await this.removeProblemMarkers(option);
             return this.runResolvedTask(taskToRun, option);
         } catch (error) {
+            if (isCancelled(error)) {
+                return undefined;
+            }
             const errMessage = `Error resolving task '${task.label}': ${error}`;
             this.logger.error(errMessage);
         }
@@ -1083,7 +1086,7 @@ export class TaskService implements TaskConfigurationClient {
         const selectedText: string = this.editorManager.currentEditor.editor.document.getText(selectedRange).trimRight() + '\n';
         let terminal = this.terminalService.lastUsedTerminal;
         if (!terminal || terminal.kind !== 'user' || (await terminal.hasChildProcesses())) {
-            terminal = <TerminalWidget>await this.terminalService.newTerminal(<TerminalWidgetFactoryOptions>{ created: nextTerminalCreationToken() });
+            terminal = await this.terminalService.newTerminal(<TerminalWidgetFactoryOptions>{ created: nextTerminalCreationToken() }) as TerminalWidget;
             await terminal.start();
             this.terminalService.open(terminal);
         }

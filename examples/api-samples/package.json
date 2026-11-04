@@ -3,8 +3,9 @@
   "name": "@theia/api-samples",
   "version": "1.76.0",
   "description": "Theia - Example code to demonstrate Theia API",
+  "type": "module",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "@theia/ai-chat": "1.76.0",
     "@theia/ai-chat-ui": "1.76.0",
     "@theia/ai-code-completion": "1.76.0",
@@ -67,5 +68,12 @@
   },
   "devDependencies": {
     "@theia/ext-scripts": "1.76.0"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
   }
 }

@@ -25,18 +25,18 @@ import { LanguageModelAlias } from '@theia/ai-core/lib/common/language-model-ali
 import { isChatAgent } from '@theia/ai-chat/lib/common';
 import { nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
-import { OPEN_AI_CONFIG_VIEW } from '../ai-configuration-view-contribution';
+import { OPEN_AI_CONFIG_VIEW } from '../ai-configuration-view-contribution.js';
 import * as React from '@theia/core/shared/react';
 import { AiConfigurationItemDetailHeader } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-primitives';
 import { AiConfigurationItemRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-item-row';
 import { AiConfigurationItemStatus } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
 import { AiToggleSwitch } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-controls';
 import { VariantSetCard } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/variant-set-card';
-import { LanguageModelRenderer } from '../language-model-renderer';
-import { AgentNotificationSettings } from '../components/agent-notification-settings';
-import { getAgentIconClass } from '../agent-icon';
-import { AgentDetailServices, AgentDetailState, loadAgentDetail } from './agent-detail-model';
-import { AgentCapabilitiesSettings, AgentGenericCapabilitiesSettings, AgentServerToolsSettings } from './agent-capabilities-settings';
+import { LanguageModelRenderer } from '../language-model-renderer.js';
+import { AgentNotificationSettings } from '../components/agent-notification-settings.js';
+import { getAgentIconClass } from '../agent-icon.js';
+import { AgentDetailServices, AgentDetailState, loadAgentDetail } from './agent-detail-model.js';
+import { AgentCapabilitiesSettings, AgentGenericCapabilitiesSettings, AgentServerToolsSettings } from './agent-capabilities-settings.js';
 
 export interface AgentDetailViewProps {
     readonly agent: Agent;
@@ -209,20 +209,23 @@ export const AgentDetailView: React.FC<AgentDetailViewProps> = ({
         </>}
 
         {state.parsed.capabilities.length > 0 && <AgentCapabilitiesSettings
-                capabilities={state.parsed.capabilities}
-                agentId={agent.id}
-                savedOverrides={state.capabilityOverrides}
-                aiSettingsService={aiSettingsService}
-                settingsRowService={settingsRowService}
-                onOpenPromptSnippet={onOpenPromptSnippet}
+            capabilities={state.parsed.capabilities}
+            agentId={agent.id}
+            savedOverrides={state.capabilityOverrides}
+            aiSettingsService={aiSettingsService}
+            settingsRowService={settingsRowService}
+            onOpenPromptSnippet={onOpenPromptSnippet}
         />}
 
-        {GenericCapabilitySelections.hasSelections(state.genericCapabilitySelections) && <AgentGenericCapabilitiesSettings
-                agentId={agent.id}
-                savedSelections={state.genericCapabilitySelections}
-                aiSettingsService={aiSettingsService}
-                settingsRowService={settingsRowService}
-                onOpenPromptSnippet={onOpenPromptSnippet}
+        {(state.availableGenericCapabilities || GenericCapabilitySelections.hasSelections(state.genericCapabilitySelections)) && <AgentGenericCapabilitiesSettings
+            agentId={agent.id}
+            savedSelections={state.genericCapabilitySelections}
+            availableCapabilities={state.availableGenericCapabilities}
+            usedCapabilities={state.usedGenericCapabilities}
+            aiSettingsService={aiSettingsService}
+            settingsRowService={settingsRowService}
+            hoverService={services.hoverService}
+            onOpenPromptSnippet={onOpenPromptSnippet}
         />}
 
         {state.serverTools && state.serverTools.length > 0 && state.serverToolVendor && <AgentServerToolsSettings

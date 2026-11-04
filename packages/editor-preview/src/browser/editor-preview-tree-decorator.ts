@@ -29,7 +29,7 @@ import {
 } from '@theia/core/lib/browser';
 import { Disposable } from '@theia/core/lib/common';
 import { OpenEditorNode } from '@theia/navigator/lib/browser/open-editors-widget/navigator-open-editors-tree-model';
-import { EditorPreviewWidget } from './editor-preview-widget';
+import { EditorPreviewWidget } from './editor-preview-widget.js';
 
 @injectable()
 export class EditorPreviewTreeDecorator implements TreeDecorator, FrontendApplicationContribution {

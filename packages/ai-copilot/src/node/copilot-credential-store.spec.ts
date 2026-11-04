@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { CopilotCredentialStore } from './copilot-credential-store';
+import { CopilotCredentialStore } from './copilot-credential-store.js';
 
 /** A keystore that records what was asked of it, keyed the way the real one is. */
 class FakeKeyStore {

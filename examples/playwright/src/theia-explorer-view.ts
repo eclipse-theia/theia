@@ -21,7 +21,7 @@ import { TheiaMenuItem } from './theia-menu-item';
 import { TheiaRenameDialog } from './theia-rename-dialog';
 import { TheiaTreeNode } from './theia-tree-node';
 import { TheiaView } from './theia-view';
-import { elementContainsClass, normalizeId, OSUtil } from './util';
+import { elementContainsClass, escapeDoubleQuotes, normalizeId, OSUtil } from './util';
 
 const TheiaExplorerViewData = {
     tabSelector: '#shell-tab-explorer-view-container',
@@ -191,7 +191,7 @@ export class TheiaExplorerView extends TheiaView {
     }
 
     protected treeNodeSelector(filePath: string): string {
-        return `.theia-FileStatNode:has(#${normalizeId(this.treeNodeId(filePath))})`;
+        return `.theia-FileStatNode:has([id="${escapeDoubleQuotes(this.treeNodeId(filePath))}"])`;
     }
 
     protected treeNodeId(filePath: string): string {

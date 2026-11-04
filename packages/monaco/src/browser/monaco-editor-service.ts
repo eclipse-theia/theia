@@ -18,15 +18,15 @@ import { injectable, inject, decorate, named } from '@theia/core/shared/inversif
 import URI from '@theia/core/lib/common/uri';
 import { OpenerService, open, WidgetOpenMode, ApplicationShell } from '@theia/core/lib/browser';
 import { EditorWidget, EditorOpenerOptions, EditorManager, CustomEditorWidget } from '@theia/editor/lib/browser';
-import { MonacoEditor } from './monaco-editor';
-import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
-import { MonacoEditorModel } from './monaco-editor-model';
-import { IResourceEditorInput, ITextResourceEditorInput } from '@theia/monaco-editor-core/esm/vs/platform/editor/common/editor';
-import { StandaloneCodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditorService';
-import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
-import { ICodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
-import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
-import { IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
+import { MonacoEditor } from './monaco-editor.js';
+import { MonacoToProtocolConverter } from './monaco-to-protocol-converter.js';
+import { MonacoEditorModel } from './monaco-editor-model.js';
+import { IResourceEditorInput, ITextResourceEditorInput } from '@theia/monaco-editor-core/esm/vs/platform/editor/common/editor.js';
+import { StandaloneCodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditorService.js';
+import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor.js';
+import { ICodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser.js';
+import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey.js';
+import { IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService.js';
 import { ContributionProvider, PreferenceService } from '@theia/core';
 
 decorate(injectable(), StandaloneCodeEditorService);

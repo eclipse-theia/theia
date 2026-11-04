@@ -21,18 +21,18 @@ import {
 import { TestExecutionProgressService } from '@theia/test/lib/browser/test-execution-progress-service';
 import { AccumulatingTreeDeltaEmitter, CollectionDelta, DeltaKind, TreeDelta, TreeDeltaBuilder } from '@theia/test/lib/common/tree-delta';
 import { Emitter, Location, Range } from '@theia/core/shared/vscode-languageserver-protocol';
-import { Range as PluginRange, Location as PluginLocation } from '../../common/plugin-api-rpc-model';
+import { Range as PluginRange, Location as PluginLocation } from '../../common/plugin-api-rpc-model.js';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { CancellationToken, Disposable, Event, URI } from '@theia/core';
-import { MAIN_RPC_CONTEXT, TestControllerUpdate, TestingExt, TestingMain } from '../../common';
-import { RPCProtocol } from '../../common/rpc-protocol';
+import { MAIN_RPC_CONTEXT, TestControllerUpdate, TestingExt, TestingMain } from '../../common/index.js';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
 import { interfaces } from '@theia/core/shared/inversify';
 import {
     TestExecutionState, TestItemDTO, TestItemReference, TestOutputDTO,
     TestRunDTO, TestRunProfileDTO, TestStateChangeDTO
-} from '../../common/test-types';
-import { TestRunProfileKind } from '../../plugin/types-impl';
-import { CommandRegistryMainImpl } from './command-registry-main';
+} from '../../common/test-types.js';
+import { TestRunProfileKind } from '../../plugin/types-impl.js';
+import { CommandRegistryMainImpl } from './command-registry-main.js';
 
 export class TestItemCollection extends TreeCollection<string, TestItemImpl, TestItemImpl | TestControllerImpl> {
     override add(item: TestItemImpl): TestItemImpl | undefined {

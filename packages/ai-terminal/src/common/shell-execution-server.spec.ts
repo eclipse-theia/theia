@@ -18,7 +18,7 @@ import { expect } from 'chai';
 import {
     ShellExecutionToolResult,
     ShellExecutionCanceledResult
-} from './shell-execution-server';
+} from './shell-execution-server.js';
 
 describe('ShellExecutionToolResult.is', () => {
     it('should return true for valid result', () => {

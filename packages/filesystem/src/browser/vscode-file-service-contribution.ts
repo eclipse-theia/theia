@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { FileServiceContribution, FileService } from './file-service';
+import { FileServiceContribution, FileService } from './file-service.js';
 import {
     FileChange, FileDeleteOptions, FileOverwriteOptions, FilePermission, FileSystemProvider, FileSystemProviderCapabilities, FileType, FileWriteOptions, Stat, WatchOptions
-} from '../common/files';
+} from '../common/files.js';
 import { Event, URI, Disposable, Emitter } from '@theia/core';
 import { JsonSchemaDataStore } from '@theia/core/lib/browser/json-schema-store';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
