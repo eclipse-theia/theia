@@ -39,7 +39,7 @@ describe('DefaultSecondaryWindowService', () => {
 
     it('should return undefined when the browser blocks the window', () => {
         const service = new DefaultSecondaryWindowService();
-        (service as unknown as { preferenceService: Partial<PreferenceService> }).preferenceService = { get: () => undefined } as any as Partial<PreferenceService>;
+        (service as unknown as { preferenceService: Partial<PreferenceService> }).preferenceService = { get: () => undefined } as unknown as Partial<PreferenceService>;
         const open = window.open;
         window.open = () => null; // eslint-disable-line no-null/no-null
         try {

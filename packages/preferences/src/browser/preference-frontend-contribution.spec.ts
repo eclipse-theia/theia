@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import { LaunchArguments } from '@theia/core/lib/common/launch-arguments';
-import { CliPreference } from '../common/cli-preferences';
+import { CliPreference } from '../common/cli-preferences.js';
 import { PreferenceFrontendContribution } from './preference-frontend-contribution.js';
 
 const launchArgs = (values: Record<string, string[]>): LaunchArguments => ({ values, negated: [] });
