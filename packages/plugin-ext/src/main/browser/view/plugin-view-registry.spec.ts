@@ -472,6 +472,7 @@ describe('PluginViewRegistry - initial view state', () => {
     let registry: PluginViewRegistry;
     let parts: FakePart[];
     let viewWidgets: Map<string, PluginViewWidget>;
+    let containerDisposed: boolean;
     let disableDom: () => void;
 
     const container = {
@@ -479,7 +480,8 @@ describe('PluginViewRegistry - initial view state', () => {
         getParts: () => parts,
         getTrackableWidgets: () => [],
         getPartFor: (widget: unknown) => parts.find(part => part.widget === widget),
-        addWidget: (widget: unknown, options: PartOptions) => { parts.push(new FakePart(widget, options)); }
+        addWidget: (widget: unknown, options: PartOptions) => { parts.push(new FakePart(widget, options)); },
+        dispose: () => { containerDisposed = true; }
     };
 
     const internals = (): {
@@ -487,22 +489,41 @@ describe('PluginViewRegistry - initial view state', () => {
         containerViews: Map<string, string[]>;
         prepareViewContainer(viewContainerId: string, containerWidget: unknown): Promise<void>;
         updateViewVisibility(viewId: string): Promise<void>;
+        initViewContainer(viewContainerId: string): Promise<void>;
     } => registry as unknown as {
         views: Map<string, [string, View]>;
         containerViews: Map<string, string[]>;
         prepareViewContainer(viewContainerId: string, containerWidget: unknown): Promise<void>;
         updateViewVisibility(viewId: string): Promise<void>;
+        initViewContainer(viewContainerId: string): Promise<void>;
     };
+
+    /** Opens the container for the first time at startup, with no layout restored, the way `initWidgets` does. */
+    async function initContainer(...views: View[]): Promise<void> {
+        registerViews(containerId, views);
+        Object.assign(registry, {
+            getPluginViewContainer: async () => undefined,
+            openViewContainer: async (viewContainerId: string) => {
+                await internals().prepareViewContainer(viewContainerId, container);
+                return container;
+            }
+        });
+        await internals().initViewContainer(containerId);
+    }
 
     function prepare(...views: View[]): Promise<PartOptions[]> {
         return prepareIn(containerId, ...views);
     }
 
-    async function prepareIn(viewContainerId: string, ...views: View[]): Promise<PartOptions[]> {
+    function registerViews(viewContainerId: string, views: View[]): void {
         for (const view of views) {
             internals().views.set(view.id, [viewContainerId, view]);
         }
         internals().containerViews.set(viewContainerId, views.map(view => view.id));
+    }
+
+    async function prepareIn(viewContainerId: string, ...views: View[]): Promise<PartOptions[]> {
+        registerViews(viewContainerId, views);
         await internals().prepareViewContainer(viewContainerId, container);
         return parts.map(part => part.options);
     }
@@ -514,6 +535,8 @@ describe('PluginViewRegistry - initial view state', () => {
         registry = new PluginViewRegistry();
         parts = [];
         viewWidgets = new Map();
+        containerDisposed = false;
+        (registry as unknown as { contextKeyService: unknown }).contextKeyService = { match: () => false };
         (registry as unknown as { widgetManager: unknown }).widgetManager = {
             tryGetWidget: () => undefined,
             getDescription: () => undefined,
@@ -565,6 +588,18 @@ describe('PluginViewRegistry - initial view state', () => {
         await internals().updateViewVisibility('sample.view');
 
         expect(parts[0].isHidden).to.equal(true);
+    });
+
+    it('keeps a container whose views all ask to start hidden, so they can be shown from its menu', async () => {
+        await initContainer({ id: 'sample.view', name: 'Sample', visibility: 'hidden' });
+
+        expect(containerDisposed).to.equal(false);
+    });
+
+    it('closes a container none of whose views has a when clause that holds', async () => {
+        await initContainer({ id: 'sample.view', name: 'Sample', when: 'sampleContext' });
+
+        expect(containerDisposed).to.equal(true);
     });
 
     it('gives a view the initial size it declares as its weight in the container', async () => {

@@ -971,8 +971,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         let viewContainer = await this.getPluginViewContainer(containerId);
         if (!viewContainer) {
             viewContainer = await this.openViewContainer(containerId);
-            if (viewContainer && !viewContainer.getParts().filter(part => !part.isHidden).length) {
-                // close view containers without any visible view parts
+            if (viewContainer && !this.getContainerViews(containerId).some(viewId => this.isViewVisible(viewId))) {
+                // A view hidden by default still keeps its container, so that it can be shown from the container's menu.
                 viewContainer.dispose();
             }
         } else {
