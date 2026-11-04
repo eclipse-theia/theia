@@ -22,7 +22,7 @@ import {
 } from '@theia/core';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { AuthMetadata, AuthProvider, ConnectionProvider, FormAuthProvider, initializeProtocol, WebAuthProvider } from 'open-collaboration-protocol';
-import { CollaborationSocketIoTransportProvider } from './collaboration-socket-io-transport';
+import { CollaborationSocketIoTransportProvider } from './collaboration-socket-io-transport.js';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { CollaborationInstance, CollaborationInstanceFactory } from './collaboration-instance.js';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';

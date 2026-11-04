@@ -32,9 +32,9 @@ import { Emitter, ILogger, URI } from '@theia/core';
 import { Deferred, timeout } from '@theia/core/lib/common/promise-util';
 import { EditorDecoration, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
-import { CollaborationInstance, CollaborationInstanceOptions } from './collaboration-instance';
-import { CollaborationUtils } from './collaboration-utils';
-import { CollaborationSocketIoTransport } from './collaboration-socket-io-transport';
+import { CollaborationInstance, CollaborationInstanceOptions } from './collaboration-instance.js';
+import { CollaborationUtils } from './collaboration-utils.js';
+import { CollaborationSocketIoTransport } from './collaboration-socket-io-transport.js';
 import { Socket } from 'socket.io-client';
 
 disableJSDOM();

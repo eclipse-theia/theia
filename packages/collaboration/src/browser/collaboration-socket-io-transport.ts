@@ -47,8 +47,7 @@ export class CollaborationSocketIoTransport extends SocketIoTransport implements
     }
 
     constructor(socket: Socket) {
-        // `open-collaboration-protocol` is typed against the ESM build of socket.io-client, this file against the CommonJS one.
-        super(socket as unknown as ConstructorParameters<typeof SocketIoTransport>[0]);
+        super(socket);
         socket.on('disconnect', reason => {
             if (reason === 'io server disconnect') {
                 this.onServerCloseEmitter.fire();
