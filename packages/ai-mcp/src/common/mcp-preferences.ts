@@ -113,7 +113,7 @@ Example configuration:\n\
                     },
                     serverUrl: {
                         type: 'string',
-                        title: nls.localize('theia/ai/mcp/servers/serverUrl/title', 'Server URL'),
+                        title: nls.localizeByDefault('Server URL'),
                         markdownDescription: nls.localize('theia/ai/mcp/servers/serverUrl/mdDescription',
                             'The URL of the remote MCP server. If provided, the server will connect to this URL instead of starting a local process.'),
                     },

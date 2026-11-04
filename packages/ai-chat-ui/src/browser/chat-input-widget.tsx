@@ -2943,7 +2943,7 @@ const ChatModelSelector: React.FunctionComponent<ChatModelSelectorProps> = React
             opts.push({
                 value: currentModelId,
                 label: currentModelId,
-                detail: nls.localize('theia/ai/chat-ui/modelUnavailable', 'unavailable'),
+                detail: nls.localizeByDefault('unavailable'),
                 disabled: isUnavailable
             });
         }
