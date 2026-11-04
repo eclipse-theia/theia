@@ -25,7 +25,7 @@ declare module '@theia/plugin-ext' {
      * This interface describes scripts for all three plugin runtimes: frontend (WebWorker), backend (NodeJs), and headless (NodeJs).
      */
     interface ExtPluginApi extends ExtPluginHeadlessApi {
-        // Note that the frontendInitPath and backendInitPath properties are included by
+        // Note that the frontendExtApi and backendInitPath properties are included by
         // Typescript interface merge from the @theia/plugin-ext::ExtPluginApi interface.
     }
 }

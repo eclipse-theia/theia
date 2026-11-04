@@ -23,7 +23,6 @@ import {
     UNPUBLISHED,
     VSCODE_EXTENSION_ACTIVATE,
     VSCODE_EXTENSION_DEACTIVATE,
-    VSCODE_FRONTEND_INIT,
     THEIA_PLUGIN_START_METHOD,
     THEIA_PLUGIN_STOP_METHOD
 } from './constants.js';
@@ -251,14 +250,12 @@ describe('plugin-model', () => {
             expect(lifecycle.startMethod).to.equal(THEIA_PLUGIN_START_METHOD);
             expect(lifecycle.stopMethod).to.equal(THEIA_PLUGIN_STOP_METHOD);
             expect(lifecycle.frontendModuleName).to.equal('acme_theia');
-            expect(lifecycle.frontendInitPath).to.equal(undefined);
         });
 
         it('uses vscode activate/deactivate lifecycle', () => {
             const lifecycle = buildLifecycle(manifest({ name: 'sample', publisher: 'acme' }), 'vscode');
             expect(lifecycle.startMethod).to.equal(VSCODE_EXTENSION_ACTIVATE);
             expect(lifecycle.stopMethod).to.equal(VSCODE_EXTENSION_DEACTIVATE);
-            expect(lifecycle.frontendInitPath).to.equal(VSCODE_FRONTEND_INIT);
             expect(lifecycle.frontendModuleName).to.equal('acme_sample');
         });
     });
