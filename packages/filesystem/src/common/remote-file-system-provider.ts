@@ -25,7 +25,7 @@ import {
     hasOpenReadWriteCloseCapability, hasFileFolderCopyCapability, hasReadWriteCapability, hasAccessCapability,
     FileSystemProviderError, FileSystemProviderErrorCode, FileUpdateOptions, hasUpdateCapability, FileUpdateResult, FileReadStreamOptions, hasFileReadStreamCapability,
     ReadOnlyMessageFileSystemProvider
-} from './files';
+} from './files.js';
 import { RpcServer, RpcProxy, RpcProxyFactory } from '@theia/core/lib/common/messaging/proxy-factory';
 import { ApplicationError } from '@theia/core/lib/common/application-error';
 import { Deferred } from '@theia/core/lib/common/promise-util';

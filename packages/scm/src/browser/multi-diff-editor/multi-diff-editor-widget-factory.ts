@@ -21,8 +21,8 @@ import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import * as monaco from '@theia/monaco-editor-core';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoDiffEditor } from '@theia/monaco/lib/browser/monaco-diff-editor';
-import { DiffEntryHeaderWidget, MultiDiffEditor, MultiDiffEditorData, MultiDiffEditorUri } from './multi-diff-editor';
-import { MultiDiffEditorResourcePair, MultiDiffEditorUriData } from './multi-diff-editor-uri';
+import { DiffEntryHeaderWidget, MultiDiffEditor, MultiDiffEditorData, MultiDiffEditorUri } from './multi-diff-editor.js';
+import { MultiDiffEditorResourcePair, MultiDiffEditorUriData } from './multi-diff-editor-uri.js';
 
 /** Options shared by embedded diff and code editors. */
 const EMBEDDED_EDITOR_OPTIONS: monaco.editor.IEditorOptions = {

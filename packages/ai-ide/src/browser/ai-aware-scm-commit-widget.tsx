@@ -23,9 +23,9 @@ import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { ScmCommitWidget } from '@theia/scm/lib/browser/scm-commit-widget';
 import { ScmInput } from '@theia/scm/lib/browser/scm-input';
 import { ScmProvider } from '@theia/scm/lib/browser/scm-provider';
-import { COMMIT_MESSAGE_AGENT_ID } from './commit-message-agent';
-import { CommitMessageCommands } from './commit-message-commands';
-import { CommitMessageRunner } from './commit-message-runner';
+import { COMMIT_MESSAGE_AGENT_ID } from './commit-message-agent.js';
+import { CommitMessageCommands } from './commit-message-commands.js';
+import { CommitMessageRunner } from './commit-message-runner.js';
 
 /**
  * Source-control provider id of the VS Code / Theia git extension. The generator runs

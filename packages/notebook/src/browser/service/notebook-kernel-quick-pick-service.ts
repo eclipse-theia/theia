@@ -20,13 +20,13 @@
  *--------------------------------------------------------------------------------------------*/
 import { ArrayUtils, CommandService, DisposableCollection, Event, ILogger, nls, QuickInputButton, QuickInputService, QuickPickInput, QuickPickItem, URI, } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { NotebookKernelService, NotebookKernel, NotebookKernelMatchResult, SourceCommand } from './notebook-kernel-service';
-import { NotebookModel } from '../view-model/notebook-model';
-import { NotebookEditorWidget } from '../notebook-editor-widget';
+import { NotebookKernelService, NotebookKernel, NotebookKernelMatchResult, SourceCommand } from './notebook-kernel-service.js';
+import { NotebookModel } from '../view-model/notebook-model.js';
+import { NotebookEditorWidget } from '../notebook-editor-widget.js';
 import { codicon, OpenerService } from '@theia/core/lib/browser';
-import { NotebookKernelHistoryService } from './notebook-kernel-history-service';
-import { NotebookCommand, NotebookModelResource } from '../../common';
-import debounce = require('@theia/core/shared/lodash.debounce');
+import { NotebookKernelHistoryService } from './notebook-kernel-history-service.js';
+import { NotebookCommand, NotebookModelResource } from '../../common/index.js';
+import debounce from '@theia/core/shared/lodash.debounce';
 
 export const JUPYTER_EXTENSION_ID = 'ms-toolsai.jupyter';
 

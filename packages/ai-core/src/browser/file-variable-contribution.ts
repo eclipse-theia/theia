@@ -27,9 +27,9 @@ import {
     AIVariableResolutionRequest,
     AIVariableResolver,
     ResolvedAIContextVariable,
-} from '../common/variable-service';
-import { FrontendVariableService } from './frontend-variable-service';
-import { WorkspaceRelativePathResolver } from './workspace-relative-path-resolver';
+} from '../common/variable-service.js';
+import { FrontendVariableService } from './frontend-variable-service.js';
+import { WorkspaceRelativePathResolver } from './workspace-relative-path-resolver.js';
 
 export namespace FileVariableArgs {
     export const uri = 'uri';

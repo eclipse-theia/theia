@@ -18,7 +18,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { LabelProviderContribution, LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { TreeNode } from '@theia/core/lib/browser/tree';
-import { ScmFileChangeFolderNode, ScmFileChangeNode, ScmFileChangeGroupNode } from './scm-tree-model';
+import { ScmFileChangeFolderNode, ScmFileChangeNode, ScmFileChangeGroupNode } from './scm-tree-model.js';
 
 @injectable()
 export class ScmTreeLabelProvider implements LabelProviderContribution {

@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { StopReason } from '../../common/frontend-application-state';
-import { Event } from '../../common/event';
-import { NewWindowOptions, WindowSearchParams } from '../../common/window';
+import { StopReason } from '../../common/frontend-application-state.js';
+import { Event } from '../../common/event.js';
+import { NewWindowOptions, WindowSearchParams } from '../../common/window.js';
 
 export interface WindowReloadOptions {
     search?: WindowSearchParams,

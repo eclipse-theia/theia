@@ -30,9 +30,9 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { ILogger, Logger, URI } from '@theia/core';
 import { PreferenceScope } from '@theia/core/lib/common/preferences';
-import { AISettings } from '../common';
-import { AISettingsServiceImpl } from './ai-settings-service';
-import { AgentsMdMigrationService, LEGACY_PROJECT_INFO_PATH } from './agents-md-migration-service';
+import { AISettings } from '../common/index.js';
+import { AISettingsServiceImpl } from './ai-settings-service.js';
+import { AgentsMdMigrationService, LEGACY_PROJECT_INFO_PATH } from './agents-md-migration-service.js';
 
 disableJSDOM();
 

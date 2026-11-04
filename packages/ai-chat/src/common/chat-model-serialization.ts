@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { GenericCapabilitySelections } from '@theia/ai-core';
-import { ChatAgentLocation } from './chat-agents';
-import { ChatSessionSettings, ResponseTokenUsage } from './chat-model';
+import { ChatAgentLocation } from './chat-agents.js';
+import { ChatSessionSettings, ResponseTokenUsage } from './chat-model.js';
 
 export interface SerializableChangeSetElement {
     kind?: string;

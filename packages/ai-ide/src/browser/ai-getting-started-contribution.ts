@@ -22,8 +22,8 @@ import { ChatAgentService } from '@theia/ai-chat/lib/common';
 import { DEFAULT_CHAT_AGENT_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { WalkthroughCommands } from '@theia/getting-started/lib/common/walkthrough-commands';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { AI_GETTING_STARTED_WALKTHROUGH_ID } from './ai-getting-started-walkthrough';
-import { AI_OPEN_GETTING_STARTED_WALKTHROUGH, AI_SET_DEFAULT_CHAT_AGENT } from './ai-getting-started-commands';
+import { AI_GETTING_STARTED_WALKTHROUGH_ID } from './ai-getting-started-walkthrough.js';
+import { AI_OPEN_GETTING_STARTED_WALKTHROUGH, AI_SET_DEFAULT_CHAT_AGENT } from './ai-getting-started-commands.js';
 
 /**
  * Opens the AI getting started walkthrough from anywhere - the chat view, the command palette or a menu -

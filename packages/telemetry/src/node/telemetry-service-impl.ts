@@ -17,15 +17,15 @@
 import { ContributionProvider, ILogger } from '@theia/core/lib/common';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
-import { TelemetryConsentProvider } from '../common/telemetry-consent-provider';
-import { TELEMETRY_FILTERS, TelemetryPreferences } from '../common/telemetry-preferences';
+import { TelemetryConsentProvider } from '../common/telemetry-consent-provider.js';
+import { TELEMETRY_FILTERS, TelemetryPreferences } from '../common/telemetry-preferences.js';
 import {
     TelemetryEvent, TelemetryRpc, createTelemetryEvent, describeTelemetryEventTopic, isValidTelemetryEvent, snapshotTelemetryEvent
-} from '../common/telemetry-protocol';
-import { TelemetryService } from '../common/telemetry-service';
-import { isValidTelemetrySinkId, isValidTelemetryTopicPattern, matchesTelemetryTopic } from '../common/telemetry-topic';
-import { BACKEND_TELEMETRY_SESSION, TelemetryData, TelemetryReportOptions, isKindAllowedByLevel } from '../common/telemetry-types';
-import { TelemetrySink } from './telemetry-sink';
+} from '../common/telemetry-protocol.js';
+import { TelemetryService } from '../common/telemetry-service.js';
+import { isValidTelemetrySinkId, isValidTelemetryTopicPattern, matchesTelemetryTopic } from '../common/telemetry-topic.js';
+import { BACKEND_TELEMETRY_SESSION, TelemetryData, TelemetryReportOptions, isKindAllowedByLevel } from '../common/telemetry-types.js';
+import { TelemetrySink } from './telemetry-sink.js';
 
 const MAX_PENDING_EVENTS = 1_000;
 

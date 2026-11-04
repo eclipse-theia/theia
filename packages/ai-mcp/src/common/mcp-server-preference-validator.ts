@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MCPOAuthConfig } from './mcp-oauth';
-import { MCPRegistryMetadata } from './mcp-server-manager';
+import { MCPOAuthConfig } from './mcp-oauth.js';
+import { MCPRegistryMetadata } from './mcp-server-manager.js';
 
 interface BaseMCPServerPreferenceValue {
     autostart?: boolean;

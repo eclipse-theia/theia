@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { computeGraphRows } from './scm-history-graph-lanes';
+import { computeGraphRows } from './scm-history-graph-lanes.js';
 
 describe('computeGraphRows', () => {
 

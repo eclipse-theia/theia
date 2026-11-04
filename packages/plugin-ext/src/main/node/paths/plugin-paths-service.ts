@@ -23,11 +23,11 @@ import { remove } from '@theia/core/shared/fs-extra';
 import * as crypto from 'crypto';
 import { ILogger } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node';
-import { PluginPaths } from '../../common/paths/const';
-import { PluginPathsService } from '../../common/plugin-paths-protocol';
+import { PluginPaths } from '../../common/paths/const.js';
+import { PluginPathsService } from '../../common/plugin-paths-protocol.js';
 import { UntitledWorkspaceService } from '@theia/workspace/lib/common';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { PluginCliContribution } from '../plugin-cli-contribution';
+import { PluginCliContribution } from '../plugin-cli-contribution.js';
 
 const SESSION_TIMESTAMP_PATTERN = /^\d{8}T\d{6}$/;
 

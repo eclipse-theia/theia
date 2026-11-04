@@ -14,19 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-const vhost = require('vhost');
-import express = require('@theia/core/shared/express');
+import express, { Application, Request, Response } from '@theia/core/shared/express';
 import * as fs from '@theia/core/shared/fs-extra';
 import { lookup } from 'mime-types';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { Application, Request, Response } from '@theia/core/shared/express';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
-import { MiniBrowserService } from '../common/mini-browser-service';
-import { MiniBrowserEndpoint as MiniBrowserEndpointNS } from '../common/mini-browser-endpoint';
+import { MiniBrowserService } from '../common/mini-browser-service.js';
+import { MiniBrowserEndpoint as MiniBrowserEndpointNS } from '../common/mini-browser-endpoint.js';
+import vhost from 'vhost';
 
 /**
  * The return type of the `FileSystem#resolveContent` method.

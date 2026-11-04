@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from 'inversify';
-import { Emitter, Event } from '../common/event';
-import { Deferred } from '../common/promise-util';
-import { ILogger } from '../common/logger';
-import { FrontendApplicationState } from '../common/frontend-application-state';
+import { Emitter, Event } from '../common/event.js';
+import { Deferred } from '../common/promise-util.js';
+import { ILogger } from '../common/logger.js';
+import { FrontendApplicationState } from '../common/frontend-application-state.js';
 
 export { FrontendApplicationState };
 

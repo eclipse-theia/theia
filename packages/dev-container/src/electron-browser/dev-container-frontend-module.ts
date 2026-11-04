@@ -16,18 +16,18 @@
 import '../../src/electron-browser/style/dev-container-attach-screen.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { RemoteRegistryContribution } from '@theia/remote/lib/electron-browser/remote-registry-contribution';
-import { DevContainerAttachScreen } from './dev-container-attach-screen';
-import { RemoteContainerConnectionProvider, RemoteContainerConnectionProviderPath } from '../electron-common/remote-container-connection-provider';
-import { ContainerConnectionContribution } from './container-connection-contribution';
+import { DevContainerAttachScreen } from './dev-container-attach-screen.js';
+import { RemoteContainerConnectionProvider, RemoteContainerConnectionProviderPath } from '../electron-common/remote-container-connection-provider.js';
+import { ContainerConnectionContribution } from './container-connection-contribution.js';
 import { ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
-import { ContainerOutputProvider } from './container-output-provider';
-import { ContainerInfoContribution } from './container-info-contribution';
+import { ContainerOutputProvider } from './container-output-provider.js';
+import { ContainerInfoContribution } from './container-info-contribution.js';
 import { FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
 import { WorkspaceOpenHandlerContribution } from '@theia/workspace/lib/browser/workspace-service';
 import { WindowTitleContribution } from '@theia/core/lib/browser/window/window-title-service';
-import { DevContainerSuggestionContribution } from './dev-container-suggestion-contribution';
-import { bindDevContainerPreferences } from '../electron-common/dev-container-preferences';
-import { DevContainerStartupContribution } from './dev-container-startup-contribution';
+import { DevContainerSuggestionContribution } from './dev-container-suggestion-contribution.js';
+import { bindDevContainerPreferences } from '../electron-common/dev-container-preferences.js';
+import { DevContainerStartupContribution } from './dev-container-startup-contribution.js';
 
 export default new ContainerModule(bind => {
     bind(ContainerConnectionContribution).toSelf().inSingletonScope();

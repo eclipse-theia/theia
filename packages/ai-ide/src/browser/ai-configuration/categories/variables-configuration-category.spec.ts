@@ -23,7 +23,7 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import { Agent, AgentService, AIVariable, AIVariableService } from '@theia/ai-core/lib/common';
 import { AiConfigurationCategoryId } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
-import { VariablesConfigurationCategory } from './variables-configuration-category';
+import { VariablesConfigurationCategory } from './variables-configuration-category.js';
 
 disableJSDOM();
 

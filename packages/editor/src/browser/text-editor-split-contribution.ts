@@ -16,9 +16,9 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Widget, DockLayout } from '@theia/core/lib/browser';
-import { SplitEditorContribution } from './split-editor-contribution';
-import { EditorWidget } from './editor-widget';
-import { EditorManager } from './editor-manager';
+import { SplitEditorContribution } from './split-editor-contribution.js';
+import { EditorWidget } from './editor-widget.js';
+import { EditorManager } from './editor-manager.js';
 
 /**
  * Implementation of SplitEditorContribution for text editors (EditorWidget).

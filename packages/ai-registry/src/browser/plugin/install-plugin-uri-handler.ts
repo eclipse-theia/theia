@@ -18,10 +18,10 @@ import { MessageService, nls } from '@theia/core';
 import { OpenHandler } from '@theia/core/lib/browser/opener-service';
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { RegistryFetchService } from '../../common/registry-fetch-service';
-import { ResolvedPluginEntry } from '../../common/plugin/plugin-registry-types';
-import { InstallPluginUriConfiguration } from './install-plugin-uri-configuration';
-import { PluginInstaller } from './plugin-installer';
+import { RegistryFetchService } from '../../common/registry-fetch-service.js';
+import { ResolvedPluginEntry } from '../../common/plugin/plugin-registry-types.js';
+import { InstallPluginUriConfiguration } from './install-plugin-uri-configuration.js';
+import { PluginInstaller } from './plugin-installer.js';
 
 const ID_PARAM = 'id';
 

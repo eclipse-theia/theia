@@ -22,8 +22,8 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import { Emitter, MessageService, ProgressMessage } from '@theia/core';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
-import { MCPOAuthFrontendDelegateClientImpl } from './mcp-oauth-frontend-delegate-client';
-import { MCPFrontendNotificationService } from '../common/mcp-server-manager';
+import { MCPOAuthFrontendDelegateClientImpl } from './mcp-oauth-frontend-delegate-client.js';
+import { MCPFrontendNotificationService } from '../common/mcp-server-manager.js';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 disableJSDOM();

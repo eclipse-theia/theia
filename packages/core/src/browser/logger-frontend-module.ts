@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import { ContainerModule, Container } from 'inversify';
-import { ILoggerServer, loggerPath, ConsoleLogger } from '../common/logger-protocol';
-import { ILogger, Logger, LoggerFactory, setRootLogger, LoggerName } from '../common/logger';
-import { LoggerWatcher } from '../common/logger-watcher';
-import { WebSocketConnectionProvider } from './messaging';
-import { FrontendApplicationContribution } from './frontend-application-contribution';
-import { EncodingError } from '../common/message-rpc/rpc-message-encoder';
-import { bindCommonLogger } from '../common/logger-binding';
+import { ILoggerServer, loggerPath, ConsoleLogger } from '../common/logger-protocol.js';
+import { ILogger, Logger, LoggerFactory, setRootLogger, LoggerName } from '../common/logger.js';
+import { LoggerWatcher } from '../common/logger-watcher.js';
+import { WebSocketConnectionProvider } from './messaging/index.js';
+import { FrontendApplicationContribution } from './frontend-application-contribution.js';
+import { EncodingError } from '../common/message-rpc/rpc-message-encoder.js';
+import { bindCommonLogger } from '../common/logger-binding.js';
 
 export const loggerFrontendModule = new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toDynamicValue(ctx => ({

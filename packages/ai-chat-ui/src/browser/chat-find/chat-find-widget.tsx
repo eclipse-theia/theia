@@ -22,7 +22,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import '../../../src/browser/style/chat-find.css';
-import { ChatFindMatch, ChatFindMatcher, ChatFindOptions } from './chat-find-matcher';
+import { ChatFindMatch, ChatFindMatcher, ChatFindOptions } from './chat-find-matcher.js';
 
 export interface ChatFindState {
     regexp: RegExp | undefined;

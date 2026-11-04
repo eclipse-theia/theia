@@ -14,26 +14,26 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
+import { ChatResponsePartRenderer } from '../chat-response-part-renderer.js';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
 import { codicon, ContextMenuRenderer, HoverService, KeybindingRegistry, MarkdownRenderer, OpenerService } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
-import { createConfirmationHandlers, ToolConfirmation, ToolConfirmationKeybindingHints, useToolConfirmationState } from './tool-confirmation';
+import { createConfirmationHandlers, ToolConfirmation, ToolConfirmationKeybindingHints, useToolConfirmationState } from './tool-confirmation.js';
 import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
-import { ResponseNode } from '../chat-tree-view';
+import { ResponseNode } from '../chat-tree-view/index.js';
 import { ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
-import { renderToolCallResult } from './toolcall-result';
+import { renderToolCallResult } from './toolcall-result.js';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 import { PendingToolConfirmationTracker } from '@theia/ai-chat/lib/browser/pending-tool-confirmation-tracker';
 import {
     APPROVE_LATEST_TOOL_CONFIRMATION_COMMAND,
     DENY_LATEST_TOOL_CONFIRMATION_COMMAND
-} from '../tool-confirmation-keybinding-contribution';
-import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
-import { Spinner } from './spinner';
+} from '../tool-confirmation-keybinding-contribution.js';
+import { condenseArguments, formatArgsForTooltip } from './toolcall-utils.js';
+import { Spinner } from './spinner.js';
 
 @injectable()
 export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {

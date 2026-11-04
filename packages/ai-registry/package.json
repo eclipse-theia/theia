@@ -2,6 +2,7 @@
   "name": "@theia/ai-registry",
   "version": "1.76.0",
   "description": "Theia - AI Registry Integration",
+  "type": "module",
   "dependencies": {
     "@theia/ai-core": "1.76.0",
     "@theia/ai-mcp": "1.76.0",
@@ -15,6 +16,13 @@
     "access": "public"
   },
   "main": "lib/common",
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "theiaExtensions": [
     {
       "frontend": "lib/browser/ai-registry-frontend-module",

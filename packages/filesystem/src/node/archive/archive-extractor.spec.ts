@@ -21,8 +21,8 @@ import * as path from 'path';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { ILogger } from '@theia/core/lib/common/logger';
-import { ArchiveExtractorImpl, ArchiveFormat } from './archive-extractor';
-import { createTestTar, createTestZip } from './test/test-archives';
+import { ArchiveExtractorImpl, ArchiveFormat } from './archive-extractor.js';
+import { createTestTar, createTestZip } from './test/test-archives.js';
 
 const isWindows = process.platform === 'win32';
 

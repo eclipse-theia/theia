@@ -16,8 +16,8 @@
 
 import { expect } from 'chai';
 import * as http from 'http';
-import { ElectronWsOriginValidator } from './electron-ws-origin-validator';
-import { BackendRemoteService } from '../../node/remote/backend-remote-service';
+import { ElectronWsOriginValidator } from './electron-ws-origin-validator.js';
+import { BackendRemoteService } from '../../node/remote/backend-remote-service.js';
 
 describe('ElectronWsOriginValidator', () => {
 

@@ -16,7 +16,7 @@
 
 import URI from '@theia/core/lib/common/uri';
 import { Breadcrumb } from '@theia/core/lib/browser/breadcrumbs/breadcrumbs-constants';
-import { FilepathBreadcrumbType } from './filepath-breadcrumbs-contribution';
+import { FilepathBreadcrumbType } from './filepath-breadcrumbs-contribution.js';
 
 export class FilepathBreadcrumb implements Breadcrumb {
     constructor(

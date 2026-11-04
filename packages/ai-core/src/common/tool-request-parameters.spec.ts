@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { ToolRequest } from './language-model';
+import { ToolRequest } from './language-model.js';
 
 describe('ToolRequest.isToolRequestParameters', () => {
     it('accepts a property with a plain string type', () => {

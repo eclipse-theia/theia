@@ -18,9 +18,11 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { PromptService } from '@theia/ai-core';
 import { nls } from '@theia/core';
-import { GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, SEARCH_IN_WORKSPACE_FUNCTION_ID, FIND_FILES_BY_PATTERN_FUNCTION_ID } from '../common/workspace-functions';
-import { WRITE_FILE_REPLACEMENTS_ID, WRITE_FILE_CONTENT_ID } from '../common/file-changeset-function-ids';
-import { MEMORY_DIRECTORY_VARIABLE } from './memory-directory-variable-contribution';
+import {
+    GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, SEARCH_IN_WORKSPACE_FUNCTION_ID, FIND_FILES_BY_PATTERN_FUNCTION_ID
+} from '../common/workspace-functions.js';
+import { WRITE_FILE_REPLACEMENTS_ID, WRITE_FILE_CONTENT_ID } from '../common/file-changeset-function-ids.js';
+import { MEMORY_DIRECTORY_VARIABLE } from './memory-directory-variable-contribution.js';
 
 @injectable()
 export class MemoryCapabilityContribution implements FrontendApplicationContribution {

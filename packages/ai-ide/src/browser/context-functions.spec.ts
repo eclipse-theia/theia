@@ -18,7 +18,7 @@ let disableJSDOM = enableJSDOM();
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
-import { ListChatContext, ResolveChatContext, AddFileToChatContext } from './context-functions';
+import { ListChatContext, ResolveChatContext, AddFileToChatContext } from './context-functions.js';
 import { CancellationTokenSource } from '@theia/core';
 import { ChatContextManager, ChatToolContext, MutableChatModel, MutableChatRequestModel, MutableChatResponseModel } from '@theia/ai-chat';
 import { fail } from 'assert';

@@ -18,11 +18,11 @@ import * as path from 'path';
 import { Emitter } from '@theia/core';
 import { timeout } from '@theia/core/lib/common/promise-util';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
-import { DirectoryIdentity, WatcherHost } from './watcher-host';
-import { FileChangeType, FileSystemWatcherServiceClient } from '../../common/filesystem-watcher-protocol';
-import { AbstractFileSystemWatcher, AbstractWatcherProvider, ResolvedWatchOptions, WatcherLogger, WatchRequest } from '../filesystem-watcher';
-import { DirectoryWatchRequest, ResolvedChange, WatchRequestRouter } from './watch-request-router';
-import throttle = require('@theia/core/shared/lodash.throttle');
+import { DirectoryIdentity, WatcherHost } from './watcher-host.js';
+import { FileChangeType, FileSystemWatcherServiceClient } from '../../common/filesystem-watcher-protocol.js';
+import { AbstractFileSystemWatcher, AbstractWatcherProvider, ResolvedWatchOptions, WatcherLogger, WatchRequest } from '../filesystem-watcher.js';
+import { DirectoryWatchRequest, ResolvedChange, WatchRequestRouter } from './watch-request-router.js';
+import throttle from '@theia/core/shared/lodash.throttle';
 
 /** How far the poll interval stretches while a handle refuses to open. */
 const MAX_OPEN_BACKOFF = 10;

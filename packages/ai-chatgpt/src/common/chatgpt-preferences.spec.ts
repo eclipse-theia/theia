@@ -18,7 +18,7 @@ import { expect } from 'chai';
 import {
     CHATGPT_ENABLED_PREF, ChatGptPreferencesSchema, MODELS_PREF,
     SERVER_SIDE_COMPACTION_PREF, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF
-} from './chatgpt-preferences';
+} from './chatgpt-preferences.js';
 
 describe('ChatGptPreferencesSchema', () => {
     it('marks every provider preference, including compaction preferences, as experimental', () => {

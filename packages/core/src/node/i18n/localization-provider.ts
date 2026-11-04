@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { nls } from '../../common/nls';
-import { LanguageInfo, Localization } from '../../common/i18n/localization';
-import { Disposable } from '../../common/disposable';
-import { isObject } from '../../common/types';
+import { nls } from '../../common/nls.js';
+import { LanguageInfo, Localization } from '../../common/i18n/localization.js';
+import { Disposable } from '../../common/disposable.js';
+import { isObject } from '../../common/types.js';
 
 /**
  * Localization data structure that contributes its localizations asynchronously.

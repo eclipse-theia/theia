@@ -20,7 +20,7 @@ import { Disposable } from '@theia/core/shared/vscode-languageserver-protocol';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { Workspace, ProtocolBroadcastConnection } from 'open-collaboration-protocol';
-import { CollaborationURI } from './collaboration-file-system-provider';
+import { CollaborationURI } from './collaboration-file-system-provider.js';
 
 @injectable()
 export class CollaborationWorkspaceService extends WorkspaceService {
@@ -48,6 +48,8 @@ export class CollaborationWorkspaceService extends WorkspaceService {
 
     protected override async computeRoots(): Promise<FileStat[]> {
         if (this.collabWorkspace) {
+            // The roots of the host carry no names. Reset the names of a previous workspace, which `super` would update.
+            this.computedRootNames = new Map();
             return this.collabWorkspace.folders.map(e => this.entryToStat(e));
         } else {
             return super.computeRoots();

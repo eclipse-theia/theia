@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // code copied and modified from https://github.com/Microsoft/vscode/blob/main/src/vs/platform/theme/common/iconRegistry.ts
 
-import { ThemeIcon } from '../common/theme';
+import { ThemeIcon } from '../common/theme.js';
 import { URI } from 'vscode-uri';
 
 export interface IconDefinition {

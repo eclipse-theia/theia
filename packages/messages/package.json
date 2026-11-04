@@ -2,6 +2,7 @@
   "name": "@theia/messages",
   "version": "1.76.0",
   "description": "Theia - Messages Extension",
+  "type": "module",
   "dependencies": {
     "@theia/core": "1.76.0",
     "react-perfect-scrollbar": "^1.5.8",
@@ -47,5 +48,12 @@
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "21358137e41342742707f660b8e222f940a27652",
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  }
 }

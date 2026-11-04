@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { DefaultUriLabelProviderContribution, URIIconReference } from './label-provider';
-import URI from '../common/uri';
-import { OS } from '../common/os';
+import { DefaultUriLabelProviderContribution, URIIconReference } from './label-provider.js';
+import URI from '../common/uri.js';
+import { OS } from '../common/os.js';
 
 describe('DefaultUriLabelProviderContribution', function (): void {
 

@@ -17,7 +17,7 @@
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { ContributionProvider } from '@theia/core';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import { TaskRunnerContribution, TaskRunnerRegistry } from './task-runner';
+import { TaskRunnerContribution, TaskRunnerRegistry } from './task-runner.js';
 
 @injectable()
 export class TaskBackendApplicationContribution implements BackendApplicationContribution {

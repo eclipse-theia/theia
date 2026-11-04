@@ -21,10 +21,10 @@ import type {
     JSONObject,
     PreferenceSchema,
     TaskDefinition,
-} from './protocol-shims';
-import type { PluginManifest } from './manifest-types';
+} from './protocol-shims.js';
+import type { PluginManifest } from './manifest-types.js';
 
-export type { JSONObject } from './protocol-shims';
+export type { JSONObject } from './protocol-shims.js';
 
 /**
  * Raw `contributes` section from `package.json` before normalization.

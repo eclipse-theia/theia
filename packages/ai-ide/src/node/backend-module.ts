@@ -16,14 +16,14 @@
 
 import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { BrowserAutomation, browserAutomationPath, type BrowserAutomationClient } from '../common/browser-automation-protocol';
-import { BrowserAutomationImpl } from './app-tester-agent/browser-automation-impl';
+import { BrowserAutomation, browserAutomationPath, type BrowserAutomationClient } from '../common/browser-automation-protocol.js';
+import { BrowserAutomationImpl } from './app-tester-agent/browser-automation-impl.js';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
-import { WorkspacePreferencesSchema } from '../common/workspace-preferences';
-import { AiConfigurationPreferences } from '../common/ai-configuration-preferences';
-import { aiIdePreferenceSchema } from '../common/ai-ide-preferences';
-import { GitHubRepoService, githubRepoServicePath } from '../common/github-repo-protocol';
-import { GitHubRepoServiceImpl } from './github-repo-service-impl';
+import { WorkspacePreferencesSchema } from '../common/workspace-preferences.js';
+import { AiConfigurationPreferences } from '../common/ai-configuration-preferences.js';
+import { aiIdePreferenceSchema } from '../common/ai-ide-preferences.js';
+import { GitHubRepoService, githubRepoServicePath } from '../common/github-repo-protocol.js';
+import { GitHubRepoServiceImpl } from './github-repo-service-impl.js';
 
 const browserAutomationModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
     bind(BrowserAutomation).to(BrowserAutomationImpl).inSingletonScope();

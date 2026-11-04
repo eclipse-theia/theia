@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { LanguageModelServiceImpl } from './language-model-service';
-import { LanguageModel, LanguageModelMessage, ReasoningLevel, ReasoningSupport, UserRequest } from './language-model';
+import { LanguageModelServiceImpl } from './language-model-service.js';
+import { LanguageModel, LanguageModelMessage, ReasoningLevel, ReasoningSupport, UserRequest } from './language-model.js';
 
 describe('LanguageModelServiceImpl message filtering', () => {
 

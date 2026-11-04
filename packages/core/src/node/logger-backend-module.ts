@@ -15,15 +15,15 @@
 // *****************************************************************************
 
 import { ContainerModule, Container, interfaces } from 'inversify';
-import { ConnectionHandler, RpcConnectionHandler } from '../common/messaging';
-import { ILogger, LoggerFactory, Logger, setRootLogger, LoggerName } from '../common/logger';
-import { ILoggerServer, ILoggerClient, loggerPath, DispatchingLoggerClient } from '../common/logger-protocol';
-import { ConsoleLoggerServer } from './console-logger-server';
-import { LoggerWatcher } from '../common/logger-watcher';
-import { BackendApplicationContribution } from './backend-application';
-import { CliContribution } from './cli';
-import { LogLevelCliContribution } from './logger-cli-contribution';
-import { bindCommonLogger } from '../common/logger-binding';
+import { ConnectionHandler, RpcConnectionHandler } from '../common/messaging/index.js';
+import { ILogger, LoggerFactory, Logger, setRootLogger, LoggerName } from '../common/logger.js';
+import { ILoggerServer, ILoggerClient, loggerPath, DispatchingLoggerClient } from '../common/logger-protocol.js';
+import { ConsoleLoggerServer } from './console-logger-server.js';
+import { LoggerWatcher } from '../common/logger-watcher.js';
+import { BackendApplicationContribution } from './backend-application.js';
+import { CliContribution } from './cli.js';
+import { LogLevelCliContribution } from './logger-cli-contribution.js';
+import { bindCommonLogger } from '../common/logger-binding.js';
 
 export function bindLogger(bind: interfaces.Bind, props?: {
     onLoggerServerActivation?: (context: interfaces.Context, server: ILoggerServer) => void

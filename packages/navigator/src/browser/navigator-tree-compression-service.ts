@@ -16,7 +16,7 @@
 
 import { CompressionParent, TreeCompressionService } from '@theia/core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
-import { WorkspaceRootNode } from './navigator-tree';
+import { WorkspaceRootNode } from './navigator-tree.js';
 
 /**
  * Does not compact the roots of a multi-root workspace with their folders, as VS Code does, so that

@@ -27,9 +27,9 @@ import {
     ToolbarAlignmentString,
     ToolbarItemPosition,
     LateInjector,
-} from './toolbar-interfaces';
-import { ToolbarController } from './toolbar-controller';
-import { ToolbarMenus } from './toolbar-constants';
+} from './toolbar-interfaces.js';
+import { ToolbarController } from './toolbar-controller.js';
+import { ToolbarMenus } from './toolbar-constants.js';
 import { TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar/tab-toolbar-item';
 
 const TOOLBAR_BACKGROUND_DATA_ID = 'toolbar-wrapper';

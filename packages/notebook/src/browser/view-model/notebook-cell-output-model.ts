@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { Disposable, Emitter } from '@theia/core';
-import { CellOutput, CellOutputItem, isTextStreamMime } from '../../common';
-import { compressOutputItemStreams } from '../notebook-output-utils';
+import { CellOutput, CellOutputItem, isTextStreamMime } from '../../common/index.js';
+import { compressOutputItemStreams } from '../notebook-output-utils.js';
 
 export class NotebookCellOutputModel implements Disposable {
 

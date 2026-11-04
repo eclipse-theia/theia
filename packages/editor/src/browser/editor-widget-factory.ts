@@ -18,8 +18,8 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { nls, SelectionService } from '@theia/core/lib/common';
 import { NavigatableWidgetOptions, WidgetFactory, LabelProvider } from '@theia/core/lib/browser';
-import { EditorWidget } from './editor-widget';
-import { TextEditorProvider } from './editor';
+import { EditorWidget } from './editor-widget.js';
+import { TextEditorProvider } from './editor.js';
 
 @injectable()
 export class EditorWidgetFactory implements WidgetFactory {

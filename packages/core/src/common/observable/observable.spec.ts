@@ -20,12 +20,12 @@
 // copied and modified from https://github.com/microsoft/vscode/blob/1.96.3/src/vs/base/test/common/observable.test.ts
 
 import { expect } from 'chai';
-import { DisposableCollection } from '../disposable';
-import { Observable } from './observable-base';
-import { SettableObservable } from './settable-observable';
-import { DerivedObservable } from './derived-observable';
-import { ObservableSignal } from './observable-signal';
-import { Autorun } from './autorun';
+import { DisposableCollection } from '../disposable.js';
+import { Observable } from './observable-base.js';
+import { SettableObservable } from './settable-observable.js';
+import { DerivedObservable } from './derived-observable.js';
+import { ObservableSignal } from './observable-signal.js';
+import { Autorun } from './autorun.js';
 
 describe('Observables', () => {
     let disposables: DisposableCollection;

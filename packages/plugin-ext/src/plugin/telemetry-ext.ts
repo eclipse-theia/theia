@@ -18,9 +18,9 @@ import { Disposable } from '@theia/core/lib/common/disposable';
 import { cloneAndChange } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { TelemetryLevel, isKindAllowedByLevel } from '@theia/telemetry/lib/common/telemetry-types';
-import { TelemetryExt } from '../common/plugin-api-rpc';
-import { mixin } from '../common/types';
-import { TelemetryTrustedValue, TelemetryLoggerOptions } from './types-impl';
+import { TelemetryExt } from '../common/plugin-api-rpc.js';
+import { mixin } from '../common/types.js';
+import { TelemetryTrustedValue, TelemetryLoggerOptions } from './types-impl.js';
 
 /**
  * Holds the telemetry level the user consented to and hands it to the loggers plugins create.

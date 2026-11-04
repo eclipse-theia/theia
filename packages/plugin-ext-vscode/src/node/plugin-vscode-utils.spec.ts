@@ -21,8 +21,8 @@ import { expect } from 'chai';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import { ArchiveExtractor, ArchiveExtractorImpl } from '@theia/filesystem/lib/node/archive/archive-extractor';
 import { createTestTar, createTestZip } from '@theia/filesystem/lib/node/archive/test/test-archives';
-import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
-import { decompressExtension, extractExtensionIdentityFromVsix, TMP_DIR_PREFIX, unpackToDeploymentDir } from './plugin-vscode-utils';
+import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment.js';
+import { decompressExtension, extractExtensionIdentityFromVsix, TMP_DIR_PREFIX, unpackToDeploymentDir } from './plugin-vscode-utils.js';
 
 describe('plugin-vscode-utils', () => {
 

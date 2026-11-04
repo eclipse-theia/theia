@@ -19,7 +19,7 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { generateUuid } from '@theia/core/lib/common/uuid';
-import { MiniBrowserEndpoint } from '../../common/mini-browser-endpoint';
+import { MiniBrowserEndpoint } from '../../common/mini-browser-endpoint.js';
 
 /**
  * Fetch values from the backend's environment and caches them locally.

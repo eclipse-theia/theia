@@ -21,10 +21,10 @@ import {
     RemoteConnectionProvider,
     ServiceConnectionProvider,
 } from '@theia/core/lib/browser/messaging/service-connection-provider';
-import { MCPToolFrontendDelegate, MCPToolDelegateClient, mcpToolDelegatePath } from '../common/mcp-tool-delegate';
-import { MCPFrontendBootstrap } from './mcp-frontend-bootstrap';
-import { MCPFrontendContribution } from './mcp-frontend-contribution';
-import { MCPToolDelegateClientImpl } from './mcp-tool-delegate-client';
+import { MCPToolFrontendDelegate, MCPToolDelegateClient, mcpToolDelegatePath } from '../common/mcp-tool-delegate.js';
+import { MCPFrontendBootstrap } from './mcp-frontend-bootstrap.js';
+import { MCPFrontendContribution } from './mcp-frontend-contribution.js';
+import { MCPToolDelegateClientImpl } from './mcp-tool-delegate-client.js';
 
 export default new ContainerModule(bind => {
     bind(MCPFrontendBootstrap).toSelf().inSingletonScope();

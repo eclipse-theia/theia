@@ -20,8 +20,8 @@ import * as path from 'path';
 import { expect } from 'chai';
 import { ArchiveExtractorImpl } from '@theia/filesystem/lib/node/archive/archive-extractor';
 import { createTestTar, createTestZip } from '@theia/filesystem/lib/node/archive/test/test-archives';
-import { DependencyDownload } from './remote-native-dependency-contribution';
-import { NativeDependencyFile, RemoteNativeDependencyService } from './remote-native-dependency-service';
+import { DependencyDownload } from './remote-native-dependency-contribution.js';
+import { NativeDependencyFile, RemoteNativeDependencyService } from './remote-native-dependency-service.js';
 
 class TestableRemoteNativeDependencyService extends RemoteNativeDependencyService {
     constructor() {

@@ -16,7 +16,7 @@
 import { FrontendApplication, codicon } from '@theia/core/lib/browser';
 import { AIViewContribution } from '@theia/ai-core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { AIHistoryView } from './ai-history-widget';
+import { AIHistoryView } from './ai-history-widget.js';
 import { Command, CommandRegistry, Emitter, nls } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { LanguageModelService } from '@theia/ai-core';

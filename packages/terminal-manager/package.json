@@ -2,6 +2,7 @@
   "name": "@theia/terminal-manager",
   "version": "1.76.0",
   "description": "Theia - Terminal Manager Extension",
+  "type": "module",
   "keywords": [
     "theia-extension"
   ],
@@ -37,5 +38,12 @@
   ],
   "publishConfig": {
     "access": "public"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
   }
 }

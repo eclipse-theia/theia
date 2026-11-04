@@ -19,7 +19,7 @@
 import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { FolderPreferenceProvider, FolderPreferenceProviderFactory } from './folder-preference-provider';
+import { FolderPreferenceProvider, FolderPreferenceProviderFactory } from './folder-preference-provider.js';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { PreferenceProviderImpl, PreferenceConfigurations, PreferenceResolveResult, PreferenceScope, PreferenceUtils, ILogger } from '@theia/core';
 

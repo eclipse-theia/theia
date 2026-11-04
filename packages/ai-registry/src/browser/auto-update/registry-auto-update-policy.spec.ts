@@ -16,8 +16,8 @@
 
 import { expect } from 'chai';
 import { PreferenceService } from '@theia/core';
-import { AUTO_UPDATE_OVERRIDES_PREF, AUTO_UPDATE_PREF, AutoUpdateMode } from '../../common/ai-registry-preferences';
-import { RegistryAutoUpdatePolicyImpl } from './registry-auto-update-policy';
+import { AUTO_UPDATE_OVERRIDES_PREF, AUTO_UPDATE_PREF, AutoUpdateMode } from '../../common/ai-registry-preferences.js';
+import { RegistryAutoUpdatePolicyImpl } from './registry-auto-update-policy.js';
 
 /** Minimal in-memory stand-in for the two preferences the policy reads and writes. */
 class TestPolicy extends RegistryAutoUpdatePolicyImpl {

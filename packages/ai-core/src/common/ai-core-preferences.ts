@@ -23,8 +23,8 @@ import {
     NOTIFICATION_TYPE_LABELS,
     NOTIFICATION_TYPE_DESCRIPTIONS,
     NotificationType
-} from './notification-types';
-import { ReasoningSettings, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM } from './language-model';
+} from './notification-types.js';
+import { ReasoningSettings, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM } from './language-model.js';
 import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 
 export const AI_CORE_PREFERENCES_TITLE = nls.localize('theia/ai-core/preferences/title', 'AI Features');

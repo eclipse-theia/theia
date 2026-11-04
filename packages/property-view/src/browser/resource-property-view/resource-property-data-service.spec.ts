@@ -23,10 +23,10 @@ FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { ResourcePropertyDataService } from './resource-property-data-service';
+import { ResourcePropertyDataService } from './resource-property-data-service.js';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import URI from '@theia/core/lib/common/uri';
-import { PropertyDataService } from '../property-data-service';
+import { PropertyDataService } from '../property-data-service.js';
 import { FileSelection } from '@theia/filesystem/lib/browser/file-selection';
 import { Navigatable } from '@theia/core/lib/browser/navigatable';
 import { FileStat } from '@theia/filesystem/lib/common/files';

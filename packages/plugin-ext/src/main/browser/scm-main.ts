@@ -33,7 +33,7 @@ import {
     ScmHistoryItemChangeDto,
     ScmHistoryOptionsDto,
     ScmHistoryItemRefsChangeEventDto
-} from '../../common/plugin-api-rpc';
+} from '../../common/plugin-api-rpc.js';
 import {
     ScmProvider, ScmResource, ScmResourceDecorations, ScmResourceGroup, ScmCommand, ScmActionButton,
     ScmHistoryProvider, ScmHistoryItemRef, ScmHistoryItemRefsChangeEvent,
@@ -41,19 +41,19 @@ import {
 } from '@theia/scm/lib/browser/scm-provider';
 import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
-import { RPCProtocol } from '../../common/rpc-protocol';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
 import { interfaces } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import URI from '@theia/core/lib/common/uri';
 import { URI as vscodeURI } from '@theia/core/shared/vscode-uri';
-import { Splice } from '../../common/arrays';
-import { UriComponents } from '../../common/uri-components';
+import { Splice } from '../../common/arrays.js';
+import { UriComponents } from '../../common/uri-components.js';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
-import { PluginSharedStyle } from './plugin-shared-style';
-import { IconUrl } from '../../common';
-import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
+import { PluginSharedStyle } from './plugin-shared-style.js';
+import { IconUrl } from '../../common/index.js';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables.js';
 
 export class PluginScmResourceGroup implements ScmResourceGroup {
 

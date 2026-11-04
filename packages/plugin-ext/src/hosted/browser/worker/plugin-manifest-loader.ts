@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { PluginModel, PluginPackage } from '../../../common/plugin-protocol';
+import { PluginModel, PluginPackage } from '../../../common/plugin-protocol.js';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import URI from '@theia/core/lib/common/uri';
 import { localizeWithResolver } from '@theia/plugin-utils/lib/common/package-nls';

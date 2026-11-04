@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, postConstruct } from '@theia/core/shared/inversify';
-import { SearchInWorkspaceService } from '../browser/search-in-workspace-service';
+import { SearchInWorkspaceService } from '../browser/search-in-workspace-service.js';
 
 @injectable()
 export class BrowserOnlySearchInWorkspaceService extends SearchInWorkspaceService {

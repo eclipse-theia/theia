@@ -13,26 +13,26 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { DocumentsMain, MAIN_RPC_CONTEXT, DocumentsExt } from '../../common/plugin-api-rpc';
-import { UriComponents } from '../../common/uri-components';
-import { EditorsAndDocumentsMain } from './editors-and-documents-main';
+import { DocumentsMain, MAIN_RPC_CONTEXT, DocumentsExt } from '../../common/plugin-api-rpc.js';
+import { UriComponents } from '../../common/uri-components.js';
+import { EditorsAndDocumentsMain } from './editors-and-documents-main.js';
 import { DisposableCollection, Disposable, UntitledResourceResolver } from '@theia/core';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
-import { RPCProtocol } from '../../common/rpc-protocol';
-import { EditorModelService } from './text-editor-model-service';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
+import { EditorModelService } from './text-editor-model-service.js';
 import { EditorOpenerOptions, EncodingMode } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { URI as CodeURI } from '@theia/core/shared/vscode-uri';
 import { ApplicationShell, SaveReason } from '@theia/core/lib/browser';
-import { TextDocumentShowOptions } from '../../common/plugin-api-rpc-model';
+import { TextDocumentShowOptions } from '../../common/plugin-api-rpc-model.js';
 import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { OpenerService } from '@theia/core/lib/browser/opener-service';
 import { Reference } from '@theia/core/lib/common/reference';
-import { dispose } from '../../common/disposable-util';
+import { dispose } from '../../common/disposable-util.js';
 import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
 import * as monaco from '@theia/monaco-editor-core';
-import { TextDocumentChangeReason } from '../../plugin/types-impl';
-import { NotebookDocumentsMainImpl } from './notebooks/notebook-documents-main';
+import { TextDocumentChangeReason } from '../../plugin/types-impl.js';
+import { NotebookDocumentsMainImpl } from './notebooks/notebook-documents-main.js';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.

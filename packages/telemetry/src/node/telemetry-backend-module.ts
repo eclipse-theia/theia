@@ -17,12 +17,12 @@
 import { bindRootContributionProvider, ConnectionHandler, RpcConnectionHandler } from '@theia/core/lib/common';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { PreferenceTelemetryConsentProvider, TelemetryConsentProvider } from '../common/telemetry-consent-provider';
-import { bindTelemetryPreferences } from '../common/telemetry-preferences';
-import { telemetryServicePath, TelemetryRpc } from '../common/telemetry-protocol';
-import { TelemetryService } from '../common/telemetry-service';
-import { TelemetryServiceImpl } from './telemetry-service-impl';
-import { TelemetrySink } from './telemetry-sink';
+import { PreferenceTelemetryConsentProvider, TelemetryConsentProvider } from '../common/telemetry-consent-provider.js';
+import { bindTelemetryPreferences } from '../common/telemetry-preferences.js';
+import { telemetryServicePath, TelemetryRpc } from '../common/telemetry-protocol.js';
+import { TelemetryService } from '../common/telemetry-service.js';
+import { TelemetryServiceImpl } from './telemetry-service-impl.js';
+import { TelemetrySink } from './telemetry-sink.js';
 
 export default new ContainerModule(bind => {
     bindTelemetryPreferences(bind);

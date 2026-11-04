@@ -35,8 +35,8 @@ import { ShellExecutionRequest, ShellExecutionServer } from '@theia/ai-terminal/
 import { ShellExecutionTool } from '@theia/ai-terminal/lib/browser/shell-execution-tool';
 import { ShellCommandPermissionService } from '@theia/ai-terminal/lib/browser/shell-command-permission-service';
 import { Minimatch } from 'minimatch';
-import { FindFilesByPattern, GetWorkspaceFileList, WorkspaceFunctionScope } from './workspace-functions';
-import { WorkspaceSearchProvider } from './workspace-search-provider';
+import { FindFilesByPattern, GetWorkspaceFileList, WorkspaceFunctionScope } from './workspace-functions.js';
+import { WorkspaceSearchProvider } from './workspace-search-provider.js';
 
 disableJSDOM();
 

@@ -16,62 +16,65 @@
 
 /* eslint-disable max-len, @stylistic/indent */
 
-import debounce = require('lodash.debounce');
+import debounce from '../../shared/lodash.debounce/index.cjs';
 import { injectable, inject, optional } from 'inversify';
-import { MAIN_MENU_BAR, MANAGE_MENU, MenuContribution, MenuModelRegistry, ACCOUNTS_MENU, CompoundMenuNode, CommandMenu, Group, Submenu } from '../common/menu';
-import { CommonMenus } from './common-menus';
+import { MAIN_MENU_BAR, MANAGE_MENU, MenuContribution, MenuModelRegistry, ACCOUNTS_MENU, CompoundMenuNode, CommandMenu, Group, Submenu } from '../common/menu/index.js';
+import { CommonMenus } from './common-menus.js';
 export { CommonMenus };
-import { KeybindingContribution, KeybindingRegistry } from './keybinding';
-import { FrontendApplication } from './frontend-application';
-import { FrontendApplicationContribution, OnWillStopAction } from './frontend-application-contribution';
-import { CommandContribution, CommandRegistry, Command } from '../common/command';
-import { CommonCommands } from './common-commands';
+import { KeybindingContribution, KeybindingRegistry } from './keybinding.js';
+import { FrontendApplication } from './frontend-application.js';
+import { FrontendApplicationContribution, OnWillStopAction } from './frontend-application-contribution.js';
+import { CommandContribution, CommandRegistry, Command } from '../common/command.js';
+import { CommonCommands } from './common-commands.js';
 export { CommonCommands };
-import { UriAwareCommandHandler } from '../common/uri-command-handler';
-import { SelectionService } from '../common/selection-service';
-import { MessageService } from '../common/message-service';
-import { OpenerService, open } from '../browser/opener-service';
-import { ApplicationShell } from './shell/application-shell';
-import { SHELL_TABBAR_CONTEXT_CLOSE, SHELL_TABBAR_CONTEXT_COPY, SHELL_TABBAR_CONTEXT_PIN, SHELL_TABBAR_CONTEXT_SPLIT } from './shell/tab-bars';
-import { AboutDialog } from './about-dialog';
-import URI from '../common/uri';
-import { ContextKey, ContextKeyService } from './context-key-service';
-import { OS, isOSX, isWindows, EOL } from '../common/os';
-import { ResourceContextKey } from './resource-context-key';
-import { UriSelection } from '../common/selection';
-import { StorageService } from './storage-service';
-import { Navigatable, NavigatableWidget } from './navigatable';
-import { QuickViewService } from './quick-input/quick-view-service';
+import { UriAwareCommandHandler } from '../common/uri-command-handler.js';
+import { SelectionService } from '../common/selection-service.js';
+import { MessageService } from '../common/message-service.js';
+import { OpenerService, open } from '../browser/opener-service.js';
+import { ApplicationShell } from './shell/application-shell.js';
+import {
+    SHELL_TABBAR_CONTEXT_CLOSE, SHELL_TABBAR_CONTEXT_COPY, SHELL_TABBAR_CONTEXT_HIDE, SHELL_TABBAR_CONTEXT_PIN, SHELL_TABBAR_CONTEXT_SPLIT, SideTabBar
+} from './shell/tab-bars.js';
+import { SidePanelItemVisibility } from './shell/side-panel-item-visibility.js';
+import { AboutDialog } from './about-dialog.js';
+import URI from '../common/uri.js';
+import { ContextKey, ContextKeyService } from './context-key-service.js';
+import { OS, isOSX, isWindows, EOL } from '../common/os.js';
+import { ResourceContextKey } from './resource-context-key.js';
+import { UriSelection } from '../common/selection.js';
+import { StorageService } from './storage-service.js';
+import { Navigatable, NavigatableWidget } from './navigatable.js';
+import { QuickViewService } from './quick-input/quick-view-service.js';
 import { environment } from '@theia/application-package/lib/environment';
-import { IconTheme, IconThemeService } from './icon-theme-service';
-import { ColorContribution } from './color-application-contribution';
-import { ColorRegistry } from './color-registry';
-import { Color } from '../common/color';
-import { CoreConfiguration, CorePreferences } from '../common/core-preferences';
-import { ThemeService } from './theming';
-import { ClipboardService } from './clipboard-service';
-import { EncodingRegistry } from './encoding-registry';
-import { UTF8 } from '../common/encodings';
-import { EnvVariablesServer } from '../common/env-variables';
-import { AuthenticationService } from './authentication-service';
-import { FormatType, Saveable, SaveOptions } from './saveable';
-import { QuickInputService, QuickPickItem, QuickPickItemOrSeparator, QuickPickSeparator } from './quick-input';
-import { AsyncLocalizationProvider } from '../common/i18n/localization';
-import { nls } from '../common/nls';
-import { CurrentWidgetCommandAdapter } from './shell/current-widget-command-adapter';
-import { ConfirmDialog, confirmExit, ConfirmSaveDialog, Dialog } from './dialogs';
-import { WindowService } from './window/window-service';
-import { SecondaryWindowService } from './window/secondary-window-service';
-import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
-import { DecorationStyle } from './decoration-style';
-import { codicon, isPinned, Title, togglePinned, Widget } from './widgets';
-import { SaveableService } from './saveable-service';
-import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
-import { PreferenceChangeEvent, PreferenceScope, PreferenceService, UNTITLED_SCHEME, UntitledResourceResolver } from '../common';
-import { LanguageQuickPickService } from './i18n/language-quick-pick-service';
-import { SidebarMenu } from './shell/sidebar-menu-widget';
-import { UndoRedoHandlerService } from './undo-redo-handler';
-import { timeout } from '../common/promise-util';
+import { IconTheme, IconThemeService } from './icon-theme-service.js';
+import { ColorContribution } from './color-application-contribution.js';
+import { ColorRegistry } from './color-registry.js';
+import { Color } from '../common/color.js';
+import { CoreConfiguration, CorePreferences } from '../common/core-preferences.js';
+import { ThemeService } from './theming.js';
+import { ClipboardService } from './clipboard-service.js';
+import { EncodingRegistry } from './encoding-registry.js';
+import { UTF8 } from '../common/encodings.js';
+import { EnvVariablesServer } from '../common/env-variables/index.js';
+import { AuthenticationService } from './authentication-service.js';
+import { FormatType, Saveable, SaveOptions } from './saveable.js';
+import { QuickInputService, QuickPickItem, QuickPickItemOrSeparator, QuickPickSeparator } from './quick-input/index.js';
+import { AsyncLocalizationProvider } from '../common/i18n/localization.js';
+import { nls } from '../common/nls.js';
+import { CurrentWidgetCommandAdapter } from './shell/current-widget-command-adapter.js';
+import { ConfirmDialog, confirmExit, ConfirmSaveDialog, Dialog } from './dialogs.js';
+import { WindowService } from './window/window-service.js';
+import { SecondaryWindowService } from './window/secondary-window-service.js';
+import { FrontendApplicationConfigProvider } from './frontend-application-config-provider.js';
+import { DecorationStyle } from './decoration-style.js';
+import { codicon, isPinned, Title, togglePinned, Widget } from './widgets/index.js';
+import { SaveableService } from './saveable-service.js';
+import { UserWorkingDirectoryProvider } from './user-working-directory-provider.js';
+import { PreferenceChangeEvent, PreferenceScope, PreferenceService, UNTITLED_SCHEME, UntitledResourceResolver } from '../common/index.js';
+import { LanguageQuickPickService } from './i18n/language-quick-pick-service.js';
+import { SidebarMenu } from './shell/sidebar-menu-widget.js';
+import { UndoRedoHandlerService } from './undo-redo-handler.js';
+import { timeout } from '../common/promise-util.js';
 
 export const supportCut = environment.electron.is() || document.queryCommandSupported('cut');
 export const supportCopy = environment.electron.is() || document.queryCommandSupported('copy');
@@ -129,6 +132,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
     @inject(StorageService)
     protected readonly storageService: StorageService;
+
+    @inject(SidePanelItemVisibility)
+    protected readonly sidePanelItemVisibility: SidePanelItemVisibility;
 
     @inject(QuickInputService) @optional()
     protected readonly quickInputService: QuickInputService;
@@ -453,6 +459,16 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             commandId: CommonCommands.SHOW_MENU_BAR.id,
             label: nls.localizeByDefault('Toggle Menu Bar'),
             order: '0'
+        });
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_HIDE, {
+            commandId: CommonCommands.HIDE_SIDE_PANEL_ITEM.id,
+            label: nls.localizeByDefault('Hide'),
+            order: '0'
+        });
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_HIDE, {
+            commandId: CommonCommands.KEEP_SIDE_PANEL_ITEM.id,
+            label: nls.localizeByDefault('Keep'),
+            order: '1'
         });
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_PIN, {
             commandId: CommonCommands.PIN_TAB.id,
@@ -793,6 +809,18 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         });
         commandRegistry.registerCommand(CommonCommands.SELECT_ICON_THEME, {
             execute: () => this.selectIconTheme()
+        });
+        commandRegistry.registerCommand(CommonCommands.HIDE_SIDE_PANEL_ITEM, new CurrentWidgetCommandAdapter(this.shell, {
+            isVisible: (title, tabBar) => Boolean(title && tabBar instanceof SideTabBar && !tabBar.shouldHideTitle(title)),
+            isEnabled: (title, tabBar) => Boolean(title && tabBar instanceof SideTabBar && tabBar.canHideTitle(title)),
+            execute: title => title && this.sidePanelItemVisibility.setHidden(title.owner.id, true),
+        }));
+        commandRegistry.registerCommand(CommonCommands.KEEP_SIDE_PANEL_ITEM, new CurrentWidgetCommandAdapter(this.shell, {
+            isVisible: (title, tabBar) => Boolean(title && tabBar instanceof SideTabBar && tabBar.shouldHideTitle(title)),
+            execute: title => title && this.sidePanelItemVisibility.setHidden(title.owner.id, false),
+        }));
+        commandRegistry.registerCommand(CommonCommands.RESET_HIDDEN_SIDE_PANEL_ITEMS, {
+            execute: () => this.sidePanelItemVisibility.reset()
         });
         commandRegistry.registerCommand(CommonCommands.PIN_TAB, new CurrentWidgetCommandAdapter(this.shell, {
             isEnabled: title => Boolean(title && !isPinned(title)),
@@ -1577,6 +1605,14 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             {
                 id: 'tab.hoverBorder',
                 description: 'Border to highlight tabs when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
+            {
+                id: 'tab.dragAndDropBorder', defaults: {
+                    dark: 'tab.activeForeground',
+                    light: 'tab.activeForeground',
+                    hcDark: 'contrastActiveBorder',
+                    hcLight: 'contrastActiveBorder'
+                }, description: 'Border between tabs to indicate that a tab can be inserted between two tabs. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
             },
             {
                 id: 'tab.unfocusedHoverBorder', defaults: {

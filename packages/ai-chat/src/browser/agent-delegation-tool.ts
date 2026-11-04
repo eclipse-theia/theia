@@ -36,8 +36,8 @@ import {
     ChatRequestInvocation,
     ThinkingChatResponseContent,
     ToolCallChatResponseContent,
-} from '../common';
-import { TASK_CONTEXT_VARIABLE } from './task-context-variable';
+} from '../common/index.js';
+import { TASK_CONTEXT_VARIABLE } from './task-context-variable.js';
 
 @injectable()
 export class AgentDelegationTool implements ToolProvider {

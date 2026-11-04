@@ -20,10 +20,10 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { StorageService } from '@theia/core/lib/browser';
-import { NotebookKernel, NotebookTextModelLike, NotebookKernelService } from './notebook-kernel-service';
+import { NotebookKernel, NotebookTextModelLike, NotebookKernelService } from './notebook-kernel-service.js';
 import { CommandService, Disposable } from '@theia/core';
-import { NotebookModel } from '../view-model/notebook-model';
-import { NotebookCommands } from '../contributions/notebook-actions-contribution';
+import { NotebookModel } from '../view-model/notebook-model.js';
+import { NotebookCommands } from '../contributions/notebook-actions-contribution.js';
 
 interface KernelsList {
     [viewType: string]: string[];

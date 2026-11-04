@@ -20,7 +20,7 @@ import URI from '@theia/core/lib/common/uri';
 import type { CompositeTreeNode, Tree } from '@theia/core/lib/browser/tree';
 import type { TreeDecoration } from '@theia/core/lib/browser/tree/tree-decorator';
 import type * as monaco from '@theia/monaco-editor-core';
-import type { MonacoOutlineSymbolInformationNode } from './monaco-outline-contribution';
+import type { MonacoOutlineSymbolInformationNode } from './monaco-outline-contribution.js';
 
 describe('MonacoOutlineDecorator', () => {
 
@@ -28,8 +28,8 @@ describe('MonacoOutlineDecorator', () => {
     // the spec files are collected registers monaco's editor contributions before monaco-init.spec initializes
     // the standalone services, which then need browser APIs that JSDOM does not provide.
     let monacoApi: typeof monaco;
-    let outline: typeof import('./monaco-outline-contribution');
-    let decorator: typeof import('./monaco-outline-decorator');
+    let outline: typeof import('./monaco-outline-contribution.js');
+    let decorator: typeof import('./monaco-outline-decorator.js');
     let disableJSDOM: () => void;
 
     before(async () => {
@@ -42,8 +42,8 @@ describe('MonacoOutlineDecorator', () => {
             (global as any).DragEvent = class DragEvent extends (global as any).Event { };
         }
         monacoApi = await import('@theia/monaco-editor-core');
-        outline = await import('./monaco-outline-contribution');
-        decorator = await import('./monaco-outline-decorator');
+        outline = await import('./monaco-outline-contribution.js');
+        decorator = await import('./monaco-outline-decorator.js');
     });
     after(() => disableJSDOM());
 

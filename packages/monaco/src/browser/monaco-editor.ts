@@ -38,35 +38,36 @@ import {
     EditorDecorationOptions,
     MouseTargetType
 } from '@theia/editor/lib/browser';
-import { MonacoEditorModel } from './monaco-editor-model';
-import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
-import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
+import { MonacoEditorModel } from './monaco-editor-model.js';
+import { MonacoToProtocolConverter } from './monaco-to-protocol-converter.js';
+import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter.js';
 import { TextEdit } from '@theia/core/shared/vscode-languageserver-protocol';
 import { UTF8 } from '@theia/core/lib/common/encodings';
 import * as monaco from '@theia/monaco-editor-core';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
-import { IInstantiationService, ServiceIdentifier } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
-import { ICodeEditor, IMouseTargetMargin } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
-import { IStandaloneEditorConstructionOptions, StandaloneCodeEditor, StandaloneEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
-import { ServiceCollection } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/serviceCollection';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language.js';
+import { IInstantiationService, ServiceIdentifier } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation.js';
+import { ICodeEditor, IMouseTargetMargin } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser.js';
+import { IStandaloneEditorConstructionOptions, StandaloneCodeEditor, StandaloneEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor.js';
+import { ServiceCollection } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/serviceCollection.js';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
-import { ConfigurationChangedEvent, IEditorOptions, ShowLightbulbIconMode } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
-import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
-import { ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
-import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
-import { IKeybindingService } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/keybinding';
-import { IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
-import { INotificationService } from '@theia/monaco-editor-core/esm/vs/platform/notification/common/notification';
-import { IAccessibilityService } from '@theia/monaco-editor-core/esm/vs/platform/accessibility/common/accessibility';
-import { ILanguageConfigurationService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/languageConfigurationRegistry';
-import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
-import * as objects from '@theia/monaco-editor-core/esm/vs/base/common/objects';
+import { ConfigurationChangedEvent, IEditorOptions, ShowLightbulbIconMode } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions.js';
+import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService.js';
+import { CursorColumns } from '@theia/monaco-editor-core/esm/vs/editor/common/core/cursorColumns.js';
+import { ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands.js';
+import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey.js';
+import { IKeybindingService } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/keybinding.js';
+import { IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService.js';
+import { INotificationService } from '@theia/monaco-editor-core/esm/vs/platform/notification/common/notification.js';
+import { IAccessibilityService } from '@theia/monaco-editor-core/esm/vs/platform/accessibility/common/accessibility.js';
+import { ILanguageConfigurationService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/languageConfigurationRegistry.js';
+import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures.js';
+import * as objects from '@theia/monaco-editor-core/esm/vs/base/common/objects.js';
 import { Selection } from '@theia/editor/lib/browser/editor';
-import { IHoverService, WorkbenchHoverDelegate } from '@theia/monaco-editor-core/esm/vs/platform/hover/browser/hover';
-import { setHoverDelegateFactory } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hoverDelegateFactory';
-import { IMarkdownRendererService } from '@theia/monaco-editor-core/esm/vs/platform/markdown/browser/markdownRenderer';
-import { MonacoTextModelService } from './monaco-text-model-service';
+import { IHoverService, WorkbenchHoverDelegate } from '@theia/monaco-editor-core/esm/vs/platform/hover/browser/hover.js';
+import { setHoverDelegateFactory } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hoverDelegateFactory.js';
+import { IMarkdownRendererService } from '@theia/monaco-editor-core/esm/vs/platform/markdown/browser/markdownRenderer.js';
+import { MonacoTextModelService } from './monaco-text-model-service.js';
 
 export type ServicePair<T> = [ServiceIdentifier<T>, T];
 
@@ -359,8 +360,15 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     }
 
     get cursor(): Position {
-        const { lineNumber, column } = this.editor.getPosition()!;
+        // a hidden editor has no model, see `handleVisibilityChanged`, its cursor is kept in the saved view state then
+        const { lineNumber, column } = this.editor.getPosition() ?? this.getSavedCursorPosition() ?? { lineNumber: 1, column: 1 };
         return this.m2p.asPosition(lineNumber, column);
+    }
+
+    protected getSavedCursorPosition(): monaco.IPosition | undefined {
+        const viewState = this.savedViewState;
+        const codeEditorViewState = viewState && 'modified' in viewState ? viewState.modified : viewState;
+        return codeEditorViewState?.cursorState[0]?.position;
     }
 
     set cursor(cursor: Position) {
@@ -633,7 +641,14 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     }
 
     getVisibleColumn(position: Position): number {
-        return this.editor.getVisibleColumnFromPosition(this.p2m.asPosition(position));
+        const monacoPosition = this.p2m.asPosition(position);
+        if (this.editor.getModel()) {
+            return this.editor.getVisibleColumnFromPosition(monacoPosition);
+        }
+        // a hidden editor has no model, see `handleVisibilityChanged`, compute the column from the document like Monaco does
+        const model = this.document.textEditorModel;
+        const { lineNumber, column } = model.validatePosition(monacoPosition);
+        return CursorColumns.visibleColumnFromColumn(model.getLineContent(lineNumber), column, model.getOptions().tabSize) + 1;
     }
 
     async replaceText(params: ReplaceTextParams): Promise<boolean> {

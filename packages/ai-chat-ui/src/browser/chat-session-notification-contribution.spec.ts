@@ -40,7 +40,7 @@ import {
     AGENT_NOTIFICATION_KIND_INPUT_NEEDED
 } from '@theia/ai-core';
 import { AgentNotificationService, AgentNotificationOptions } from '@theia/ai-core/lib/browser';
-import { ChatSessionNotificationContribution } from './chat-session-notification-contribution';
+import { ChatSessionNotificationContribution } from './chat-session-notification-contribution.js';
 
 disableJSDOM();
 

@@ -16,14 +16,14 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
-import { PluginDeployerImpl } from './plugin-deployer-impl';
-import { PluginsKeyValueStorage } from './plugins-key-value-storage';
+import { PluginDeployerImpl } from './plugin-deployer-impl.js';
+import { PluginsKeyValueStorage } from './plugins-key-value-storage.js';
 import {
     PluginServer, PluginDeployer, PluginStorageKind, PluginType, UnresolvedPluginEntry, PluginIdentifiers,
     PluginDeployOptions, PluginDeployerHandler
-} from '../../common/plugin-protocol';
-import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
-import { PluginUninstallationManager } from './plugin-uninstallation-manager';
+} from '../../common/plugin-protocol.js';
+import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types.js';
+import { PluginUninstallationManager } from './plugin-uninstallation-manager.js';
 
 @injectable()
 export class PluginServerImpl implements PluginServer {

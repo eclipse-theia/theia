@@ -25,20 +25,20 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { DebugScope, DebugVariable } from '@theia/debug/lib/browser/console/debug-console-items';
 import { DebugFrontendApplicationContribution } from '@theia/debug/lib/browser/debug-frontend-application-contribution';
 import { DebugVariablesWidget } from '@theia/debug/lib/browser/view/debug-variables-widget';
-import { MemoryEditableTableWidget } from './editable-widget/memory-editable-table-widget';
-import { MemoryProviderService } from './memory-provider/memory-provider-service';
-import { MemoryTableWidget } from './memory-widget/memory-table-widget';
-import { MemoryWidget } from './memory-widget/memory-widget';
-import { RegisterTableWidget } from './register-widget/register-table-widget';
-import { RegisterWidget } from './register-widget/register-widget-types';
+import { MemoryEditableTableWidget } from './editable-widget/memory-editable-table-widget.js';
+import { MemoryProviderService } from './memory-provider/memory-provider-service.js';
+import { MemoryTableWidget } from './memory-widget/memory-table-widget.js';
+import { MemoryWidget } from './memory-widget/memory-widget.js';
+import { RegisterTableWidget } from './register-widget/register-table-widget.js';
+import { RegisterWidget } from './register-widget/register-widget-types.js';
 import {
     CreateNewMemoryViewCommand, CreateNewRegisterViewCommand, FollowPointerDebugCommand, FollowPointerTableCommand, MemoryCommand,
     RegisterSetVariableCommand, ResetModifiedCellCommand, ToggleDiffSelectWidgetVisibilityCommand, ViewVariableInMemoryCommand, ViewVariableInRegisterViewCommand
-} from './utils/memory-commands';
-import { MemoryWidgetManager } from './utils/memory-widget-manager';
-import { VariableRange } from './utils/memory-widget-variable-utils';
-import { MemoryDockPanel } from './wrapper-widgets/memory-dock-panel';
-import { MemoryLayoutWidget } from './wrapper-widgets/memory-layout-widget';
+} from './utils/memory-commands.js';
+import { MemoryWidgetManager } from './utils/memory-widget-manager.js';
+import { VariableRange } from './utils/memory-widget-variable-utils.js';
+import { MemoryDockPanel } from './wrapper-widgets/memory-dock-panel.js';
+import { MemoryLayoutWidget } from './wrapper-widgets/memory-layout-widget.js';
 import { nls } from '@theia/core/lib/common/nls';
 import Long from 'long';
 

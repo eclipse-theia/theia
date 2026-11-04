@@ -18,9 +18,9 @@ import { injectable, inject } from 'inversify';
 import {
     ActionMenuNode, CommandMenu, CommandRegistry, Group, GroupImpl, MenuAction, MenuNode, MenuNodeFactory,
     MutableCompoundMenuNode, SubMenuLink, Submenu, SubmenuImpl
-} from '../../common';
-import { ContextKeyService } from '../context-key-service';
-import { KeybindingRegistry } from '../keybinding';
+} from '../../common/index.js';
+import { ContextKeyService } from '../context-key-service.js';
+import { KeybindingRegistry } from '../keybinding.js';
 
 @injectable()
 export class BrowserMenuNodeFactory implements MenuNodeFactory {

@@ -20,6 +20,15 @@
   ],
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json",
+    "./lib/ovsx-router-filters": "./lib/ovsx-router-filters/index.js",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "scripts": {
     "build": "theiaext build",
     "clean": "theiaext clean",

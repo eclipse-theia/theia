@@ -17,8 +17,8 @@
 import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
 import { getProxyUrl } from '@theia/ai-core/lib/node';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { HuggingFaceModel } from './huggingface-language-model';
-import { HuggingFaceLanguageModelsManager, HuggingFaceModelDescription } from '../common';
+import { HuggingFaceModel } from './huggingface-language-model.js';
+import { HuggingFaceLanguageModelsManager, HuggingFaceModelDescription } from '../common/index.js';
 import { ILogger } from '@theia/core';
 
 @injectable()
