@@ -327,14 +327,19 @@ async function readGrammarsForBrowserOnly(
         }
         const grammarPath = path.resolve(pluginPath, rawGrammar.path);
         if (!shouldCopyPluginPath(grammarPath, pluginPath)) {
-            const inlined = await readGrammarFromDisk(rawGrammar, pluginPath, { onError });
-            if (inlined) {
-                result.push(inlined);
+            // Otherwise one broken file drops every grammar of the plugin.
+            try {
+                const inlined = await readGrammarFromDisk(rawGrammar, pluginPath, { onError });
+                if (inlined) {
+                    result.push(inlined);
+                }
+            } catch (err) {
+                onError('grammars', err, rawGrammar);
             }
         } else if (await fs.pathExists(grammarPath)) {
             result.push(contribution);
         } else {
-            onError('grammars', new Error(`Grammar file '${rawGrammar.path}' of '${rawGrammar.scopeName}' does not exist.`));
+            onError('grammars', new Error(`Grammar file '${rawGrammar.path}' of '${rawGrammar.scopeName}' does not exist.`), rawGrammar);
         }
     }
     return result;

@@ -26,6 +26,7 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import URI from '@theia/core/lib/common/uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileSystemProvider, FileSystemProviderCapabilities } from '@theia/filesystem/lib/common/files';
 import { PLUGINS_SCHEME } from '@theia/plugin-utils/lib/common/constants';
 import { DeployedPlugin, GrammarsContribution } from '../../common/index.js';
 import { PluginContributionHandler } from './plugin-contribution-handler.js';
@@ -36,12 +37,22 @@ disableJSDOM();
 class TestablePluginContributionHandler extends PluginContributionHandler {
 
     readonly reads: string[] = [];
+    readonly fileServiceReads: string[] = [];
+
+    capabilities = FileSystemProviderCapabilities.FileReadWrite;
 
     constructor() {
         super();
         (this as unknown as { fileService: Partial<FileService> }).fileService = {
+            activateProvider: async () => ({
+                capabilities: this.capabilities,
+                readFile: async (uri: URI) => {
+                    this.reads.push(uri.toString());
+                    return new TextEncoder().encode(`content of ${uri.path.base}`);
+                }
+            } as unknown as FileSystemProvider),
             read: async (uri: URI) => {
-                this.reads.push(uri.toString());
+                this.fileServiceReads.push(uri.toString());
                 return { value: `content of ${uri.path.base}` } as Awaited<ReturnType<FileService['read']>>;
             }
         };
@@ -79,6 +90,16 @@ describe('PluginContributionHandler', () => {
 
             expect(await load()).to.equal('content of acme.tmLanguage.json');
             expect(handler.reads).to.deep.equal([`${PLUGINS_SCHEME}:/acme_ext/syntaxes/acme.tmLanguage.json`]);
+            expect(handler.fileServiceReads).to.be.empty;
+        });
+
+        it('falls back to the file service if the provider cannot read whole files', async () => {
+            handler.capabilities = FileSystemProviderCapabilities.FileOpenReadWriteClose;
+            const load = handler.loader({ scope: 'source.acme', format: 'json', grammarLocation: './syntaxes/acme.tmLanguage.json' });
+
+            expect(await load()).to.equal('content of acme.tmLanguage.json');
+            expect(handler.reads).to.be.empty;
+            expect(handler.fileServiceReads).to.deep.equal([`${PLUGINS_SCHEME}:/acme_ext/syntaxes/acme.tmLanguage.json`]);
         });
 
         it('fails if the grammar has neither content nor location', async () => {

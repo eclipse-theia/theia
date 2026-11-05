@@ -245,5 +245,35 @@ describe('prepare-browser-only-plugins helpers', () => {
             expect(grammars.map(grammar => grammar.scope)).to.deep.equal(['source.acme']);
             expect(grammars[0].grammar).to.deep.equal({ scopeName: 'source.acme' });
         });
+
+        it('keeps the other grammars of a plugin if an inlined one cannot be read', async () => {
+            const pluginRoot = path.join(tmpRoot, 'plugins', 'acme');
+            const vendoredDir = path.join('node_modules', 'acme-grammar');
+            await fs.ensureDir(path.join(pluginRoot, vendoredDir));
+            await fs.writeJson(path.join(pluginRoot, 'package.json'), {
+                name: 'acme',
+                version: '1.0.0',
+                engines: { vscode: '*' },
+                contributes: {
+                    grammars: [
+                        { language: 'broken', scopeName: 'source.broken', path: `./${vendoredDir}/broken.tmLanguage.json` },
+                        { language: 'acme', scopeName: 'source.acme', path: `./${vendoredDir}/acme.tmLanguage.json` }
+                    ]
+                }
+            });
+            await fs.writeFile(path.join(pluginRoot, vendoredDir, 'broken.tmLanguage.json'), '{ not json');
+            await fs.writeJson(path.join(pluginRoot, vendoredDir, 'acme.tmLanguage.json'), { scopeName: 'source.acme' });
+
+            const outDir = path.join(tmpRoot, 'out');
+            const applicationPackage = {
+                projectPath: tmpRoot,
+                pck: { theiaPluginsDir: 'plugins' },
+                lib: (...segments: string[]) => path.join(outDir, ...segments)
+            } as unknown as ApplicationPackage;
+            await prepareBrowserOnlyPlugins(applicationPackage);
+
+            const [plugin]: DeployedPlugin[] = await fs.readJson(path.join(outDir, 'frontend', PLUGINS_BASE_PATH, LIST_JSON));
+            expect(plugin.contributes!.grammars!.map(grammar => grammar.scope)).to.deep.equal(['source.acme']);
+        });
     });
 });

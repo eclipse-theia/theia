@@ -55,6 +55,7 @@ import { JSONObject, JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import { ILogger } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { hasReadWriteCapability } from '@theia/filesystem/lib/common/files';
 
 // The enum export is missing from `vscode-textmate@9.2.0`
 const enum StandardTokenType {
@@ -240,7 +241,6 @@ export class PluginContributionHandler {
         const grammars = contributions.grammars;
         if (grammars && grammars.length) {
             const grammarsWithLanguage: GrammarsContribution[] = [];
-            const registeredGrammars = new Set<string>();
             for (const grammar of grammars) {
                 if (grammar.injectTo) {
                     for (const injectScope of grammar.injectTo) {
@@ -261,18 +261,9 @@ export class PluginContributionHandler {
                     // processing is deferred.
                     grammarsWithLanguage.push(grammar);
                 }
-                // Registering the scope once is enough, and a second registration makes the registry load
-                // both grammars just to compare their locations. Inline grammars have no location to compare,
-                // so they keep last-one-wins.
-                if (grammar.grammarLocation !== undefined) {
-                    const grammarKey = `${grammar.scope}\n${grammar.grammarLocation}`;
-                    if (registeredGrammars.has(grammarKey)) {
-                        continue;
-                    }
-                    registeredGrammars.add(grammarKey);
-                }
                 const loadGrammarContent = this.createGrammarContentLoader(plugin, grammar);
                 pushContribution(`grammar.textmate.scope.${grammar.scope}`, () => this.grammarsRegistry.registerTextmateGrammarScope(grammar.scope, {
+                    location: grammar.grammarLocation,
                     async getGrammarDefinition(): Promise<GrammarDefinition> {
                         return {
                             format: grammar.format,
@@ -533,7 +524,19 @@ export class PluginContributionHandler {
                 throw new Error(`Grammar '${grammar.scope}' has no content and no location to load it from.`);
             };
         }
-        return async () => (await this.fileService.read(grammarUri)).value;
+        return () => this.readGrammarFile(grammarUri);
+    }
+
+    /**
+     * `FileService.read` also stats the file, which is an extra `HEAD` per grammar in browser-only.
+     * Markdown alone pulls in about 70 embedded grammars.
+     */
+    protected async readGrammarFile(uri: URI): Promise<string> {
+        const provider = await this.fileService.activateProvider(uri.scheme);
+        if (hasReadWriteCapability(provider)) {
+            return new TextDecoder().decode(await provider.readFile(uri));
+        }
+        return (await this.fileService.read(uri)).value;
     }
 
     protected registerCommands(contribution: PluginContribution): Disposable {

@@ -32,6 +32,10 @@ export interface TextmateGrammarConfiguration extends IGrammarConfiguration {
 export interface GrammarDefinitionProvider {
     getGrammarDefinition(): Promise<GrammarDefinition>;
     getInjections?(scopeName: string): string[];
+    /**
+     * Lets the registry detect overridden grammars without loading them.
+     */
+    readonly location?: string;
 }
 
 export interface GrammarDefinition {
@@ -57,12 +61,9 @@ export class TextmateRegistry {
     registerTextmateGrammarScope(scope: string, provider: GrammarDefinitionProvider): Disposable {
         const providers = this.scopeToProvider.get(scope) || [];
         const existingProvider = providers[0];
-        if (existingProvider) {
-            Promise.all([existingProvider.getGrammarDefinition(), provider.getGrammarDefinition()]).then(([a, b]) => {
-                if (a.location !== b.location || !a.location && !b.location) {
-                    this.logger.warn(`a registered grammar provider for '${scope}' scope is overridden`);
-                }
-            });
+        // `getGrammarDefinition` may fetch the grammar, so keep it out of the registration.
+        if (existingProvider && (existingProvider.location !== provider.location || !provider.location)) {
+            this.logger.warn(`a registered grammar provider for '${scope}' scope is overridden`);
         }
         providers.unshift(provider);
         this.scopeToProvider.set(scope, providers);
