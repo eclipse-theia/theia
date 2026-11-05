@@ -82,11 +82,17 @@ export class OPFSFileSystemProvider implements Disposable,
         const setup = async (): Promise<true> => {
             const root = await this.initialization.getRootDirectory();
 
-            this.fs = this.createFileSystem({
+            const fs = this.createFileSystem({
                 root,
-                broadcastChannel: this.initialization.getBroadcastChannel(),
+                broadcastChannel: this.initialization.getBroadcastChannelName(),
                 hashAlgorithm: false,
             });
+            if (this.toDispose.disposed) {
+                fs.dispose();
+                return true;
+            }
+            this.fs = fs;
+            this.toDispose.push(Disposable.create(() => fs.dispose()));
 
             await this.initialization.initializeFS(new Proxy(this, {
                 get(target, prop, receiver): unknown {
