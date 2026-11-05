@@ -20,7 +20,7 @@ import {
     MenuContribution, Disposable, nls, PreferenceScope, PreferenceService
 } from '../../common/index.js';
 import {
-    codicon, ConfirmDialog, KeybindingContribution, KeybindingRegistry, Widget,
+    ConfirmDialog, KeybindingContribution, KeybindingRegistry, Widget,
     FrontendApplication, FrontendApplicationContribution, CommonMenus, CommonCommands, Dialog, Message, ApplicationShell, animationFrame,
 } from '../../browser/index.js';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory.js';
@@ -30,6 +30,7 @@ import { PREF_WINDOW_ZOOM_LEVEL, ZoomLevel } from '../../electron-common/electro
 import { BrowserMenuBarContribution, MenuBarWidget } from '../../browser/menu/browser-menu-plugin.js';
 import { WindowService } from '../../browser/window/window-service.js';
 import { WindowTitleService } from '../../browser/window/window-title-service.js';
+import { ElectronWindowTitleBarService } from './electron-window-title-bar-service.js';
 
 import '../../../src/electron-browser/menu/electron-menu-style.css';
 import { ThemeService } from '../../browser/theming.js';
@@ -97,6 +98,9 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
 
     @inject(CustomTitleWidgetFactory)
     protected readonly customTitleWidgetFactory: CustomTitleWidgetFactory;
+
+    @inject(ElectronWindowTitleBarService)
+    protected readonly titleBarService: ElectronWindowTitleBarService;
 
     protected titleBarStyleChangeFlag = false;
     protected titleBarStyle?: string;
@@ -260,25 +264,11 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
     }
 
     protected handleWindowControls(): void {
-        toggleControlButtons();
-        window.electronTheiaCore.onWindowEvent('maximize', toggleControlButtons);
-        window.electronTheiaCore.onWindowEvent('unmaximize', toggleControlButtons);
-
-        function toggleControlButtons(): void {
-            if (window.electronTheiaCore.isMaximized()) {
-                document.body.classList.add('maximized');
-            } else {
-                document.body.classList.remove('maximized');
-            }
-        }
+        this.titleBarService.setupMaximizeRestoreToggle(document.body);
     }
 
     protected createControlButton(id: string, handler: () => void): HTMLElement {
-        const button = document.createElement('div');
-        button.id = `${id}-button`;
-        button.className = `control-button ${codicon(`chrome-${id}`)}`;
-        button.addEventListener('click', handler);
-        return button;
+        return this.titleBarService.createControlButton(document, id, handler);
     }
 
     protected async handleRequiredRestart(): Promise<void> {

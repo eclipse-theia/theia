@@ -118,7 +118,8 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
 
     protected toOpenDialogOptions(uri: URI, props: OpenFileDialogProps): OpenDialogOptions {
         const result: OpenDialogOptions = {
-            path: FileUri.fsPath(uri)
+            path: FileUri.fsPath(uri),
+            windowName: props.targetWindow?.name
         };
 
         result.title = props.title;
@@ -152,7 +153,8 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
         }
 
         const result: SaveDialogOptions = {
-            path: FileUri.fsPath(uri)
+            path: FileUri.fsPath(uri),
+            windowName: props.targetWindow?.name
         };
 
         result.title = props.title;
