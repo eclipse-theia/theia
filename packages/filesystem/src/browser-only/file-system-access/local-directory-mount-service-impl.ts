@@ -17,7 +17,7 @@
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter, Event, ILogger, URI } from '@theia/core';
 import { FileSystemAccessHandle, FileSystemAccessPermissionState, WindowWithFileSystemAccess } from './file-system-access-types.js';
-import { LocalDirectoryMount, LocalDirectoryMountService } from './local-directory-mount-service.js';
+import { LocalDirectoryMount, LocalDirectoryMountPath, LocalDirectoryMountService } from './local-directory-mount-service.js';
 import { LocalDirectoryHandleStore } from './local-directory-handle-store.js';
 import { LocalDirectoryFileSystemProviderFactory } from './local-directory-file-system-provider.js';
 
@@ -33,6 +33,12 @@ export class LocalDirectoryMountServiceImpl implements LocalDirectoryMountServic
     @inject(ILogger) @named('filesystem:LocalDirectoryMountServiceImpl')
     protected readonly logger: ILogger;
 
+    /**
+     * Where local directories are mounted. Subclasses can override it if the default collides with their content.
+     * Has to be a single top-level segment, as the mounts are only discoverable through the listing of `/`.
+     */
+    protected readonly rootPath: string = LocalDirectoryMount.DEFAULT_ROOT;
+
     protected readonly mounts = new Map<string, LocalDirectoryMount>();
     protected readonly onDidChangeMountsEmitter = new Emitter<void>();
     readonly onDidChangeMounts: Event<void> = this.onDidChangeMountsEmitter.event;
@@ -40,6 +46,10 @@ export class LocalDirectoryMountServiceImpl implements LocalDirectoryMountServic
     protected _ready: Promise<void> = Promise.resolve();
     get ready(): Promise<void> {
         return this._ready;
+    }
+
+    get rootUri(): URI {
+        return new URI('file:///').withPath(this.rootPath);
     }
 
     @postConstruct()
@@ -73,7 +83,6 @@ export class LocalDirectoryMountServiceImpl implements LocalDirectoryMountServic
     }
 
     async pickAndMount(): Promise<URI | undefined> {
-        await this.ready;
         const win = this.getWindow();
         if (!win?.showDirectoryPicker) {
             return undefined;
@@ -88,6 +97,8 @@ export class LocalDirectoryMountServiceImpl implements LocalDirectoryMountServic
             throw error;
         }
 
+        // Not before the picker, the user gesture can expire if we wait.
+        await this.ready;
         for (const existing of this.mounts.values()) {
             if (await existing.handle.isSameEntry(handle)) {
                 if (existing.permission !== 'granted') {
@@ -117,6 +128,14 @@ export class LocalDirectoryMountServiceImpl implements LocalDirectoryMountServic
 
     getMounts(): LocalDirectoryMount[] {
         return Array.from(this.mounts.values());
+    }
+
+    toUri(name: string): URI {
+        return this.rootUri.resolve(name);
+    }
+
+    getMountPath(uri: URI): LocalDirectoryMountPath | undefined {
+        return uri.scheme === 'file' ? LocalDirectoryMount.splitPath(this.rootUri.path, uri.path) : undefined;
     }
 
     async unmount(name: string): Promise<void> {
@@ -158,7 +177,7 @@ export class LocalDirectoryMountServiceImpl implements LocalDirectoryMountServic
         return {
             name,
             handle,
-            uri: LocalDirectoryMount.toUri(name),
+            uri: this.toUri(name),
             provider: this.providerFactory({ handle }),
             permission
         };

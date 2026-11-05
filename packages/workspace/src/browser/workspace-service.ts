@@ -120,6 +120,15 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         return this._ready.promise;
     }
 
+    protected _requestedWorkspace: URI | undefined;
+    /**
+     * The workspace this window was asked to restore. Unlike {@link workspace}, it is also available
+     * if the workspace could not be read and the service fell back to another one or to none at all.
+     */
+    get requestedWorkspace(): URI | undefined {
+        return this._requestedWorkspace;
+    }
+
     @postConstruct()
     protected init(): void {
         this.doInit();
@@ -127,6 +136,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
 
     protected async doInit(): Promise<void> {
         let wsUriString = await this.getDefaultWorkspaceUri();
+        this._requestedWorkspace = wsUriString ? new URI(wsUriString) : undefined;
         if (wsUriString) {
             const wsUri = new URI(wsUriString);
             if (wsUri.scheme !== 'file') {

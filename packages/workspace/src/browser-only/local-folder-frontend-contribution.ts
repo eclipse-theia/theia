@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, ILogger, MessageService, nls } from '@theia/core/lib/common';
+import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, ILogger, MessageService, URI, nls } from '@theia/core/lib/common';
 import { CommonCommands, CommonMenus, FrontendApplicationContribution, QuickInputService, QuickPickItem } from '@theia/core/lib/browser';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
-import { LocalDirectoryMount, LocalDirectoryMountService } from '@theia/filesystem/lib/browser-only/file-system-access/local-directory-mount-service';
+import { LocalDirectoryMountService } from '@theia/filesystem/lib/browser-only/file-system-access/local-directory-mount-service';
 import { WorkspaceService } from '../browser/workspace-service.js';
 
 export namespace LocalFolderCommands {
@@ -59,6 +59,9 @@ export class LocalFolderFrontendContribution implements CommandContribution, Men
 
     @inject(WindowService)
     protected readonly windowService: WindowService;
+
+    /** The workspace that could not be opened at startup, because access to its mount is missing. */
+    protected workspaceToReopen: URI | undefined;
 
     registerCommands(commands: CommandRegistry): void {
         const isSupported = () => this.mountService.isSupported();
@@ -127,8 +130,8 @@ export class LocalFolderFrontendContribution implements CommandContribution, Men
         const name = selected.label;
         const roots = this.workspaceService.tryGetRoots().map(root => root.resource);
         const workspaceUri = this.workspaceService.workspace?.resource;
-        const rootsInMount = roots.filter(root => LocalDirectoryMount.getMountName(root) === name);
-        const workspaceInMount = workspaceUri !== undefined && LocalDirectoryMount.getMountName(workspaceUri) === name;
+        const rootsInMount = roots.filter(root => this.mountService.getMountPath(root)?.name === name);
+        const workspaceInMount = workspaceUri !== undefined && this.mountService.getMountPath(workspaceUri)?.name === name;
         if (rootsInMount.length > 0) {
             // Unmounting a folder that backs the whole workspace would leave it broken. A root of a
             // multi-root workspace file located elsewhere can be dropped safely.
@@ -140,6 +143,17 @@ export class LocalFolderFrontendContribution implements CommandContribution, Men
             await this.workspaceService.removeRoots(rootsInMount);
         }
         await this.mountService.unmount(name);
+        await this.removeRecentWorkspaces(name);
+    }
+
+    protected async removeRecentWorkspaces(mountName: string): Promise<void> {
+        // Mount names are derived from the folder name, so a stale entry would open the next folder of that name.
+        // Sequential because every removal rewrites the whole list.
+        for (const recent of await this.workspaceService.recentWorkspaces()) {
+            if (this.mountService.getMountPath(new URI(recent))?.name === mountName) {
+                await this.workspaceService.removeRecentWorkspace(recent);
+            }
+        }
     }
 
     protected async promptForMissingAccess(): Promise<void> {
@@ -149,16 +163,26 @@ export class LocalFolderFrontendContribution implements CommandContribution, Men
         await this.mountService.ready;
         const roots = await this.workspaceService.roots;
         const uris = roots.map(root => root.resource);
-        if (this.workspaceService.workspace) {
-            uris.push(this.workspaceService.workspace.resource);
+        const opened = this.workspaceService.workspace?.resource;
+        if (opened) {
+            uris.push(opened);
+        }
+        // Without access only the mount root can be read, so a workspace file inside the mount never got opened.
+        const requested = this.workspaceService.requestedWorkspace;
+        if (requested) {
+            uris.push(requested);
         }
         const pending = new Set<string>();
         for (const uri of uris) {
-            const name = LocalDirectoryMount.getMountName(uri);
+            const name = this.mountService.getMountPath(uri)?.name;
             const mount = name !== undefined ? this.mountService.getMount(name) : undefined;
             if (mount && mount.permission !== 'granted') {
                 pending.add(mount.name);
             }
+        }
+        const requestedMount = requested && this.mountService.getMountPath(requested)?.name;
+        if (requestedMount !== undefined && pending.has(requestedMount) && requested?.toString() !== opened?.toString()) {
+            this.workspaceToReopen = requested;
         }
         // One message per mount: every request needs its own user gesture.
         for (const name of pending) {
@@ -181,12 +205,21 @@ export class LocalFolderFrontendContribution implements CommandContribution, Men
                 pending.delete(name);
                 // Reload once the last missing mount is granted so that the workspace is read with access.
                 if (pending.size === 0) {
-                    this.windowService.reload();
+                    this.reloadWorkspace();
                 }
             } else {
                 // Otherwise the user would be left with an empty folder and no way to ask again short of reloading.
                 this.promptForAccess(name, pending, true);
             }
         }).catch(error => this.logger.error(`Failed to request access to the local folder '${name}'`, error));
+    }
+
+    protected reloadWorkspace(): void {
+        if (this.workspaceToReopen) {
+            // The failed restore cleared the URL fragment and the most recently used workspace, so a reload would open nothing.
+            this.workspaceService.open(this.workspaceToReopen, { preserveWindow: true });
+        } else {
+            this.windowService.reload();
+        }
     }
 }

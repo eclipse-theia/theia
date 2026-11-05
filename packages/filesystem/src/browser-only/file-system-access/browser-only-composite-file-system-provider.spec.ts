@@ -19,7 +19,7 @@ import { Emitter, Event, URI } from '@theia/core';
 import { FileChange, FileChangeType, FileSystemProviderErrorCode, FileType, Stat } from '../../common/files.js';
 import { OPFSFileSystemProvider } from '../opfs-filesystem-provider.js';
 import { BrowserOnlyCompositeFileSystemProvider } from './browser-only-composite-file-system-provider.js';
-import { LocalDirectoryMount, LocalDirectoryMountService } from './local-directory-mount-service.js';
+import { LocalDirectoryMount, LocalDirectoryMountPath, LocalDirectoryMountService } from './local-directory-mount-service.js';
 import { FileSystemAccessPermissionState } from './file-system-access-types.js';
 
 const enc = new TextEncoder();
@@ -128,12 +128,19 @@ class FakeMountService {
     readonly onDidChangeMounts: Event<void> = this.emitter.event;
     readonly ready = Promise.resolve();
     readonly mounts = new Map<string, LocalDirectoryMount>();
+    rootUri = new URI('file:///local');
 
     add(name: string, permission: FileSystemAccessPermissionState = 'granted'): FakeProvider {
         const provider = new FakeProvider();
-        this.mounts.set(name, { name, permission, provider: provider as never, handle: undefined as never, uri: LocalDirectoryMount.toUri(name) });
+        this.mounts.set(name, { name, permission, provider: provider as never, handle: undefined as never, uri: this.toUri(name) });
         this.emitter.fire();
         return provider;
+    }
+    toUri(name: string): URI {
+        return this.rootUri.resolve(name);
+    }
+    getMountPath(uri: URI): LocalDirectoryMountPath | undefined {
+        return LocalDirectoryMount.splitPath(this.rootUri.path, uri.path);
     }
     remove(name: string): void {
         this.mounts.delete(name);
@@ -219,6 +226,16 @@ describe('BrowserOnlyCompositeFileSystemProvider', () => {
         await expectCode(composite.delete(file('/local'), { recursive: true, useTrash: false }), FileSystemProviderErrorCode.NoPermissions);
         await expectCode(composite.rename(file('/local'), file('/x'), { overwrite: false }), FileSystemProviderErrorCode.NoPermissions);
         await expectCode(composite.delete(file('/local/one'), { recursive: true, useTrash: false }), FileSystemProviderErrorCode.NoPermissions);
+    });
+
+    it('follows the root of the mount service and leaves other paths to the OPFS', async () => {
+        opfs.files.set('/local/real.txt', enc.encode('opfs'));
+        mounts.rootUri = file('/.mounts');
+        const provider = mounts.add('proj');
+        provider.files.set('/a.txt', enc.encode('mount'));
+        expect(dec.decode(await composite.readFile(file('/local/real.txt')))).to.equal('opfs');
+        expect(dec.decode(await composite.readFile(file('/.mounts/proj/a.txt')))).to.equal('mount');
+        expect(await composite.readdir(file('/'))).to.deep.include(['.mounts', FileType.Directory]);
     });
 
     it('rewrites mount events to absolute URIs', () => {

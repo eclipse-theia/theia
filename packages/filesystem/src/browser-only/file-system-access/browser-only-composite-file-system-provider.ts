@@ -27,7 +27,7 @@ import { OPFSFileSystemProvider } from '../opfs-filesystem-provider.js';
 import { FileSystemAccessPermissionState } from './file-system-access-types.js';
 import { LocalDirectoryMount, LocalDirectoryMountService } from './local-directory-mount-service.js';
 
-/** The target of an operation: the OPFS, the virtual `/local` directory or a mounted local directory. */
+/** The target of an operation: the OPFS, the virtual directory holding the mounts or a mounted local directory. */
 type Route =
     { kind: 'opfs' } |
     { kind: 'local-root' } |
@@ -41,7 +41,7 @@ interface MountSubscription {
 
 /**
  * Dispatches to the OPFS or to a mounted local directory based on the path.
- * Local directories live at `file:///local/<name>`, everything else is stored in the OPFS.
+ * Local directories live below {@link LocalDirectoryMountService.rootUri}, everything else is stored in the OPFS.
  */
 @injectable()
 export class BrowserOnlyCompositeFileSystemProvider implements Disposable,
@@ -115,12 +115,12 @@ export class BrowserOnlyCompositeFileSystemProvider implements Disposable,
             if (!current.has(name)) {
                 subscription.disposable.dispose();
                 this.subscriptions.delete(name);
-                changes.push({ resource: LocalDirectoryMount.toUri(name), type: FileChangeType.DELETED });
+                changes.push({ resource: this.mountService.toUri(name), type: FileChangeType.DELETED });
             }
         }
 
         const hasMounts = this.subscriptions.size > 0;
-        const localRoot = LocalDirectoryMount.rootUri();
+        const localRoot = this.mountService.rootUri;
         if (!hadMounts && hasMounts) {
             changes.unshift({ resource: localRoot, type: FileChangeType.ADDED });
         } else if (hadMounts && !hasMounts) {
@@ -151,11 +151,11 @@ export class BrowserOnlyCompositeFileSystemProvider implements Disposable,
     // #region Routing
 
     protected getRoute(resource: URI): Route {
-        const mountPath = LocalDirectoryMount.splitPath(resource.path);
+        const mountPath = this.mountService.getMountPath(resource);
         if (mountPath) {
             return { kind: 'mount', name: mountPath.name, relative: new URI('file:///').resolve(mountPath.relative) };
         }
-        return LocalDirectoryMount.relativeToRoot(resource.path) ? { kind: 'local-root' } : { kind: 'opfs' };
+        return this.mountService.rootUri.path.relative(resource.path.normalize()) ? { kind: 'local-root' } : { kind: 'opfs' };
     }
 
     /** Waits for the mounts of previous sessions first, so that requests made during startup don't fail with FileNotFound. */
@@ -290,7 +290,7 @@ export class BrowserOnlyCompositeFileSystemProvider implements Disposable,
             // `/` or an empty path
             const isRoot = !resource.path.hasDir && !resource.path.base;
             if (isRoot && this.mountService.getMounts().length > 0) {
-                const name = LocalDirectoryMount.rootUri().path.base;
+                const name = this.mountService.rootUri.path.base;
                 return [...entries.filter(([entry]) => entry !== name), [name, FileType.Directory]];
             }
             return entries;

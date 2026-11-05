@@ -22,12 +22,14 @@ export const LocalDirectoryMountService = Symbol('LocalDirectoryMountService');
 
 /**
  * Keeps track of the local directories that the user granted access to through the File System Access API
- * and mounts each of them at `file:///local/<name>`.
+ * and mounts each of them at `<rootUri>/<name>`.
  */
 export interface LocalDirectoryMountService {
     /** Resolves once the mounts of previous sessions have been restored. */
     readonly ready: Promise<void>;
     readonly onDidChangeMounts: Event<void>;
+    /** The `file:` URI below which the local directories are mounted. */
+    readonly rootUri: URI;
 
     isSupported(): boolean;
     /**
@@ -38,6 +40,10 @@ export interface LocalDirectoryMountService {
     pickAndMount(): Promise<URI | undefined>;
     getMount(name: string): LocalDirectoryMount | undefined;
     getMounts(): LocalDirectoryMount[];
+    /** Returns the URI of the mount with the given name, whether it exists or not. */
+    toUri(name: string): URI;
+    /** Locates `uri` inside of a mount, or returns `undefined` if it is not below {@link rootUri}. */
+    getMountPath(uri: URI): LocalDirectoryMountPath | undefined;
     unmount(name: string): Promise<void>;
     /**
      * Asks the user to grant read/write access again, e.g. after a reload.
@@ -47,7 +53,7 @@ export interface LocalDirectoryMountService {
 }
 
 export interface LocalDirectoryMount {
-    /** The name of the mount, i.e. the path segment below {@link LocalDirectoryMount.ROOT}. */
+    /** The name of the mount, i.e. the path segment below {@link LocalDirectoryMountService.rootUri}. */
     readonly name: string;
     readonly handle: FileSystemDirectoryHandle;
     readonly uri: URI;
@@ -55,32 +61,26 @@ export interface LocalDirectoryMount {
     permission: FileSystemAccessPermissionState;
 }
 
+export interface LocalDirectoryMountPath {
+    /** The name of the mount. */
+    readonly name: string;
+    /** The path inside of the mount, empty for the root of the mount. */
+    readonly relative: Path;
+}
+
 export namespace LocalDirectoryMount {
-    /** The path below which local directories are mounted in the `file` scheme. */
-    export const ROOT = '/local';
-
-    export function rootUri(): URI {
-        return new URI('file:///').withPath(ROOT);
-    }
-
-    export function toUri(name: string): URI {
-        return rootUri().resolve(name);
-    }
-
     /**
-     * Returns `path` relative to {@link ROOT}, e.g. `<name>/src/index.ts`, or `undefined` if it is outside of it.
-     * {@link ROOT} itself gives an empty path.
+     * The default path below which local directories are mounted in the `file` scheme.
+     * The OPFS shares that scheme and whatever it stores at this path is shadowed, hence the unusual name.
      */
-    export function relativeToRoot(path: Path): Path | undefined {
-        return rootUri().path.relative(path.normalize());
-    }
+    export const DEFAULT_ROOT = '/.local-folders';
 
     /**
      * Splits `path` into the mount name and the path inside the mount,
-     * e.g. `a` and `src/index.ts` for `/local/a/src/index.ts`.
+     * e.g. `a` and `src/index.ts` for `<root>/a/src/index.ts`.
      */
-    export function splitPath(path: Path): { name: string, relative: Path } | undefined {
-        const relative = relativeToRoot(path);
+    export function splitPath(root: Path, path: Path): LocalDirectoryMountPath | undefined {
+        const relative = root.relative(path.normalize());
         if (!relative || relative.toString() === '') {
             return undefined;
         }
@@ -89,10 +89,5 @@ export namespace LocalDirectoryMount {
             top = top.dir;
         }
         return { name: top.toString(), relative: top.relative(relative) ?? new Path('') };
-    }
-
-    /** Returns the mount name of `uri`, or `undefined` if it is not inside a mount. */
-    export function getMountName(uri: URI): string | undefined {
-        return uri.scheme === 'file' ? splitPath(uri.path)?.name : undefined;
     }
 }
