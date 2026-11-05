@@ -28,8 +28,7 @@
           "title": "Capability Overrides"
         },
         "completionNotification": {
-          "mdDescription": "Notification behavior when this agent needs your attention, i.e. it completed a task or requests your input.                     If not set, the global default notification setting will be used.\n                    - `os-notification`: Show OS/system notifications\n                    - `message`: Show notifications in the status bar/message area\n                    - `blink`: Blink or highlight the UI\n                    - `off`: Disable notifications for this agent",
-          "title": "Notification"
+          "mdDescription": "Notification behavior when this agent needs your attention, i.e. it completed a task or requests your input.                     If not set, the global default notification setting will be used.\n                    - `os-notification`: Show OS/system notifications\n                    - `message`: Show notifications in the status bar/message area\n                    - `blink`: Blink or highlight the UI\n                    - `off`: Disable notifications for this agent"
         },
         "enable": {
           "mdDescription": "Specifies whether the agent should be enabled (true) or disabled (false).",
@@ -206,6 +205,15 @@
           "label": "Image File"
         },
         "imagePickerPlaceholder": "Select an image file or search by name",
+        "networkError": {
+          "dns": "Could not resolve the AI provider host. Check the model/endpoint URL and your DNS or internet connection.",
+          "generic": "Could not reach the AI provider. Check your internet connection, the configured endpoint URL, and any proxy or firewall settings.",
+          "refused": "Connection refused by the AI provider endpoint. Verify the host and port, and that any local model server (e.g. Ollama) is running.",
+          "reset": "The connection to the AI provider was reset before a response was received. This is often transient — please retry.",
+          "timeout": "The connection to the AI provider timed out. Check your network, VPN, or proxy settings.",
+          "tls": "The TLS certificate of the AI provider endpoint could not be verified. If using a custom or self-signed endpoint, check its certificate or proxy configuration.",
+          "unreachable": "The AI provider host is unreachable. Check your network connection, VPN, or proxy settings."
+        },
         "orchestrator": {
           "description": "This agent analyzes the user request against the description of all available chat agents and selects the best fitting agent to answer the request     (by using AI).The user's request will be directly delegated to the selected agent without further confirmation.",
           "vars": {
@@ -278,7 +286,6 @@
           "generating": "Generating",
           "noRenderer": "Error: No renderer found",
           "scrollToBottom": "Jump to latest message",
-          "waitingForInput": "Waiting for input",
           "you": "You"
         },
         "chatInput": {
@@ -298,6 +305,7 @@
         },
         "collapseAll": "Collapse all",
         "collapseChangeSet": "Collapse Change Set",
+        "collapseMessage": "Collapse Message",
         "command-part-renderer": {
           "commandNotExecutable": "The command has the id \"{0}\" but it is not executable from the Chat window."
         },
@@ -308,6 +316,7 @@
         "couldNotSendRequestToSession": "Was not able to send request \"{0}\" to session {1}",
         "delegatedSession": "Delegated",
         "delegation-response-renderer": {
+          "cancel": "Cancel delegation",
           "interactionNeeded": "User interaction needed",
           "prompt": {
             "label": "Delegated prompt:"
@@ -331,6 +340,7 @@
         "enterChatName": "Enter chat name",
         "errorChatInvocation": "An error occurred during chat service invocation.",
         "expandChangeSet": "Expand Change Set",
+        "expandMessage": "Expand Message",
         "failedToDeleteSession": "Failed to delete chat session",
         "failedToLoadChats": "Failed to load chat sessions",
         "failedToRestoreSession": "Failed to restore chat session",
@@ -355,7 +365,6 @@
           "wheelZoomHint": "{0} + Scroll"
         },
         "modelBadgeTooltip": "Language model used for this response: {0}",
-        "modelUnavailable": "unavailable",
         "noChatAgentsAvailable": "No chat agents available.",
         "noMatchingCapabilities": "No matching capabilities",
         "openImage": "Open image",
@@ -445,6 +454,45 @@
         "variantTooltip": "Prompt variant: {0}",
         "yourMessage": "Your message"
       },
+      "chatgpt": {
+        "category": "ChatGPT",
+        "codePrompt": "Paste the authorization code or the full redirect URL from your browser",
+        "commands": {
+          "signIn": "Sign in",
+          "signOut": "Sign out"
+        },
+        "compaction": {
+          "default": "Follow the global chat server-side compaction setting.",
+          "description": "Override provider-native server-side compaction for ChatGPT models. \"default\" follows the global chat setting ({0}). When effectively enabled, the Response API is asked to summarize older turns once the conversation grows past the provider's threshold.",
+          "disabled": "Never request server-side compaction for ChatGPT models.",
+          "enabled": "Always request server-side compaction for ChatGPT models."
+        },
+        "compactionTokenThreshold": {
+          "description": "Override the global input-token threshold for server-side compaction for ChatGPT models. When unset, the global setting or provider default applies. If set, the value must be at least 50,000 tokens."
+        },
+        "discovery": {
+          "overridden": "The model list is configured manually. Clear it to offer the models your ChatGPT plan grants.",
+          "signedOut": "Not signed in with ChatGPT. Sign in to use the models of your ChatGPT plan."
+        },
+        "enabled": {
+          "mdDescription": "Enable the ChatGPT provider. When enabled, a status bar entry appears for authentication and available models are discovered from your ChatGPT subscription."
+        },
+        "enterCode": "Enter code manually",
+        "models": {
+          "mdDescription": "Models to serve through your ChatGPT subscription. They are only available while you are signed in. Leave this empty to offer the models your ChatGPT plan actually grants, which are queried once you are signed in.",
+          "signIn": "Sign in with ChatGPT"
+        },
+        "signInFailed": "The ChatGPT sign in failed: {0}",
+        "signOutConfirm": "Are you sure you want to sign out of ChatGPT?",
+        "signOutTitle": "Sign out of ChatGPT",
+        "signedIn": "Signed in to ChatGPT.",
+        "signedInAs": "Signed in to ChatGPT as {0}.",
+        "statusBar": {
+          "signedIn": "Signed in to ChatGPT as {0}. Click to sign out.",
+          "signedOut": "Not signed in to ChatGPT. Click to sign in."
+        },
+        "waiting": "Complete the ChatGPT sign in in your browser."
+      },
       "claude-code": {
         "agentDescription": "Anthropic's coding agent",
         "allowSession": "Allow for this session",
@@ -466,7 +514,6 @@
         "currentDirectory": "current directory",
         "differentAgentRequestWarning": "The previous chat request was handled by a different agent. Claude Code does not see those other messages.",
         "editAutomatically": "Edit automatically",
-        "editing": "Editing",
         "editsCount": "{0} edits",
         "emptyTodoList": "No todos available",
         "entireFile": "Entire File",
@@ -493,6 +540,7 @@
         "findMatchingFiles": "Find files matching the glob pattern \"{0}\" in the current directory",
         "findMatchingFilesWithPath": "Find files matching the glob pattern \"{0}\" within {1}",
         "finding": "Finding",
+        "from": "From",
         "globPattern": "glob pattern",
         "grepOptions": {
           "caseInsensitive": "case-insensitive",
@@ -535,7 +583,6 @@
         "project": "project",
         "projectRoot": "project root",
         "readMode": "Read Mode",
-        "reading": "Reading",
         "replaceAllCount": "{0} replace-all",
         "replaceAllOccurrences": "Replace all occurrences",
         "resumeCommand": {
@@ -545,10 +592,10 @@
           "description": "Request code review"
         },
         "searchPath": "Search Path",
-        "searching": "Searching",
         "startingLine": "Starting Line",
         "timeout": "Timeout",
         "timeoutInMs": "Timeout: {0}ms",
+        "to": "To",
         "todoList": "Todo List",
         "todoPriority": {
           "high": "high",
@@ -580,8 +627,6 @@
         "itemCount": "{0} items",
         "noItems": "No items",
         "oneItem": "1 item",
-        "searched": "Searched",
-        "searching": "Searching",
         "todoList": "Todo List"
       },
       "completion": {
@@ -706,6 +751,28 @@
           "usedGlobalVariables": "Used Global Variables",
           "usedTools": "Used Tools"
         },
+        "agentsMd": {
+          "inactiveOverride": "Inactive",
+          "legacyOverrides": "These project-info prompt overrides are not migrated automatically and no longer reach the built-in agents that use AGENTS.md. Move the instructions you want to keep into the relevant project's AGENTS.md. They still apply to prompts that reference project-info: {0}",
+          "migrationResult": {
+            "backedUp": "The previous project info was kept as `{0}`.",
+            "backupFailed": "{0} could not be renamed to `{1}`, so it is still in place and takes precedence over {2}. Rename or remove it to start using {2}.",
+            "empty": "AGENTS.md migration: nothing to migrate.",
+            "promptSyntax": "{0} of the migrated files still contain prompt template syntax, which {1} no longer resolves. Review and remove it.",
+            "untrusted": "AGENTS.md migration: the workspace is not trusted, so no project info was migrated."
+          },
+          "openOverrideSources": "Open Source Files",
+          "rerunMigration": "Re-run AGENTS.md migration"
+        },
+        "agentsMdAutoLoadedVariable": {
+          "description": "Returns the content of the workspace root AGENTS.md when the workspace has a single root, so that it is always in context"
+        },
+        "agentsMdContentVariable": {
+          "description": "Returns the full content of the AGENTS.md files of the workspace"
+        },
+        "agentsMdVariable": {
+          "description": "Lists the AGENTS.md files an agent has to read on demand, i.e. the ones that are not already loaded"
+        },
         "agentsVariable": {
           "description": "Returns the list of agents available in the system"
         },
@@ -729,7 +796,11 @@
           },
           "scopeBanner": "Editing the {0} scope.",
           "searchPlaceholder": "Search AI settings",
-          "selectCategory": "Select a category to configure."
+          "selectCategory": "Select a category to configure.",
+          "sessionOverride": {
+            "tooltip": "Set for this session via --session-preference. Changing or resetting it here clears the session value until the window reloads.",
+            "tooltipWithValue": "Set for this session via --session-preference: {0}. Changing or resetting it here clears the session value until the window reloads."
+          }
         },
         "blinkTitle": {
           "agentCompleted": "{0} - Agent Completed",
@@ -745,6 +816,7 @@
           },
           "description": "Conditionally resolves prompt fragments based on default on/off setting"
         },
+        "category": "AI",
         "changeSetSummaryVariable": {
           "description": "Provides a summary of the files in a change set and their contents."
         },
@@ -836,10 +908,10 @@
           "windowBlink": "Window Blink"
         },
         "openEditorsShortVariable": {
-          "description": "Short reference to all currently open files (relative paths, comma-separated)"
+          "description": "Short reference to all currently open editors (relative paths with their state, comma-separated)"
         },
         "openEditorsVariable": {
-          "description": "A comma-separated list of all currently open files as workspace-relative paths (e.g., my-project/src/index.ts)."
+          "description": "A comma-separated list of all currently open editors as workspace-relative paths, each followed by its state, if any (e.g., 'my-project/src/index.ts' (active, unsaved changes))."
         },
         "preference": {
           "languageModelAliases": {
@@ -879,7 +951,9 @@
           "category": "AI Prompt Templates"
         },
         "reasoning": {
-          "mdDescription": "Default value for the chat input's reasoning selector, applied to models that support reasoning.\n\nThis is a UI-level setting: the chosen level is translated to the provider's native API parameters at request time (e.g. Anthropic `thinking` / `output_config.effort`, OpenAI `reasoning.effort`, Gemini `thinkingConfig`) and takes precedence over any raw values supplied via `#ai-features.modelSettings.requestSettings#` for the same fields.\n\nEach entry consists of:\n- `scope`: Defines when the setting applies (`modelId`, `providerId`, `agentId`).\n- `reasoning.level`: One of `off`, `minimal`, `low`, `medium`, `high`, `auto`.\n\nPrecedence at runtime (highest first): session override via the selector → this preference → the model's declared default. Whichever the selector displays is what gets sent. To override a provider's reasoning field manually via `#ai-features.modelSettings.requestSettings#`, set `reasoning.level` to `off` here so the level-based translation is disabled.\n\nEntries are matched based on scope specificity (agent: 100, model: 10, provider: 1 points).\n\nExample:\n```json\n[\n  { \"scope\": { \"providerId\": \"anthropic\" }, \"reasoning\": { \"level\": \"medium\" } },\n  { \"scope\": { \"modelId\": \"openai/gpt-5\" }, \"reasoning\": { \"level\": \"high\" } },\n  { \"scope\": { \"agentId\": \"Coder\" }, \"reasoning\": { \"level\": \"off\" } }\n]\n```",
+          "mdDescription": "Default value for the chat input's reasoning selector, applied to models that support reasoning.\n\nThis is a UI-level setting: the chosen level is translated to the provider's native API parameters at request time (e.g. Anthropic `thinking` / `output_config.effort`, OpenAI `reasoning.effort`, Gemini `thinkingConfig`) and takes precedence over any raw values supplied via `#ai-features.modelSettings.requestSettings#` for the same fields.\n\nEach entry consists of:\n- `scope`: Defines when the setting applies (`modelId`, `providerId`, `agentId`).\n- `reasoning.level`: One of `off`, `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`, `auto`.\nSupported levels depend on the model. `none` explicitly requests no reasoning; `off` disables thinking on Ollama. For other providers, `off` omits explicit reasoning effort, allowing provider defaults or raw request settings to apply. `auto` uses the provider default.\n\nPrecedence at runtime (highest first): session override via the selector → this preference → the model's declared default. Whichever the selector displays is what gets sent. To override a provider's reasoning field manually via `#ai-features.modelSettings.requestSettings#`, set `reasoning.level` to `off` here so the level-based translation is disabled (except on Ollama).\n\nEntries are matched based on scope specificity (agent: 100, model: 10, provider: 1 points).\n\nExample:\n```json\n[\n  { \"scope\": { \"providerId\": \"anthropic\" }, \"reasoning\": { \"level\": \"medium\" } },\n  { \"scope\": { \"modelId\": \"openai/gpt-5\" }, \"reasoning\": { \"level\": \"high\" } },\n  { \"scope\": { \"agentId\": \"Coder\" }, \"reasoning\": { \"level\": \"off\" } }\n]\n```",
+          "noneDescription": "Explicitly requests no reasoning.",
+          "offDescription": "Omits explicit reasoning effort, allowing provider defaults or raw request settings to apply; on Ollama, disables thinking.",
           "title": "Reasoning Defaults"
         },
         "requestSettings": {
@@ -936,10 +1010,10 @@
           "builtInVariable": "{0} Built-in Variable",
           "currentAbsoluteFilePath": "The absolute path of the currently opened file.",
           "currentFileContent": "The plain content of the currently opened file. This excludes the information where the content is coming from.",
-          "currentRelativeDirPath": "The workspace-relative path of the directory containing the currently opened file (e.g., my-project/src).",
-          "currentRelativeFilePath": "The workspace-relative path of the currently opened file (e.g., my-project/src/index.ts).",
+          "currentRelativeDirPath": "The path of the directory containing the currently opened file relative to its workspace root, without the root name (e.g., src).",
+          "currentRelativeFilePath": "The path of the currently opened file relative to its workspace root, without the root name (e.g., src/index.ts).",
           "currentSelectedText": "The plain text that is currently selected in the opened file. This excludes the information where the content is coming from.",
-          "dotRelativePath": "Short reference to the workspace-relative path of the currently opened file ('currentRelativeFilePath')."
+          "dotRelativePath": "Short reference to the path of the currently opened file relative to its workspace root, without the root name ('currentRelativeFilePath')."
         },
         "variantSet": {
           "unavailableVariant": "{0} (unavailable)",
@@ -1039,6 +1113,7 @@
         "agentConfiguration": {
           "agentMode": "Agent mode for Coder",
           "behavior": "Behavior",
+          "closeGenericCapabilitiesEditor": "Close the generic capabilities editor",
           "customAgentLocationQuickPick": {
             "placeholder": "Choose where to create the agents/<id>/agent.md file",
             "title": "Select location for the new custom agent"
@@ -1047,6 +1122,7 @@
           "defaultChatAgentNone": "Built-in default",
           "defaultChatAgentNoneDescription": "No explicit default; Theia picks the default Chat Agent.",
           "defaults": "Defaults",
+          "editGenericCapabilities": "Edit generic capabilities",
           "genericCapabilitiesSettings": "Generic Capabilities",
           "genericCapabilityType": {
             "agentDelegation": "Agent Delegation",
@@ -1183,7 +1259,7 @@
           "mdDescription": "This setting allows you to access the AI capabilities of Theia IDE.            \n            Please be aware that AI features may generate            continuous requests to the language models (LLMs) you provide access to. This might incur costs that you            need to monitor closely. By enabling this option, you acknowledge these risks.            \n            **Please note! The settings below in this section will only take effect\n            once the main feature setting is enabled. After enabling the feature, you need to configure at least one            LLM provider below. Also see [the documentation](https://theia-ide.org/docs/user_ai/)**."
         },
         "exploreAgent": {
-          "description": "A codebase exploration assistant that extracts and distills information from the codebase.         Reports facts about what exists, provides code excerpts, and describes observed patterns."
+          "description": "A codebase exploration assistant that extracts and distills information from the codebase.         Reports facts about what exists, provides code excerpts, and describes observed patterns.         Delegate to it when the design is clear but facts must be gathered across files: call sites, data flow, patterns, ripple checks.         It does not plan. For 1-2 known files or a single targeted search, use tools directly instead."
         },
         "generalConfiguration": {
           "aboutCosts": "About costs and data usage",
@@ -1252,7 +1328,6 @@
           "noModels": "No models discovered yet.",
           "noProviders": "No language-model providers are installed.",
           "providers": "Providers",
-          "ready": "Ready",
           "refresh": "Refresh the model list",
           "refreshUnavailable": "Nothing to refresh until the provider has a credential",
           "released": "released {0}",
@@ -1295,8 +1370,7 @@
               "description": "Checks out the pull request locally and protects existing worktree changes."
             },
             "localValidation": {
-              "description": "Runs local install, build, lint, test, or comparable validation tasks for the pull request.",
-              "name": "Build"
+              "description": "Runs local install, build, lint, test, or comparable validation tasks for the pull request."
             },
             "pendingGitHubReview": {
               "description": "Delegates to the GitHub agent to create or update a pending pull request review with prepared inline comments after explicit user confirmation.",
@@ -1410,6 +1484,10 @@
             "title": "Reset All Tool Confirmation Modes"
           },
           "resetAllTooltip": "Reset all tools to default",
+          "sessionOverride": {
+            "tooltip": "Set for this session via --session-preference. Changing any tool's mode here, or resetting all tools, clears the session value for every tool until the window reloads.",
+            "tooltipWithValue": "Set for this session via --session-preference: {0}. Changing any tool's mode here, or resetting all tools, clears the session value for every tool until the window reloads."
+          },
           "shellExecution": "Shell Command Execution",
           "toolOptions": {
             "confirm": {
@@ -1616,8 +1694,7 @@
             "title": "Authentication Header Name"
           },
           "serverUrl": {
-            "mdDescription": "The URL of the remote MCP server. If provided, the server will connect to this URL instead of starting a local process.",
-            "title": "Server URL"
+            "mdDescription": "The URL of the remote MCP server. If provided, the server will connect to this URL instead of starting a local process."
           },
           "title": "MCP Server Configuration"
         },
@@ -1665,7 +1742,6 @@
         "deleteServerDialogMsg": "Are you sure you want to delete the server \"{0}\"?",
         "deleteServerDialogTitle": "Delete MCP Server",
         "deleteServerError": "Failed to delete MCP server: {0}",
-        "environmentVariables": "Environment Variables",
         "form": {
           "argsPlaceholder": "Space-separated, e.g., -y @modelcontextprotocol/server-brave-search",
           "authHeaderPlaceholder": "Default: Authorization with Bearer",
@@ -1710,8 +1786,6 @@
         "saveServerError": "Failed to save MCP server configuration: {0}",
         "serverAuthToken": "Auth Token",
         "serverAuthTokenHeader": "Auth Header Name",
-        "serverTypeLabel": "MCP server",
-        "serverUrl": "Server URL",
         "serversListTitle": "Servers",
         "showToolSettings": "Show tool",
         "signInServerFailed": "Failed to sign in to MCP server \"{0}\".",
@@ -1762,7 +1836,7 @@
           "id": {
             "title": "A unique identifier which is used in the UI to identify the custom model"
           },
-          "mdDescription": "Integrate custom models compatible with the OpenAI API, for example via `vllm`. The required attributes are `model` and `url`.            \n            Optionally, you can            \n            - specify a unique `id` to identify the custom model in the UI. If none is given `model` will be used as `id`.            \n            - provide an `apiKey` to access the API served at the given url. Use `true` to indicate the use of the global OpenAI API key.            \n            - provide an `apiVersion` to access the API served at the given url in Azure. Use `true` to indicate the use of the global OpenAI API version.            \n            - provide a `deployment` name for your Azure deployment.            \n            - set `developerMessageSettings` to one of `user`, `system`, `developer`, `mergeWithFollowingUserMessage`, or `skip` to control how the developer message is            included (where `user`, `system`, and `developer` will be used as a role, `mergeWithFollowingUserMessage` will prefix the following user message with the system            message or convert the system message to user message if the next message is not a user message. `skip` will just remove the system message).            Defaulting to `developer`.            \n            - specify `supportsStructuredOutput: false` to indicate that structured output shall not be used.            \n            - specify `enableStreaming: false` to indicate that streaming shall not be used.            \n            - specify `useResponseApi: true` to use the newer OpenAI Response API instead of the Chat Completion API (requires compatible endpoint).            \n            - specify `reasoningSupport` to opt in to the chat reasoning selector. Provide an object with            `supportedLevels` (e.g. `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`) and an optional `defaultLevel`.            \n            - specify `headers` to send additional HTTP headers with every request to the endpoint, e.g. headers required by a gateway in front of the API.            \n            Refer to [our documentation](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) for more information.",
+          "mdDescription": "Integrate custom models compatible with the OpenAI API, for example via `vllm`. The required attributes are `model` and `url`.            \n            Optionally, you can            \n            - specify a unique `id` to identify the custom model in the UI. If none is given `model` will be used as `id`.            \n            - provide an `apiKey` to access the API served at the given url. Use `true` to indicate the use of the global OpenAI API key.            \n            - provide an `apiVersion` to access the API served at the given url in Azure. Use `true` to indicate the use of the global OpenAI API version.            \n            - provide a `deployment` name for your Azure deployment.            \n            - set `developerMessageSettings` to one of `user`, `system`, `developer`, `mergeWithFollowingUserMessage`, or `skip` to control how the developer message is            included (where `user`, `system`, and `developer` will be used as a role, `mergeWithFollowingUserMessage` will prefix the following user message with the system            message or convert the system message to user message if the next message is not a user message. `skip` will just remove the system message).            Defaulting to `developer`.            \n            - specify `supportsStructuredOutput: false` to indicate that structured output shall not be used.            \n            - specify `enableStreaming: false` to indicate that streaming shall not be used.            \n            - specify `useResponseApi: true` to use the newer OpenAI Response API instead of the Chat Completion API (requires compatible endpoint).            \n            - specify `reasoningSupport` to opt in to the chat reasoning selector. Provide an object with            `supportedLevels` (choices: `off`, `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`, `auto`) and an optional `defaultLevel`.            `none` sends an explicit no-reasoning effort; `off` omits generated reasoning settings; `auto` uses the provider default effort.            Only declare levels supported by your endpoint.            \n            - specify `headers` to send additional HTTP headers with every request to the endpoint, e.g. headers required by a gateway in front of the API.            \n            Refer to [our documentation](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) for more information.",
           "modelId": {
             "title": "Model ID"
           },
@@ -1810,6 +1884,9 @@
           "description": "List of relative paths to specific files in the current workspace to be used as prompt templates. When templates with the same ID (filename) exist in multiple locations, conflicts are resolved by priority: specific template files (highest) > workspace directories > global directories (lowest).",
           "title": "Workspace-specific Prompt Template Files"
         }
+      },
+      "registry": {
+        "from": "From"
       },
       "scanoss": {
         "changeSet": {
@@ -1896,52 +1973,15 @@
         "failedToGetTokenUsageData": "Failed to fetch token usage data: {0}",
         "inputTokens": "Input Tokens",
         "label": "Token Usage",
-        "lastUsed": "Last Used",
         "noData": "No token usage data available yet.",
         "note": "Token usage is tracked since the start of the application and is not persisted.",
         "outputTokens": "Output Tokens",
         "readCachedInputTokens": "Input Tokens Read From Cache"
       },
-      "vercelai": {
-        "anthropicApiKey": {
-          "mdDescription": "Enter an API Key for Anthropic models used by the Vercel AI SDK.                 **Please note:** By using this preference the API key will be stored in clear text         on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely."
-        },
-        "customEndpoints": {
-          "apiKey": {
-            "title": "Either the key to access the API served at the given url or `true` to use the global API key"
-          },
-          "enableStreaming": {
-            "title": "Indicates whether the streaming API shall be used. `true` by default."
-          },
-          "id": {
-            "title": "A unique identifier which is used in the UI to identify the custom model"
-          },
-          "mdDescription": "Integrate custom models compatible with the Vercel AI SDK. The required attributes are `model` and `url`.            \n            Optionally, you can            \n            - specify a unique `id` to identify the custom model in the UI. If none is given `model` will be used as `id`.            \n            - provide an `apiKey` to access the API served at the given url. Use `true` to indicate the use of the global API key.            \n            - specify `supportsStructuredOutput: false` to indicate that structured output shall not be used.            \n            - specify `enableStreaming: false` to indicate that streaming shall not be used.            \n            - specify `provider` to indicate which provider the model is from (openai, anthropic).",
-          "modelId": {
-            "title": "Model ID"
-          },
-          "supportsStructuredOutput": {
-            "title": "Indicates whether the model supports structured output. `true` by default."
-          },
-          "url": {
-            "title": "The API endpoint where the model is hosted"
-          }
-        },
-        "models": {
-          "description": "Official models to use with Vercel AI SDK",
-          "id": {
-            "title": "Model ID"
-          },
-          "model": {
-            "provider": "Provider",
-            "title": "Model Name"
-          }
-        },
-        "openaiApiKey": {
-          "mdDescription": "Enter an API Key for OpenAI models used by the Vercel AI SDK.                 **Please note:** By using this preference the API key will be stored in clear text         on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to set the key securely."
-        }
-      },
       "workspace": {
+        "agentsMdAgent": {
+          "description": "An AI assistant for managing the project context that other AI agents use. This agent helps create, update and review the AGENTS.md file at the root of your workspace, following the open AGENTS.md standard that other agentic tools read as well. It can analyze your workspace to suggest project information, consolidate existing instruction files such as CLAUDE.md or copilot-instructions.md, or update the file based on your requirements."
+        },
         "allowedExternalPaths": {
           "description": "List of absolute paths or file URIs (directories or files) outside the workspace that AI tools may access. Supports `~` to refer to the user home directory. Empty by default; opt-in only. Honored by every tool that takes a path, including the tools that write files. Workspace-scoped values are ignored when the workspace is not trusted. Symbolic links inside allow-listed directories are followed and may point to files outside the allow-list; only add directories whose contents you trust.",
           "title": "Allowed External Paths"
@@ -1964,15 +2004,16 @@
           "description": "Maximum size in kilobytes of the content returned by the getFileContent tool. When reading a full file (no offset/limit), files exceeding this limit return an error. When using offset and limit, only the requested range is checked against this limit.",
           "title": "File Content Max Size (KB)"
         },
-        "projectInfoAgent": {
-          "description": "An AI assistant for managing project information templates. This agent helps create, update, and review the .prompts/project-info.prompttemplate file which provides context about your project to other AI agents. It can analyze your workspace to suggest project information or update existing templates based on your requirements."
-        },
         "searchMaxResults": {
           "description": "Maximum number of search results returned by the workspace search function.",
           "title": "Maximum Search Results"
         },
         "workspaceAgent": {
-          "description": "An AI assistant integrated into {0}, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files and folders and retrieve their content. It cannot modify files. It can therefore answer questions about the current project, project files and source code in the workspace, such as how to build the project, where to put source code, where to find specific code or configurations, etc."
+          "description": "An AI assistant integrated into {0}, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files and folders and retrieve their content. It cannot modify files. It can therefore answer questions about the current project, project files and source code in the workspace, such as how to build the project, where to put source code, where to find specific code or configurations, etc. It explores and produces an implementation plan (task context). Delegate to it when \"what should change?\" is itself open: design decisions, changes across 3+ files or 2+ packages, or crossing architectural layers."
+        },
+        "writeContentMaxSizeKB": {
+          "description": "Maximum size in kilobytes of the content accepted by the whole-file write tools (writeFileContent and suggestFileContent). Larger writes are rejected with a hint to use the replacement-based tools instead.",
+          "title": "Write Content Max Size (KB)"
         }
       }
     },
@@ -2018,8 +2059,7 @@
         "description": "AI settings have moved to the AI Configuration view. Open it to configure providers, models, agents, and more."
       },
       "preferences": {
-        "linuxEnvHint": "On Linux, make sure the variable is defined in `~/.profile` (not just `~/.bashrc`) if you launch the application from a desktop shortcut. See the [documentation](https://theia-ide.org/docs/user_ai/#setting-api-keys) for details.",
-        "title": "AI Features"
+        "linuxEnvHint": "On Linux, make sure the variable is defined in `~/.profile` (not just `~/.bashrc`) if you launch the application from a desktop shortcut. See the [documentation](https://theia-ide.org/docs/user_ai/#setting-api-keys) for details."
       },
       "showChat": "Show Chat"
     },
@@ -2149,6 +2189,7 @@
         "mdDescription": "Per-artifact overrides of `#ai-features.registry.autoUpdate#`, keyed by `skill:<skillId>`, `mcp:<serverId>` or `plugin:<pluginId>`. Entries are normally maintained through the gear menu in the Extensions view; an artifact without an entry follows the default."
       },
       "mcp": {
+        "registryLatestVersion": "MCP registry: {0}",
         "updated": "Updated MCP server \"{0}\"."
       },
       "plugin": {
@@ -2296,7 +2337,6 @@
       "configurePermissions": "Configure shell command permissions",
       "confirmExecution": "Confirm Shell Command",
       "denialReason": "Reason",
-      "executionDenied": "Denied",
       "executionDeniedWithReason": "Denied with reason",
       "partialOutput": "Partial Output",
       "shellCommandAllowlist": {
@@ -2305,8 +2345,7 @@
       "shellCommandDenylist": {
         "description": "List of shell command patterns that should always be denied. Commands matching these patterns will be auto-rejected without confirmation. Uses pattern syntax: \"git push\" (exact match) or \"git push *\" (with any arguments). Ships with default patterns for dangerous commands (eval, exec, sudo, rm -rf, etc.)."
       },
-      "timeout": "Timeout",
-      "workingDirectory": "Working directory"
+      "timeout": "Timeout"
     },
     "ai-tool-sketchpad": {
       "addItemProperty": "Add Item Property",
@@ -2385,7 +2424,6 @@
       "optional": "optional",
       "selectAuth": "Select Authentication Method",
       "selectCollaboration": "Select collaboration option",
-      "serverUrl": "Server URL",
       "serverUrlDescription": "URL of the Open Collaboration Tools Server instance for live collaboration sessions",
       "sharedSession": "Shared a collaboration session",
       "startSession": "Start or join collaboration session",
@@ -2412,6 +2450,9 @@
         "collapseLeftPanel": "Toggle Left Panel",
         "collapseRightPanel": "Toggle Right Panel",
         "collapseTab": "Collapse Side Panel",
+        "hideSidePanelItem": "Hide from Side Bar",
+        "keepSidePanelItem": "Keep in Side Bar",
+        "resetHiddenSidePanelItems": "Reset Hidden Side Bar Items",
         "showNextTabGroup": "Switch to Next Tab Group",
         "showNextTabInGroup": "Switch to Next Tab in Group",
         "showPreviousTabGroup": "Switch to Previous Tab Group",
@@ -2427,10 +2468,23 @@
         "visual": "Display a visual preview of the tab."
       },
       "highlightModifiedTabs": "Controls whether a top border is drawn on modified (dirty) editor tabs or not.",
+      "http": {
+        "proxy": "The proxy setting to use. If not set, will be inherited from the `http_proxy` and `https_proxy` environment variables.",
+        "proxyAuthorization": "The value to send as the `Proxy-Authorization` header for every network request.",
+        "proxyStrictSSL": "Controls whether the proxy server certificate should be verified against the list of supplied CAs.",
+        "proxySupport": "Use the proxy support for extensions.",
+        "systemCertificates": "Controls whether CA certificates should be loaded from the OS. On Windows and macOS, a reload of the window is required after turning this off."
+      },
       "jumpListName": "Recent Workspaces",
       "keybinding": {
+        "characterRequiresCodeDispatch": "Character keybindings require the \"keyboard.dispatch\" preference to be set to \"code\".",
+        "commandModifierAltGraphCharacterUnavailable": "The logical character and the {0} command modifier cannot be produced together on the current keyboard layout.",
         "duplicateModifierError": "Can't parse keybinding {0} Duplicate modifiers",
+        "invalidCharacter": "Invalid Unicode character {0}.",
         "metaError": "Can't parse keybinding {0} meta is for OSX only",
+        "shiftedAltGraphCharacterUnavailable": "The logical character and Shift command modifier cannot be produced together on the current keyboard layout.",
+        "unavailableCharacter": "The key is not available on the current keyboard layout.",
+        "unknownScanCode": "Unknown scan code {0}. Use a supported KeyboardEvent.code name.",
         "unrecognizedKeyError": "Unrecognized key {0} in {1}"
       },
       "keybindingStatus": "{0} was pressed, waiting for more keys",
@@ -2464,10 +2518,15 @@
       },
       "secondaryWindow": {
         "alwaysOnTop": "When enabled, the secondary window stays above all other windows, including those of different applications.",
+        "closeBehavior": {
+          "close": "The views of the secondary window are closed. Views that would lose state, e.g. editors with unsaved changes, are moved back to the main window.",
+          "moveToMainWindow": "All views of the secondary window are moved back to the main window."
+        },
         "description": "Sets the initial position and size of the extracted secondary window.",
         "fullSize": "The position and size of the extracted widget will be the same as the running Theia application.",
         "halfWidth": "The position and size of the extracted widget will be half the width of the running Theia application.",
-        "originalSize": "The position and size of the extracted widget will be the same as the original widget."
+        "originalSize": "The position and size of the extracted widget will be the same as the original widget.",
+        "restore": "Controls whether secondary windows are restored on startup. When disabled, their views are restored in the main window instead."
       },
       "severity": {
         "log": "Log"
@@ -2526,6 +2585,8 @@
       "missingConfiguration": "Dynamic configuration '{0}:{1}' is missing or not applicable",
       "pause": "pause",
       "pauseAll": "Pause All",
+      "restartFrameFailed": "Failed to restart the frame.",
+      "restartFrameNotSupported": "The debug adapter does not support restarting frames.",
       "step": "step",
       "taskTerminatedBySignal": "Task '{0}' terminated by signal {1}.",
       "taskTerminatedForUnknownReason": "Task '{0}' terminated for unknown reason.",
@@ -2562,6 +2623,10 @@
       "editor.inlineSuggest.edits.experimental.useInterleavedLinesDiff": "Controls whether to enable experimental interleaved lines diff in inline suggestions.",
       "editor.inlineSuggest.edits.experimental.useMixedLinesDiff": "Controls whether to enable experimental edits in inline suggestions.",
       "editor.insertSpaces": "Insert spaces when pressing `Tab`. This setting is overridden based on the file contents when `#editor.detectIndentation#` is on.",
+      "editor.multiCursorPaste": {
+        "description": "Controls pasting when the line count of the pasted text matches the cursor count.",
+        "spread": "Each cursor pastes a single line of the text."
+      },
       "editor.quickSuggestions": "Controls whether suggestions should automatically show up while typing. This can be controlled for typing in comments, strings, and other code. Quick suggestion can be configured to show as ghost text or with the suggest widget. Also be aware of the `#editor.suggestOnTriggerCharacters#`-setting which controls if suggestions are triggered by special characters.",
       "editor.suggestFontSize": "Font size for the suggest widget. When set to `0`, the value of `#editor.fontSize#` is used.",
       "editor.suggestLineHeight": "Line height for the suggest widget. When set to `0`, the value of `#editor.lineHeight#` is used. The minimum value is 8.",
@@ -2611,6 +2676,7 @@
       "cwd": "Select current working directory for new external terminal"
     },
     "file-search": {
+      "placeholder": "Search files by name (append {0} to go to line or {1} to go to symbol)",
       "toggleExcludedFiles": " (Press {0} to show/hide excluded files)"
     },
     "fileDialog": {
@@ -2672,6 +2738,8 @@
       "editKeybindingTitle": "Edit Keybinding for {0}",
       "editWhenExpression": "Edit When Expression...",
       "editWhenExpressionTitle": "Edit When Expression for {0}",
+      "inactiveKeybinding": "Inactive on the current keyboard layout",
+      "interpretationShadowing": "A command-modifier interpretation takes precedence over this keybinding.",
       "keybinding": {
         "copy": "Copy Keybinding",
         "copyCommandId": "Copy Keybinding Command ID",
@@ -2680,10 +2748,13 @@
         "editWhenExpression": "Edit Keybinding When Expression..."
       },
       "keybindingCollidesValidation": "keybinding currently collides",
+      "keybindingDescription": "Logical key or key sequence separated by spaces. Use [ScanCode] for a physical key and [char:0x...] for reserved Unicode characters.",
+      "physicalRealizationUnavailable": "Physical realization unavailable",
       "requiredKeybindingValidation": "keybinding value is required",
       "resetKeybindingConfirmation": "Do you really want to reset this keybinding to its default value?",
       "resetKeybindingTitle": "Reset keybinding for {0}",
-      "resetMultipleKeybindingsWarning": "If multiple keybindings exist for this command, all of them will be reset."
+      "resetMultipleKeybindingsWarning": "If multiple keybindings exist for this command, all of them will be reset.",
+      "windowsRecorderGuidance": "Press the desired key combination, then press ENTER. AltGr combinations are saved as their logical character."
     },
     "localize": {
       "offlineTooltip": "Cannot connect to backend."
@@ -2849,11 +2920,16 @@
       "webviewWarnIfUnsecure": "Warns users that webviews are currently deployed insecurely."
     },
     "preferences": {
-      "ai-features": "AI Features",
-      "hostedPlugin": "Hosted Plugin",
-      "input": {
-        "browse": "Browse"
+      "ai-features": {
+        "ai-enable": "AI Enablement",
+        "code-completion": "Code Completion",
+        "model-settings": "Model Settings",
+        "open-ai-custom": "{0} Custom Models",
+        "open-ai-official": "{0} Official Models",
+        "promptTemplates": "Prompt Templates",
+        "workspace-functions": "Workspace Functions"
       },
+      "hostedPlugin": "Hosted Plugin",
       "sessionOverride": {
         "suffix": "Overridden by session",
         "suffixTooltip": "This preference has a session value set via --session-preference. Editing it here clears the session override for the rest of this session."
@@ -2862,9 +2938,7 @@
         "statusBar": "Session Preferences ({0})",
         "tooltipBody": "They were passed in via --session-preference and only live in memory. Click a setting name to jump to it in the Settings view.",
         "tooltipChangeNote": "Editing any of these clears its session override for this run. To use the saved values from the next launch on, restart without the --session-preference arguments.",
-        "tooltipHeader": "These settings are overridden for this session",
-        "valueOff": "off",
-        "valueOn": "on"
+        "tooltipHeader": "These settings are overridden for this session"
       },
       "toolbar": "Toolbar"
     },
@@ -2945,13 +3019,14 @@
       "mergeEditor": {
         "resetConfirmationTitle": "Do you really want to reset the merge result in this editor?"
       },
+      "multiDiffEditor": {
+        "loadFailed": "Failed to load diff: {0}"
+      },
       "noChanges": "No changed files.",
       "noHistory": "No source control history available.",
-      "noHistoryForError": "There is no history available for {0}",
       "openCommit": "Open Commit",
       "pickHistoryItemRefs": "Pick History Item Reference...",
       "pickHistoryItemRefsPlaceholder": "Select one or more history item references",
-      "prepositionIn": "in",
       "refPickerBranches": "branches",
       "refPickerRemoteBranches": "remote branches",
       "refPickerTags": "tags",
@@ -2966,7 +3041,9 @@
       "searchOnEditorModification": "Search the active editor when modified."
     },
     "secondary-window": {
-      "extract-widget": "Move View to Secondary Window"
+      "extract-widget": "Move View to Secondary Window",
+      "restore-all-widgets": "Move All Views to Main Window",
+      "restore-widget": "Move View to Main Window"
     },
     "shell-area": {
       "secondary": "Secondary Window"
@@ -3151,7 +3228,10 @@
       "restrictedModeFeatures": "Features like task execution, debugging, extensions, and AI are disabled to protect against potentially harmful code.",
       "schema": {
         "folders": {
-          "description": "Root folders in the workspace"
+          "description": "Root folders in the workspace",
+          "name": {
+            "description": "An optional name for the folder, shown instead of the folder name"
+          }
         },
         "title": "Workspace File"
       },
