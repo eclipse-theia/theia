@@ -23,7 +23,7 @@ import {
     TaskPresentationOptionsDTO
 } from '../../common/plugin-api-rpc.js';
 import { RPCProtocol } from '../../common/rpc-protocol.js';
-import { Disposable, DisposableCollection } from '@theia/core/lib/common';
+import { Disposable, DisposableCollection, generateUuid } from '@theia/core/lib/common';
 import { TaskProviderRegistry, TaskResolverRegistry, TaskProvider, TaskResolver } from '@theia/task/lib/browser/task-contribution';
 import { interfaces } from '@theia/core/shared/inversify';
 import { TaskInfo, TaskExitedEvent, TaskConfiguration, TaskOutputPresentation, RevealKind, PanelKind } from '@theia/task/lib/common/task-protocol';
@@ -53,7 +53,7 @@ const panelKindMap = new Map<number | PanelKind, PanelKind | number>(
     ]
 );
 
-/** The property of a task configuration that holds the id of the `$executeTask` request that runs it. */
+/** The property of a task configuration that holds the tag of the `$executeTask` request that runs it. */
 const EXECUTE_REQUEST_ID = '_executeRequestId';
 
 export class TasksMainImpl implements TasksMain, Disposable {
@@ -65,8 +65,8 @@ export class TasksMainImpl implements TasksMain, Disposable {
     private readonly taskDefinitionRegistry: TaskDefinitionRegistry;
 
     private readonly taskProviders = new Map<number, Disposable>();
-    /** The tasks that plugins requested to run with `$executeTask`, by request id, until `runTask` settles for them. */
-    private readonly pendingExecuteRequests = new Map<number, TaskConfiguration>();
+    /** The ids of the `$executeTask` requests, by the tag of the configuration they run, until `runTask` settles for them. */
+    private readonly pendingExecuteRequests = new Map<string, number>();
     private readonly toDispose = new DisposableCollection();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
@@ -158,13 +158,14 @@ export class TasksMainImpl implements TasksMain, Disposable {
     }
 
     async $executeTask(taskDto: TaskDto, executeRequestId: number): Promise<TaskExecutionDto | undefined> {
-        const taskConfig: TaskConfiguration = { ...this.toTaskConfiguration(taskDto), [EXECUTE_REQUEST_ID]: executeRequestId };
-        this.pendingExecuteRequests.set(executeRequestId, taskConfig);
+        const tag = generateUuid();
+        const taskConfig: TaskConfiguration = { ...this.toTaskConfiguration(taskDto), [EXECUTE_REQUEST_ID]: tag };
+        this.pendingExecuteRequests.set(tag, executeRequestId);
         let taskInfo: TaskInfo | undefined;
         try {
             taskInfo = await this.taskService.runTask(taskConfig);
         } finally {
-            this.pendingExecuteRequests.delete(executeRequestId);
+            this.pendingExecuteRequests.delete(tag);
         }
         if (taskInfo) {
             return {
@@ -176,15 +177,15 @@ export class TasksMainImpl implements TasksMain, Disposable {
     }
 
     /**
-     * The configuration passed to `runTask` by `$executeTask` is tagged with the request id, which is kept in the configuration of the started task.
-     * A tag is only trusted while its request is pending and for a matching task of this client,
-     * because a tagged configuration may be run again later, e.g. as a recent task, or by another client.
+     * The configuration passed to `runTask` by `$executeTask` is tagged with a unique id, which is kept in the configuration of the started task.
+     * A tag is only trusted while its request is pending and for a task of this client,
+     * because a tagged configuration may be run again later, e.g. as a recent task, which is persisted across sessions.
      * @returns the id of the pending request that started the task, if any
      */
     protected getExecuteRequestId(event: TaskInfo): number | undefined {
-        const executeRequestId = event.config[EXECUTE_REQUEST_ID];
-        const pendingConfig = typeof executeRequestId === 'number' ? this.pendingExecuteRequests.get(executeRequestId) : undefined;
-        if (pendingConfig && this.taskService.isEventForThisClient(event.ctx) && this.taskDefinitionRegistry.compareTasks(pendingConfig, event.config)) {
+        const tag = event.config[EXECUTE_REQUEST_ID];
+        const executeRequestId = typeof tag === 'string' ? this.pendingExecuteRequests.get(tag) : undefined;
+        if (executeRequestId !== undefined && this.taskService.isEventForThisClient(event.ctx)) {
             return executeRequestId;
         }
     }

@@ -155,6 +155,18 @@ describe('TasksMainImpl', () => {
         expect(reported).to.deep.equal(['start 1 3', 'start 2 undefined']);
     });
 
+    it('should not report the request id with the start of a recent task of a previous session', async () => {
+        // The recent tasks are stored with the tag of the request that ran them in a previous session.
+        // The request ids of the plugin host start at 0 again, so the stored request id may be the id of a new request.
+        // The user runs the recent task while the new request waits for the task lock.
+        runTask = async config => {
+            taskCreated(1, { ...untagged(config), _executeRequestId: 'tag of a previous session' });
+            return undefined;
+        };
+        await tasksMain.$executeTask(taskDto, 0);
+        expect(reported).to.deep.equal(['start 1 undefined']);
+    });
+
     it('should keep the request id when a plugin resolves the task', async () => {
         tasksMain.$registerTaskProvider(0, 'shell');
         runTask = async config => taskCreated(1, await taskResolver!.resolveTask(config));
