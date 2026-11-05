@@ -119,7 +119,7 @@ export class TokenUsageConfigurationCategory extends SinglePageCategoryRenderer 
                         </>}
                         <th className='token-usage-column'>{nls.localize('theia/ai/tokenUsage/outputTokens', 'Output Tokens')}</th>
                         <th className='token-usage-column'>{nls.localizeByDefault('Total Tokens')}</th>
-                        <th className='token-usage-column'>{nls.localize('theia/ai/tokenUsage/lastUsed', 'Last Used')}</th>
+                        <th className='token-usage-column'>{nls.localizeByDefault('Last Used')}</th>
                     </tr>
                 </thead>
                 <tbody>

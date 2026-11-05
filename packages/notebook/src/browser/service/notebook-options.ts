@@ -80,7 +80,8 @@ export class NotebookOptionsService {
     @postConstruct()
     protected init(): void {
         this.preferenceService.onPreferencesChanged(async preferenceChanges => {
-            if (notebookOutputOptionsRelevantPreferences.some(p => p in preferenceChanges)) {
+            const preferenceKeys = preferenceChanges.map(p => p.preferenceName);
+            if (notebookOutputOptionsRelevantPreferences.some(p => preferenceKeys.includes(p))) {
                 this.outputOptionsChangedEmitter.fire(this.computeOutputOptions());
             }
         });
@@ -106,7 +107,7 @@ export class NotebookOptionsService {
     }
 
     protected getNotebookPreferenceWithDefault<T>(key: string): T {
-        return this.preferenceService.get<T>(key, notebookPreferenceSchema.properties?.[key]?.default as T);
+        return this.preferenceService.get<T>(key, { fallback: notebookPreferenceSchema.properties?.[key]?.default as T })!;
     }
 
     protected computeOutputLineHeight(lineHeight: number, outputFontSize: number): number {

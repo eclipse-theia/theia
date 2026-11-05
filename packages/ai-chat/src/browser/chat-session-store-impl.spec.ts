@@ -46,7 +46,11 @@ describe('ChatSessionStoreImpl', () => {
     let container: Container;
     let chatSessionStore: ChatSessionStoreImpl;
     let mockFileService: sinon.SinonStubbedInstance<FileService>;
-    let mockPreferenceService: sinon.SinonStubbedInstance<PreferenceService>;
+    let mockPreferenceService: {
+        ready: Promise<void>;
+        get: sinon.SinonStub;
+        onPreferenceChanged: sinon.SinonStub;
+    };
     let mockEnvServer: sinon.SinonStubbedInstance<EnvVariablesServer>;
     let mockWorkspaceService: {
         tryGetRoots: () => FileStat[];
@@ -114,7 +118,7 @@ describe('ChatSessionStoreImpl', () => {
                 preferenceChangeCallback = callback;
                 return { dispose: () => { preferenceChangeCallback = undefined; } };
             })
-        } as unknown as sinon.SinonStubbedInstance<PreferenceService>;
+        };
 
         mockEnvServer = {
             getConfigDirUri: sandbox.stub().resolves(GLOBAL_CONFIG_DIR)

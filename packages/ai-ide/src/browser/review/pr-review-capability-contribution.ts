@@ -137,7 +137,7 @@ Store these values for the review plan and cleanup:
     }
 
     protected buildLocalValidationTemplate(): string {
-        const name = nls.localize('theia/ai/ide/prReview/capability/localValidation/name', 'Build');
+        const name = nls.localizeByDefault('Build');
         const description = nls.localize('theia/ai/ide/prReview/capability/localValidation/description',
             'Runs local install, build, lint, test, or comparable validation tasks for the pull request.');
 

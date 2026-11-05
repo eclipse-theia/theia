@@ -123,7 +123,7 @@ export class DisposableCollection implements Disposable {
     push(disposable: Disposable): Disposable {
         const disposables = this.disposables;
         disposables.push(disposable);
-        const originalDispose = disposable.dispose.bind(disposable);
+        const originalDispose = disposable.dispose;
         const toRemove = Disposable.create(() => {
             const index = disposables.indexOf(disposable);
             if (index !== -1) {
@@ -134,7 +134,7 @@ export class DisposableCollection implements Disposable {
         disposable.dispose = () => {
             toRemove.dispose();
             disposable.dispose = originalDispose;
-            originalDispose();
+            originalDispose.call(disposable);
         };
         return toRemove;
     }
