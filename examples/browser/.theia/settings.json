@@ -1,0 +1,7 @@
+{
+    "files.autoSave": "afterDelay",
+    "workbench.editor.closeOnFileDelete": true,
+    "git.autoRepositoryDetection": true,
+    "git.openRepositoryInParentFolders": "always"
+}
+
