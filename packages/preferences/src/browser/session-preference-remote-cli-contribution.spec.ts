@@ -54,6 +54,6 @@ describe('SessionPreferenceRemoteCliContribution#getRemoteCliArgs', () => {
         expect(args).to.have.lengthOf(1);
         // The produced arg must parse back to the original entry on the remote.
         const value = args[0].substring('--session-preference='.length);
-        expect(CliPreferenceEntry.parse(value)).to.deep.equal(['editor.fontSize', 20]);
+        expect(CliPreferenceEntry.parse(value)).to.deep.equal({ preferenceName: 'editor.fontSize', value: 20 });
     });
 });

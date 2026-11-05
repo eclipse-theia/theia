@@ -67,7 +67,7 @@ describe('Saveable', function () {
     const toTearDown = new DisposableCollection();
 
     /** @type {string | undefined} */
-    const autoSave = preferences.get('files.autoSave', undefined, rootUri.toString());
+    const autoSave = preferences.get('files.autoSave', { resource: rootUri.toString() });
 
     beforeEach(async () => {
         await preferences.set('files.autoSave', 'off', undefined, rootUri.toString());

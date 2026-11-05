@@ -170,7 +170,16 @@ function createPolicy(defaultMode: AutoUpdateMode, overrides: Record<string, Aut
     const policy = new RegistryAutoUpdatePolicyImpl();
     Object.assign(policy, {
         preferenceService: {
-            get: (name: string, defaultValue: unknown) => values[name] ?? defaultValue,
+            get: (name: string, optionsOrFallback: unknown) => {
+                if (values[name] !== undefined) {
+                    return values[name];
+                }
+                if (optionsOrFallback && typeof optionsOrFallback === 'object' && !Array.isArray(optionsOrFallback)
+                    && 'fallback' in optionsOrFallback) {
+                    return (optionsOrFallback as { fallback?: unknown }).fallback;
+                }
+                return optionsOrFallback;
+            },
             inspect: (name: string) => ({
                 globalValue: name === AUTO_UPDATE_PREF && !userSetDefault ? undefined : values[name]
             }),
