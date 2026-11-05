@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import * as http from 'http';
-import { NodeRequestService } from './node-request-service';
+import { NodeRequestOptions, NodeRequestService } from './node-request-service';
 import { CancellationToken, RequestContext } from './common-request-service';
 
 describe('NodeRequestService', () => {
@@ -212,6 +212,13 @@ describe('NodeRequestService', () => {
             const headers = RequestContext.asJson<Record<string, string>>(result);
             expect(headers['proxy-authorization']).to.be.undefined;
         });
+
+        it('should not send a Proxy-Authorization request header to the server', async () => {
+            const result = await service.request({ url: url('/echo-headers'), headers: { 'Proxy-Authorization': 'Basic dGVzdDp0ZXN0', 'X-Custom': 'kept' } });
+            const headers = RequestContext.asJson<Record<string, string>>(result);
+            expect(headers['proxy-authorization']).to.be.undefined;
+            expect(headers['x-custom']).to.equal('kept');
+        });
     });
 
     describe('proxy authorization', () => {
@@ -240,9 +247,9 @@ describe('NodeRequestService', () => {
             tunnelAuthorizations = [];
         });
 
-        async function requestThroughProxy(configuredService: NodeRequestService, proxyAuthorization?: string): Promise<void> {
+        async function requestThroughProxy(configuredService: NodeRequestService, options: Partial<NodeRequestOptions> = {}): Promise<void> {
             try {
-                await configuredService.request({ url: 'https://example.com/', proxyAuthorization });
+                await configuredService.request({ url: 'https://example.com/', ...options });
             } catch {
                 return;
             }
@@ -259,7 +266,14 @@ describe('NodeRequestService', () => {
         it('should send the authorization of the request options to the proxy', async () => {
             const configuredService = new NodeRequestService();
             await configuredService.configure({ proxyUrl });
-            await requestThroughProxy(configuredService, 'Basic dGVzdDp0ZXN0');
+            await requestThroughProxy(configuredService, { proxyAuthorization: 'Basic dGVzdDp0ZXN0' });
+            expect(tunnelAuthorizations).to.deep.equal(['Basic dGVzdDp0ZXN0']);
+        });
+
+        it('should send the authorization of a Proxy-Authorization request header to the proxy', async () => {
+            const configuredService = new NodeRequestService();
+            await configuredService.configure({ proxyUrl, proxyAuthorization: 'Basic configured' });
+            await requestThroughProxy(configuredService, { headers: { 'proxy-authorization': 'Basic dGVzdDp0ZXN0' } });
             expect(tunnelAuthorizations).to.deep.equal(['Basic dGVzdDp0ZXN0']);
         });
 
