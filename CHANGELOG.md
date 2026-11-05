@@ -4,9 +4,127 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## 1.77.0 - tbd
+## 1.77.0 - 11/5/2026
 
+- [all] switched runtime packages from CommonJS to ES modules [#18216](https://github.com/eclipse-theia/theia/pull/18216)
+- [ai-anthropic] preserved signed empty thinking blocks when replaying requests to the official API [#18145](https://github.com/eclipse-theia/theia/pull/18145)
+- [ai-chat-ui] added support for canceling individual agent delegations [#18134](https://github.com/eclipse-theia/theia/pull/18134)
+- [ai-chat-ui] added support for collapsing and expanding messages in the chat view [#18159](https://github.com/eclipse-theia/theia/pull/18159)
+- [ai-chat-ui] fixed duplicate document errors by assigning unique URIs to chat code blocks [#18167](https://github.com/eclipse-theia/theia/pull/18167)
+- [ai-chat-ui] fixed tool call argument tooltips to appear next to the label [#18073](https://github.com/eclipse-theia/theia/pull/18073)
+- [ai-chat-ui] hid model selection for agents without language model requirements [#18117](https://github.com/eclipse-theia/theia/pull/18117) - Contributed on behalf of MVTec Software GmbH
+- [ai-chat-ui] prevented Ctrl/Cmd+F from opening Monaco's find widget in the AI Chat view [#18081](https://github.com/eclipse-theia/theia/pull/18081)
+- [ai-chat-ui] prevented typing and focus in the AI chat input when AI features were disabled [#18140](https://github.com/eclipse-theia/theia/pull/18140)
+- [ai-chat-ui] replaced date-fns with Intl.RelativeTimeFormat to improve relative timestamp localization [#18148](https://github.com/eclipse-theia/theia/pull/18148)
+- [ai-chat-ui] reused existing session summaries instead of regenerating them when opened [#18099](https://github.com/eclipse-theia/theia/pull/18099)
+- [ai-chat] improved network error messages with actionable explanations and underlying causes [#18088](https://github.com/eclipse-theia/theia/pull/18088)
+- [ai-chatgpt] added support for ChatGPT subscription models with account sign-in [#17911](https://github.com/eclipse-theia/theia/pull/17911)
+- [ai-core, ai-google] updated default model aliases to Claude 5.5, GPT-6.1 Sol and Gemini 4 and adjusted Gemini 4 reasoning levels [#18273](https://github.com/eclipse-theia/theia/pull/18273)
+- [ai-core] added editor state and support for non-text editors to the openEditors variable [#18128](https://github.com/eclipse-theia/theia/pull/18128)
+- [ai-core] added listSkills and listAgents tools with keyword filtering [#18086](https://github.com/eclipse-theia/theia/pull/18086)
+- [ai-core] added support for AGENTS.md as project context and migration from legacy project-info files [#18061](https://github.com/eclipse-theia/theia/pull/18061)
+- [ai-core] added support for JSON Schema union types in tool request parameters [#17788](https://github.com/eclipse-theia/theia/pull/17788)
+- [ai-core] expanded reasoning effort support with none, xhigh and max levels and model-specific presets [#18107](https://github.com/eclipse-theia/theia/pull/18107)
+- [ai-core] fixed session preference handling in AI configuration and prevented session overrides from being saved to settings [#18230](https://github.com/eclipse-theia/theia/pull/18230)
+- [ai-ide] added generic capability editing to the AI Configuration agent detail page [#18085](https://github.com/eclipse-theia/theia/pull/18085)
+- [ai-ide] enforced a configurable content size limit for whole-file write tools [#17976](https://github.com/eclipse-theia/theia/pull/17976)
+- [ai-ide] fixed flaky capabilities settings tests by waiting for checkbox state updates [#18151](https://github.com/eclipse-theia/theia/pull/18151)
+- [ai-ide] fixed inconsistent path handling across AI tools and chat variables in multi-root workspaces [#18103](https://github.com/eclipse-theia/theia/pull/18103) - Contributed on behalf of STMicroelectronics
+- [ai-ide] fixed task context summaries to use standard YAML frontmatter [#18101](https://github.com/eclipse-theia/theia/pull/18101)
+- [ai-ide] moved agent guidance into tool and agent descriptions and stabilized prompts for caching [#18074](https://github.com/eclipse-theia/theia/pull/18074)
+- [ai-ollama] fixed tool parameter conversion to preserve full JSON schemas [#18015](https://github.com/eclipse-theia/theia/pull/18015)
+- [ai-openai] ensured tool calls batched in a single model turn executed in parallel across providers [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-openai] fixed retry handling for transient provider failures with cancellable backoff and consistent retry limits [#18224](https://github.com/eclipse-theia/theia/pull/18224)
+- [ai-openai] made the Responses API the default for official OpenAI models [#18094](https://github.com/eclipse-theia/theia/pull/18094)
+- [ai-openai] preserved complete native response output, including compaction and reasoning, across tool iterations [#18217](https://github.com/eclipse-theia/theia/pull/18217)
+- [ai-openai] preserved outputs for empty tool results in history and Responses API tool execution [#18144](https://github.com/eclipse-theia/theia/pull/18144)
+- [ai-openai] stopped sending the placeholder API key to Azure endpoints when no key was configured [#18258](https://github.com/eclipse-theia/theia/pull/18258) - Contributed on behalf of K2view
+- [ai-openai] updated the OpenAI SDK to 7.34 and handled response metadata from the ChatGPT subscriptions provider [#18169](https://github.com/eclipse-theia/theia/pull/18169)
+- [ai-registry] added MCP registry version display when approval and installed versions are unavailable [#18208](https://github.com/eclipse-theia/theia/pull/18208)
+- [ai-registry] replaced encoded preference override keys with explicit override identifiers [#17478](https://github.com/eclipse-theia/theia/pull/17478)
+- [ai-vercel-ai, scm-extra] removed deprecated @theia/ai-vercel-ai and @theia/scm-extra extension code [#18133](https://github.com/eclipse-theia/theia/pull/18133) - Contributed on behalf of STMicroelectronics
+- [api-tests] fixed a flaky explorer close assertion by using a read-only widget check [#18250](https://github.com/eclipse-theia/theia/pull/18250)
+- [application-manager] fixed empty webviews in browser-only apps by serving webview files from the frontend bundle [#18124](https://github.com/eclipse-theia/theia/pull/18124)
+- [ci] added retries for missing packages after failed publishes [#18155](https://github.com/eclipse-theia/theia/pull/18155) - Contributed on behalf of STMicroelectronics
+- [ci] made publishing resilient to npm malware scanning delays and preserved package-update PR creation after partial publishes [#18121](https://github.com/eclipse-theia/theia/pull/18121) - Contributed on behalf of STMicroelectronics
+- [collaboration] added periodic shared document resynchronization to recover missed updates [#18214](https://github.com/eclipse-theia/theia/pull/18214)
+- [collaboration] fixed incorrect remote Yjs delta offsets that caused text loss during concurrent editing [#18014](https://github.com/eclipse-theia/theia/pull/18014)
+- [collaboration] stopped sharing an editor's selection when it was closed [#18220](https://github.com/eclipse-theia/theia/pull/18220)
+- [core] accelerated frontend readiness by no longer waiting for the loading indicator fade-out [#18201](https://github.com/eclipse-theia/theia/pull/18201) - Contributed on behalf of STMicroelectronics
+- [core] added --vscode- CSS color variables alongside --theia- variables for VS Code extension compatibility [#18120](https://github.com/eclipse-theia/theia/pull/18120) - Contributed on behalf of STMicroelectronics
+- [core] added support for hiding side bar items while keeping their views accessible [#18138](https://github.com/eclipse-theia/theia/pull/18138) - Contributed on behalf of JuliaHub
+- [core] added the `toggle` option to `window.menuBarVisibility` to show and hide the menu bar with the Alt key [#17585](https://github.com/eclipse-theia/theia/pull/17585)
+- [core] fixed ArrowUp opening closed dropdown menus with the last option selected [#18082](https://github.com/eclipse-theia/theia/pull/18082)
+- [core] fixed fragmented header handling in BinaryMessagePipe to prevent payload truncation and frame corruption [#18097](https://github.com/eclipse-theia/theia/pull/18097)
 - [core, keymaps, monaco, plugin-ext] fixed logical-character keybindings on international keyboard layouts, e.g. `ctrl+[` on German layouts, and kept Latin-letter shortcuts working on non-Latin layouts [#17892](https://github.com/eclipse-theia/theia/pull/17892)
+- [core] fixed nested dispose bindings in DisposableCollection.push that caused progressive slowdowns and freezes [#18278](https://github.com/eclipse-theia/theia/pull/18278)
+- [core] fixed removal of default preference overrides when disposed [#18222](https://github.com/eclipse-theia/theia/pull/18222)
+- [core] fixed Shift+punctuation keybindings for synthetic base-character input [#18170](https://github.com/eclipse-theia/theia/pull/18170)
+- [core] fixed stale status bar items remaining after their widget was closed [#18178](https://github.com/eclipse-theia/theia/pull/18178)
+- [core] improved secondary window support with cross-window tab dragging, configurable close behavior, and layout restoration [#18211](https://github.com/eclipse-theia/theia/pull/18211)
+- [core] improved support for complex widgets in secondary windows [#18263](https://github.com/eclipse-theia/theia/pull/18263) - Contributed on behalf of STMicroelectronics
+- [core] made bundled resources accessible to external processes in ASAR-packaged applications [#18054](https://github.com/eclipse-theia/theia/pull/18054)
+- [core] preserved the backend exit code on Windows when terminating child processes [#18105](https://github.com/eclipse-theia/theia/pull/18105)
+- [core] removed unresolved placeholders from HTTP preference descriptions [#18055](https://github.com/eclipse-theia/theia/pull/18055)
+- [core] restored the original focus context when evaluating command states in the command palette [#18113](https://github.com/eclipse-theia/theia/pull/18113)
+- [core] restored tree scrolling to the focused node after a reload [#18092](https://github.com/eclipse-theia/theia/pull/18092)
+- [core] translation update for version 1.77.0 [#18325](https://github.com/eclipse-theia/theia/pull/18325)
+- [core] upgraded dependencies after 1.76.0 and overrode vulnerable dependency versions [#18149](https://github.com/eclipse-theia/theia/pull/18149) - Contributed on behalf of STMicroelectronics
+- [core] upgraded TypeScript to 6.0.3 and migrated lint tooling [#18100](https://github.com/eclipse-theia/theia/pull/18100) - Contributed on behalf of STMicroelectronics
+- [debug] evaluated variables and watch expressions before copying to retrieve complete values [#18132](https://github.com/eclipse-theia/theia/pull/18132)
+- [debug] released terminated debug sessions while preserving console output and added configurable console line limits [#18111](https://github.com/eclipse-theia/theia/pull/18111)
+- [debug] restricted Restart Frame availability to supported debug adapters and restartable stack frames [#18180](https://github.com/eclipse-theia/theia/pull/18180)
+- [docs] aligned dependency injection examples with the interface and symbol rule [#18125](https://github.com/eclipse-theia/theia/pull/18125)
+- [electron, ci] upgraded Electron from 42.8.1 to 44.4.5, made clipboard reads asynchronous, and required GCC 13+ or Clang for Linux native builds [#18150](https://github.com/eclipse-theia/theia/pull/18150) - Contributed on behalf of STMicroelectronics
+- [electron] fixed repeated handling of the initial Electron open-url after window reloads [#18225](https://github.com/eclipse-theia/theia/pull/18225)
+- [electron] upgraded Electron from 44.4.5 to 44.9.1 [#18244](https://github.com/eclipse-theia/theia/pull/18244) - Contributed on behalf of STMicroelectronics
+- [examples] restored browser example workspace settings to prevent Windows API test failures [#18324](https://github.com/eclipse-theia/theia/pull/18324)
+- [filesystem] corrected expiration time calculation for downloads [#18176](https://github.com/eclipse-theia/theia/pull/18176)
+- [filesystem] fixed folder tooltips showing the wrong path when compact folders were disabled [#18314](https://github.com/eclipse-theia/theia/pull/18314)
+- [filesystem] fixed move and copy validation to reject targets inside the source and prevent overwriting its parent [#18153](https://github.com/eclipse-theia/theia/pull/18153)
+- [filesystem] fixed opening files containing non-ASCII characters when `files.autoGuessEncoding` was enabled [#18157](https://github.com/eclipse-theia/theia/pull/18157)
+- [filesystem] fixed provider activation hanging after provider registration [#17625](https://github.com/eclipse-theia/theia/pull/17625)
+- [filesystem] handled rimraf cleanup errors to prevent unhandled promise rejections [#18126](https://github.com/eclipse-theia/theia/pull/18126)
+- [filesystem] honored non-recursive file watch requests and restored detection of deleted workspace folders [#17875](https://github.com/eclipse-theia/theia/pull/17875)
+- [filesystem] ignored folder drops onto themselves or their subfolders to prevent errors [#18317](https://github.com/eclipse-theia/theia/pull/18317)
+- [filesystem] replaced decompress with a hardened archive extractor that rejected path traversal and skipped links [#18207](https://github.com/eclipse-theia/theia/pull/18207) - Contributed on behalf of STMicroelectronics
+- [getting-started] prevented the Welcome page from opening over restored non-text editors [#18130](https://github.com/eclipse-theia/theia/pull/18130)
+- [metrics, telemetry] moved type definitions to telemetry-types.ts and fixed metrics header ordering and duplication [#18020](https://github.com/eclipse-theia/theia/pull/18020) - Contributed on behalf of STMicroelectronics
+- [metrics] prevented literal "undefined" output in the /metrics endpoint during startup [#18023](https://github.com/eclipse-theia/theia/pull/18023)
+- [mini-browser] fixed handler priority registration, asynchronous file read error handling, and image response MIME types [#18131](https://github.com/eclipse-theia/theia/pull/18131)
+- [monaco] added strikethrough styling for deprecated symbols in the outline view [#18154](https://github.com/eclipse-theia/theia/pull/18154)
+- [monaco] fixed editor models losing unsaved changes when edited during a save [#18298](https://github.com/eclipse-theia/theia/pull/18298) - Contributed on behalf of CodeSignal
+- [output] fixed focus stealing when revealing the Output view with preserveFocus enabled [#18141](https://github.com/eclipse-theia/theia/pull/18141)
+- [performance] added workbench visibility, application readiness, and Electron startup timing metrics and fixed browser performance reporting [#18200](https://github.com/eclipse-theia/theia/pull/18200) - Contributed on behalf of STMicroelectronics
+- [playwright] fixed browser page lifecycle and ownership handling in TheiaAppLoader [#18302](https://github.com/eclipse-theia/theia/pull/18302)
+- [playwright] fixed command palette triggering by filtering commands before selection [#18259](https://github.com/eclipse-theia/theia/pull/18259)
+- [playwright] fixed file tree node selection for paths containing special characters [#18116](https://github.com/eclipse-theia/theia/pull/18116)
+- [plugin-ext, application-package] updated VS Code API compatibility and localization metadata to 1.144.0 [#18318](https://github.com/eclipse-theia/theia/pull/18318)
+- [plugin-ext-vscode] preserved pinned editors in bulk close commands and fixed group close and save commands [#18235](https://github.com/eclipse-theia/theia/pull/18235)
+- [plugin-ext-vscode] treated installing an already installed extension by ID as a no-op [#18146](https://github.com/eclipse-theia/theia/pull/18146)
+- [plugin-ext] clarified plugin activation errors to mention disabled dependencies [#18177](https://github.com/eclipse-theia/theia/pull/18177)
+- [plugin-ext] deferred webview view resolution until views became visible [#18166](https://github.com/eclipse-theia/theia/pull/18166)
+- [plugin-ext] fixed Disposable callback collisions with subclass fields by using a JavaScript private field [#18315](https://github.com/eclipse-theia/theia/pull/18315)
+- [plugin-ext] fixed document synchronization errors by reporting closed documents to the plugin host synchronously [#18147](https://github.com/eclipse-theia/theia/pull/18147)
+- [plugin-ext] fixed findTextInFiles to reject when the search failed to start [#18232](https://github.com/eclipse-theia/theia/pull/18232)
+- [plugin-ext] fixed forwarding of DAP messages modified by debug adapter trackers [#18255](https://github.com/eclipse-theia/theia/pull/18255) - Contributed on behalf of CodeSignal
+- [plugin-ext] fixed missing welcome content in welcome-only views on first open and after reloading [#18143](https://github.com/eclipse-theia/theia/pull/18143)
+- [plugin-ext] fixed URI.from to return the correct subclass in the extension host [#18112](https://github.com/eclipse-theia/theia/pull/18112)
+- [plugin-ext] fixed webview resources not reloading when their query changed [#18265](https://github.com/eclipse-theia/theia/pull/18265) - Contributed on behalf of CodeSignal
+- [plugin-ext] fixed workspace folder resolution for debug sessions and task scopes [#18186](https://github.com/eclipse-theia/theia/pull/18186)
+- [plugin-ext] honored visibility and initial size settings for plugin-contributed views [#18269](https://github.com/eclipse-theia/theia/pull/18269)
+- [plugin-ext] moved browser-only plugin state from local storage to files [#18122](https://github.com/eclipse-theia/theia/pull/18122)
+- [plugin-ext] preserved the deployment path in web extension URIs [#18292](https://github.com/eclipse-theia/theia/pull/18292)
+- [plugin-ext] registered VS Code-compatible commands for extension views and corrected view container toggle behavior [#18114](https://github.com/eclipse-theia/theia/pull/18114)
+- [plugin-metrics] prevented metrics backend calls in browser-only applications [#18119](https://github.com/eclipse-theia/theia/pull/18119)
+- [remote] fixed Dev Container attach by copying the backend ES module marker [#18316](https://github.com/eclipse-theia/theia/pull/18316) - Contributed on behalf of STMicroelectronics
+- [request] fixed proxy authorization handling by passing credentials to ProxyAgent instead of request headers [#18237](https://github.com/eclipse-theia/theia/pull/18237)
+- [scm] added a multi-diff editor to display commit and SCM changes in a single tab [#17373](https://github.com/eclipse-theia/theia/pull/17373)
+- [task] kept input prompts open on focus loss and canceled tasks when input was dismissed [#17917](https://github.com/eclipse-theia/theia/pull/17917)
+- [terminal] fixed open terminals not updating when terminal colors changed [#18228](https://github.com/eclipse-theia/theia/pull/18228)
+- [terminal] restored the Ctrl/Cmd+V accelerator for Paste in the terminal context menu [#18218](https://github.com/eclipse-theia/theia/pull/18218)
+- [workspace] preserved configured workspace root names and used them in root labels and plugin APIs [#18168](https://github.com/eclipse-theia/theia/pull/18168)
+- [workspace] restricted workspace file dialogs to workspace file types [#18181](https://github.com/eclipse-theia/theia/pull/18181)
 
 <a name="breaking_changes_1.77.0">[Breaking Changes:](#breaking_changes_1.77.0)</a>
 
@@ -22,22 +140,24 @@
 - [core] changed `KeybindingRegistry.matchKeybinding()` results from `match.binding` to `match.runtime`, which contains the binding and resolved sequence. Pass resolved sequences from `resolveKeybinding()` or runtime interpretations; raw `KeySequence.parse()` output is no longer guaranteed to match under `keyboard.dispatch: 'code'`. Protected chord handling now uses `keySequenceCandidates`, and keybinding-tree values are runtime records instead of `ScopedKeybinding[]`; subclasses consuming or overriding these members must adapt [#17892](https://github.com/eclipse-theia/theia/pull/17892)
 - [core, plugin-ext] changed `AcceleratorSource.getAccelerator` to require a `form: 'logical' | 'physical'` argument. Custom implementations must return logical labels for browser UI and physical accelerators for Electron native menus [#17892](https://github.com/eclipse-theia/theia/pull/17892)
 - [core] added `withContext(context: HTMLElement | Context, callback)` to the `ContextKeyService` interface [#18113](https://github.com/eclipse-theia/theia/pull/18113)
-- [core] upgraded to TypeScript 6.0.x: `configs/base.tsconfig.json` now enables `esModuleInterop`, uses `moduleResolution: bundler`, and declares global `types` explicitly. Published extensions that emit import helpers must declare `tslib`; consumers compiling Theia's declarations need `esModuleInterop`, `allowSyntheticDefaultImports`, or `skipLibCheck`. `TreeProps.viewProps` and `TreeWidget.ViewProps` no longer accept the inherited HTML `width`, `height`, or `rows` properties, and `@theia/localization-manager` now depends on TypeScript 6. See the [migration guide](doc/Migration.md) [#18100](https://github.com/eclipse-theia/theia/pull/18100) - Contributed on behalf of STMicroelectronics
+- [core] upgraded to TypeScript 6.0.x: `configs/base.tsconfig.json` now enables `esModuleInterop`, uses `moduleResolution: bundler`, and declares global `types` explicitly. Published extensions that emit import helpers must declare `tslib`; consumers compiling Theia's declarations need `esModuleInterop`, `allowSyntheticDefaultImports`, or `skipLibCheck`. `TreeProps.viewProps` and `TreeWidget.ViewProps` no longer accept the inherited HTML `width`, `height`, or `rows` properties, and `@theia/localization-manager` now depends on TypeScript 6. See the [migration guide](doc/Migration.md) [#18100](https://github.com/eclipse-theia/theia/pull/18100)
 - [core] `TreeSelectionState` keeps the ids of the selected nodes rather than the nodes themselves, so that it does not retain nodes the tree has replaced. `selectionStack` became a getter that resolves those ids against the tree and leaves out the nodes it no longer holds, so it can no longer be redeclared as a property by a subclass [#18111](https://github.com/eclipse-theia/theia/pull/18111)
 - [core] added the required `restoreWidget` method to the `SecondaryWindowService` interface; implementations that don't extend `DefaultSecondaryWindowService` need to add it. Removed the unused `secondaryWindowHandler` field from `ColorApplicationContribution` and `StylingService` [#18211](https://github.com/eclipse-theia/theia/pull/18211)
 - [core] the tabs of `TheiaDockPanel`s with drag and drop enabled, e.g. the main and bottom areas, are dragged with native HTML drag and drop instead of Lumino's pointer-based drag. Their `ToolbarAwareTabBar`s set `tabsMovable` to `false`, so Lumino no longer emits `tabDetachRequested` for them, and `tabMoved` is only emitted when a tab is dropped within its tab bar. Drop targets for tabs keep receiving Lumino's `lm-*` drag events, translated by the new `NativeTabDragService` [#18211](https://github.com/eclipse-theia/theia/pull/18211)
+- [core] `FrontendApplication.start()` no longer waits for the loading indicator (`.theia-preload`) to fade out before reaching `ready`: `revealShell()` resolves when the fade-out starts and the indicator is removed in the background through the new `removeStartupIndicator()`. The default fade-out was shortened from 0.8 s to 0.15 s. Code that assumes `.theia-preload` is gone at `ready` must wait for its removal, see the [migration guide](doc/Migration.md) [#18201](https://github.com/eclipse-theia/theia/pull/18201)
 - [debug] removed the `copyValue`, `valueRef` and `setValueRef` members from `DebugVariable` and `DebugWatchExpression`; adopters that use these public members need to update their integrations [#18132](https://github.com/eclipse-theia/theia/pull/18132)
 - [debug] `DebugConsoleSession.debugSession` is now a read-only `DebugSession | undefined`, as the console releases the session once it terminates. The setter is replaced by `startFor(session)`, the new `label` and `configurationName` describe a session that has already ended, and `id` is now generated, so a console is no longer found by `ConsoleSessionManager.get(session.id)` [#18111](https://github.com/eclipse-theia/theia/pull/18111)
 - [electron] upgraded Electron from 42.8.1 to 44.4.5. Downstream Electron applications must update their `electron` devDependency to `44.4.5`. Electron 44 requires macOS 13 (Ventura) or later and ships only 64-bit (x64/arm64) builds, and its clipboard module was rearchitected to the async W3C Clipboard API and is no longer exposed to the renderer process. As a result the `TheiaCoreAPI` preload method `readClipboard()` now returns `Promise<string>` (backed by `ipcRenderer.invoke`/`ipcMain.handle` instead of synchronous IPC) and `ElectronClipboardService.readText()` now returns a `Promise<string>`; adopters with a custom Electron preload script must return a promise from `readClipboard()`. Rebuilding native modules for Electron 44 requires GCC 13 or later, or Clang; on Ubuntu 22.04, whose GCC is older, build with Clang, e.g. `CC=clang CXX=clang++`. See the Electron breaking changes for [43.0](https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-430) and [44.0](https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-440). [#18150](https://github.com/eclipse-theia/theia/pull/18150)
 - [filesystem] renamed `ParcelFileSystemWatcherService` to `FileSystemWatcherServiceImpl` and moved it to `node/filesystem-watcher-service-impl.ts`. Removed its `watchers` and `watcherHandles` maps and its `createWatcher`, `getWatcherKey`, `registerWatcher`, and `getLiveWatcher` methods; adopters overriding them should move that logic into a `RecursiveWatcherProvider` or `DirectoryWatcherProvider`. Moved `ParcelWatcher` to `node/parcel-watcher/parcel-watcher.ts`, renamed `ParcelWatcherOptions` to `ParcelWatcherExcludes`, and deprecated the `initialClientId` constructor argument of `ParcelWatcher`. `parcel-filesystem-service.ts` re-exports the old names and is deprecated [#17875](https://github.com/eclipse-theia/theia/pull/17875)
 - [plugin-ext] removed the `workspaceService` constructor parameter and the `shouldSkipWatch` method from `MainFileSystemEventService`. They implemented a mitigation that dropped non-recursive plugin watches rooted above a workspace root, which is obsolete now that the backend honors `recursive` [#17875](https://github.com/eclipse-theia/theia/pull/17875)
-- [plugin-ext] `PluginDebugAdapterTracker.create` and `DebugExtImpl.createDebugAdapterTracker` now resolve to `undefined` when no factory provides a tracker for the session. Callers must handle `undefined`, and `PluginDebugAdapterSession` now accepts an optional tracker [#18255](https://github.com/eclipse-theia/theia/pull/18255) - Contributed on behalf of CodeSignal
+- [plugin-ext] `PluginDebugAdapterTracker.create` and `DebugExtImpl.createDebugAdapterTracker` now resolve to `undefined` when no factory provides a tracker for the session. Callers must handle `undefined`, and `PluginDebugAdapterSession` now accepts an optional tracker [#18255](https://github.com/eclipse-theia/theia/pull/18255)
 - [plugin-ext] browser-only plugin `globalState` and `workspaceState` moved from localStorage to files and are not migrated. The protected API of `BrowserOnlyPluginServer` changed accordingly [#18122](https://github.com/eclipse-theia/theia/pull/18122)
 - [core] reworked the preference API to use explicit override identifiers instead of encoding them into preference names (e.g. `[typescript].editor.tabSize`). Adopters that read, write or listen to language-scoped preferences through `PreferenceService`, `PreferenceProvider` or the change events must migrate to the new signatures [#16046](https://github.com/eclipse-theia/theia/issues/16046). Preference change events for
 "override names" like `[typescript].editor.tabSize` will no longer be sent. Listen for the base name (`editor.tabSize`) and check whether the event `affects` your use case.
 The typed getters like `getBoolean(...)` in `PreferenceServiceImpl` have been removed in favor of typed overloads of `get(...)` in the `PreferenceService` interface.
 - [plugin-ext] the plugin host resolves the workspace folders of debug sessions and folder scoped tasks through `WorkspaceExtImpl` instead of creating them. `DebugExtImpl` injects `WorkspaceExtImpl`, `TasksExtImpl` takes it as a third constructor argument, and `TaskProviderAdapter` takes a function returning the workspace folder of a URI as a second constructor argument. The `toTask` type converter requires such a function and returns `undefined` for a task scoped to a folder that is not in a workspace folder; use the new `toTaskDefinition` to convert only the definition. `TasksMain.$executeTask` takes a request id as a second argument, which `TasksExtImpl` uses to give the execution reported by `$onDidStartTask` the task passed to `tasks.executeTask` [#18186](https://github.com/eclipse-theia/theia/pull/18186)
 - [task] made `TaskService.isEventForThisClient` public, so that the plugin system can tell whether a task event is for this client. Subclasses that override it have to make their override public as well [#18186](https://github.com/eclipse-theia/theia/pull/18186)
+- [telemetry] moved `TelemetryPrimitive`, `TelemetryValue`, `TelemetryData`, `isTelemetryData`, `snapshotTelemetryData`, `TelemetryEventKind`, `isTelemetryEventKind` and `TelemetryReportOptions` from `telemetry-service.ts` to `telemetry-types.ts`. They are still re-exported from `@theia/telemetry/lib/common`, so only deep imports of `telemetry-service` must be updated [#18020](https://github.com/eclipse-theia/theia/pull/18020)
 
 ## 1.76.0 - 9/24/2026
 
