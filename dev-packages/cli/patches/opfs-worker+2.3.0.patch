@@ -1,0 +1,282 @@
+diff --git a/node_modules/opfs-worker/dist/core/BaseOPFS.d.ts b/node_modules/opfs-worker/dist/core/BaseOPFS.d.ts
+index 9435e75..c5e73a9 100644
+--- a/node_modules/opfs-worker/dist/core/BaseOPFS.d.ts
++++ b/node_modules/opfs-worker/dist/core/BaseOPFS.d.ts
+@@ -1,4 +1,4 @@
+-import type { DirentData, FileOpenOptions, FileStat, ImportFilesProgress, ImportFilesResult, ImportFilesSource, OPFSOptions, RenameOptions, WatchEvent } from '../types';
++import type { DirentData, FileOpenOptions, FileStat, ImportFilesProgress, ImportFilesResult, ImportFilesSource, OPFSOptions, RenameOptions, WatchEvent } from '../types.js';
+ /**
+  * Shared OPFS logic (directories, meta, watch, high-level helpers).
+  *
+diff --git a/node_modules/opfs-worker/dist/core/OPFSAsync.d.ts b/node_modules/opfs-worker/dist/core/OPFSAsync.d.ts
+index 3c008d2..8164a04 100644
+--- a/node_modules/opfs-worker/dist/core/OPFSAsync.d.ts
++++ b/node_modules/opfs-worker/dist/core/OPFSAsync.d.ts
+@@ -1,5 +1,5 @@
+-import { BaseOPFS } from './BaseOPFS';
+-import type { FileOpenOptions, FileStat } from '../types';
++import { BaseOPFS } from './BaseOPFS.js';
++import type { FileOpenOptions, FileStat } from '../types.js';
+ /**
+  * Async OPFS backend using the promise-based File System API
+  * (`getFile()` / `createWritable()`).
+diff --git a/node_modules/opfs-worker/dist/core/OPFSSync.d.ts b/node_modules/opfs-worker/dist/core/OPFSSync.d.ts
+index 9707e2a..b6494ae 100644
+--- a/node_modules/opfs-worker/dist/core/OPFSSync.d.ts
++++ b/node_modules/opfs-worker/dist/core/OPFSSync.d.ts
+@@ -1,5 +1,5 @@
+-import { BaseOPFS } from './BaseOPFS';
+-import type { FileOpenOptions, FileStat, OPFSOptions } from '../types';
++import { BaseOPFS } from './BaseOPFS.js';
++import type { FileOpenOptions, FileStat, OPFSOptions } from '../types.js';
+ /**
+  * Sync OPFS backend using `FileSystemSyncAccessHandle` (dedicated worker only).
+  *
+diff --git a/node_modules/opfs-worker/dist/facade/OPFSFacade.d.ts b/node_modules/opfs-worker/dist/facade/OPFSFacade.d.ts
+index 091eba5..cca0400 100644
+--- a/node_modules/opfs-worker/dist/facade/OPFSFacade.d.ts
++++ b/node_modules/opfs-worker/dist/facade/OPFSFacade.d.ts
+@@ -1,4 +1,4 @@
+-import type { BinaryEncoding, DirentData, Encoding, FileOpenOptions, FileStat, ImportFilesProgress, ImportFilesResult, ImportFilesSource, ImportStreamProgress, OPFSApi, OPFSOptions, PathLike, RenameOptions, StringEncoding, WatchListener, WatchOptions } from '../types';
++import type { BinaryEncoding, DirentData, Encoding, FileOpenOptions, FileStat, ImportFilesProgress, ImportFilesResult, ImportFilesSource, ImportStreamProgress, OPFSApi, OPFSOptions, PathLike, RenameOptions, StringEncoding, WatchListener, WatchOptions } from '../types.js';
+ /** Backend the facade talks to: an fs implementation plus its cleanup. */
+ export interface OPFSBackend {
+     fs: OPFSApi;
+diff --git a/node_modules/opfs-worker/dist/facade/createOPFSAsync.d.ts b/node_modules/opfs-worker/dist/facade/createOPFSAsync.d.ts
+index edd71a0..b289c84 100644
+--- a/node_modules/opfs-worker/dist/facade/createOPFSAsync.d.ts
++++ b/node_modules/opfs-worker/dist/facade/createOPFSAsync.d.ts
+@@ -1,5 +1,5 @@
+-import { OPFSFacade } from './OPFSFacade';
+-import type { OPFSOptions } from '../types';
++import { OPFSFacade } from './OPFSFacade.js';
++import type { OPFSOptions } from '../types.js';
+ /**
+  * Async mode: Node-like `fs` API over the promise-based File System API,
+  * without any worker.
+diff --git a/node_modules/opfs-worker/dist/facade/createOPFSDedicated.d.ts b/node_modules/opfs-worker/dist/facade/createOPFSDedicated.d.ts
+index 37325b7..de309a4 100644
+--- a/node_modules/opfs-worker/dist/facade/createOPFSDedicated.d.ts
++++ b/node_modules/opfs-worker/dist/facade/createOPFSDedicated.d.ts
+@@ -1,5 +1,5 @@
+-import { OPFSFacade } from './OPFSFacade';
+-import type { DedicatedWorkerOptions } from '../worker/createDedicatedWorker';
++import { OPFSFacade } from './OPFSFacade.js';
++import type { DedicatedWorkerOptions } from '../worker/createDedicatedWorker.js';
+ /**
+  * Dedicated mode: start a dedicated worker and get a Node-like `fs` API
+  * backed by `OPFSSync`.
+diff --git a/node_modules/opfs-worker/dist/facade/createOPFSShared.d.ts b/node_modules/opfs-worker/dist/facade/createOPFSShared.d.ts
+index 4500551..6990483 100644
+--- a/node_modules/opfs-worker/dist/facade/createOPFSShared.d.ts
++++ b/node_modules/opfs-worker/dist/facade/createOPFSShared.d.ts
+@@ -1,5 +1,5 @@
+-import { OPFSFacade } from './OPFSFacade';
+-import type { SharedWorkerOptions } from '../worker/createSharedWorker';
++import { OPFSFacade } from './OPFSFacade.js';
++import type { SharedWorkerOptions } from '../worker/createSharedWorker.js';
+ /**
+  * Shared mode: Node-like `fs` API over a SharedWorker running one `OPFSAsync`
+  * instance for every tab — writes are serialized across tabs by per-path locks,
+diff --git a/node_modules/opfs-worker/dist/index.async.d.ts b/node_modules/opfs-worker/dist/index.async.d.ts
+index d283dca..05b3c8f 100644
+--- a/node_modules/opfs-worker/dist/index.async.d.ts
++++ b/node_modules/opfs-worker/dist/index.async.d.ts
+@@ -1,10 +1,10 @@
+-export * from './types';
+-export * from './utils/errors';
+-export * from './utils/helpers';
+-export * from './utils/encoder';
+-export { BaseOPFS } from './core/BaseOPFS';
+-export { OPFSAsync } from './core/OPFSAsync';
+-export { OPFSFacade } from './facade/OPFSFacade';
+-export type { OPFSBackend } from './facade/OPFSFacade';
+-export { createOPFSAsync } from './facade/createOPFSAsync';
++export * from './types.js';
++export * from './utils/errors.js';
++export * from './utils/helpers.js';
++export * from './utils/encoder.js';
++export { BaseOPFS } from './core/BaseOPFS.js';
++export { OPFSAsync } from './core/OPFSAsync.js';
++export { OPFSFacade } from './facade/OPFSFacade.js';
++export type { OPFSBackend } from './facade/OPFSFacade.js';
++export { createOPFSAsync } from './facade/createOPFSAsync.js';
+ //# sourceMappingURL=index.async.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/opfs-worker/dist/index.d.ts b/node_modules/opfs-worker/dist/index.d.ts
+index 2a1b207..b9c11df 100644
+--- a/node_modules/opfs-worker/dist/index.d.ts
++++ b/node_modules/opfs-worker/dist/index.d.ts
+@@ -1,18 +1,18 @@
+-export * from './types';
+-export * from './utils/errors';
+-export * from './utils/helpers';
+-export * from './utils/encoder';
+-export { BaseOPFS, OPFSFacade, OPFSSync, createOPFS, createOPFSDedicated, } from './index.sync';
+-export type { DedicatedWorkerOptions, OPFSBackend, } from './index.sync';
+-export { OPFSAsync, createOPFSAsync, } from './index.async';
+-export { createOPFSShared, } from './index.sharedworker';
+-export type { SharedWorkerOptions, } from './index.sharedworker';
++export * from './types.js';
++export * from './utils/errors.js';
++export * from './utils/helpers.js';
++export * from './utils/encoder.js';
++export { BaseOPFS, OPFSFacade, OPFSSync, createOPFS, createOPFSDedicated, } from './index.sync.js';
++export type { DedicatedWorkerOptions, OPFSBackend, } from './index.sync.js';
++export { OPFSAsync, createOPFSAsync, } from './index.async.js';
++export { createOPFSShared, } from './index.sharedworker.js';
++export type { SharedWorkerOptions, } from './index.sharedworker.js';
+ /**
+  * @deprecated Use {@link createOPFSDedicated}. Kept for 1.x → 2.x migration.
+  */
+-export { createOPFSDedicated as createWorker } from './index.sync';
++export { createOPFSDedicated as createWorker } from './index.sync.js';
+ /**
+  * @deprecated Use {@link OPFSFacade}. Kept for 1.x → 2.x migration.
+  */
+-export { OPFSFacade as OPFSFileSystem } from './index.sync';
++export { OPFSFacade as OPFSFileSystem } from './index.sync.js';
+ //# sourceMappingURL=index.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/opfs-worker/dist/index.pure.d.ts b/node_modules/opfs-worker/dist/index.pure.d.ts
+index 0855a29..ea8a576 100644
+--- a/node_modules/opfs-worker/dist/index.pure.d.ts
++++ b/node_modules/opfs-worker/dist/index.pure.d.ts
+@@ -1,8 +1,8 @@
+-export * from './types';
+-export * from './utils/errors';
+-export * from './utils/helpers';
+-export * from './utils/encoder';
+-export { BaseOPFS } from './core/BaseOPFS';
+-export { OPFSSync } from './core/OPFSSync';
+-export { OPFSAsync } from './core/OPFSAsync';
++export * from './types.js';
++export * from './utils/errors.js';
++export * from './utils/helpers.js';
++export * from './utils/encoder.js';
++export { BaseOPFS } from './core/BaseOPFS.js';
++export { OPFSSync } from './core/OPFSSync.js';
++export { OPFSAsync } from './core/OPFSAsync.js';
+ //# sourceMappingURL=index.pure.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/opfs-worker/dist/index.sharedworker.d.ts b/node_modules/opfs-worker/dist/index.sharedworker.d.ts
+index 15930e6..009f2b1 100644
+--- a/node_modules/opfs-worker/dist/index.sharedworker.d.ts
++++ b/node_modules/opfs-worker/dist/index.sharedworker.d.ts
+@@ -1,11 +1,11 @@
+-export * from './types';
+-export * from './utils/errors';
+-export * from './utils/helpers';
+-export * from './utils/encoder';
+-export { BaseOPFS } from './core/BaseOPFS';
+-export { OPFSAsync } from './core/OPFSAsync';
+-export { OPFSFacade } from './facade/OPFSFacade';
+-export type { OPFSBackend } from './facade/OPFSFacade';
+-export { createOPFSShared } from './facade/createOPFSShared';
+-export type { SharedWorkerOptions } from './worker/createSharedWorker';
++export * from './types.js';
++export * from './utils/errors.js';
++export * from './utils/helpers.js';
++export * from './utils/encoder.js';
++export { BaseOPFS } from './core/BaseOPFS.js';
++export { OPFSAsync } from './core/OPFSAsync.js';
++export { OPFSFacade } from './facade/OPFSFacade.js';
++export type { OPFSBackend } from './facade/OPFSFacade.js';
++export { createOPFSShared } from './facade/createOPFSShared.js';
++export type { SharedWorkerOptions } from './worker/createSharedWorker.js';
+ //# sourceMappingURL=index.sharedworker.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/opfs-worker/dist/index.sync.d.ts b/node_modules/opfs-worker/dist/index.sync.d.ts
+index 5c5c2f4..478c80c 100644
+--- a/node_modules/opfs-worker/dist/index.sync.d.ts
++++ b/node_modules/opfs-worker/dist/index.sync.d.ts
+@@ -1,13 +1,13 @@
+-export * from './types';
+-export * from './utils/errors';
+-export * from './utils/helpers';
+-export * from './utils/encoder';
+-export { BaseOPFS } from './core/BaseOPFS';
+-export { OPFSSync } from './core/OPFSSync';
+-export { OPFSFacade } from './facade/OPFSFacade';
+-export type { OPFSBackend } from './facade/OPFSFacade';
+-export { createOPFSDedicated } from './facade/createOPFSDedicated';
++export * from './types.js';
++export * from './utils/errors.js';
++export * from './utils/helpers.js';
++export * from './utils/encoder.js';
++export { BaseOPFS } from './core/BaseOPFS.js';
++export { OPFSSync } from './core/OPFSSync.js';
++export { OPFSFacade } from './facade/OPFSFacade.js';
++export type { OPFSBackend } from './facade/OPFSFacade.js';
++export { createOPFSDedicated } from './facade/createOPFSDedicated.js';
+ /** Short alias for {@link createOPFSDedicated} */
+-export { createOPFSDedicated as createOPFS } from './facade/createOPFSDedicated';
+-export type { DedicatedWorkerOptions } from './worker/createDedicatedWorker';
++export { createOPFSDedicated as createOPFS } from './facade/createOPFSDedicated.js';
++export type { DedicatedWorkerOptions } from './worker/createDedicatedWorker.js';
+ //# sourceMappingURL=index.sync.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/opfs-worker/dist/types.d.ts b/node_modules/opfs-worker/dist/types.d.ts
+index ced5ab1..7ffbab4 100644
+--- a/node_modules/opfs-worker/dist/types.d.ts
++++ b/node_modules/opfs-worker/dist/types.d.ts
+@@ -1,5 +1,5 @@
+-import type { BaseOPFS } from './core/BaseOPFS';
+-import type { OPFSSync } from './core/OPFSSync';
++import type { BaseOPFS } from './core/BaseOPFS.js';
++import type { OPFSSync } from './core/OPFSSync.js';
+ /**
+  * Type for paths that can be either a string or URI
+  */
+diff --git a/node_modules/opfs-worker/dist/utils/encoder.d.ts b/node_modules/opfs-worker/dist/utils/encoder.d.ts
+index 2e8bcb0..d9d3fb0 100644
+--- a/node_modules/opfs-worker/dist/utils/encoder.d.ts
++++ b/node_modules/opfs-worker/dist/utils/encoder.d.ts
+@@ -1,4 +1,4 @@
+-import type { Encoding } from '../types';
++import type { Encoding } from '../types.js';
+ /**
+  * Common binary file extensions
+  */
+diff --git a/node_modules/opfs-worker/dist/utils/helpers.d.ts b/node_modules/opfs-worker/dist/utils/helpers.d.ts
+index cf8f7cc..ef112b9 100644
+--- a/node_modules/opfs-worker/dist/utils/helpers.d.ts
++++ b/node_modules/opfs-worker/dist/utils/helpers.d.ts
+@@ -1,4 +1,4 @@
+-import type { Encoding } from '../types';
++import type { Encoding } from '../types.js';
+ /**
+  * Check if the browser supports the OPFS API
+  *
+diff --git a/node_modules/opfs-worker/dist/utils/importSources.d.ts b/node_modules/opfs-worker/dist/utils/importSources.d.ts
+index de4a342..25b2964 100644
+--- a/node_modules/opfs-worker/dist/utils/importSources.d.ts
++++ b/node_modules/opfs-worker/dist/utils/importSources.d.ts
+@@ -1,4 +1,4 @@
+-import type { ImportFilesSource } from '../types';
++import type { ImportFilesSource } from '../types.js';
+ /** Content types after File System Access handles are resolved. */
+ export type ResolvedImportFileData = string | Uint8Array | Blob;
+ export declare function isFileSystemFileHandle(value: unknown): value is FileSystemFileHandle;
+diff --git a/node_modules/opfs-worker/dist/worker/createDedicatedWorker.d.ts b/node_modules/opfs-worker/dist/worker/createDedicatedWorker.d.ts
+index 6d067e2..c7039af 100644
+--- a/node_modules/opfs-worker/dist/worker/createDedicatedWorker.d.ts
++++ b/node_modules/opfs-worker/dist/worker/createDedicatedWorker.d.ts
+@@ -1,4 +1,4 @@
+-import type { OPFSOptions, OPFSSync } from '../types';
++import type { OPFSOptions, OPFSSync } from '../types.js';
+ import type { Remote } from 'comlink';
+ type RemoteOPFSSync = Remote<OPFSSync>;
+ export interface DedicatedWorkerOptions extends OPFSOptions {
+diff --git a/node_modules/opfs-worker/dist/worker/createSharedWorker.d.ts b/node_modules/opfs-worker/dist/worker/createSharedWorker.d.ts
+index afee921..0e27edc 100644
+--- a/node_modules/opfs-worker/dist/worker/createSharedWorker.d.ts
++++ b/node_modules/opfs-worker/dist/worker/createSharedWorker.d.ts
+@@ -1,5 +1,5 @@
+-import type { OPFSAsync } from '../core/OPFSAsync';
+-import type { OPFSOptions } from '../types';
++import type { OPFSAsync } from '../core/OPFSAsync.js';
++import type { OPFSOptions } from '../types.js';
+ import type { Remote } from 'comlink';
+ type RemoteOPFSAsync = Remote<OPFSAsync>;
+ export interface SharedWorkerOptions extends OPFSOptions {
