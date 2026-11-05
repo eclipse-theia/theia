@@ -132,12 +132,17 @@ class FakeDirectoryHandle {
 
 @injectable()
 class TestOPFSFileSystemProvider extends OPFSFileSystemProvider {
+    fileSystemDisposed = false;
+
     protected override createFileSystem(options: OPFSOptions): OPFSFacade {
-        // In a worker, opfs-worker receives the channel by name.
-        const channel = options.broadcastChannel instanceof BroadcastChannel ? options.broadcastChannel.name : options.broadcastChannel;
-        const backendOptions = { ...options, broadcastChannel: channel };
-        const backend = new OPFSSync(backendOptions);
-        return new OPFSFacade({ fs: backend, dispose: () => backend.dispose() }, backendOptions);
+        const backend = new OPFSSync(options);
+        return new OPFSFacade({
+            fs: backend,
+            dispose: () => {
+                this.fileSystemDisposed = true;
+                backend.dispose();
+            }
+        }, options);
     }
 }
 
@@ -151,7 +156,7 @@ const decode = (data: Uint8Array) => new TextDecoder().decode(data);
 describe('OPFSFileSystemProvider', () => {
 
     let provider: TestOPFSFileSystemProvider;
-    let channel: BroadcastChannel;
+    let channelName: string;
     let originalNavigator: PropertyDescriptor | undefined;
 
     before(() => {
@@ -166,31 +171,31 @@ describe('OPFSFileSystemProvider', () => {
         }
     });
 
-    async function createProvider(rootDirectory: string): Promise<void> {
+    function createTestProvider(rootDirectory: string | Promise<string>): TestOPFSFileSystemProvider {
         const root = new FakeDirectoryHandle('');
         // opfs-worker takes Web Locks from `navigator.locks`, as in a browser.
         Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { locks, storage: { getDirectory: async () => root } } });
-        channel = new BroadcastChannel(`opfs-test-${Math.random()}`);
+        channelName = `opfs-test-${Math.random()}`;
         const initialization: OPFSInitialization = {
             getRootDirectory: () => rootDirectory,
-            getBroadcastChannel: () => channel,
+            getBroadcastChannelName: () => channelName,
             initializeFS: async () => { }
         };
         const container = new Container();
         container.bind(OPFSInitialization).toConstantValue(initialization);
         container.bind(EncodingService).toSelf().inSingletonScope();
         container.bind(TestOPFSFileSystemProvider).toSelf().inSingletonScope();
-        provider = container.get(TestOPFSFileSystemProvider);
+        return container.get(TestOPFSFileSystemProvider);
+    }
+
+    async function createProvider(rootDirectory: string): Promise<void> {
+        provider = createTestProvider(rootDirectory);
         await provider.writeFile(FILE, encode('old'), OVERWRITE);
     }
 
     beforeEach(() => createProvider('/'));
 
-    afterEach(() => {
-        provider['fs'].dispose();
-        provider.dispose();
-        channel.close();
-    });
+    afterEach(() => provider.dispose());
 
     function delay(ms: number): Promise<void> {
         return new Promise(resolve => setTimeout(resolve, ms));
@@ -375,11 +380,39 @@ describe('OPFSFileSystemProvider', () => {
     });
 
     it('should report changes under a root directory without a leading slash', async () => {
-        provider['fs'].dispose();
         provider.dispose();
-        channel.close();
         await createProvider('workspace');
 
         expect(await watchForChanges(FILE)).to.deep.equal(['/a.txt']);
+    });
+
+    it('should send changes on the channel that the initialization names', async () => {
+        const channel = new BroadcastChannel(channelName);
+        const paths: string[] = [];
+        channel.onmessage = event => paths.push(event.data.path);
+        try {
+            await provider.writeFile(FILE, encode('new'), OVERWRITE);
+            await delay(50);
+        } finally {
+            channel.close();
+        }
+
+        expect(paths).to.include('/a.txt');
+    });
+
+    it('should dispose the file system with the provider', () => {
+        provider.dispose();
+
+        expect(provider.fileSystemDisposed).to.be.true;
+    });
+
+    it('should dispose the file system when the provider is disposed before it is set up', async () => {
+        let resolveRoot!: (root: string) => void;
+        const early = createTestProvider(new Promise(resolve => resolveRoot = resolve));
+        early.dispose();
+        resolveRoot('/');
+        await settle();
+
+        expect(early.fileSystemDisposed).to.be.true;
     });
 });

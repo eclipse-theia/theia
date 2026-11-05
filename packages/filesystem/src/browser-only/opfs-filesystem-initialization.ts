@@ -19,15 +19,15 @@ import { injectable } from '@theia/core/shared/inversify';
 
 export const OPFSInitialization = Symbol('OPFSInitialization');
 export interface OPFSInitialization {
-    getBroadcastChannel(): BroadcastChannel;
+    getBroadcastChannelName(): string;
     getRootDirectory(): Promise<string> | string;
     initializeFS(provider: OPFSFileSystemProvider): Promise<void>;
 }
 
 @injectable()
 export class DefaultOPFSInitialization implements OPFSInitialization {
-    getBroadcastChannel(): BroadcastChannel {
-        return new BroadcastChannel('theia-opfs-events');
+    getBroadcastChannelName(): string {
+        return 'theia-opfs-events';
     }
 
     getRootDirectory(): Promise<string> | string {
