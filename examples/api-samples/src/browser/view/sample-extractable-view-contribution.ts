@@ -75,7 +75,7 @@ export class SampleExtractableViewContribution extends AbstractViewContribution<
 
 export const bindSampleExtractableView = (bind: interfaces.Bind): void => {
     bindViewContribution(bind, SampleExtractableViewContribution);
-    bind(TabBarToolbarContribution).to(SampleExtractableViewContribution).inSingletonScope();
+    bind(TabBarToolbarContribution).toService(SampleExtractableViewContribution);
     bind(SampleExtractableView).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: SampleExtractableView.ID,

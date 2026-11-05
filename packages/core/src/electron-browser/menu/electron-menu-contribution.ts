@@ -244,8 +244,16 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         app.shell.addWidget(dragPanel, { area: 'top' });
         this.appendMenu(app.shell);
         this.createCustomTitleWidget(app);
-        app.shell.topPanel.node.append(this.titleBarService.createWindowControlsContainer(document));
-        this.titleBarService.setupMaximizeRestoreToggle(document.body);
+        const controls = document.createElement('div');
+        controls.id = 'window-controls';
+        controls.append(
+            this.createControlButton('minimize', () => window.electronTheiaCore.minimize()),
+            this.createControlButton('maximize', () => window.electronTheiaCore.maximize()),
+            this.createControlButton('restore', () => window.electronTheiaCore.unMaximize()),
+            this.createControlButton('close', () => window.electronTheiaCore.close())
+        );
+        app.shell.topPanel.node.append(controls);
+        this.handleWindowControls();
     }
 
     protected createCustomTitleWidget(app: FrontendApplication): void {
@@ -253,6 +261,14 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         if (titleWidget) {
             app.shell.addWidget(titleWidget, { area: 'top' });
         }
+    }
+
+    protected handleWindowControls(): void {
+        this.titleBarService.setupMaximizeRestoreToggle(document.body);
+    }
+
+    protected createControlButton(id: string, handler: () => void): HTMLElement {
+        return this.titleBarService.createControlButton(document, id, handler);
     }
 
     protected async handleRequiredRestart(): Promise<void> {

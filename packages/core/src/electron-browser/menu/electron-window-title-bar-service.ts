@@ -21,7 +21,7 @@ import { codicon } from '../../browser/widgets/widget.js';
 @injectable()
 export class ElectronWindowTitleBarService {
 
-    protected createControlButton(doc: Document, id: string, handler: () => void): HTMLElement {
+    createControlButton(doc: Document, id: string, handler: () => void): HTMLElement {
         const button = doc.createElement('div');
         button.id = `${id}-button`;
         button.className = `control-button ${codicon(`chrome-${id}`)}`;
