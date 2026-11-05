@@ -47,22 +47,38 @@ export class NodeRequestService implements RequestService {
     protected async processOptions(options: NodeRequestOptions): Promise<NodeRequestOptions> {
         const { strictSSL } = this;
         options.strictSSL = options.strictSSL ?? strictSSL;
+        const headerAuthorization = this.takeProxyAuthorizationHeader(options);
         if (!options.dispatcher) {
+            // undici's ProxyAgent rejects a Proxy-Authorization request header, so the authorization goes to the agent
             options.dispatcher = getProxyAgent(options.url || '', process.env, {
                 proxyUrl: await this.getProxyUrl(options.url),
-                strictSSL: options.strictSSL
+                strictSSL: options.strictSSL,
+                proxyAuthorization: options.proxyAuthorization || headerAuthorization || this.authorization
             });
         }
 
-        const authorization = options.proxyAuthorization || this.authorization;
-        if (authorization) {
-            options.headers = {
-                ...(options.headers || {}),
-                'Proxy-Authorization': authorization
-            };
-        }
-
         return options;
+    }
+
+    /**
+     * Removes a `Proxy-Authorization` header from the request options and returns its value.
+     * The header must not be sent: undici's `ProxyAgent` rejects it, and without a proxy it would reach the target server.
+     */
+    protected takeProxyAuthorizationHeader(options: NodeRequestOptions): string | undefined {
+        if (!options.headers) {
+            return undefined;
+        }
+        let authorization: string | undefined;
+        const headers: Headers = {};
+        for (const [name, value] of Object.entries(options.headers)) {
+            if (name.toLowerCase() === 'proxy-authorization') {
+                authorization = value;
+            } else {
+                headers[name] = value;
+            }
+        }
+        options.headers = headers;
+        return authorization;
     }
 
     async request(options: NodeRequestOptions, token?: CancellationToken): Promise<RequestContext> {

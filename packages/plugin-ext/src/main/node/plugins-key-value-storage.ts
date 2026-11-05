@@ -92,7 +92,7 @@ export class PluginsKeyValueStorage {
         const configDirUri = await this.envServer.getConfigDirUri();
         const globalStorageFsPath = path.join(FileUri.fsPath(configDirUri), PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR);
         await fs.ensureDir(globalStorageFsPath);
-        return path.join(globalStorageFsPath, 'global-state.json');
+        return path.join(globalStorageFsPath, PluginPaths.PLUGINS_GLOBAL_STATE_FILE);
     }
 
     private async initializeStore(storePath: string): Promise<Store> {
@@ -137,7 +137,7 @@ export class PluginsKeyValueStorage {
         }
         const storagePath = await this.pluginPathsService.getHostStoragePath(kind.workspace, kind.roots);
         if (storagePath) {
-            return path.join(storagePath, 'workspace-state.json');
+            return path.join(storagePath, PluginPaths.PLUGINS_WORKSPACE_STATE_FILE);
         }
     }
 

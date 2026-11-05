@@ -798,7 +798,7 @@ export class TaskService implements TaskConfigurationClient {
                 }
                 const terminateTaskAction = nls.localizeByDefault('Terminate Task');
                 const restartTaskAction = nls.localizeByDefault('Restart Running Task');
-                const selectedAction = await this.messageService.info(nls.localizeByDefault('Task `{0}` is already running.', taskName), terminateTaskAction, restartTaskAction);
+                const selectedAction = await this.messageService.info(nls.localizeByDefault('Task \'{0}\' is already running.', taskName), terminateTaskAction, restartTaskAction);
                 if (selectedAction === terminateTaskAction) {
                     await this.terminateTask(matchedRunningTaskInfo);
                 } else if (selectedAction === restartTaskAction) {

@@ -1,0 +1,85 @@
+{
+  "private": true,
+  "name": "plugin-view-layout",
+  "version": "1.76.0",
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
+  "publisher": "sample-namespace",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "engines": {
+    "vscode": "^1.125.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.125.0"
+  },
+  "scripts": {
+    "build": "npx @vscode/vsce@3 package --no-dependencies"
+  },
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "plugin-view-layout",
+          "title": "View Layout Sample",
+          "icon": "$(layout)"
+        }
+      ]
+    },
+    "views": {
+      "plugin-view-layout": [
+        {
+          "id": "plugin-view-layout.small",
+          "name": "Small",
+          "initialSize": 1
+        },
+        {
+          "id": "plugin-view-layout.large",
+          "name": "Large",
+          "initialSize": 3
+        },
+        {
+          "id": "plugin-view-layout.collapsed",
+          "name": "Collapsed",
+          "visibility": "collapsed"
+        },
+        {
+          "id": "plugin-view-layout.hidden",
+          "name": "Hidden",
+          "visibility": "hidden",
+          "when": "true"
+        }
+      ],
+      "explorer": [
+        {
+          "id": "plugin-view-layout.explorer",
+          "name": "View Layout Sample",
+          "initialSize": 5
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "plugin-view-layout.small",
+        "contents": "Declares `initialSize: 1`. On a fresh layout it takes about a quarter of the space it shares with Large."
+      },
+      {
+        "view": "plugin-view-layout.large",
+        "contents": "Declares `initialSize: 3`. On a fresh layout it takes about three quarters of the space it shares with Small."
+      },
+      {
+        "view": "plugin-view-layout.collapsed",
+        "contents": "Declares `visibility: collapsed`, so it starts collapsed."
+      },
+      {
+        "view": "plugin-view-layout.hidden",
+        "contents": "Declares `visibility: hidden`. It starts hidden although its when clause holds, and is shown only from the container menu."
+      },
+      {
+        "view": "plugin-view-layout.explorer",
+        "contents": "Declares `initialSize: 5` in a container of another plugin, so the size is ignored."
+      }
+    ]
+  }
+}
