@@ -27,6 +27,7 @@ import {
     CapabilityAwareContext,
     GenericCapabilitySelections,
     getTextOfResponse,
+    extractErrorMessageWithCause,
     isCompactionResponsePart,
     isLanguageModelStreamResponsePart,
     isServerToolCallResponsePart,
@@ -334,8 +335,18 @@ export abstract class AbstractChatAgent implements ChatAgent {
 
     protected handleError(request: MutableChatRequestModel, error: Error): void {
         this.logger.error('Error handling chat interaction:', error);
-        request.response.response.addContent(new ErrorChatResponseContentImpl(error));
-        request.response.error(error);
+        // The node-side language model frontend delegate flattens the `cause` chain into the error
+        // message before it crosses the RPC boundary (the RPC error extension serializes only
+        // code/data/message/name/stack, so `cause` is gone by the time the frontend agent sees a
+        // backend error). This call is a defensive fallback for errors thrown locally in the
+        // frontend that still carry their `cause` (e.g. Node fetch's opaque "fetch failed" with the
+        // real reason on error.cause).
+        const enrichedMessage = extractErrorMessageWithCause(error);
+        const displayError = enrichedMessage && enrichedMessage !== error.message
+            ? Object.assign(new Error(enrichedMessage), { stack: error.stack, cause: error })
+            : error;
+        request.response.response.addContent(new ErrorChatResponseContentImpl(displayError));
+        request.response.error(displayError);
     }
 
     protected getLanguageModelSelector(languageModelPurpose: string): LanguageModelRequirement {
