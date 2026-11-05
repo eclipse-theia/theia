@@ -14,8 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Disposable, Event, ViewColumn } from '@theia/core';
+import { Disposable, Event, ILogger, ViewColumn } from '@theia/core';
 import { BaseWidget } from '@theia/core/lib/browser';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import { ThemeIcon } from '@theia/core/lib/common/theme';
 import { CommandLineOptions } from '@theia/process/lib/common/shell-command-builder';
@@ -67,7 +68,11 @@ export interface TerminalBlock {
 /**
  * Terminal UI widget.
  */
+@injectable()
 export abstract class TerminalWidget extends BaseWidget {
+
+    @inject(ILogger) @named('terminal:TerminalWidget')
+    protected readonly logger: ILogger;
 
     abstract processId: Promise<number>;
     /**
@@ -101,6 +106,16 @@ export abstract class TerminalWidget extends BaseWidget {
      * @param id - terminal id.
      */
     abstract start(id?: number): Promise<number>;
+
+    /**
+     * Start the terminal (see {@link start}) as soon as the widget is shown, or right away if it is visible already,
+     * so that no process is spawned for a terminal that the user cannot see yet, e.g. in a collapsed panel.
+     * The default implementation starts the terminal right away.
+     * @param id - terminal id.
+     */
+    startWhenShown(id?: number): void {
+        this.start(id).catch(error => this.logger.error('Failed to start the terminal', error));
+    }
 
     /**
      * Send text to the terminal server.
