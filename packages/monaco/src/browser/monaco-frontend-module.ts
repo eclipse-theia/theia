@@ -328,9 +328,8 @@ export function createMonacoConfigurationService(container: interfaces.Container
                 key = key.substring(0, index);
             }
 
-            for (const override of change.affectedOverrides) {
-                const property = preferenceSchemaService.getSchemaProperty(change.preferenceName);
-                if (property && property.overridable) {
+            if (preferenceSchemaService.getSchemaProperty(change.preferenceName)?.overridable) {
+                for (const override of change.affectedOverrides) {
                     const existingOverrides = context.overrides.get(override) || new Set<string>();
                     context.overrides.set(override, existingOverrides);
                     overrideKeys.forEach(k => existingOverrides.add(k));

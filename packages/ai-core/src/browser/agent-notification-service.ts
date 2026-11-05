@@ -155,7 +155,7 @@ export class AgentNotificationService {
         if (!agentNotificationType) {
             return this.preferenceService.get<NotificationType>(
                 PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE,
-                { fallback: NOTIFICATION_TYPE_OFF },
+                NOTIFICATION_TYPE_OFF,
             );
         }
 
