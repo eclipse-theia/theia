@@ -9,7 +9,7 @@ A sample VS Code extension for testing menus, toolbars, and dialogs in Theia sec
 - **Notifications**: `showInformationMessage` / `showWarningMessage` triggered from commands and webview buttons
 - **Dialogs**: input boxes, quick picks, and save dialogs triggered from the secondary window
 - **Webview message passing**: `postMessage` / `onDidReceiveMessage` across windows
-- **Style consistency**: dynamic CSS injection/removal works identically in main and secondary windows
+- **Webview styling**: dynamic CSS injection/removal within the webview iframe
 
 ## How to use
 

@@ -111,7 +111,8 @@ export class ElectronSecondaryWindowService extends DefaultSecondaryWindowServic
         topPanel.appendChild(this.titleBarService.createTitleElement(doc, widget.title.label));
         topPanel.appendChild(this.titleBarService.createWindowControlsContainer(doc, windowName));
 
-        this.titleBarService.setupMaximizeRestoreToggle(doc.body, windowName);
+        const toggleDisposable = this.titleBarService.setupMaximizeRestoreToggle(doc.body, windowName);
+        newWindow.addEventListener('pagehide', () => toggleDisposable.dispose());
     }
     private async canClose(extractableWidget: ExtractableWidget, shell: ApplicationShell, newWindow: Window): Promise<boolean> {
         return this.restoreWidgets(newWindow, extractableWidget, shell);

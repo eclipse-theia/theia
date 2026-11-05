@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 and others.
+// Copyright (C) 2026 EclipseSource and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -47,6 +47,9 @@ export class SecondaryWindowStyleMirror implements FrontendApplicationContributi
     /** Original CSSStyleSheet methods, saved before monkey-patching. */
     protected originalInsertRule: typeof CSSStyleSheet.prototype.insertRule | undefined;
     protected originalDeleteRule: typeof CSSStyleSheet.prototype.deleteRule | undefined;
+
+    /** Body classes that represent per-window state and must not be mirrored. */
+    protected static readonly EXCLUDED_BODY_CLASSES = new Set(['maximized']);
 
     /** Tracks which classes this mirror has added to each secondary window's body. */
     protected readonly mainOriginatedClasses = new Map<Window, Set<string>>();
@@ -151,6 +154,9 @@ export class SecondaryWindowStyleMirror implements FrontendApplicationContributi
                     }
 
                     for (const cls of added) {
+                        if (SecondaryWindowStyleMirror.EXCLUDED_BODY_CLASSES.has(cls)) {
+                            continue;
+                        }
                         secondaryBody.classList.add(cls);
                         tracked.add(cls);
                     }
@@ -398,6 +404,9 @@ export class SecondaryWindowStyleMirror implements FrontendApplicationContributi
         // Add classes from main that are missing in secondary, and track them
         for (let i = 0; i < mainClasses.length; i++) {
             const cls = mainClasses[i];
+            if (SecondaryWindowStyleMirror.EXCLUDED_BODY_CLASSES.has(cls)) {
+                continue;
+            }
             if (!secondaryBody.classList.contains(cls)) {
                 secondaryBody.classList.add(cls);
             }

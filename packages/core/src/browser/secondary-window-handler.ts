@@ -748,4 +748,3 @@ export function extractSecondaryWindow(widget: Widget | undefined | null): Windo
 
     return undefined;
 }
-

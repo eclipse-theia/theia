@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 and others.
+// Copyright (C) 2026 EclipseSource and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
+import { Disposable, DisposableCollection } from '../../common/disposable.js';
 import { codicon } from '../../browser/widgets/widget.js';
 
 @injectable()
@@ -40,15 +41,16 @@ export class ElectronWindowTitleBarService {
         return controls;
     }
 
-    setupMaximizeRestoreToggle(targetBody: HTMLElement, windowName?: string): void {
+    setupMaximizeRestoreToggle(targetBody: HTMLElement, windowName?: string): Disposable {
         toggleMaximizedClass();
+        const toDispose = new DisposableCollection();
 
         if (windowName) {
-            window.electronTheiaCore.onSecondaryWindowEvent(windowName, 'maximize', toggleMaximizedClass);
-            window.electronTheiaCore.onSecondaryWindowEvent(windowName, 'unmaximize', toggleMaximizedClass);
+            toDispose.push(window.electronTheiaCore.onSecondaryWindowEvent(windowName, 'maximize', toggleMaximizedClass));
+            toDispose.push(window.electronTheiaCore.onSecondaryWindowEvent(windowName, 'unmaximize', toggleMaximizedClass));
         } else {
-            window.electronTheiaCore.onWindowEvent('maximize', toggleMaximizedClass);
-            window.electronTheiaCore.onWindowEvent('unmaximize', toggleMaximizedClass);
+            toDispose.push(window.electronTheiaCore.onWindowEvent('maximize', toggleMaximizedClass));
+            toDispose.push(window.electronTheiaCore.onWindowEvent('unmaximize', toggleMaximizedClass));
         }
 
         function toggleMaximizedClass(): void {
@@ -58,6 +60,8 @@ export class ElectronWindowTitleBarService {
                 targetBody.classList.remove('maximized');
             }
         }
+
+        return toDispose;
     }
 
     createDragPanel(doc: Document): HTMLElement {
