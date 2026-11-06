@@ -168,11 +168,15 @@ jobs:
           VERSION=$(node -p "require('./lerna.json').version")
           echo "Lerna Version: $VERSION"
 
-          # A successful publish reverts every package.json but keeps lerna.json and package-lock.json
-          # bumped. Re-apply the version so that the PR updates every package, which also regenerates
-          # packages/core/README.md. Keep the lockfile of the publish: lerna rewrites it as well and
-          # drops fields such as `hasInstallScript` on the way.
+          # A successful publish reverts the package.json of every published package but keeps the
+          # private packages (e.g. @theia/ext-scripts), lerna.json and package-lock.json bumped. The
+          # reverted packages then depend on private versions that no longer exist locally, which
+          # lerna leaves alone and npm looks up in the registry. Restore every package.json first
+          # and re-apply the version so that the PR updates every package consistently, which also
+          # regenerates packages/core/README.md. Keep the lockfile of the publish: lerna rewrites it
+          # as well and drops fields such as `hasInstallScript` on the way.
           cp package-lock.json "$RUNNER_TEMP/package-lock.json"
+          git checkout HEAD -- ':(glob)**/package.json'
           npx lerna version "$VERSION" --exact --force-publish --no-git-tag-version --no-push --yes
           cp "$RUNNER_TEMP/package-lock.json" package-lock.json
 
