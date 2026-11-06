@@ -169,6 +169,24 @@ Use `BundledResourceProvider.resolveExternalPath(path)` for any other bundled fi
 
 If you worked around the ripgrep problem by overriding the `@vscode/ripgrep` replacement in your own esbuild configuration, that override is no longer needed.
 
+### v1.78.0
+
+#### Electron: the backend resolves the login shell environment [#18204](https://github.com/eclipse-theia/theia/pull/18204)
+
+The generated `electron-main.js` no longer runs `fix-path` before the Electron main process starts, which blocked the start for as long as the user's interactive login shell took to initialize. Instead, the backend runs the login shell once it has started, in parallel with the window and the frontend bundle, and applies the shell's environment to its own `process.env`, from where every process it spawns inherits it.
+
+Until the environment is known, the backend holds the channel of every service that a frontend opens on its connection, so that terminals, tasks, debug adapters, local MCP servers and whatever else runs the user's tools see the resolved environment without waiting for it. Services that the frontend needs in order to start up, and that start no processes, are declared independent of the shell environment and are not held: those of `@theia/core`, `@theia/filesystem`, `@theia/workspace`, `@theia/preferences` and the plugin metadata services of `@theia/plugin-ext`. The plugin host itself is forked once the environment is known, while the plugin metadata is served at once. The resolution is skipped in browser deployments, on Windows and in a backend that the login shell being resolved has started.
+
+What changes for adopters:
+
+- A backend service that the frontend needs to start up, and that starts no processes, should be declared independent of the shell environment, otherwise the workbench waits for the login shell on macOS and Linux: `new RpcConnectionHandler(path, factory, { independentOfShellEnvironment: true })`, `bindBackendService(path, Service, undefined, { independentOfShellEnvironment: true })` or `messagingService.registerChannelHandler(path, handler, { independentOfShellEnvironment: true })`. A service that starts processes must not be declared independent. Frontend services bound with `bindFrontendService` are never held. At the `debug` log level, the backend logs `Held the channel '<path>' for <n> ms until the login shell environment was resolved.` for every channel it held, which shows what to declare.
+- `RpcConnectionHandler` takes an options object (`RpcConnectionHandlerOptions`) as its third argument; a proxy factory constructor passed there is still accepted.
+- The Electron main process keeps the environment of the GUI application. Main-process code that spawns the user's tools has to resolve the `PATH` itself, for example with `@theia/electron/shared/fix-path`, which stays available.
+- The backend applies all variables of the login shell, not only `PATH`, as VS Code does. Variables that the login shell does not define are left as they are.
+- Backend code that spawns processes on its own before any frontend connects, for example in `BackendApplicationContribution.onStart()`, has to await `ShellEnvironmentServer.whenResolved()` (`@theia/core/lib/common/shell-environment`) before spawning, as the headless plugin host does. Code that serves the requests of a held service needs no change.
+- `EnvVariablesServerImpl` reads `process.env` on every request instead of a snapshot taken when it was created, so that the login shell environment is reported; its `envs` field is a getter now, and `getValue` answers from it like `getVariables`. The service is not held, as the frontend needs the configuration directory to start, so a frontend that asks for a variable before the login shell has answered gets the environment of the GUI application; it used to get the `fix-path`-ed `PATH` at any time. The `${env:...}` variable of `@theia/variable-resolver` waits for the login shell before it reads, so that a task or launch configuration started early does not pass the `PATH` of the GUI application to its process. A frontend service of your own that passes variables to a process should await `ShellEnvironmentServer.whenResolved()` likewise; the frontend proxy is bound in Electron applications only, so inject it `@optional()`.
+- The login shell runs with `THEIA_RESOLVING_ENVIRONMENT=1` in its environment, which dotfiles can check to skip prompts or programs that would keep the shell from exiting. A shell that does not answer within the new `application.shellEnvironmentResolutionTimeout` preference, 10 seconds by default, is killed, the environment is left as it is, and the user is notified. The preference takes effect at the next start.
+
 ### v1.77.0
 
 #### TypeScript 6.0 [#18100](https://github.com/eclipse-theia/theia/pull/18100)
@@ -481,7 +499,7 @@ The PR makes preferences support available in the backend. Only default and user
 use Theia types (for example for scopes) and a straight-forward extension of standard IJSONSchema for properties. This means schemas from VS Code (contributed) must be converted to Theia format.
 - PrefenceSchemaService separates between adding a schema and registering a default override for a property. Also, the service uses explicit override identifiers instead of encoding the override in the preference key. The service strictly distinguishes between preference schema and the derived JSON Schema for preference files. `JSONValue` is used instead of `any` where applicable. Schema properties must be added before overrides are registered.
 `PreferenceSchemaService` now has the concept of`validScopes`. In the backend, only`Default` and `User` can be used. As a consequence, a preference provider for a particular preference scope might not be bound. Do not inject a preference provider with `@inject(PreferenceProvider) @named(<preference scope>)`, inject and use `PreferenceProviderProvider` instead.
-- `PreferenceContribution` now has a `initSchema()` method in addition to the declarative Schema contribution. It is used to register overrides.  
+- `PreferenceContribution` now has a `initSchema()` method in addition to the declarative Schema contribution. It is used to register overrides.
 
 ### v1.62.0
 

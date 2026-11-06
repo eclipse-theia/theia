@@ -38,7 +38,8 @@ export default new ContainerModule(bind => {
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler(workspacePath, () =>
-            ctx.container.get(WorkspaceServer)
+            ctx.container.get(WorkspaceServer),
+            { independentOfShellEnvironment: true }
         )
     ).inSingletonScope();
     bindWorkspacePreferences(bind);

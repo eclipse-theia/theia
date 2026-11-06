@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as chai from 'chai';
-import { RpcProxyFactory, RpcProxy } from './proxy-factory.js';
+import { RpcConnectionHandler, RpcProxyFactory, RpcProxy } from './proxy-factory.js';
 import { ChannelPipe } from '../message-rpc/channel.spec.js';
 
 const expect = chai.expect;
@@ -106,3 +106,19 @@ function getSetup(): {
         serverProxy
     };
 }
+
+describe('RpcConnectionHandler', () => {
+    it('is held until the shell environment is resolved unless declared independent of it', () => {
+        const held = new RpcConnectionHandler('/services/held', () => new TestServer());
+        expect(held.independentOfShellEnvironment).to.be.false;
+        const independent = new RpcConnectionHandler('/services/independent', () => new TestServer(), { independentOfShellEnvironment: true });
+        expect(independent.independentOfShellEnvironment).to.be.true;
+    });
+
+    it('takes the proxy factory constructor from the options or, as before, as the third argument', () => {
+        class CustomFactory extends RpcProxyFactory<TestServer> { }
+        expect(new RpcConnectionHandler('/services/a', () => new TestServer()).factoryConstructor).to.equal(RpcProxyFactory);
+        expect(new RpcConnectionHandler('/services/b', () => new TestServer(), CustomFactory).factoryConstructor).to.equal(CustomFactory);
+        expect(new RpcConnectionHandler('/services/c', () => new TestServer(), { factoryConstructor: CustomFactory }).factoryConstructor).to.equal(CustomFactory);
+    });
+});

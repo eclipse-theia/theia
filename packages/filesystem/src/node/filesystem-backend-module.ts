@@ -62,7 +62,7 @@ export default new ContainerModule(bind => {
             server.setClient(client);
             client.onDidCloseConnection(() => server.dispose());
             return server;
-        }, RemoteFileSystemProxyFactory)
+        }, { factoryConstructor: RemoteFileSystemProxyFactory, independentOfShellEnvironment: true })
     ).inSingletonScope();
     bind(NodeFileUploadService).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(NodeFileUploadService);

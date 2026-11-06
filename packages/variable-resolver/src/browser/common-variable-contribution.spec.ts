@@ -25,6 +25,8 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { isCancelled } from '@theia/core/lib/common/cancellation';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
+import { Deferred, wait } from '@theia/core/lib/common/promise-util';
+import { ShellEnvironmentResolution, ShellEnvironmentServer } from '@theia/core/lib/common/shell-environment';
 import { QuickInputService } from '@theia/core/lib/common/quick-pick-service';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Container } from '@theia/core/shared/inversify';
@@ -65,17 +67,24 @@ describe('CommonVariableContribution', () => {
     let variables: VariableRegistry;
     let input: sinon.SinonStub;
     let showQuickPick: sinon.SinonStub;
+    let getValue: sinon.SinonStub;
 
-    beforeEach(async () => {
+    /** Registers the variables, with the login shell environment service of an Electron frontend if given. */
+    const setup = async (shellEnvironment?: Partial<ShellEnvironmentServer>): Promise<void> => {
         const container = new Container();
         container.bind(ILogger).to(MockLogger);
         input = sinon.stub().resolves('task-argument');
         showQuickPick = sinon.stub();
+        getValue = sinon.stub().resolves({ name: 'PATH', value: '/usr/bin' });
         const inputs = [promptInput, pickInput];
 
         container.bind<Partial<EnvVariablesServer>>(EnvVariablesServer).toConstantValue({
-            getExecPath: async () => ''
+            getExecPath: async () => '',
+            getValue
         });
+        if (shellEnvironment) {
+            container.bind<Partial<ShellEnvironmentServer>>(ShellEnvironmentServer).toConstantValue(shellEnvironment);
+        }
         container.bind<Partial<CommandService>>(CommandService).toConstantValue({});
         container.bind<Partial<PreferenceService>>(PreferenceService).toConstantValue({
             get: sinon.stub().returns({ inputs })
@@ -93,6 +102,26 @@ describe('CommonVariableContribution', () => {
 
         variables = container.get(VariableRegistry);
         await container.get(CommonVariableContribution).registerVariables(variables);
+    };
+
+    beforeEach(() => setup());
+
+    it('reads an environment variable at once where the login shell environment is not resolved', async () => {
+        expect(await variables.getVariable('env')?.resolve(workspace, 'PATH')).to.equal('/usr/bin');
+        sinon.assert.calledOnceWithExactly(getValue, 'PATH');
+    });
+
+    it('waits for the environment of the login shell before reading a variable', async () => {
+        const resolution = new Deferred<ShellEnvironmentResolution>();
+        await setup({ whenResolved: () => resolution.promise });
+
+        const resolving = variables.getVariable('env')?.resolve(workspace, 'PATH');
+        await wait(0);
+        sinon.assert.notCalled(getValue);
+
+        resolution.resolve({ status: 'applied' });
+        expect(await resolving).to.equal('/usr/bin');
+        sinon.assert.calledOnceWithExactly(getValue, 'PATH');
     });
 
     it('keeps promptString inputs open when focus is lost', async () => {

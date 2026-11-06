@@ -26,10 +26,15 @@ import { BackendApplicationPath } from '../backend-application.js';
 import { BackendApplicationConfigProvider } from '../backend-application-config-provider.js';
 import { ILogger } from '../../common/logger.js';
 
+/**
+ * Serves the environment variables of the backend process.
+ *
+ * The variables are read from `process.env` on every request rather than captured once, because the backend
+ * completes its environment with that of the user's login shell after it has started, see `ShellEnvironmentServer`.
+ */
 @injectable()
 export class EnvVariablesServerImpl implements EnvVariablesServer {
 
-    protected readonly envs: { [key: string]: EnvVariable } = {};
     protected readonly homeDirUri = FileUri.create(homedir()).toString();
     protected readonly configDirUri: Promise<string>;
     protected readonly pathExistenceCache: { [key: string]: boolean } = {};
@@ -40,14 +45,19 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
     constructor() {
         this.configDirUri = this.createConfigDirUri();
         this.configDirUri.then(configDirUri => this.logger.info(`Configuration directory URI: '${configDirUri}'`));
-        const prEnv = process.env;
-        Object.keys(prEnv).forEach((key: string) => {
-            let keyName = key;
-            if (isWindows) {
-                keyName = key.toLowerCase();
-            }
-            this.envs[keyName] = { 'name': keyName, 'value': prEnv[key] };
-        });
+    }
+
+    /**
+     * The variables of `process.env` as of now, keyed by name, which is lower-cased on Windows.
+     * Both `getVariables` and `getValue` answer from it.
+     */
+    protected get envs(): { [key: string]: EnvVariable } {
+        const envs: { [key: string]: EnvVariable } = {};
+        for (const [key, value] of Object.entries(process.env)) {
+            const name = isWindows ? key.toLowerCase() : key;
+            envs[name] = { name, value };
+        }
+        return envs;
     }
 
     protected async createConfigDirUri(): Promise<string> {
@@ -78,14 +88,12 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
     }
 
     async getVariables(): Promise<EnvVariable[]> {
-        return Object.keys(this.envs).map(key => this.envs[key]);
+        return Object.values(this.envs);
     }
 
     async getValue(key: string): Promise<EnvVariable | undefined> {
-        if (isWindows) {
-            key = key.toLowerCase();
-        }
-        return this.envs[key];
+        // `process.env` is case-insensitive on Windows, where the name is reported in lower case as in `getVariables`.
+        return this.envs[isWindows ? key.toLowerCase() : key];
     }
 
     getConfigDirUri(): Promise<string> {
