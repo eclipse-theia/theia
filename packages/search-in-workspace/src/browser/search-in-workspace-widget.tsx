@@ -269,7 +269,6 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         }
         if (showReplaceField) {
             this.showReplaceField = true;
-            this.resultTreeWidget.showReplaceButtons = true;
             // Only jump to the replace field if term is not empty
             this.pendingReplaceFocus = term !== '';
         }
@@ -394,7 +393,9 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     }
 
     /**
-     * Called after every commit of the search header
+     * Called after every commit of the search header.
+     * This relies on the ref callback in `renderSearchHeader` being a new function on each render,
+     * so React re-invokes it on every commit. Do not replace it with a stable callback.
      */
     protected onSearchHeaderRendered(element: HTMLDivElement | null): void {
         if (element) {
