@@ -122,7 +122,7 @@ export interface DataBreakpointVariableSource {
     variable: string;
 }
 
-export const enum DataBreakpointSourceType {
+export enum DataBreakpointSourceType {
     Variable,
     Address,
 }

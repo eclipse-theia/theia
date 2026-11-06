@@ -254,7 +254,7 @@ export class BatchingChannel implements Channel {
     }
 }
 
-export const enum MsgPackExtensionTag {
+export enum MsgPackExtensionTag {
     Uri = 2,
     // eslint-disable-next-line @typescript-eslint/no-shadow
     Range = 3,

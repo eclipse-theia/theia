@@ -103,7 +103,7 @@ export class LiveDiff implements Disposable {
     }
 }
 
-export const enum LiveDiffState {
+export enum LiveDiffState {
     Initializing,
     UpToDate,
     Updating,

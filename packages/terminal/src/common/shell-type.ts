@@ -23,7 +23,7 @@ import * as path from 'path';
  *--------------------------------------------------------------------------------------------*/
 // code copied and modified from https://github.com/microsoft/vscode/blob/1.99.0/src/vs/platform/terminal/common/terminal.ts#L135-L155
 
-export const enum GeneralShellType {
+export enum GeneralShellType {
     Bash = 'bash',
     Csh = 'csh',
     Fish = 'fish',
@@ -37,7 +37,7 @@ export const enum GeneralShellType {
     Zsh = 'zsh',
 }
 
-export const enum WindowsShellType {
+export enum WindowsShellType {
     CommandPrompt = 'cmd',
     GitBash = 'gitbash',
     Wsl = 'wsl'
