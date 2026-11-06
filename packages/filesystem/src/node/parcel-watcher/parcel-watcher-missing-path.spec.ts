@@ -140,6 +140,12 @@ describe('parcel-filesystem-watcher missing path handling', function (): void {
     it('does not report a creation for a watched file that already exists', async () => {
         const file = root.resolve('settings.json');
         fs.writeFileSync(FileUri.fsPath(file), '{ "breadcrumbs.enabled": false }');
+        if (process.platform === 'darwin') {
+            // FSEvents delivers events with a delay, so a stream that is created right after the
+            // write still receives it. Let it settle first: this test is about the synthetic
+            // creation, which must not be reported for a path that existed all along.
+            await sleep(1000);
+        }
 
         await service.watchFileChanges(0, file.toString());
         // Allow more than one poll interval so a synthetic event would have been delivered by now.
