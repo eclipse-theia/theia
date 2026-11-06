@@ -19,6 +19,7 @@ let disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
 
 import { MessageLoop } from '@lumino/messaging';
+import { Signal } from '@lumino/signaling';
 import { VirtualDOM } from '@lumino/virtualdom';
 import { TabBar, Title, Widget } from '@lumino/widgets';
 import { BreadcrumbsRenderer } from '../breadcrumbs/breadcrumbs-renderer.js';
@@ -399,6 +400,117 @@ describe('ScrollableTabBar pinned tabs', () => {
         const n = tabBar.titles.length;
         expect(zIndex(2)).to.equal(n);
         expect(zIndex(0)).to.be.lessThan(n);
+    });
+
+    // simulate a drag like lumino's pointer drag does: move the title directly, then emit `tabMoved`
+    const simulateDrag = (tabBar: ScrollableTabBar, title: Title<Widget>, fromIndex: number, toIndex: number): void => {
+        const titles = (tabBar as unknown as { _titles: Title<Widget>[] })._titles;
+        titles.splice(toIndex, 0, titles.splice(fromIndex, 1)[0]);
+        (tabBar.tabMoved as Signal<ScrollableTabBar, TabBar.ITabMovedArgs<Widget>>).emit({ fromIndex, toIndex, title });
+    };
+
+    // simulate a native drag like the dock panel does: `insertTab` (clamped to the group
+    // edge in shrink mode), then emit `tabMoved` with the index the tab was dropped at
+    const simulateNativeDrag = (tabBar: ScrollableTabBar, title: Title<Widget>, fromIndex: number, toIndex: number): void => {
+        tabBar.insertTab(toIndex, title);
+        (tabBar.tabMoved as Signal<ScrollableTabBar, TabBar.ITabMovedArgs<Widget>>).emit({ fromIndex, toIndex, title });
+    };
+
+    it('pins an unpinned tab dropped in front of the pinned tabs in shrink mode', () => {
+        const tabBar = createRenderedTabBar();
+        tabBar.insertTab(0, createTitle('p1', true));
+        tabBar.insertTab(1, createTitle('p2', true));
+        const u1 = createTitle('u1');
+        tabBar.insertTab(2, u1);
+        tabBar.pinnedTabSizingMode = 'shrink';
+        simulateDrag(tabBar, u1, 2, 0);
+        expect(isPinned(u1)).to.be.true;
+        expect(u1.closable).to.be.false;
+        expect(labels(tabBar)).to.deep.equal(['u1', 'p1', 'p2']);
+    });
+
+    it('pins an unpinned tab at the drop position within the pinned group', () => {
+        const tabBar = createRenderedTabBar();
+        tabBar.insertTab(0, createTitle('p1', true));
+        tabBar.insertTab(1, createTitle('p2', true));
+        tabBar.insertTab(2, createTitle('p3', true));
+        const u1 = createTitle('u1');
+        tabBar.insertTab(3, u1);
+        tabBar.pinnedTabSizingMode = 'shrink';
+        simulateNativeDrag(tabBar, u1, 3, 1); // dropped between p1 and p2
+        expect(isPinned(u1)).to.be.true;
+        expect(labels(tabBar)).to.deep.equal(['p1', 'u1', 'p2', 'p3']);
+    });
+
+    it('does not pin an unpinned tab dropped behind the pinned tabs in shrink mode', () => {
+        const tabBar = createRenderedTabBar();
+        tabBar.insertTab(0, createTitle('p1', true));
+        tabBar.insertTab(1, createTitle('p2', true));
+        tabBar.insertTab(2, createTitle('u1'));
+        const u2 = createTitle('u2');
+        tabBar.insertTab(3, u2);
+        tabBar.pinnedTabSizingMode = 'shrink';
+        simulateDrag(tabBar, u2, 3, 2); // right behind the pinned group
+        expect(isPinned(u2)).to.be.false;
+    });
+
+    it('pins an unpinned tab dropped in front of pinned tabs when shrink mode is disabled', () => {
+        const tabBar = createRenderedTabBar();
+        tabBar.insertTab(0, createTitle('p1', true));
+        const u1 = createTitle('u1');
+        tabBar.insertTab(1, u1);
+        tabBar.pinnedTabSizingMode = 'normal';
+        simulateDrag(tabBar, u1, 1, 0);
+        expect(isPinned(u1)).to.be.true;
+        expect(labels(tabBar)).to.deep.equal(['u1', 'p1']);
+    });
+
+    it('unpins a pinned tab dragged out of the pinned group in shrink mode', () => {
+        const tabBar = createRenderedTabBar();
+        const p1 = createTitle('p1', true);
+        tabBar.insertTab(0, p1);
+        tabBar.insertTab(1, createTitle('p2', true));
+        tabBar.insertTab(2, createTitle('u1'));
+        tabBar.pinnedTabSizingMode = 'shrink';
+        simulateDrag(tabBar, p1, 0, 2); // behind u1, outside the pinned group
+        expect(isPinned(p1)).to.be.false;
+        expect(p1.closable).to.be.true;
+        expect(labels(tabBar)).to.deep.equal(['p2', 'u1', 'p1']);
+    });
+
+    it('unpins a pinned tab at the drop position in the unpinned group', () => {
+        const tabBar = createRenderedTabBar();
+        const p1 = createTitle('p1', true);
+        tabBar.insertTab(0, p1);
+        tabBar.insertTab(1, createTitle('p2', true));
+        tabBar.insertTab(2, createTitle('u1'));
+        tabBar.insertTab(3, createTitle('u2'));
+        tabBar.pinnedTabSizingMode = 'shrink';
+        simulateNativeDrag(tabBar, p1, 0, 3); // dropped between u1 and u2
+        expect(isPinned(p1)).to.be.false;
+        expect(labels(tabBar)).to.deep.equal(['p2', 'u1', 'u2', 'p1']);
+    });
+
+    it('keeps a pinned tab pinned when it is dragged within the pinned group', () => {
+        const tabBar = createRenderedTabBar();
+        tabBar.insertTab(0, createTitle('p1', true));
+        const p2 = createTitle('p2', true);
+        tabBar.insertTab(1, p2);
+        tabBar.insertTab(2, createTitle('u1'));
+        tabBar.pinnedTabSizingMode = 'shrink';
+        simulateDrag(tabBar, p2, 1, 0);
+        expect(isPinned(p2)).to.be.true;
+    });
+
+    it('unpins a pinned tab dragged out of the pinned group when shrink mode is disabled', () => {
+        const tabBar = createRenderedTabBar();
+        const p1 = createTitle('p1', true);
+        tabBar.insertTab(0, p1);
+        tabBar.insertTab(1, createTitle('u1'));
+        tabBar.pinnedTabSizingMode = 'normal';
+        simulateDrag(tabBar, p1, 0, 1);
+        expect(isPinned(p1)).to.be.false;
+        expect(labels(tabBar)).to.deep.equal(['u1', 'p1']);
     });
 
     it('suspends pinned tab transitions only for the first frame of a drag', async () => {

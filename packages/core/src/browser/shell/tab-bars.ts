@@ -31,7 +31,7 @@ import { IconThemeService } from '../icon-theme-service.js';
 import { BreadcrumbsRenderer, BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer.js';
 import { NavigatableWidget } from '../navigatable-types.js';
 import { Drag } from '@lumino/dragdrop';
-import { isPinned, LOCKED_CLASS, PINNED_CLASS } from '../widgets/widget.js';
+import { isPinned, LOCKED_CLASS, PINNED_CLASS, pin, unpin } from '../widgets/widget.js';
 import { CoreConfiguration, CorePreferences } from '../../common/core-preferences.js';
 import { HoverService } from '../hover-service.js';
 import { Root, createRoot } from 'react-dom/client';
@@ -784,6 +784,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
     constructor(options?: TabBar.IOptions<Widget>, protected readonly scrollbarOptions?: PerfectScrollbar.Options, dynamicTabOptions?: ScrollableTabBar.Options) {
         super(options);
         this._dynamicTabOptions = dynamicTabOptions;
+        this.tabMoved.connect(this.onTabMoved, this);
         this.node.style.setProperty(PINNED_TAB_SIZE_PROPERTY, `${ScrollableTabBar.DEFAULT_PINNED_TAB_SIZE}px`);
         this.topRow = document.createElement('div');
         this.topRow.classList.add('theia-tabBar-tab-row');
@@ -875,6 +876,24 @@ export class ScrollableTabBar extends TabBar<Widget> {
             return Math.max(0, Math.min(index, pinnedCount - (moved ? 1 : 0)));
         }
         return Math.max(index, pinnedCount);
+    }
+
+    /**
+     * Keep the pinned group consistent when tabs are dragged: an
+     * unpinned tab dropped in front of the pinned tabs is pinned, and a pinned tab
+     * dragged out of the pinned group is unpinned.
+     */
+    protected onTabMoved(sender: TabBar<Widget>, args: TabBar.ITabMovedArgs<Widget>): void {
+        const title = args.title;
+        const pinnedCount = this.titles.filter(t => isPinned(t)).length;
+        if (isPinned(title) && args.toIndex >= pinnedCount) {
+            unpin(title);
+        } else if (!isPinned(title) && args.toIndex < pinnedCount) {
+            pin(title);
+        } else {
+            return;
+        }
+        this.insertTab(args.toIndex, title);
     }
 
     /**
