@@ -17,7 +17,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from 'inversify';
-import { ProcessUtils } from './process-utils.js';
+import { ProcessUtils, UnixProcessInfo } from './process-utils.js';
 import { ILogger } from '../common/index.js';
 import { MockLogger } from '../common/test/mock-logger.js';
 
@@ -31,6 +31,11 @@ const mockPsOutput = `\
      2     5
      0     1
 `;
+
+/** PID, PPID, PGID, start time */
+function processTable(rows: [number, number, number, string][]): Map<number, UnixProcessInfo> {
+    return new Map(rows.map(([pid, ppid, pgid, startTime]) => [pid, { pid, ppid, pgid, startTime }]));
+}
 
 describe('ProcessUtils', () => {
 
@@ -52,24 +57,93 @@ describe('ProcessUtils', () => {
     });
 
     describe('#unixTerminateChildProcessTrees', () => {
+        const delay = 2000;
+        let clock: sinon.SinonFakeTimers;
         let killStub: sinon.SinonStub;
+        let alivePids: Set<number>;
+        let processes: Map<number, UnixProcessInfo>;
+
+        function sigtermedPids(): number[] {
+            return killStub.args.filter(([, signal]) => signal === undefined).map(([pid]) => pid);
+        }
+
+        function sigkilledPids(): number[] {
+            return killStub.args.filter(([, signal]) => signal === 'SIGKILL').map(([pid]) => pid);
+        }
 
         beforeEach(() => {
-            coreProcessManager['execFile'] = async () => ({ stdout: mockPsOutput, stderr: '' });
+            clock = sinon.useFakeTimers();
             killStub = sinon.stub();
             coreProcessManager['unixKill'] = killStub;
+            // The tree of mockPsOutput under PID 2: 40, 5 and their children 7, 6.
+            processes = processTable([
+                [2, 1, 2, 'Thu Oct 29 10:00:00 2026'],
+                [40, 2, 2, 'Thu Oct 29 10:00:01 2026'],
+                [5, 2, 2, 'Thu Oct 29 10:00:01 2026'],
+                [7, 40, 2, 'Thu Oct 29 10:00:02 2026'],
+                [6, 5, 2, 'Thu Oct 29 10:00:02 2026'],
+                [3, 1, 3, 'Thu Oct 29 10:00:00 2026']
+            ]);
+            coreProcessManager['unixListProcesses'] = () => processes;
+            coreProcessManager['unixListProcessesAsync'] = async () => processes;
+            alivePids = new Set([40, 5, 6, 7]);
+            coreProcessManager['unixIsAlive'] = (pid: number) => alivePids.has(pid);
         });
 
         afterEach(() => {
+            clock.restore();
             sinon.restore();
         });
 
         it('kills all descendants but not the process itself', async () => {
+            alivePids.clear();
             await coreProcessManager['unixTerminateChildProcessTrees'](2);
-            expect(killStub.args.map(([pid]) => pid)).members([40, 5, 6, 7]);
+            expect(sigtermedPids()).members([40, 5, 6, 7]);
+            expect(sigkilledPids()).to.be.empty;
+        });
+
+        it('kills the descendants that are still running with SIGKILL after the delay', async () => {
+            let resolved = false;
+            const terminated = coreProcessManager['unixTerminateChildProcessTrees'](2).then(() => resolved = true);
+            await clock.tickAsync(0);
+            expect(sigtermedPids()).members([40, 5, 6, 7]);
+            alivePids.delete(40);
+            alivePids.delete(5);
+
+            await clock.tickAsync(delay - 1);
+            expect(sigkilledPids()).to.be.empty;
+            expect(resolved).to.be.false;
+            await clock.tickAsync(1);
+            await terminated;
+            expect(sigkilledPids()).members([6, 7]);
+        });
+
+        it('kills the processes of an earlier tree that are still running, even if they are no longer descendants', async () => {
+            // 424244 was a child of 424243, which has exited since: it was reparented and is no longer in the tree of 2.
+            processes.set(424243, { pid: 424243, ppid: 2, pgid: 424243, startTime: 'Thu Oct 29 10:00:03 2026' });
+            processes.set(424244, { pid: 424244, ppid: 424243, pgid: 424243, startTime: 'Thu Oct 29 10:00:04 2026' });
+            coreProcessManager['unixTerminateProcessTree'](424243);
+            processes.delete(424243);
+            processes.set(424244, { pid: 424244, ppid: 1, pgid: 424243, startTime: 'Thu Oct 29 10:00:04 2026' });
+            alivePids = new Set([424244]);
+
+            const terminated = coreProcessManager['unixTerminateChildProcessTrees'](2);
+            await clock.tickAsync(delay);
+            await terminated;
+            expect(sigkilledPids()).members([424244]);
+        });
+
+        it('only sends SIGTERM when the start times cannot be listed', async () => {
+            coreProcessManager['unixListProcessesAsync'] = async () => { throw new Error('ps: bad -o argument'); };
+            coreProcessManager['execFile'] = async () => ({ stdout: mockPsOutput, stderr: '' });
+            await coreProcessManager['unixTerminateChildProcessTrees'](2);
+            expect(sigtermedPids()).members([40, 5, 6, 7]);
+            await clock.tickAsync(delay);
+            expect(sigkilledPids()).to.be.empty;
         });
 
         it('rejects when the processes cannot be listed', async () => {
+            coreProcessManager['unixListProcessesAsync'] = async () => { throw new Error('ps not found'); };
             coreProcessManager['execFile'] = async () => { throw new Error('ps not found'); };
             let error: unknown;
             await coreProcessManager['unixTerminateChildProcessTrees'](2).catch(e => error = e);
@@ -97,8 +171,8 @@ describe('ProcessUtils', () => {
             // One child plus the parent; report the parent as its own group leader so the `kill(-ppid)` branch runs too.
             coreProcessManager['unixGetChildrenRecursive'] = () => new Set([424242]);
             coreProcessManager['unixGetPGID'] = (pid: number) => pid;
-            // Without start times, the processes are not killed with SIGKILL later.
-            coreProcessManager['unixGetStartTimes'] = () => new Map();
+            // Without a listing of the processes, they are not killed with SIGKILL later.
+            coreProcessManager['unixTryListProcesses'] = () => undefined;
         });
 
         afterEach(() => {
@@ -131,7 +205,9 @@ describe('ProcessUtils', () => {
         let clock: sinon.SinonFakeTimers;
         let killStub: sinon.SinonStub;
         let alivePids: Set<number>;
-        let startTimesStub: sinon.SinonStub;
+        let processes: Map<number, UnixProcessInfo>;
+        let listStub: sinon.SinonStub;
+        let listAsyncStub: sinon.SinonStub;
 
         function sigkilledPids(): number[] {
             return killStub.args.filter(([, signal]) => signal === 'SIGKILL').map(([pid]) => pid);
@@ -141,17 +217,22 @@ describe('ProcessUtils', () => {
             clock = sinon.useFakeTimers();
             killStub = sinon.stub();
             coreProcessManager['unixKill'] = killStub;
-            coreProcessManager['unixGetChildrenRecursive'] = () => new Set([424244, 424245]);
-            coreProcessManager['unixGetPGID'] = () => 1;
-            alivePids = new Set([424243, 424244, 424245]);
+            coreProcessManager['unixGetChildrenRecursive'] = () => expect.fail('the tree should come from the listing');
+            coreProcessManager['unixGetPGID'] = () => expect.fail('the group should come from the listing');
+            // 424243 leads a group; 424246 is a member of that group that was reparented to init.
+            processes = processTable([
+                [424243, 1000, 424243, 'Thu Oct 29 10:00:00 2026'],
+                [424244, 424243, 424243, 'Thu Oct 29 10:00:01 2026'],
+                [424245, 424244, 424243, 'Thu Oct 29 10:00:01 2026'],
+                [424246, 1, 424243, 'Thu Oct 29 10:00:02 2026'],
+                [424247, 1, 424247, 'Thu Oct 29 10:00:02 2026']
+            ]);
+            listStub = sinon.stub().callsFake(() => processes);
+            listAsyncStub = sinon.stub().callsFake(async () => processes);
+            coreProcessManager['unixListProcesses'] = listStub;
+            coreProcessManager['unixListProcessesAsync'] = listAsyncStub;
+            alivePids = new Set([424243, 424244, 424245, 424246, 424247]);
             coreProcessManager['unixIsAlive'] = (pid: number) => alivePids.has(pid);
-            startTimesStub = sinon.stub();
-            startTimesStub.returns(new Map([
-                [424243, 'Thu Oct 29 10:00:00 2026'],
-                [424244, 'Thu Oct 29 10:00:01 2026'],
-                [424245, 'Thu Oct 29 10:00:01 2026']
-            ]));
-            coreProcessManager['unixGetStartTimes'] = startTimesStub;
         });
 
         afterEach(() => {
@@ -159,64 +240,66 @@ describe('ProcessUtils', () => {
             sinon.restore();
         });
 
-        it('kills the processes that are still running with SIGKILL after the delay', () => {
+        it('kills the processes of the tree and of its group that are still running with SIGKILL after the delay', async () => {
             coreProcessManager['unixTerminateProcessTree'](424243);
-            expect(killStub.args.map(([pid]) => pid)).members([424243, 424244, 424245]);
+            expect(listStub.calledOnce).to.be.true;
+            expect(killStub.args.map(([pid]) => pid)).members([424244, 424245, -424243, 424243]);
             expect(sigkilledPids()).to.be.empty;
 
             alivePids.delete(424243);
-            clock.tick(delay - 1);
+            await clock.tickAsync(delay - 1);
             expect(sigkilledPids()).to.be.empty;
-            clock.tick(1);
-            expect(sigkilledPids()).members([424244, 424245]);
+            await clock.tickAsync(1);
+            expect(sigkilledPids()).members([424244, 424245, 424246]);
         });
 
-        it('spares a PID that a new process has taken since the tree was terminated', () => {
+        it('spares a PID that a new process has taken since the tree was terminated', async () => {
             coreProcessManager['unixTerminateProcessTree'](424243);
-            startTimesStub.returns(new Map([
-                [424243, 'Thu Oct 29 10:00:00 2026'],
-                [424244, 'Thu Oct 29 10:00:01 2026'],
-                [424245, 'Thu Oct 29 10:00:04 2026']
-            ]));
-            clock.tick(delay);
-            expect(sigkilledPids()).members([424243, 424244]);
+            processes = new Map(processes);
+            processes.set(424245, { pid: 424245, ppid: 1, pgid: 424245, startTime: 'Thu Oct 29 10:00:04 2026' });
+            await clock.tickAsync(delay);
+            expect(sigkilledPids()).members([424243, 424244, 424246]);
         });
 
-        it('does not list the processes again when all of them have exited', () => {
+        it('does not list the processes again when all of them have exited', async () => {
             coreProcessManager['unixTerminateProcessTree'](424243);
             alivePids.clear();
-            clock.tick(delay);
-            expect(startTimesStub.calledOnce).to.be.true;
+            await clock.tickAsync(delay);
+            expect(listAsyncStub.called).to.be.false;
             expect(sigkilledPids()).to.be.empty;
         });
 
-        it('only sends SIGTERM when the start times cannot be listed', () => {
+        it('only sends SIGTERM when the processes cannot be listed', async () => {
             const mockLogger = (coreProcessManager as unknown as { logger: ILogger }).logger;
             const warnStub = sinon.stub(mockLogger, 'warn');
-            startTimesStub.throws(new Error('ps: lstart: keyword not found'));
+            listStub.throws(new Error('ps: bad -o argument'));
+            coreProcessManager['unixGetChildrenRecursive'] = () => new Set([424244, 424245]);
+            coreProcessManager['unixGetPGID'] = () => 1;
             expect(() => coreProcessManager['unixTerminateProcessTree'](424243)).to.not.throw();
             expect(killStub.args.map(([pid]) => pid)).members([424243, 424244, 424245]);
             expect(warnStub.called).to.be.true;
-            clock.tick(delay);
+            await clock.tickAsync(delay);
             expect(sigkilledPids()).to.be.empty;
         });
 
-        it('does not kill the tree of the current process with SIGKILL', () => {
+        it('does not kill the tree of the current process with SIGKILL', async () => {
+            coreProcessManager['unixGetChildrenRecursive'] = () => new Set();
+            coreProcessManager['unixGetPGID'] = () => 1;
             coreProcessManager['unixTerminateProcessTree'](process.pid);
-            clock.tick(delay);
-            expect(startTimesStub.called).to.be.false;
+            await clock.tickAsync(delay);
+            expect(listStub.called).to.be.false;
             expect(sigkilledPids()).to.be.empty;
         });
     });
 
-    it('ProcessUtils#unixParseStartTimes', () => {
-        const startTimes = coreProcessManager['unixParseStartTimes'](`\
-    1 Thu Oct 29 09:58:12 2026
-42424 Thu Oct 29 10:00:01 2026
+    it('ProcessUtils#unixParseProcesses', () => {
+        const processes = coreProcessManager['unixParseProcesses'](`\
+    1     0     1 Thu Oct 29 09:58:12 2026
+42424     1 42424 Thu Oct 29 10:00:01 2026
 `);
-        expect(Array.from(startTimes.entries())).to.deep.equal([
-            [1, 'Thu Oct 29 09:58:12 2026'],
-            [42424, 'Thu Oct 29 10:00:01 2026']
+        expect(Array.from(processes.values())).to.deep.equal([
+            { pid: 1, ppid: 0, pgid: 1, startTime: 'Thu Oct 29 09:58:12 2026' },
+            { pid: 42424, ppid: 1, pgid: 42424, startTime: 'Thu Oct 29 10:00:01 2026' }
         ]);
     });
 

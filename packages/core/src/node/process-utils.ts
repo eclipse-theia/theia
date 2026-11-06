@@ -30,6 +30,47 @@ const WIN_LIST_CHILDREN_TIMEOUT_MS = 5000;
 const WIN_LIST_CHILDREN_OPTIONS = { windowsHide: true, timeout: WIN_LIST_CHILDREN_TIMEOUT_MS };
 
 /**
+ * The arguments of `ps` that list all processes with their parent, process group and start time.
+ * `lstart` goes last, as it contains spaces.
+ */
+const UNIX_LIST_PROCESSES_ARGS = ['-A', '-o', 'pid=,ppid=,pgid=,lstart='];
+
+/**
+ * How long to wait for `ps` to list all processes before giving up, in milliseconds.
+ */
+const UNIX_LIST_PROCESSES_TIMEOUT_MS = 2000;
+
+/**
+ * How often to check whether processes that were sent `SIGTERM` have exited, in milliseconds.
+ */
+const UNIX_FORCE_KILL_POLL_INTERVAL_MS = 100;
+
+/**
+ * A process as listed by `ps`.
+ */
+export interface UnixProcessInfo {
+    pid: number;
+    ppid: number;
+    pgid: number;
+    /**
+     * As printed by `ps`. Only meant to be compared with another listing, to tell a process apart from a later
+     * one with the same PID.
+     */
+    startTime: string;
+}
+
+/**
+ * A process that was sent `SIGTERM` and is killed with `SIGKILL` if it is still running at its deadline.
+ */
+export interface UnixForceKillTarget {
+    startTime: string;
+    /**
+     * In milliseconds since the epoch.
+     */
+    deadline: number;
+}
+
+/**
  * `@theia/core` service with some process-related utilities.
  */
 @injectable()
@@ -43,6 +84,19 @@ export class ProcessUtils {
      * in milliseconds, see {@link unixTerminateProcessTree}.
      */
     protected readonly unixForceKillDelay: number = 5000;
+
+    /**
+     * How long {@link terminateChildProcessTrees} waits for processes to exit after `SIGTERM` before it kills
+     * them with `SIGKILL`, in milliseconds. It is shorter than {@link unixForceKillDelay}, as it delays the exit
+     * of the current process.
+     */
+    protected readonly unixChildProcessTreesForceKillDelay: number = 2000;
+
+    /**
+     * The processes that were sent `SIGTERM` and are to be killed with `SIGKILL` if they are still running
+     * at their deadline, by PID.
+     */
+    protected readonly unixForceKillTargets = new Map<number, UnixForceKillTarget>();
 
     /**
      * Kills the given process together with all of its descendants.
@@ -61,7 +115,8 @@ export class ProcessUtils {
 
     /**
      * Kills all of the descendants of the given process, but not the process itself, without blocking
-     * the event loop.
+     * the event loop. On Unix, it resolves once the processes have exited, or have been killed with `SIGKILL`
+     * after {@link unixChildProcessTreesForceKillDelay}.
      *
      * @throws if the descendants of the process cannot be listed
      */
@@ -182,59 +237,140 @@ export class ProcessUtils {
     }
 
     /**
-     * Sends `SIGTERM` to the given process and its descendants. Unless the given process is the current
-     * one, whose tree is only terminated when it exits, the processes of the tree that are still running
-     * after {@link unixForceKillDelay} are then killed with `SIGKILL`.
+     * Sends `SIGTERM` to the given process, its descendants and, if it leads a process group, the members of
+     * its group. Unless the given process is the current one, whose tree is only terminated when it exits,
+     * the processes that are still running {@link unixForceKillDelay} later are then killed with `SIGKILL`,
+     * if the current process is still running by then, see {@link unixTerminateChildProcessTrees}.
      */
     protected unixTerminateProcessTree(ppid: number): void {
-        // Listed before the tree, so that a PID reused in between does not match its start time.
-        const startTimes = ppid === process.pid ? undefined : this.unixTryGetStartTimes();
-        const descendants = this.unixGetChildrenRecursive(ppid);
+        const processes = ppid === process.pid ? undefined : this.unixTryListProcesses();
+        if (!processes) {
+            this.unixSendSigterm(ppid, this.unixGetChildrenRecursive(ppid), ppid === this.unixGetPGID(ppid));
+            return;
+        }
+        const isGroupLeader = processes.get(ppid)?.pgid === ppid;
+        const descendants = this.unixGetDescendants(processes, ppid);
+        this.unixSendSigterm(ppid, descendants, isGroupLeader);
+        const groupMembers = isGroupLeader ? this.unixGetGroupMembers(processes, ppid) : [];
+        this.unixAddForceKillTargets(processes, [ppid, ...descendants, ...groupMembers], Date.now() + this.unixForceKillDelay);
+        setTimeout(() => this.unixForceKillDueTargets(), this.unixForceKillDelay).unref();
+    }
+
+    protected unixSendSigterm(ppid: number, descendants: Iterable<number>, isGroupLeader: boolean): void {
         for (const pid of descendants) {
             // Prevent killing the current process:
             if (pid !== process.pid) {
                 this.unixKill(pid);
             }
         }
-        if (ppid === this.unixGetPGID(ppid)) {
+        if (isGroupLeader) {
             // When a process pgid === pid this means the the process is a group leader.
             // We can then kill every process part of its group by doing `kill(-pgid)`.
             // This can catch leaked processes under `init` that are still part of the group.
             this.unixKill(-ppid);
         }
         this.unixKill(ppid);
-        if (startTimes) {
-            const tree = [ppid, ...descendants].filter(pid => pid !== process.pid && startTimes.has(pid));
-            this.unixScheduleForceKill(tree, startTimes);
+    }
+
+    /**
+     * Sends `SIGTERM` to the descendants of the given process. The ones that are still running after
+     * {@link unixChildProcessTreesForceKillDelay} are killed with `SIGKILL`, together with the processes
+     * of earlier calls of {@link unixTerminateProcessTree} that are still running.
+     */
+    protected async unixTerminateChildProcessTrees(ppid: number): Promise<void> {
+        let processes: Map<number, UnixProcessInfo>;
+        try {
+            processes = await this.unixListProcessesAsync();
+        } catch (error) {
+            this.logger.warn('Failed to list the start times of processes, child processes will only be sent SIGTERM', error);
+            const { stdout } = await this.execFile('ps', ['ax', '-o', 'ppid=,pid=']);
+            this.unixSendSigtermToAll(this.unixParseChildrenRecursive(stdout, ppid));
+            return;
+        }
+        const descendants = this.unixGetDescendants(processes, ppid);
+        this.unixSendSigtermToAll(descendants);
+        const deadline = Date.now() + this.unixChildProcessTreesForceKillDelay;
+        this.unixAddForceKillTargets(processes, descendants, deadline);
+        for (const target of this.unixForceKillTargets.values()) {
+            target.deadline = Math.min(target.deadline, deadline);
+        }
+        await this.unixWaitForForceKillTargets(deadline);
+        await this.unixForceKillDueTargets();
+    }
+
+    protected unixSendSigtermToAll(pids: Iterable<number>): void {
+        for (const pid of pids) {
+            // Prevent killing the current process:
+            if (pid !== process.pid) {
+                this.unixKill(pid);
+            }
         }
     }
 
     /**
-     * Kills the given processes with `SIGKILL` after {@link unixForceKillDelay}, except for those that have
-     * exited by then. A PID whose start time differs from `startTimes` belongs to a new process and is left alone.
-     * The timer does not keep the current process alive.
+     * Records the given processes as {@link unixForceKillTargets}, except for the current process. A process
+     * that is already recorded keeps its earlier deadline.
      */
-    protected unixScheduleForceKill(pids: number[], startTimes: Map<number, string>): void {
-        if (pids.length === 0) {
+    protected unixAddForceKillTargets(processes: Map<number, UnixProcessInfo>, pids: Iterable<number>, deadline: number): void {
+        for (const pid of pids) {
+            const info = processes.get(pid);
+            if (pid === process.pid || !info) {
+                continue;
+            }
+            const existing = this.unixForceKillTargets.get(pid);
+            if (existing?.startTime === info.startTime && existing.deadline <= deadline) {
+                continue;
+            }
+            this.unixForceKillTargets.set(pid, { startTime: info.startTime, deadline });
+        }
+    }
+
+    /**
+     * Waits until all of the {@link unixForceKillTargets} have exited, or until the given deadline.
+     */
+    protected async unixWaitForForceKillTargets(deadline: number): Promise<void> {
+        for (; ;) {
+            for (const pid of this.unixForceKillTargets.keys()) {
+                if (!this.unixIsAlive(pid)) {
+                    this.unixForceKillTargets.delete(pid);
+                }
+            }
+            const remaining = deadline - Date.now();
+            if (this.unixForceKillTargets.size === 0 || remaining <= 0) {
+                return;
+            }
+            await new Promise(resolve => setTimeout(resolve, Math.min(remaining, UNIX_FORCE_KILL_POLL_INTERVAL_MS)));
+        }
+    }
+
+    /**
+     * Kills the {@link unixForceKillTargets} whose deadline has passed with `SIGKILL`, if they are still running
+     * and their PID has not been reused since. Never rejects.
+     */
+    protected async unixForceKillDueTargets(): Promise<void> {
+        const now = Date.now();
+        const due = new Map<number, UnixForceKillTarget>();
+        for (const [pid, target] of this.unixForceKillTargets) {
+            if (target.deadline <= now) {
+                due.set(pid, target);
+                this.unixForceKillTargets.delete(pid);
+            }
+        }
+        const survivors = Array.from(due.keys()).filter(pid => this.unixIsAlive(pid));
+        if (survivors.length === 0) {
             return;
         }
-        setTimeout(() => {
-            try {
-                const survivors = pids.filter(pid => this.unixIsAlive(pid));
-                if (survivors.length === 0) {
-                    return;
+        try {
+            const processes = await this.unixListProcessesAsync();
+            for (const pid of survivors) {
+                if (processes.get(pid)?.startTime === due.get(pid)!.startTime) {
+                    this.logger.warn(`[${pid}] still running after SIGTERM, killing it with SIGKILL`);
+                    this.unixKill(pid, 'SIGKILL');
                 }
-                const currentStartTimes = this.unixGetStartTimes();
-                for (const pid of survivors) {
-                    if (currentStartTimes.get(pid) === startTimes.get(pid)) {
-                        this.logger.warn(`[${pid}] still running ${this.unixForceKillDelay}ms after SIGTERM, killing it with SIGKILL`);
-                        this.unixKill(pid, 'SIGKILL');
-                    }
-                }
-            } catch (error) {
-                this.logger.error('Failed to kill the remaining processes of a process tree', error);
             }
-        }, this.unixForceKillDelay).unref();
+        } catch (error) {
+            this.logger.error('Failed to kill the remaining processes of a process tree', error);
+        }
     }
 
     protected unixIsAlive(pid: number): boolean {
@@ -247,12 +383,35 @@ export class ProcessUtils {
     }
 
     /**
-     * @returns the start times of all processes, see {@link unixGetStartTimes}, or `undefined` if they
-     * cannot be listed
+     * @returns the PIDs of all of the descendants of the given process
      */
-    protected unixTryGetStartTimes(): Map<number, string> | undefined {
+    protected unixGetDescendants(processes: Map<number, UnixProcessInfo>, ppid: number): Set<number> {
+        const descendants = new Set<number>();
+        let size; do {
+            size = descendants.size;
+            for (const info of processes.values()) {
+                if (info.ppid === ppid || descendants.has(info.ppid)) {
+                    descendants.add(info.pid);
+                }
+            }
+        } while (size !== descendants.size);
+        descendants.delete(ppid);
+        return descendants;
+    }
+
+    /**
+     * @returns the PIDs of the members of the given process group, including those that were reparented
+     */
+    protected unixGetGroupMembers(processes: Map<number, UnixProcessInfo>, pgid: number): number[] {
+        return Array.from(processes.values()).filter(info => info.pgid === pgid).map(info => info.pid);
+    }
+
+    /**
+     * @returns all processes, see {@link unixListProcesses}, or `undefined` if they cannot be listed
+     */
+    protected unixTryListProcesses(): Map<number, UnixProcessInfo> | undefined {
         try {
-            return this.unixGetStartTimes();
+            return this.unixListProcesses();
         } catch (error) {
             this.logger.warn('Failed to list the start times of processes, a process tree will only be sent SIGTERM', error);
             return undefined;
@@ -260,37 +419,39 @@ export class ProcessUtils {
     }
 
     /**
-     * @returns the start time of every process by PID, as printed by `ps`, which tells a process apart from
-     * a later one with the same PID. The values are only meant to be compared with each other.
+     * @returns all processes by PID, from a single run of `ps`
      */
-    protected unixGetStartTimes(): Map<number, string> {
-        // A fixed locale and time zone keep the output of `lstart` comparable across calls.
-        const { stdout } = this.spawnSync('ps', ['-A', '-o', 'pid=,lstart='], { env: { ...process.env, LC_ALL: 'C', TZ: 'UTC' } });
-        return this.unixParseStartTimes(stdout);
+    protected unixListProcesses(): Map<number, UnixProcessInfo> {
+        const { stdout } = this.spawnSync('ps', UNIX_LIST_PROCESSES_ARGS, this.unixListProcessesOptions());
+        return this.unixParseProcesses(stdout);
     }
 
     /**
-     * @param psOutput the output of `ps -A -o pid=,lstart=`
+     * @returns all processes by PID, from a single run of `ps`, without blocking the event loop
      */
-    protected unixParseStartTimes(psOutput: string): Map<number, string> {
-        const startTimes = new Map<number, string>();
-        for (const line of psOutput.split('\n')) {
-            const match = line.trim().match(/^(\d+)\s+(.+)$/);
-            if (match) {
-                startTimes.set(Number.parseInt(match[1], 10), match[2]);
-            }
-        }
-        return startTimes;
+    protected async unixListProcessesAsync(): Promise<Map<number, UnixProcessInfo>> {
+        const { stdout } = await this.execFile('ps', UNIX_LIST_PROCESSES_ARGS, this.unixListProcessesOptions());
+        return this.unixParseProcesses(stdout);
     }
 
-    protected async unixTerminateChildProcessTrees(ppid: number): Promise<void> {
-        const { stdout } = await this.execFile('ps', ['ax', '-o', 'ppid=,pid=']);
-        for (const pid of this.unixParseChildrenRecursive(stdout, ppid)) {
-            // Prevent killing the current process:
-            if (pid !== process.pid) {
-                this.unixKill(pid);
+    protected unixListProcessesOptions(): cp.SpawnSyncOptions & cp.ExecFileOptions {
+        // A fixed locale and time zone keep the output of `lstart` comparable across runs.
+        return { env: { ...process.env, LC_ALL: 'C', TZ: 'UTC' }, timeout: UNIX_LIST_PROCESSES_TIMEOUT_MS };
+    }
+
+    /**
+     * @param psOutput the output of `ps` with {@link UNIX_LIST_PROCESSES_ARGS}
+     */
+    protected unixParseProcesses(psOutput: string): Map<number, UnixProcessInfo> {
+        const processes = new Map<number, UnixProcessInfo>();
+        for (const line of psOutput.split('\n')) {
+            const match = line.trim().match(/^(\d+)\s+(\d+)\s+(\d+)\s+(.+)$/);
+            if (match) {
+                const pid = Number.parseInt(match[1], 10);
+                processes.set(pid, { pid, ppid: Number.parseInt(match[2], 10), pgid: Number.parseInt(match[3], 10), startTime: match[4] });
             }
         }
+        return processes;
     }
 
     protected unixKill(pid: number, signal?: NodeJS.Signals): void {
