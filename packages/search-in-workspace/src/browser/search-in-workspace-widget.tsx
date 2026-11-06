@@ -74,6 +74,8 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     private refsAreSet = new Deferred();
 
+    protected pendingReplaceFocus = false;
+
     protected _showReplaceField = false;
     protected get showReplaceField(): boolean {
         return this._showReplaceField;
@@ -267,6 +269,9 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         }
         if (showReplaceField) {
             this.showReplaceField = true;
+            this.resultTreeWidget.showReplaceButtons = true;
+            // Only jump to the replace field if term is not empty
+            this.pendingReplaceFocus = term !== '';
         }
         this.refresh();
     }
@@ -360,6 +365,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     protected override onAfterHide(msg: Message): void {
         super.onAfterHide(msg);
+        this.pendingReplaceFocus = false;
         this.contextKeyService.searchViewletVisible.set(false);
     }
 
@@ -377,10 +383,32 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         }
     }
 
+    protected focusReplaceField(): boolean {
+        const textarea = this.replaceRef.current?.textarea.current;
+        if (textarea?.checkVisibility()) {
+            textarea.focus();
+            textarea.select();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Called after every commit of the search header
+     */
+    protected onSearchHeaderRendered(element: HTMLDivElement | null): void {
+        if (element) {
+            this.refsAreSet.resolve();
+            if (this.pendingReplaceFocus && this.focusReplaceField()) {
+                this.pendingReplaceFocus = false;
+            }
+        }
+    }
+
     protected renderSearchHeader(): React.ReactNode {
         const searchAndReplaceContainer = this.renderSearchAndReplace();
         const searchDetails = this.renderSearchDetails();
-        return <div ref={() => this.refsAreSet.resolve()}>{searchAndReplaceContainer}{searchDetails}</div>;
+        return <div ref={element => this.onSearchHeaderRendered(element)}>{searchAndReplaceContainer}{searchDetails}</div>;
     }
 
     protected renderSearchAndReplace(): React.ReactNode {
@@ -409,6 +437,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
                 }
                 this.showReplaceField = !this.showReplaceField;
                 this.resultTreeWidget.showReplaceButtons = this.showReplaceField;
+                this.pendingReplaceFocus = false;
                 this.update();
             }}>
             {toggle}
