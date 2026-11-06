@@ -3,6 +3,7 @@ Thank you for your Pull Request. Please provide a description and review
 the requirements below.
 
 Contributors guide: https://github.com/theia-ide/theia/blob/master/CONTRIBUTING.md
+Review flow: https://github.com/eclipse-theia/theia/blob/master/doc/pull-requests.md#review-flow
 
 Note: Security vulnerabilities should not be disclosed on GitHub, through a PR or any
 other means. See SECURITY.md at the root of this repository, to learn how to report
@@ -19,7 +20,7 @@ vulnerabilities.
 
 #### Follow-ups
 
-<!-- Please list potential follow-up work, including known issues, possible future work, identified technical debt, and potentially introduced technical debt. If the PR introduces technical debt, specify the reason why this is acceptable. Please create tickets and link them here. Please use the label "technical debt" for new issues when it applies. -->
+<!-- Please list potential follow-up work, including known issues, possible future work, identified technical debt, and potentially introduced technical debt. If the PR introduces technical debt, specify the reason why this is acceptable. -->
 
 #### Breaking changes
 
@@ -34,7 +35,6 @@ vulnerabilities.
 #### Review checklist
 
 - [ ] As an author, I have thoroughly tested my changes and carefully followed [the review guidelines](https://github.com/theia-ide/theia/blob/master/doc/pull-requests.md#requesting-a-review)
-- [ ] User-facing text is internationalized using the `nls` service (for details, please see the [Internationalization/Localization section](https://github.com/theia-ide/theia/blob/master/doc/coding-guidelines.md#internationalizationlocalization) in the Coding Guidelines)
 
 #### Reminder for reviewers
 

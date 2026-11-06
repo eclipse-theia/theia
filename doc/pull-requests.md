@@ -6,6 +6,7 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 
 - [**Opening a Pull Request**](#opening-a-pull-request)
 - [**Requesting a Review**](#requesting-a-review)
+- [**Review Flow**](#review-flow)
 - [**Review Checklist**](#review-checklist)
 - [**Reviewing**](#reviewing)
 - [**Landing**](#landing)
@@ -27,6 +28,7 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 - [3.](#design-review) A PR can be opened early for the design review before going into the detailed implementation.
   - A request on the design review should be an explicit comment.
   - Such PR should be marked as a draft or with the WIP prefix.
+  - Drafts get no automatic [AI review](#review-flow).
 
 <a name="fixups"></a>
 
@@ -46,11 +48,194 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
   - [The PR template](#pr-template) is filled in.
   - Changes are thoroughly tested by an author.
   - Changes thoroughly reviewed following the [review checklist](#review-checklist) by an author.
-<a name="review-request-gh"></a>
-- [2.](#review-request-gh) A review can be requested explicitly [using GitHub](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/requesting-a-pull-request-review).
-<a name="review-request-comment"></a>
-- [3.](#review-request-comment) A review can be also requested as a comment from any GitHub users.
-  - For example to invite the person who originally filed an issue for testing.
+<a name="review-request-open"></a>
+- [2.](#review-request-open) Any open non-draft PR is considered to be a request for review.
+
+## Review Flow
+
+AI powered tools may support the review. They run automatically on PRs of committers who opted in, and maintainers can request them on demand for PRs of external contributors. Without an AI review, the PR continues with the review of a maintainer.
+
+The flow depends on the author. External contributors are authors without write access to the repository.
+
+<a name="flow-roles"></a>
+
+- [1.](#flow-roles) The flow has these roles:
+  - Author: Opens the PR and addresses findings and requested changes
+  - PR steward: Takes care of the PR and moves it through the flow. The role is not well defined yet. At the moment, committers take it on voluntarily.
+  - AI review: An AI agent that reviews the PR, e.g. [EclipseSourceAI](https://github.com/EclipseSourceAI)
+  - Maintainer: Reviews and approves the PR
+<a name="ai-review-findings"></a>
+- [2.](#ai-review-findings) The author fixes or answers each AI finding. Answered findings do not block the AI approval. Maintainers settle them during their review.
+<a name="ai-review-rounds"></a>
+- [3.](#ai-review-rounds) Without an AI approval after multiple rounds, the PR steward decides how to continue.
+<a name="ai-review-approval"></a>
+- [4.](#ai-review-approval) The AI review approves once each finding is fixed or answered. The approval ends the AI review and does not count for merging. The PR steward then requests a review from a maintainer. On committer PRs, the author may do that too.
+<a name="ai-review-secondary"></a>
+- [5.](#ai-review-secondary) After fixes for requested changes, a maintainer may request a secondary AI review before the next human review. On committer PRs, the author may request it too.
+<a name="follow-up-issues"></a>
+- [6.](#follow-up-issues) After the merge, the PR steward creates issues for the `Follow-ups` of the PR description and for [out of scope changes](#changes-no-out-of-scope) that have no issue yet.
+
+In the diagrams below, purple marks AI steps and green marks human steps.
+
+### Committer Flow
+
+<a name="flow-committer"></a>
+
+- [1.](#flow-committer) Committers opt in to the AI review. It then starts automatically when they open a non-draft PR. To skip it, they open a draft PR.
+<a name="flow-committer-rereview"></a>
+- [2.](#flow-committer-rereview) The author re-requests the AI review after fixing or answering the findings.
+<a name="flow-committer-review-request"></a>
+- [3.](#flow-committer-review-request) The author may request a review from a maintainer or wait for the PR steward to do it.
+<a name="flow-committer-merge"></a>
+- [4.](#flow-committer-merge) The author merges after the approval of a maintainer, see [merging](#merging-pr).
+<a name="flow-committer-consultation"></a>
+- [5.](#flow-committer-consultation) Substantial behavior changes need reviews from maintainers of several organizations, see [review consultation](#review-consultation).
+
+```mermaid
+sequenceDiagram
+    actor A as Committer
+    participant AI as AI review
+    actor S as PR steward
+    actor R as Maintainer
+    opt Optional AI review
+        rect rgba(139, 92, 246, 0.18)
+            A->>AI: Open PR
+            loop Until no open findings
+                AI->>A: Findings
+                A->>AI: Fixes and answers, re-request
+            end
+            AI->>S: Approve when no findings are open
+        end
+    end
+    rect rgba(16, 185, 129, 0.18)
+        alt Committer
+            A->>R: Request review
+        else PR steward
+            S->>R: Request review
+        end
+    end
+    loop While changes are requested
+        rect rgba(16, 185, 129, 0.18)
+            R->>A: Changes requested
+            A->>A: Fixes
+        end
+        opt Optional secondary AI review
+            rect rgba(139, 92, 246, 0.18)
+                alt Committer
+                    A->>AI: Request review
+                else Maintainer
+                    R->>AI: Request review
+                else PR steward
+                    S->>AI: Request review
+                end
+                loop Until no open findings
+                    AI->>A: Findings
+                    A->>AI: Fixes and answers, re-request
+                end
+                AI->>A: Approve when no findings are open
+            end
+        end
+        rect rgba(16, 185, 129, 0.18)
+            A->>R: Re-request review
+        end
+    end
+    rect rgba(16, 185, 129, 0.18)
+        R->>A: Approve with comment
+        A->>A: Merge
+        opt Follow-ups exist
+            S->>S: Create follow-up issues
+        end
+    end
+```
+
+### External Contributor Flow
+
+<a name="flow-external-welcome"></a>
+
+- [1.](#flow-external-welcome) A GitHub Action welcomes the author with a summary of this flow. For first-time contributors, a second comment lists failed basic checks, i.e. a missing [ECA](https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#eclipse-contributor-agreement), lint errors, several CI failures or an incomplete [PR template](#pr-template), until they pass.
+<a name="flow-external-classification"></a>
+- [2.](#flow-external-classification) The PR steward approves pending CI runs before or with the high level classification. The classification is one comment on the approach, no line comments:
+  - Go: The steward requests the AI review or, if it is skipped, a review from a maintainer
+  - Major changes: The author reworks the PR and comments when done. The steward then classifies it again.
+  - No-go: The steward closes the PR with a reason, see [closing](#closing-pr-reasons)
+<a name="flow-external-ai-review"></a>
+- [3.](#flow-external-ai-review) The author fixes or answers the AI findings and comments on the PR when done. The PR steward then requests the next AI review round.
+<a name="flow-external-merge"></a>
+- [4.](#flow-external-merge) A committer of the author's organization or, if none is available, the approving maintainer merges the PR, see [merging](#merging-pr).
+
+```mermaid
+sequenceDiagram
+    actor C as External contributor
+    participant GH as GitHub Action
+    actor S as PR steward
+    participant AI as AI review
+    actor R as Maintainer
+    rect rgba(16, 185, 129, 0.18)
+        C->>S: Open PR
+    end
+    GH->>C: Welcome comment explaining the flow
+    opt First-time contributor with failed basic checks
+        GH->>C: What to fix, e.g. sign the ECA, fix CI failures, fill in the PR template
+    end
+    rect rgba(16, 185, 129, 0.18)
+        S->>S: High level classification
+    end
+    alt No-go
+        rect rgba(16, 185, 129, 0.18)
+            S->>C: Close with a reason
+        end
+    else Major changes needed
+        rect rgba(16, 185, 129, 0.18)
+            S->>C: Request major changes
+            C->>C: Major changes
+            C->>S: Done, back to the high level classification
+        end
+    else Go
+        opt Optional AI review
+            rect rgba(139, 92, 246, 0.18)
+                loop Until no open findings
+                    S->>AI: Request review
+                    AI->>C: Findings
+                    C->>S: Fixes and answers, comment when done
+                end
+                AI->>S: Approve when no findings are open
+            end
+        end
+        rect rgba(16, 185, 129, 0.18)
+            S->>R: Request review
+        end
+        loop While changes are requested
+            rect rgba(16, 185, 129, 0.18)
+                R->>C: Changes requested
+                C->>C: Fixes
+            end
+            opt Optional secondary AI review
+                rect rgba(139, 92, 246, 0.18)
+                    loop Until no open findings
+                        alt Maintainer
+                            R->>AI: Request review
+                        else PR steward
+                            S->>AI: Request review
+                        end
+                        AI->>C: Findings
+                        C->>C: Fixes and answers, comment when done
+                    end
+                    AI->>C: Approve when no findings are open
+                end
+            end
+            rect rgba(16, 185, 129, 0.18)
+                C->>R: Re-request review
+            end
+        end
+        rect rgba(16, 185, 129, 0.18)
+            R->>C: Approve with comment
+            R->>R: Merge
+            opt Follow-ups exist
+                S->>S: Create follow-up issues
+            end
+        end
+    end
+```
 
 ## Review Checklist
 
@@ -73,15 +258,13 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
   - If red: it most likely mean you need to create a CQ.
 <a name="checklist-copyright"></a>
 - [6.](#checklist-copyright) Each new file has proper copyright with the current year and the name of contributing entity (individual or company).
-<a name="checklist-sign-off"></a>
-- [7.](#checklist-sign-off) Commits are signed-off: <https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#sign-your-work>.
 <a name="checklist-meaningful-commits"></a>
-- [8.](#checklist-meaningful-commits) Each commit has meaningful title and a body that explains what it does. One can take inspiration from the `What it does` section from the PR.
+- [7.](#checklist-meaningful-commits) Each commit has meaningful title and a body that explains what it does. One can take inspiration from the `What it does` section from the PR.
 <a name="checklist-commit-history"></a>
-- [9.](#checklist-commit-history) Commit history is rebased on master and contains only meaningful commits and changes (less are usually better).
+- [8.](#checklist-commit-history) Commit history is rebased on master and contains only meaningful commits and changes (less are usually better).
   - For example, use `git pull -r` or `git fetch && git rebase` to pick up changes from the master.
 <a name="checklist-i18n"></a>
-- [10.](#checklist-i18n) User-facing text is internationalized using the `nls` service.
+- [9.](#checklist-i18n) User-facing text is internationalized using the `nls` service.
   - For details, please see the [Internationalization/Localization section](./coding-guidelines.md#internationalizationlocalization) in the Coding Guidelines.
 
 ## Reviewing
@@ -109,6 +292,7 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 <a name="changes-no-out-of-scope"></a>
 - [3.](#changes-no-out-of-scope) Changes cannot be requested if they address issues out of the scope of a PR.
   - Such change requests should be dismissed and an issue should be filed to address them separately.
+  - This also applies to AI findings. The PR steward files the issues, see [follow-up issues](#follow-up-issues).
 <a name="changes-style-agreement"></a>
 - [4.](#changes-style-agreement) Styles and coding preferences should not be discussed on the PR, but raised in [the dev meeting](https://github.com/eclipse-theia/theia/wiki/Dev-Meetings),
   agreed by the team, applied to [the coding guidelines](coding-guidelines.md) and after that followed by all contributors.
@@ -122,6 +306,8 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 - [2.](#dismissing-approve) An approval without a comment should be dismissed.
 <a name="approval-finality"></a>
 - [3.](#approval-finality) Approval of a PR implies that the reviewer is prepared to merge the PR. A reviewer should only approve a pull request that they are prepared to merge it. If a PR is under review by multiple reviewers, reviewers who are not satisfied with the state of the PR should block its merge, for example by marking their review 'request changes'.
+<a name="ai-approval-not-sufficient"></a>
+- [4.](#ai-approval-not-sufficient) An [AI approval](#ai-review-approval) is not sufficient. A maintainer has to approve the PR.
 
 ### Collaborating
 
@@ -145,7 +331,7 @@ provided that the original author accepted the [ECA](https://github.com/eclipse-
 - [1.](#landing-pr) A PR can be landed when:
   - CI build has succeeded.
   - The author has accepted the [Eclipse Contributor Agreement](https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#eclipse-contributor-agreement).
-  - All checks from [the review checklist](#review-checklist) are approved by at least one reviewer.
+  - All checks from [the review checklist](#review-checklist) are approved by at least one reviewer. The [AI approval](#ai-review-approval) does not count.
   - There are no unresolved review comments.
 <a name="merging-pr"></a>
 - [2.](#merging-pr) Pull requests satisfying the criteria above should be merged in a timely fashion to avoid a buildup of approved PR's at release time. Responsibility for merging a PR falls to

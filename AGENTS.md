@@ -146,3 +146,11 @@ When implementing browser-side services that need to read files from user-config
 4. Document that users should configure paths within their workspace or config directory
 
 **Reference implementation:** `packages/ai-core/src/browser/skill-service.ts` and `packages/ai-core/src/browser/frontend-prompt-customization-service.ts`
+
+## Reviewing Pull Requests
+
+Reviews of pull requests follow [the pull request rules](doc/pull-requests.md):
+
+- Check the PR against the [review checklist](doc/pull-requests.md#review-checklist)
+- Do not report personal preferences or style questions, see [here](doc/pull-requests.md#changes-no-nit)
+- Report issues outside the scope of the PR as follow-ups. They need no fix in the PR and do not block the [AI approval](doc/pull-requests.md#ai-review-approval).
