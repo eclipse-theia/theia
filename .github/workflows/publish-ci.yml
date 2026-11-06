@@ -22,6 +22,11 @@ on:
         required: true
         type: boolean
         default: false
+      dry_run:
+        description: 'Dry run: do not publish, only bump the versions with lerna and open the package-update PR as a draft on a separate branch. Use this to test the PR creation. Not available for "next".'
+        required: true
+        type: boolean
+        default: false
   schedule:
     - cron: "0 0 * * 1-5" # Publish next version (default) every weekday at midnight
 
@@ -33,6 +38,7 @@ jobs:
     env:
       RELEASE_TYPE: ${{ inputs.release_type || 'next' }}
       IS_PATCH_TO_PREVIOUS: ${{ inputs.is_patch_to_previous || false }}
+      DRY_RUN: ${{ inputs.dry_run || false }}
       # GCC before 13 (ubuntu-22.04 ships 11 and 12) cannot compile the V8 headers of Electron 44
       CC: clang-15
       CXX: clang++-15
@@ -42,6 +48,10 @@ jobs:
         run: |
           if [[ "${{ env.IS_PATCH_TO_PREVIOUS }}" == "true" && "${{ env.RELEASE_TYPE }}" != "patch" ]]; then
             echo "Error: When 'is_patch_to_previous' is enabled, release_type must be 'patch'"
+            exit 1
+          fi
+          if [[ "${{ env.DRY_RUN }}" == "true" && "${{ env.RELEASE_TYPE }}" == "next" ]]; then
+            echo "Error: A dry run only tests the package-update PR, which 'next' does not open"
             exit 1
           fi
           echo "Input validation passed"
@@ -85,7 +95,7 @@ jobs:
         id: publish-latest
         continue-on-error: true
         # We only publish minor or patch releases for the current version as latest, never for older patches or next versions.
-        if: ${{ (env.RELEASE_TYPE == 'patch' || env.RELEASE_TYPE == 'minor') && env.IS_PATCH_TO_PREVIOUS == 'false' }}
+        if: ${{ env.DRY_RUN == 'false' && (env.RELEASE_TYPE == 'patch' || env.RELEASE_TYPE == 'minor') && env.IS_PATCH_TO_PREVIOUS == 'false' }}
         shell: bash
         run: |
           npm run publish:latest -- ${{ env.RELEASE_TYPE }} --summary-file lerna-publish-summary.json 2>&1 | tee -a "$RUNNER_TEMP/lerna-publish.log"
@@ -97,7 +107,7 @@ jobs:
       - name: Publish to NPM (Patch - To Previous Version)
         id: publish-patch
         continue-on-error: true
-        if: ${{ env.RELEASE_TYPE == 'patch' && env.IS_PATCH_TO_PREVIOUS == 'true' }}
+        if: ${{ env.DRY_RUN == 'false' && env.RELEASE_TYPE == 'patch' && env.IS_PATCH_TO_PREVIOUS == 'true' }}
         shell: bash
         run: |
           npm run publish:patch -- ${{ env.RELEASE_TYPE }} --summary-file lerna-publish-summary.json 2>&1 | tee -a "$RUNNER_TEMP/lerna-publish.log"
@@ -117,6 +127,13 @@ jobs:
           if [ -f lerna-publish-summary.json ]; then mv lerna-publish-summary.json "$RUNNER_TEMP/"; fi
         env:
           NPM_CONFIG_PROVENANCE: "true"
+
+      # Leaves lerna.json and package-lock.json bumped like a publish does, which the PR step builds on
+      - name: Bump versions (Dry Run)
+        id: dry-run
+        if: ${{ env.DRY_RUN == 'true' }}
+        shell: bash
+        run: npx lerna version ${{ env.RELEASE_TYPE }} --exact --force-publish --no-git-tag-version --no-push --yes
 
       # `npm publish --provenance` signs every package with Sigstore before uploading it. When the
       # transparency log answers slowly, the signing repeats its request, and if the first one got
@@ -147,7 +164,7 @@ jobs:
       # Also runs when the publish failed part way, e.g. on a Sigstore error: every version the
       # registry accepted is final, so the version bump in the PR is right either way.
       - name: Submit PR for package updates
-        if: ${{ !cancelled() && env.RELEASE_TYPE != 'next' && (steps.publish-latest.outcome != 'skipped' || steps.publish-patch.outcome != 'skipped') }}
+        if: ${{ !cancelled() && env.RELEASE_TYPE != 'next' && (steps.publish-latest.outcome != 'skipped' || steps.publish-patch.outcome != 'skipped' || steps.dry-run.outcome == 'success') }}
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -155,7 +172,7 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           # A version bump is only worth a PR if the registry accepted at least one package of it.
-          if ! grep -qE '(lerna|publish-missing) success published @' "$RUNNER_TEMP/lerna-publish.log"; then
+          if [ "$DRY_RUN" = "false" ] && ! grep -qE '(lerna|publish-missing) success published @' "$RUNNER_TEMP/lerna-publish.log"; then
             echo "::warning::lerna did not publish any package, not submitting a PR for package updates"
             exit 0
           fi
@@ -214,18 +231,30 @@ jobs:
               PR_BODY="${PR_BODY}
             - **The publish failed part way.** Publish the missing packages (see the workflow run) with \`npx lerna publish from-package\` before merging"
             fi
-            
-            # Create a new branch for the PR
+
             BRANCH_NAME="${{ github.ref_name }}-package-updates"
+            PR_TITLE="Release v${VERSION} - Package updates"
+            PR_ARGS=()
+            if [ "$DRY_RUN" = "true" ]; then
+              BRANCH_NAME="${BRANCH_NAME}-dry-run-${{ github.run_id }}"
+              PR_TITLE="[Dry run] ${PR_TITLE}"
+              PR_BODY="**Dry run, nothing was published.** Do not merge, close this PR and delete its branch.
+
+            ${PR_BODY}"
+              PR_ARGS+=(--draft)
+            fi
+
+            # Create a new branch for the PR
             git checkout -b "$BRANCH_NAME"
             git push origin "$BRANCH_NAME"
 
             # Create PR using GitHub CLI
             gh pr create \
-              --title "Release v${VERSION} - Package updates" \
+              --title "$PR_TITLE" \
               --body "$PR_BODY" \
               --base "${{ github.ref_name }}" \
-              --head "$BRANCH_NAME"
+              --head "$BRANCH_NAME" \
+              "${PR_ARGS[@]}"
 
             echo "PR created for branch $BRANCH_NAME"
           else
