@@ -364,6 +364,43 @@ describe('ScrollableTabBar pinned tabs', () => {
         expect(tabs[1].style.getPropertyValue('--theia-pinned-tab-offset')).to.equal('');
     });
 
+    it('stacks sticky pinned tabs above the current unpinned tab', () => {
+        const tabBar = createRenderedTabBar();
+        tabBar.insertTab(0, createTitle('p1', true));
+        tabBar.insertTab(1, createTitle('p2', true));
+        tabBar.insertTab(2, createTitle('u1'));
+        const u2 = createTitle('u2');
+        tabBar.insertTab(3, u2);
+        tabBar.pinnedTabSizingMode = 'shrink';
+        tabBar.currentTitle = u2;
+        MessageLoop.sendMessage(tabBar, Widget.Msg.UpdateRequest);
+        const tabs = Array.from(tabBar.contentNode.children) as HTMLElement[];
+        const zIndex = (index: number): number => Number(tabs[index].style.zIndex);
+        const n = tabBar.titles.length;
+        // the current tab keeps the highest z-index among the unpinned tabs ...
+        expect(zIndex(3)).to.equal(n);
+        // ... but the sticky pinned tabs stack above it, so that the current tab
+        // scrolled underneath them is painted below them
+        expect(zIndex(0)).to.be.greaterThan(n);
+        expect(zIndex(1)).to.be.greaterThan(n);
+    });
+
+    it('keeps the current tab above the pinned tabs when shrink mode is disabled', () => {
+        const tabBar = createRenderedTabBar();
+        tabBar.insertTab(0, createTitle('p1', true));
+        tabBar.insertTab(1, createTitle('u1'));
+        const u2 = createTitle('u2');
+        tabBar.insertTab(2, u2);
+        tabBar.pinnedTabSizingMode = 'normal';
+        tabBar.currentTitle = u2;
+        MessageLoop.sendMessage(tabBar, Widget.Msg.UpdateRequest);
+        const tabs = Array.from(tabBar.contentNode.children) as HTMLElement[];
+        const zIndex = (index: number): number => Number(tabs[index].style.zIndex);
+        const n = tabBar.titles.length;
+        expect(zIndex(2)).to.equal(n);
+        expect(zIndex(0)).to.be.lessThan(n);
+    });
+
     it('suspends pinned tab transitions only for the first frame of a drag', async () => {
         // jsdom has no requestAnimationFrame unless it is polyfilled
         (window as unknown as { requestAnimationFrame?: unknown }).requestAnimationFrame ??=

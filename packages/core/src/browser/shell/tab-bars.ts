@@ -899,6 +899,14 @@ export class ScrollableTabBar extends TabBar<Widget> {
     }
 
     /**
+     * Whether pinned tabs are shrunk and sticky: aligned on the left edge of a
+     * horizontal tab bar, where they must stack above the tabs scrolled underneath them.
+     */
+    protected get pinnedTabsAreSticky(): boolean {
+        return this.pinnedTabSizingMode === 'shrink' && this.orientation === 'horizontal';
+    }
+
+    /**
      * The width of a shrunk pinned tab: the dynamic tab size if configured,
      * otherwise `DEFAULT_PINNED_TAB_SIZE`, applied to the tabs by CSS.
      */
@@ -911,7 +919,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
      * tab bar, or 0 if pinned tabs are not shrunk and sticky.
      */
     protected getPinnedTabsWidth(): number {
-        if (this.pinnedTabSizingMode !== 'shrink' || this.orientation !== 'horizontal') {
+        if (!this.pinnedTabsAreSticky) {
             return 0;
         }
         let pinnedCount = 0;
@@ -1057,10 +1065,12 @@ export class ScrollableTabBar extends TabBar<Widget> {
             this.openTabsContainer.classList.add('lm-mod-hidden');
             this.node.classList.remove('dynamic-tabs');
         }
+        const sticky = this.pinnedTabsAreSticky;
+        const stickyPinnedCount = sticky ? this.titles.filter(t => isPinned(t)).length : 0;
         for (let i = 0, n = this.titles.length; i < n; ++i) {
             const title = this.titles[i];
             const current = title === this.currentTitle;
-            const zIndex = current ? n : n - i - 1;
+            const zIndex = sticky && isPinned(title) ? n + stickyPinnedCount - i : current ? n : n - i - 1;
             const renderData: ScrollableRenderData = { title: title, current: current, zIndex: zIndex };
             if (this.dynamicTabOptions && this.orientation === 'horizontal') {
                 renderData.tabWidth = this.pinnedTabWidth > 0 && isPinned(title)
@@ -1086,7 +1096,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
      * natural position so that they do not overlap.
      */
     protected updatePinnedTabOffsets(): void {
-        const sticky = this.pinnedTabSizingMode === 'shrink' && this.orientation === 'horizontal';
+        const sticky = this.pinnedTabsAreSticky;
         const tabs = this.contentNode.children;
         let pinnedTabIndex = 0;
         for (let i = 0, n = this.titles.length; i < n; ++i) {
