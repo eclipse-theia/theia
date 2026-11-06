@@ -469,7 +469,12 @@ export class PreferenceServiceImpl implements PreferenceService {
         const workspaceFolderValue = this.inspectInScope<T>(preferenceName, PreferenceScope.Folder, resourceUri, overrideIdentifier);
         const sessionValue = this.inspectInScope<T>(preferenceName, PreferenceScope.Session, resourceUri, overrideIdentifier);
 
-        const valueApplied = sessionValue ?? workspaceFolderValue ?? workspaceValue ?? globalValue ?? defaultValue;
+        // null is a valid value, so only undefined falls through to the next scope (matching doResolve, which checks value !== undefined).
+        const valueApplied = sessionValue !== undefined ? sessionValue
+            : workspaceFolderValue !== undefined ? workspaceFolderValue
+            : workspaceValue !== undefined ? workspaceValue
+            : globalValue !== undefined ? globalValue
+            : defaultValue;
 
         return { preferenceName, defaultValue, globalValue, workspaceValue, workspaceFolderValue, sessionValue, value: valueApplied };
     }
