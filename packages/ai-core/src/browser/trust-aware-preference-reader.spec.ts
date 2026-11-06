@@ -23,29 +23,32 @@ import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { PreferenceService } from '@theia/core/lib/common/preferences';
+import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
+import { PreferenceGetOptions, PreferenceScope, PreferenceService, PreferenceUtils } from '@theia/core/lib/common/preferences';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { TrustAwarePreferenceReader } from './trust-aware-preference-reader.js';
 
 disableJSDOM();
 
-interface InspectResult<T> {
-    defaultValue?: T;
-    globalValue?: T;
-    workspaceValue?: T;
-    workspaceFolderValue?: T;
-}
+/** Lowest precedence first, as `PreferenceService` merges them. */
+const SCOPES = [PreferenceScope.Default, PreferenceScope.User, PreferenceScope.Workspace, PreferenceScope.Folder, PreferenceScope.Session];
 
 class StubPreferenceService {
-    inspectResult: InspectResult<unknown> | undefined;
-    effectiveValue: unknown;
+    scopeValues: Partial<Record<PreferenceScope, JSONValue>> = {};
+    readonly excludedScopes: (readonly PreferenceScope[] | undefined)[] = [];
+    readonly resources: (string | undefined)[] = [];
 
-    get<T>(_preferenceName: string, fallback?: T, _resourceUri?: string): T | undefined {
-        return ((this.effectiveValue as T | undefined) ?? fallback);
-    }
-
-    inspect<T>(_preferenceName: string, _resourceUri?: string): InspectResult<T> | undefined {
-        return this.inspectResult as InspectResult<T> | undefined;
+    get<T>(_preferenceName: string, options?: PreferenceGetOptions<T>): T | undefined {
+        this.excludedScopes.push(options?.excludeScopes);
+        this.resources.push(options?.resource);
+        let value: JSONValue | undefined;
+        for (const scope of SCOPES) {
+            const scopeValue = this.scopeValues[scope];
+            if (!options?.excludeScopes?.includes(scope) && scopeValue !== undefined) {
+                value = PreferenceUtils.merge(value, scopeValue);
+            }
+        }
+        return value === undefined ? options?.fallback : value as T;
     }
 }
 
@@ -83,30 +86,27 @@ describe('TrustAwarePreferenceReader', () => {
     });
 
     describe('fail-closed default', () => {
-        it('returns only user/default/fallback before ready resolves', () => {
-            preferences.effectiveValue = 'workspace';
-            preferences.inspectResult = {
-                defaultValue: 'default',
-                globalValue: 'user',
-                workspaceValue: 'workspace'
+        it('leaves out the workspace value before ready resolves', () => {
+            preferences.scopeValues = {
+                [PreferenceScope.Default]: 'default',
+                [PreferenceScope.User]: 'user',
+                [PreferenceScope.Workspace]: 'workspace'
             };
             const value = reader.get<string>(PREFERENCE_NAME, 'fallback');
             expect(value).to.equal('user');
         });
 
         it('returns defaultValue when only workspace value exists before ready', () => {
-            preferences.effectiveValue = 'workspace';
-            preferences.inspectResult = {
-                defaultValue: 'default',
-                workspaceValue: 'workspace'
+            preferences.scopeValues = {
+                [PreferenceScope.Default]: 'default',
+                [PreferenceScope.Workspace]: 'workspace'
             };
             const value = reader.get<string>(PREFERENCE_NAME, 'fallback');
             expect(value).to.equal('default');
         });
 
         it('returns fallback when nothing is set before ready', () => {
-            preferences.effectiveValue = undefined;
-            preferences.inspectResult = {};
+            preferences.scopeValues = {};
             const value = reader.get<string>(PREFERENCE_NAME, 'fallback');
             expect(value).to.equal('fallback');
         });
@@ -119,11 +119,10 @@ describe('TrustAwarePreferenceReader', () => {
         });
 
         it('delegates to preferences.get and returns the workspace value', () => {
-            preferences.effectiveValue = 'workspace';
-            preferences.inspectResult = {
-                defaultValue: 'default',
-                globalValue: 'user',
-                workspaceValue: 'workspace'
+            preferences.scopeValues = {
+                [PreferenceScope.Default]: 'default',
+                [PreferenceScope.User]: 'user',
+                [PreferenceScope.Workspace]: 'workspace'
             };
             const value = reader.get<string>(PREFERENCE_NAME, 'fallback');
             expect(value).to.equal('workspace');
@@ -137,44 +136,82 @@ describe('TrustAwarePreferenceReader', () => {
         });
 
         it('returns globalValue when both global and workspace values exist', () => {
-            preferences.effectiveValue = 'workspace';
-            preferences.inspectResult = {
-                defaultValue: 'default',
-                globalValue: 'user',
-                workspaceValue: 'workspace'
+            preferences.scopeValues = {
+                [PreferenceScope.Default]: 'default',
+                [PreferenceScope.User]: 'user',
+                [PreferenceScope.Workspace]: 'workspace'
             };
             const value = reader.get<string>(PREFERENCE_NAME, 'fallback');
             expect(value).to.equal('user');
         });
 
         it('falls back to defaultValue when only workspace value exists', () => {
-            preferences.effectiveValue = 'workspace';
-            preferences.inspectResult = {
-                defaultValue: 'default',
-                workspaceValue: 'workspace'
+            preferences.scopeValues = {
+                [PreferenceScope.Default]: 'default',
+                [PreferenceScope.Workspace]: 'workspace'
             };
             const value = reader.get<string>(PREFERENCE_NAME, 'fallback');
             expect(value).to.equal('default');
         });
 
         it('returns the supplied fallback when nothing is set', () => {
-            preferences.effectiveValue = undefined;
-            preferences.inspectResult = {};
+            preferences.scopeValues = {};
             const value = reader.get<string>(PREFERENCE_NAME, 'fallback');
             expect(value).to.equal('fallback');
         });
 
         it('merges the user object into the default object, like PreferenceService.get', () => {
-            preferences.inspectResult = {
-                defaultValue: { list: ['a'], mode: 'default', kept: true },
-                globalValue: { list: ['b'], mode: 'user' },
-                workspaceValue: { list: ['c'], mode: 'workspace' }
+            preferences.scopeValues = {
+                [PreferenceScope.Default]: { list: ['a'], mode: 'default', kept: true },
+                [PreferenceScope.User]: { list: ['b'], mode: 'user' },
+                [PreferenceScope.Workspace]: { list: ['c'], mode: 'workspace' }
             };
             const value = reader.get(PREFERENCE_NAME);
             // Nested arrays are concatenated and the user's primitives win, as in the trusted read.
             expect(value).to.deep.equal({ list: ['a', 'b'], mode: 'user', kept: true });
-            // The merge works on a copy: the inspected default stays as it was.
-            expect(preferences.inspectResult.defaultValue).to.deep.equal({ list: ['a'], mode: 'default', kept: true });
+        });
+    });
+
+    describe('scopes', () => {
+        it('leaves out only the workspace and folder scopes while untrusted', async () => {
+            reader.get(PREFERENCE_NAME);
+            trust.trustDeferred.resolve(false);
+            await reader.ready;
+            reader.get(PREFERENCE_NAME);
+
+            expect(preferences.excludedScopes).to.deep.equal([
+                [PreferenceScope.Workspace, PreferenceScope.Folder],
+                [PreferenceScope.Workspace, PreferenceScope.Folder]
+            ]);
+        });
+
+        it('passes no filter when trusted', async () => {
+            trust.trustDeferred.resolve(true);
+            await reader.ready;
+            reader.get(PREFERENCE_NAME);
+
+            expect(preferences.excludedScopes).to.deep.equal([undefined]);
+        });
+
+        it('passes the resource on, trusted or not', async () => {
+            reader.get(PREFERENCE_NAME, undefined, 'file:///folder/a.ts');
+            trust.trustDeferred.resolve(true);
+            await reader.ready;
+            reader.get(PREFERENCE_NAME, undefined, 'file:///folder/b.ts');
+
+            expect(preferences.resources).to.deep.equal(['file:///folder/a.ts', 'file:///folder/b.ts']);
+        });
+
+        it('applies a session value while untrusted', async () => {
+            trust.trustDeferred.resolve(false);
+            await reader.ready;
+            preferences.scopeValues = {
+                [PreferenceScope.User]: 'user',
+                [PreferenceScope.Workspace]: 'workspace',
+                [PreferenceScope.Session]: 'session'
+            };
+
+            expect(reader.get<string>(PREFERENCE_NAME, 'fallback')).to.equal('session');
         });
     });
 
@@ -230,11 +267,10 @@ describe('TrustAwarePreferenceReader', () => {
         });
 
         it('has updated the cached trusted flag by the time listeners run', () => {
-            preferences.effectiveValue = 'workspace';
-            preferences.inspectResult = {
-                defaultValue: 'default',
-                globalValue: 'user',
-                workspaceValue: 'workspace'
+            preferences.scopeValues = {
+                [PreferenceScope.Default]: 'default',
+                [PreferenceScope.User]: 'user',
+                [PreferenceScope.Workspace]: 'workspace'
             };
 
             let observedDuringListener: string | undefined;
@@ -272,11 +308,10 @@ describe('TrustAwarePreferenceReader', () => {
             // be reported as a change event.
             expect(received).to.deep.equal([]);
 
-            preferences.effectiveValue = 'workspace';
-            preferences.inspectResult = {
-                defaultValue: 'default',
-                globalValue: 'user',
-                workspaceValue: 'workspace'
+            preferences.scopeValues = {
+                [PreferenceScope.Default]: 'default',
+                [PreferenceScope.User]: 'user',
+                [PreferenceScope.Workspace]: 'workspace'
             };
             expect(reader.get<string>(PREFERENCE_NAME, 'fallback')).to.equal('workspace');
         });
@@ -297,11 +332,10 @@ describe('TrustAwarePreferenceReader', () => {
             await Promise.resolve();
             await Promise.resolve();
 
-            preferences.effectiveValue = 'workspace';
-            preferences.inspectResult = {
-                defaultValue: 'default',
-                globalValue: 'user',
-                workspaceValue: 'workspace'
+            preferences.scopeValues = {
+                [PreferenceScope.Default]: 'default',
+                [PreferenceScope.User]: 'user',
+                [PreferenceScope.Workspace]: 'workspace'
             };
 
             // Cached trust must still reflect the change event (false), not
@@ -330,11 +364,10 @@ describe('TrustAwarePreferenceReader', () => {
             await Promise.resolve();
             await Promise.resolve();
 
-            preferences.effectiveValue = 'workspace';
-            preferences.inspectResult = {
-                defaultValue: 'default',
-                globalValue: 'user',
-                workspaceValue: 'workspace'
+            preferences.scopeValues = {
+                [PreferenceScope.Default]: 'default',
+                [PreferenceScope.User]: 'user',
+                [PreferenceScope.Workspace]: 'workspace'
             };
 
             // Cached trust must reflect the change event (true).

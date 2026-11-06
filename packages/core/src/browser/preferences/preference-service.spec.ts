@@ -31,6 +31,7 @@ import { bindPreferenceService } from '../frontend-application-bindings.js';
 import { ILogger } from '../../common/logger.js';
 import { MockLogger } from '../../common/test/mock-logger.js';
 import { expect } from 'chai';
+import URI from '../../common/uri.js';
 
 disableJSDOM();
 
@@ -404,6 +405,81 @@ describe('Preference Service', () => {
             expect(prefService.get('test.boolean', { fallback: false })).to.equal(false);
             expect(prefService.get<string[]>('test.array', { fallback: ['c'] })).to.deep.equal(['c']);
             expect(prefService.get('test.string')).to.be.undefined;
+        });
+    });
+
+    describe('excludeScopes', () => {
+        const WORKSPACE_SCOPES = [PreferenceScope.Workspace, PreferenceScope.Folder];
+
+        it('leaves the excluded scopes out of the value', async () => {
+            const { preferences } = await prepareServices();
+            getProvider(PreferenceScope.User).setPreference('editor.tabSize', 2);
+            getProvider(PreferenceScope.Workspace).setPreference('editor.tabSize', 3);
+            getProvider(PreferenceScope.Folder).setPreference('editor.tabSize', 5);
+
+            expect(preferences.get('editor.tabSize')).to.equal(5);
+            expect(preferences.get('editor.tabSize', { excludeScopes: [] })).to.equal(5);
+            expect(preferences.get('editor.tabSize', { excludeScopes: [PreferenceScope.Folder] })).to.equal(3);
+            expect(preferences.get('editor.tabSize', { excludeScopes: WORKSPACE_SCOPES })).to.equal(2);
+            expect(preferences.get('editor.tabSize', { excludeScopes: [PreferenceScope.User, ...WORKSPACE_SCOPES] })).to.equal(4);
+        });
+
+        it('returns the fallback when only excluded scopes have a value', () => {
+            prefSchema.addSchema({ scope: PreferenceScope.Folder, properties: { 'test.number': { type: 'number' } } });
+            getProvider(PreferenceScope.Workspace).setPreference('test.number', 1);
+
+            expect(prefService.get('test.number', { fallback: 7, excludeScopes: WORKSPACE_SCOPES })).to.equal(7);
+        });
+
+        it('merges object values across the included scopes only, and freezes the result', async () => {
+            const { preferences } = await prepareServices({
+                schema: {
+                    scope: PreferenceScope.Folder,
+                    properties: { 'test.object': { type: 'object', default: { mode: 'default', list: ['default'] } } }
+                }
+            });
+            getProvider(PreferenceScope.User).setPreference('test.object', { user: true, list: ['user'] });
+            getProvider(PreferenceScope.Workspace).setPreference('test.object', { mode: 'workspace', workspace: true });
+
+            const value = preferences.get('test.object', { excludeScopes: WORKSPACE_SCOPES });
+
+            expect(value).to.deep.equal({ mode: 'default', user: true, list: ['default', 'user'] });
+            expect(Object.isFrozen(value)).to.be.true;
+        });
+
+        it('applies the filter to a language override and to the fallback to its base preference', async () => {
+            const { preferences, schema } = await prepareServices();
+            schema.registerOverrideIdentifier('json');
+            getProvider(PreferenceScope.User).setPreference('editor.tabSize', 2);
+            getProvider(PreferenceScope.Workspace).setPreference('editor.tabSize', 3, undefined, 'json');
+            getProvider(PreferenceScope.Workspace).setPreference('editor.tabSize', 5);
+
+            expect(preferences.get('editor.tabSize', { override: 'json' })).to.equal(3);
+            expect(preferences.get('editor.tabSize', { override: 'json', excludeScopes: WORKSPACE_SCOPES })).to.equal(2);
+        });
+
+        it('keeps a default language override over a base value from an included scope, as an unfiltered read does', async () => {
+            const { preferences, schema } = await prepareServices();
+            schema.registerOverrideIdentifier('markdown');
+            schema.registerOverride('editor.tabSize', 'markdown', 8);
+            getProvider(PreferenceScope.User).setPreference('editor.tabSize', 2);
+
+            expect(preferences.get('editor.tabSize', { override: 'markdown' })).to.equal(8);
+            expect(preferences.get('editor.tabSize', { override: 'markdown', excludeScopes: WORKSPACE_SCOPES })).to.equal(8);
+        });
+
+        it('reports the configuration uri of the highest included scope', async () => {
+            const { preferences } = await prepareServices();
+            const userProvider = getProvider(PreferenceScope.User);
+            const workspaceProvider = getProvider(PreferenceScope.Workspace);
+            userProvider.getConfigUri = () => new URI('file:///user/settings.json');
+            workspaceProvider.getConfigUri = () => new URI('file:///workspace/.theia/settings.json');
+            userProvider.setPreference('editor.tabSize', 2);
+            workspaceProvider.setPreference('editor.tabSize', 3);
+
+            expect(preferences.resolve('editor.tabSize').configUri?.toString()).to.equal('file:///workspace/.theia/settings.json');
+            expect(preferences.resolve('editor.tabSize', undefined, undefined, undefined, { excludeScopes: WORKSPACE_SCOPES }).configUri?.toString())
+                .to.equal('file:///user/settings.json');
         });
     });
 
