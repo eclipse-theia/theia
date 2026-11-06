@@ -78,14 +78,20 @@ describe('tab bar', () => {
     });
 
     it('should only render a close icon for closable or pinned tabs', () => {
-        const renderer = new TabBarRenderer();
+        class TestTabBarRenderer extends TabBarRenderer {
+            constructor() {
+                super();
+                this._tabBar = new TabBar<Widget>({ renderer: this });
+            }
+        }
+        const renderer = new TestTabBarRenderer();
         const [closable, notClosable, pinned] = ['closable', 'notClosable', 'pinned'].map(label => new Title<Widget>({ owner: new Widget(), label }));
         closable.closable = true;
         notClosable.closable = false;
         pin(pinned);
 
         const closeIconTitles = [closable, notClosable, pinned].map(title => {
-            const tab = VirtualDOM.realize(renderer.renderTab({ title, current: false, zIndex: 0 }, true));
+            const tab = VirtualDOM.realize(renderer.renderTab({ title, current: false, zIndex: 0 }));
             return tab.querySelector('.lm-TabBar-tabCloseIcon')?.getAttribute('title');
         });
         expect(closeIconTitles).to.deep.equal(['Close', undefined, 'Unpin']);
