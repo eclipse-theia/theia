@@ -19,11 +19,13 @@ let disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
 
 import { MessageLoop } from '@lumino/messaging';
+import { VirtualDOM } from '@lumino/virtualdom';
 import { TabBar, Title, Widget } from '@lumino/widgets';
 import { BreadcrumbsRenderer } from '../breadcrumbs/breadcrumbs-renderer.js';
 import { NativeTabDragService } from './native-tab-drag-service.js';
 import { TabBarToolbar, TabBarToolbarRegistry } from './tab-bar-toolbar/index.js';
 import { SideTabBar, TabBarRenderer, ToolbarAwareTabBar } from './tab-bars.js';
+import { pin } from '../widgets/widget.js';
 
 disableJSDOM();
 
@@ -73,6 +75,20 @@ describe('tab bar', () => {
         expect(pathMap.get(tabPaths[4])).to.be.equal('root1/aaa/bbb');
         expect(pathMap.get(tabPaths[5])).to.be.equal('.../ccc');
         expect(pathMap.get(tabPaths[6])).to.be.equal(undefined);
+    });
+
+    it('should only render a close icon for closable or pinned tabs', () => {
+        const renderer = new TabBarRenderer();
+        const [closable, notClosable, pinned] = ['closable', 'notClosable', 'pinned'].map(label => new Title<Widget>({ owner: new Widget(), label }));
+        closable.closable = true;
+        notClosable.closable = false;
+        pin(pinned);
+
+        const closeIconTitles = [closable, notClosable, pinned].map(title => {
+            const tab = VirtualDOM.realize(renderer.renderTab({ title, current: false, zIndex: 0 }, true));
+            return tab.querySelector('.lm-TabBar-tabCloseIcon')?.getAttribute('title');
+        });
+        expect(closeIconTitles).to.deep.equal(['Close', undefined, 'Unpin']);
     });
 
     describe('side tab bar', () => {
