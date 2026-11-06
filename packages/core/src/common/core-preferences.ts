@@ -318,7 +318,7 @@ export const corePreferenceSchema: PreferenceSchema = {
             type: 'string',
             enum: ['normal', 'shrink'],
             default: 'normal',
-            markdownDescription: nls.localize('theia/core/pinnedTabSizing', 'Controls the size of pinned editor tabs. Pinned tabs typically do not close until unpinned. When set to "shrink", pinned tabs are moved to the beginning of the tab bar and shown at a compact fixed size.'),
+            markdownDescription: nls.localize('theia/core/pinnedTabSizing', 'Controls the size of pinned editor tabs. Pinned tabs typically do not close until unpinned. Pinning a tab moves it to the end of the pinned group at the beginning of the tab bar. When set to "shrink", pinned tabs are additionally shown at a compact fixed size.'),
             enumDescriptions: [
                 nls.localize('theia/core/pinnedTabSizing/normal', 'A pinned tab inherits the look of non pinned tabs.'),
                 nls.localize('theia/core/pinnedTabSizing/shrink', 'A pinned tab shrinks to a compact fixed size showing parts of the editor name.')
