@@ -50,11 +50,13 @@ const commonHostedConnectionModule = ConnectionContainerModule.create(({ bind, b
     bind(HostedPluginServerImpl).toSelf().inSingletonScope();
     bind(HostedPluginServer).toService(HostedPluginServerImpl);
     bind(BackendPluginHostableFilter).toConstantValue(isConnectionScopedBackendPlugin);
+    // The plugin metadata is available at once; the plugin host itself is forked once the login shell environment is known,
+    // see HostedPluginServerImpl.
     bindBackendService<HostedPluginServer, HostedPluginClient>(hostedServicePath, HostedPluginServer, (server, client) => {
         server.setClient(client);
         client.onDidCloseConnection(() => server.dispose());
         return server;
-    });
+    }, { independentOfShellEnvironment: true });
 });
 
 export function bindCommonHostedBackend(bind: interfaces.Bind): void {
@@ -74,7 +76,8 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bind(LanguagePackService).toService(PluginLanguagePackService);
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler(languagePackServicePath, () =>
-            ctx.container.get(LanguagePackService)
+            ctx.container.get(LanguagePackService),
+            { independentOfShellEnvironment: true }
         )
     ).inSingletonScope();
 

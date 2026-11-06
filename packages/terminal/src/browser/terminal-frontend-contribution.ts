@@ -341,10 +341,12 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         }
         try {
             const termWidget = await this.newTerminal({});
-            await termWidget.start();
             // Use shell.addWidget directly (not this.open()) to add the terminal
             // to the bottom panel without expanding it on startup.
             this.shell.addWidget(termWidget, { area: 'bottom' });
+            // The backend starts the terminal's process once the login shell environment is known;
+            // the layout does not wait for that.
+            termWidget.start().catch(error => this.logger.error('Failed to start the terminal of the default layout', error));
         } catch (error) {
             this.logger.error('Failed to initialize terminal in default layout', error);
         }

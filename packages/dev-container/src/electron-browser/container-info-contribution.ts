@@ -41,6 +41,11 @@ export class ContainerInfoContribution implements FrontendApplicationContributio
 
     async onStart(): Promise<void> {
         const containerPort = parseInt(new URLSearchParams(location.search).get('port') ?? '0');
+        if (!containerPort) {
+            // Not a dev container window: there is nothing to ask the backend, and asking would hold the start-up
+            // until the backend has resolved the login shell environment, as the services start containers.
+            return;
+        }
         const containerInfo = await this.connectionProvider.getCurrentContainerInfo(containerPort);
         this.status = await this.remoteStatusService.getStatus(containerPort);
 

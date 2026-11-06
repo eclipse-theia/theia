@@ -24,7 +24,8 @@ export default new ContainerModule(bind => {
     bind(KeyboardLayoutProvider).toService(ElectronKeyboardLayoutProvider);
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler(keyboardPath, () =>
-            ctx.container.get(KeyboardLayoutProvider)
+            ctx.container.get(KeyboardLayoutProvider),
+            { independentOfShellEnvironment: true }
         )
     ).inSingletonScope();
 });

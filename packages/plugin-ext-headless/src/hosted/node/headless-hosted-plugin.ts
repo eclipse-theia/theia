@@ -28,6 +28,7 @@ import { ContributionProvider, Disposable, DisposableCollection, ILogger, nls } 
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { IPCChannel } from '@theia/core/lib/node';
 import { BackendApplicationConfigProvider } from '@theia/core/lib/node/backend-application-config-provider';
+import { ShellEnvironmentServer } from '@theia/core/lib/common/shell-environment';
 import { HostedPluginProcess } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin-process';
 import { IShellTerminalServer } from '@theia/terminal/lib/common/shell-terminal-protocol';
 import { HeadlessPluginManagerExt, HEADLESSMAIN_RPC_CONTEXT } from '../../common/headless-plugin-rpc.js';
@@ -64,6 +65,9 @@ export class HeadlessHostedPluginSupport extends AbstractHostedPluginSupport<Hea
     @inject(PluginDeployer)
     protected readonly pluginDeployer: PluginDeployerImpl;
 
+    @inject(ShellEnvironmentServer)
+    protected readonly shellEnvironment: ShellEnvironmentServer;
+
     @inject(ContributionProvider)
     @named(SupportedHeadlessActivationEvents)
     protected readonly supportedActivationEventsContributions: ContributionProvider<string[]>;
@@ -77,7 +81,9 @@ export class HeadlessHostedPluginSupport extends AbstractHostedPluginSupport<Hea
     }
 
     protected createTheiaReadyPromise(): Promise<unknown> {
-        return Promise.all([this.envServer.getVariables()]);
+        // The headless plugin host is forked when the backend starts, before any frontend connects,
+        // so it must wait for the environment of the user's login shell itself.
+        return Promise.all([this.shellEnvironment.whenResolved(), this.envServer.getVariables()]);
     }
 
     // Only load headless plugins

@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.78.0 - tbd
+
+<a name="breaking_changes_1.78.0">[Breaking Changes:](#breaking_changes_1.78.0)</a>
+
+- [core, electron] the generated `electron-main.js` no longer blocks on `fix-path` before the Electron main process starts: the backend resolves the environment of the user's login shell itself and, until it is known, holds the channel of every backend service that a frontend opens, unless the service's `ConnectionHandler` declares `independentOfShellEnvironment`. Main-process code that spawns the user's tools has to resolve the `PATH` itself, backend code that spawns before a frontend connects has to await `ShellEnvironmentServer.whenResolved()`, and `RpcConnectionHandler`, `bindBackendService` and `MessagingService.registerChannelHandler` take an options argument. See the [migration guide](https://github.com/eclipse-theia/theia/blob/master/doc/Migration.md#electron-the-backend-resolves-the-login-shell-environment-18204) [#18204](https://github.com/eclipse-theia/theia/pull/18204) - Contributed on behalf of STMicroelectronics
+
 ## 1.77.0 - 11/5/2026
 
 - [all] switched runtime packages from CommonJS to ES modules [#18216](https://github.com/eclipse-theia/theia/pull/18216)

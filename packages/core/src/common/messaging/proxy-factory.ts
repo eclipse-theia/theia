@@ -42,12 +42,26 @@ export interface RpcConnectionEventEmitter {
 }
 export type RpcProxy<T> = T & RpcConnectionEventEmitter;
 
+export interface RpcConnectionHandlerOptions<T extends object> {
+    /** See {@link ConnectionHandler.independentOfShellEnvironment}. The default is `false`. */
+    independentOfShellEnvironment?: boolean;
+    /** Creates the proxy factory of each connection. The default is {@link RpcProxyFactory}. */
+    factoryConstructor?: new () => RpcProxyFactory<T>;
+}
+
 export class RpcConnectionHandler<T extends object> implements ConnectionHandler {
+    readonly factoryConstructor: new () => RpcProxyFactory<T>;
+    readonly independentOfShellEnvironment: boolean;
+
     constructor(
         readonly path: string,
         readonly targetFactory: (proxy: RpcProxy<T>) => any,
-        readonly factoryConstructor: new () => RpcProxyFactory<T> = RpcProxyFactory
-    ) { }
+        options: RpcConnectionHandlerOptions<T> | (new () => RpcProxyFactory<T>) = {}
+    ) {
+        const { factoryConstructor, independentOfShellEnvironment } = typeof options === 'function' ? { factoryConstructor: options } : options;
+        this.factoryConstructor = factoryConstructor ?? RpcProxyFactory;
+        this.independentOfShellEnvironment = independentOfShellEnvironment ?? false;
+    }
 
     onConnection(connection: Channel): void {
         const factory = new this.factoryConstructor();

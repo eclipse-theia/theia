@@ -63,7 +63,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(RemoteStatusServiceImpl).toSelf().inSingletonScope();
     bind(RemoteStatusService).toService(RemoteStatusServiceImpl);
     bind(ConnectionHandler).toDynamicValue(
-        ctx => new RpcConnectionHandler(RemoteStatusServicePath, () => ctx.container.get(RemoteStatusService))
+        ctx => new RpcConnectionHandler(RemoteStatusServicePath, () => ctx.container.get(RemoteStatusService), { independentOfShellEnvironment: true })
     ).inSingletonScope();
 
     bind(RemoteCopyService).toSelf().inSingletonScope();

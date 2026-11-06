@@ -23,6 +23,8 @@ import { Channel, ChannelMultiplexer } from '../../common/message-rpc/channel.js
 import { FrontendConnectionService } from './frontend-connection-service.js';
 import { BackendApplicationContribution } from '../backend-application.js';
 import { ILogger } from '../../common/logger.js';
+import { ShellEnvironmentServer } from '../../common/shell-environment.js';
+import { GatedChannelMultiplexer } from './gated-channel-multiplexer.js';
 
 export const MessagingContainer = Symbol('MessagingContainer');
 export const MainChannel = Symbol('MainChannel');
@@ -44,6 +46,9 @@ export class DefaultMessagingService implements MessagingService, BackendApplica
     @inject(ContributionProvider) @named(MessagingService.Contribution)
     protected readonly contributions: ContributionProvider<MessagingService.Contribution>;
 
+    @inject(ShellEnvironmentServer)
+    protected readonly shellEnvironment: ShellEnvironmentServer;
+
     protected readonly channelHandlers = new ConnectionHandlers<Channel>();
 
     initialize(): void {
@@ -57,17 +62,46 @@ export class DefaultMessagingService implements MessagingService, BackendApplica
         this.frontendConnectionService.registerConnectionHandler(path, callback);
     }
 
-    registerChannelHandler(spec: string, callback: (params: MessagingService.PathParams, channel: Channel) => void): void {
-        this.channelHandlers.push(spec, (params, channel) => callback(params, channel));
+    registerChannelHandler(spec: string, callback: (params: MessagingService.PathParams, channel: Channel) => void, options?: MessagingService.ChannelHandlerOptions): void {
+        this.channelHandlers.push(spec, (params, channel) => callback(params, channel), options);
     }
 
     protected handleConnection(channel: Channel): void {
-        const multiplexer = new ChannelMultiplexer(channel);
         const channelHandlers = this.getConnectionChannelHandlers(channel);
+        const multiplexer = this.createChannelMultiplexer(channel, channelHandlers);
         multiplexer.onDidOpenChannel(event => {
             if (channelHandlers.route(event.id, event.channel)) {
                 this.logger.debug(`Opening channel for service path '${event.id}'.`);
                 event.channel.onClose(() => this.logger.info(`Closing channel on service path '${event.id}'.`));
+            }
+        });
+    }
+
+    /**
+     * Creates the multiplexer of the service channels on the main channel of a frontend. It holds the channels of the
+     * services that depend on the environment of the user's login shell until that environment is known, see {@link holdChannel}.
+     */
+    protected createChannelMultiplexer(mainChannel: Channel, channelHandlers: ConnectionHandlers<Channel>): ChannelMultiplexer {
+        return new GatedChannelMultiplexer(mainChannel, id => this.holdChannel(id, channelHandlers));
+    }
+
+    /**
+     * Holds the opening of a service channel until the environment of the user's login shell has been applied to `process.env`,
+     * unless the service is declared independent of it (see `ConnectionHandler.independentOfShellEnvironment`). Terminals, tasks,
+     * debug sessions, the plugin host and whatever else runs the user's tools are requested through these channels, so by the
+     * time a request arrives, the environment is complete. In a browser deployment and on Windows, nothing is held.
+     *
+     * @returns the promise to wait for, or `undefined` if the channel is not to be held
+     */
+    protected holdChannel(id: string, channelHandlers: ConnectionHandlers<Channel>): Promise<void> | undefined {
+        if (channelHandlers.isIndependentOfShellEnvironment(id)) {
+            return undefined;
+        }
+        const start = performance.now();
+        return this.shellEnvironment.whenResolved().then(() => {
+            const held = performance.now() - start;
+            if (held >= 10) {
+                this.logger.debug(`Held the channel '${id}' for ${held.toFixed(0)} ms until the login shell environment was resolved.`);
             }
         });
     }
@@ -88,7 +122,7 @@ export class DefaultMessagingService implements MessagingService, BackendApplica
         for (const connectionHandler of connectionHandlers.getContributions(true)) {
             connectionChannelHandlers.push(connectionHandler.path, (_, channel) => {
                 connectionHandler.onConnection(channel);
-            });
+            }, { independentOfShellEnvironment: connectionHandler.independentOfShellEnvironment });
         }
         return connectionChannelHandlers;
     }
@@ -96,15 +130,15 @@ export class DefaultMessagingService implements MessagingService, BackendApplica
 }
 
 export class ConnectionHandlers<T> {
-    protected readonly handlers: ((path: string, connection: T) => string | false)[] = [];
+    protected readonly handlers: ConnectionHandlers.Entry<T>[] = [];
 
     constructor(
         protected readonly parent?: ConnectionHandlers<T>
     ) { }
 
-    push(spec: string, callback: (params: MessagingService.PathParams, connection: T) => void): void {
+    push(spec: string, callback: (params: MessagingService.PathParams, connection: T) => void, options: MessagingService.ChannelHandlerOptions = {}): void {
         const route = new Route(spec);
-        const handler = (path: string, channel: T): string | false => {
+        const handle = (path: string, channel: T): string | false => {
             const params = route.match(path);
             if (!params) {
                 return false;
@@ -112,13 +146,13 @@ export class ConnectionHandlers<T> {
             callback(params, channel);
             return route.reverse(params);
         };
-        this.handlers.push(handler);
+        this.handlers.push({ route, handle, independentOfShellEnvironment: options.independentOfShellEnvironment ?? false });
     }
 
     route(path: string, connection: T): string | false {
-        for (const handler of this.handlers) {
+        for (const { handle } of this.handlers) {
             try {
-                const result = handler(path, connection);
+                const result = handle(path, connection);
                 if (result) {
                     return result;
                 }
@@ -130,5 +164,25 @@ export class ConnectionHandlers<T> {
             return this.parent.route(path, connection);
         }
         return false;
+    }
+
+    /**
+     * Whether the handler of the given path is declared independent of the shell environment,
+     * see {@link ConnectionHandler.independentOfShellEnvironment}. A path without a handler is not.
+     */
+    isIndependentOfShellEnvironment(path: string): boolean {
+        const entry = this.handlers.find(({ route }) => !!route.match(path));
+        if (entry) {
+            return entry.independentOfShellEnvironment;
+        }
+        return this.parent?.isIndependentOfShellEnvironment(path) ?? false;
+    }
+}
+
+export namespace ConnectionHandlers {
+    export interface Entry<T> {
+        readonly route: Route;
+        readonly handle: (path: string, connection: T) => string | false;
+        readonly independentOfShellEnvironment: boolean;
     }
 }
