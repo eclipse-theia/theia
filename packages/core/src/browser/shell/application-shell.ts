@@ -114,11 +114,20 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
     }
 
     createTabBar(): TabBar<Widget> {
+        const getPinnedTabSizingMode = (): ScrollableTabBar.PinnedTabSizingMode =>
+            this.corePreferences.get('workbench.editor.pinnedTabSizing') ?? 'normal';
+        const getPinnedTabSize = (): number | undefined => {
+            switch (getPinnedTabSizingMode()) {
+                case 'shrink': return ScrollableTabBar.DEFAULT_PINNED_TAB_SIZE;
+                default: return undefined;
+            }
+        };
         const getDynamicTabOptions: () => ScrollableTabBar.Options | undefined = () => {
             if (this.corePreferences.get('workbench.tab.shrinkToFit.enabled')) {
                 return {
                     minimumTabSize: this.corePreferences.get('workbench.tab.shrinkToFit.minimumSize'),
-                    defaultTabSize: this.corePreferences.get('workbench.tab.shrinkToFit.defaultSize')
+                    defaultTabSize: this.corePreferences.get('workbench.tab.shrinkToFit.defaultSize'),
+                    pinnedTabSize: getPinnedTabSize()
                 };
             } else {
                 return undefined;
@@ -147,11 +156,15 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
         tabBar.nativeTabDragService = this.nativeTabDragService;
         renderer.contextMenuPath = SHELL_TABBAR_CONTEXT_MENU;
         tabBar.currentChanged.connect(this.onCurrentTabChanged, this);
+        tabBar.pinnedTabSizingMode = getPinnedTabSizingMode();
         const prefChangeDisposable = this.corePreferences.onPreferenceChanged(change => {
             if (change.preferenceName === 'workbench.tab.shrinkToFit.enabled' ||
                 change.preferenceName === 'workbench.tab.shrinkToFit.minimumSize' ||
                 change.preferenceName === 'workbench.tab.shrinkToFit.defaultSize') {
                 tabBar.dynamicTabOptions = getDynamicTabOptions();
+            }
+            if (change.preferenceName === 'workbench.editor.pinnedTabSizing') {
+                tabBar.updateTabOptions(getDynamicTabOptions(), getPinnedTabSizingMode());
             }
         });
         tabBar.disposed.connect(() => {

@@ -31,8 +31,8 @@ import { IconThemeService } from '../icon-theme-service.js';
 import { BreadcrumbsRenderer, BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer.js';
 import { NavigatableWidget } from '../navigatable-types.js';
 import { Drag } from '@lumino/dragdrop';
-import { isPinned, LOCKED_CLASS } from '../widgets/widget.js';
-import { CorePreferences } from '../../common/core-preferences.js';
+import { isPinned, LOCKED_CLASS, PINNED_CLASS, pin, unpin } from '../widgets/widget.js';
+import { CoreConfiguration, CorePreferences } from '../../common/core-preferences.js';
 import { HoverService } from '../hover-service.js';
 import { Root, createRoot } from 'react-dom/client';
 import { SelectComponent } from '../widgets/select-component.js';
@@ -738,9 +738,31 @@ export interface TabBarPrivateMethods {
 }
 
 /**
+ * Custom property carrying the sticky `left` offset of a shrunk pinned tab. It is
+ * consumed by the `theia-pinned-tab-shrink` rules in tabs.css. The offset is not
+ * applied as an inline `left` style because lumino positions the tabs with inline
+ * `left` styles while dragging, which would be confused with the sticky offset.
+ */
+const PINNED_TAB_OFFSET_PROPERTY = '--theia-pinned-tab-offset';
+
+/**
+ * Custom property carrying the fixed width of a shrunk pinned tab. It is consumed
+ * by the `theia-pinned-tab-shrink` rules in tabs.css and set on the tab bar node
+ * from `ScrollableTabBar.DEFAULT_PINNED_TAB_SIZE`, so that the CSS rules and the
+ * tab layout logic share a single source for the value.
+ */
+const PINNED_TAB_SIZE_PROPERTY = '--theia-pinned-tab-size';
+
+/**
  * A specialized tab bar for the main and bottom areas.
  */
 export class ScrollableTabBar extends TabBar<Widget> {
+
+    /**
+     * The fixed width of a shrunk pinned tab when no dynamic tab sizing is
+     * configured. Published to CSS as the `--theia-pinned-tab-size` custom property.
+     */
+    static readonly DEFAULT_PINNED_TAB_SIZE = 80;
 
     protected scrollBar: PerfectScrollbar | undefined;
 
@@ -748,7 +770,10 @@ export class ScrollableTabBar extends TabBar<Widget> {
     protected isMouseOver = false;
     protected needsRecompute = false;
     protected tabSize = 0;
+    protected pinnedTabWidth = 0;
+    protected _pinnedTabSizingMode: ScrollableTabBar.PinnedTabSizingMode | undefined;
     protected _dynamicTabOptions?: ScrollableTabBar.Options;
+    protected pinnedTabDragStartFrame?: number;
     protected contentContainer: HTMLElement;
     protected topRow: HTMLElement;
 
@@ -759,6 +784,8 @@ export class ScrollableTabBar extends TabBar<Widget> {
     constructor(options?: TabBar.IOptions<Widget>, protected readonly scrollbarOptions?: PerfectScrollbar.Options, dynamicTabOptions?: ScrollableTabBar.Options) {
         super(options);
         this._dynamicTabOptions = dynamicTabOptions;
+        this.tabMoved.connect(this.onTabMoved, this);
+        this.node.style.setProperty(PINNED_TAB_SIZE_PROPERTY, `${ScrollableTabBar.DEFAULT_PINNED_TAB_SIZE}px`);
         this.topRow = document.createElement('div');
         this.topRow.classList.add('theia-tabBar-tab-row');
         this.node.appendChild(this.topRow);
@@ -788,6 +815,141 @@ export class ScrollableTabBar extends TabBar<Widget> {
         return this._dynamicTabOptions;
     }
 
+    set pinnedTabSizingMode(mode: ScrollableTabBar.PinnedTabSizingMode | undefined) {
+        this._pinnedTabSizingMode = mode;
+        this.node.classList.remove('theia-pinned-tab-shrink');
+        if (mode === 'shrink') {
+            this.node.classList.add('theia-pinned-tab-shrink');
+        }
+        this.updateTabs();
+    }
+
+    get pinnedTabSizingMode(): ScrollableTabBar.PinnedTabSizingMode | undefined {
+        return this._pinnedTabSizingMode;
+    }
+
+    /**
+     * Updates both dynamic tab options and pinned tab sizing mode with a single tab bar refresh.
+     */
+    updateTabOptions(dynamicTabOptions: ScrollableTabBar.Options | undefined, pinnedTabSizingMode: ScrollableTabBar.PinnedTabSizingMode | undefined): void {
+        this._dynamicTabOptions = dynamicTabOptions;
+        this._pinnedTabSizingMode = pinnedTabSizingMode;
+        this.node.classList.remove('theia-pinned-tab-shrink');
+        if (pinnedTabSizingMode === 'shrink') {
+            this.node.classList.add('theia-pinned-tab-shrink');
+        }
+        this.updateTabs();
+    }
+
+    override insertTab(index: number, value: Title<Widget> | Title.IOptions<Widget>): Title<Widget> {
+        return super.insertTab(this.adjustIndexForPinnedTabs(index, value), value);
+    }
+
+    /**
+     * Shrunk pinned tabs are sticky and aligned on the left edge of the tab bar, so pinned
+     * titles must always precede unpinned ones. Clamp the insertion index to keep an unpinned
+     * title from being placed within the pinned tabs, and a pinned title from being placed
+     * after unpinned ones.
+     */
+    protected adjustIndexForPinnedTabs(index: number, value: Title<Widget> | Title.IOptions<Widget>): number {
+        if (this.pinnedTabSizingMode !== 'shrink') {
+            return index;
+        }
+        let title: Title<Widget> | undefined;
+        let pinned: boolean;
+        if (value instanceof Title) {
+            title = value;
+            pinned = isPinned(value);
+        } else {
+            pinned = value.closable === false && (value.className?.includes(PINNED_CLASS) ?? false);
+        }
+        let pinnedCount = 0;
+        for (const t of this.titles) {
+            if (isPinned(t)) {
+                pinnedCount++;
+            }
+        }
+        if (pinned) {
+            // A pinned title that is already in the tab bar is moved rather than inserted,
+            // so it must not be counted when computing the size of the pinned group.
+            const moved = title !== undefined && this.titles.indexOf(title) !== -1;
+            return Math.max(0, Math.min(index, pinnedCount - (moved ? 1 : 0)));
+        }
+        return Math.max(index, pinnedCount);
+    }
+
+    /**
+     * Keep the pinned group consistent when tabs are dragged: an
+     * unpinned tab dropped in front of the pinned tabs is pinned, and a pinned tab
+     * dragged out of the pinned group is unpinned.
+     */
+    protected onTabMoved(sender: TabBar<Widget>, args: TabBar.ITabMovedArgs<Widget>): void {
+        const title = args.title;
+        const pinnedCount = this.titles.filter(t => isPinned(t)).length;
+        if (isPinned(title) && args.toIndex >= pinnedCount) {
+            unpin(title);
+        } else if (!isPinned(title) && args.toIndex < pinnedCount) {
+            pin(title);
+        } else {
+            return;
+        }
+        this.insertTab(args.toIndex, title);
+    }
+
+    /**
+     * Move pinned titles to the start of the tab bar so that the sticky pinned tabs stay
+     * aligned on the left edge. Titles keep their relative order.
+     */
+    protected enforcePinnedTabsFirst(): void {
+        if (this.pinnedTabSizingMode !== 'shrink') {
+            return;
+        }
+        const titles = this.titles.slice();
+        let pinnedCount = 0;
+        for (let i = 0; i < titles.length; i++) {
+            const title = titles[i];
+            if (isPinned(title)) {
+                if (i !== pinnedCount) {
+                    this.insertTab(pinnedCount, title);
+                }
+                pinnedCount++;
+            }
+        }
+    }
+
+    /**
+     * Whether pinned tabs are shrunk and sticky: aligned on the left edge of a
+     * horizontal tab bar, where they must stack above the tabs scrolled underneath them.
+     */
+    protected get pinnedTabsAreSticky(): boolean {
+        return this.pinnedTabSizingMode === 'shrink' && this.orientation === 'horizontal';
+    }
+
+    /**
+     * The width of a shrunk pinned tab: the dynamic tab size if configured,
+     * otherwise `DEFAULT_PINNED_TAB_SIZE`, applied to the tabs by CSS.
+     */
+    protected getPinnedTabWidth(): number {
+        return this.pinnedTabWidth > 0 ? this.pinnedTabWidth : ScrollableTabBar.DEFAULT_PINNED_TAB_SIZE;
+    }
+
+    /**
+     * The total width of the sticky pinned tabs aligned on the left edge of the
+     * tab bar, or 0 if pinned tabs are not shrunk and sticky.
+     */
+    protected getPinnedTabsWidth(): number {
+        if (!this.pinnedTabsAreSticky) {
+            return 0;
+        }
+        let pinnedCount = 0;
+        for (const title of this.titles) {
+            if (isPinned(title)) {
+                pinnedCount++;
+            }
+        }
+        return pinnedCount * this.getPinnedTabWidth();
+    }
+
     override dispose(): void {
         if (this.isDisposed) {
             return;
@@ -813,6 +975,38 @@ export class ScrollableTabBar extends TabBar<Widget> {
         (this as unknown as TabBarPrivateMethods)._releaseMouse();
     }
 
+    override handleEvent(event: Event): void {
+        const wasDragging = this.node.classList.contains('lm-mod-dragging');
+        super.handleEvent(event);
+        // Lumino adds `lm-mod-dragging` to the tab bar once a tab drag is activated.
+        if (event.type === 'pointermove' && !wasDragging && this.pinnedTabSizingMode === 'shrink'
+            && this.node.classList.contains('lm-mod-dragging')) {
+            this.suspendPinnedTabTransitionsOnDragStart();
+        }
+    }
+
+    /**
+     * Suspend the `left` transition of pinned tabs for the frame in which a drag
+     * starts. A pinned tab switches from sticky to relative positioning at drag
+     * start so that lumino's inline `left` drag positions apply, and that switch
+     * changes the meaning of the `left` offset: animating it would make the tab
+     * jump by its sticky offset and slide back. The class is removed again after
+     * the next frame, so lumino's `transition: left 150ms ease` slides the pinned
+     * tabs for the rest of the drag.
+     */
+    protected suspendPinnedTabTransitionsOnDragStart(): void {
+        if (this.pinnedTabDragStartFrame !== undefined) {
+            window.cancelAnimationFrame(this.pinnedTabDragStartFrame);
+        }
+        this.node.classList.add('theia-pinned-tab-drag-start');
+        this.pinnedTabDragStartFrame = window.requestAnimationFrame(() => {
+            this.pinnedTabDragStartFrame = window.requestAnimationFrame(() => {
+                this.pinnedTabDragStartFrame = undefined;
+                this.node.classList.remove('theia-pinned-tab-drag-start');
+            });
+        });
+    }
+
     protected override onAfterAttach(msg: Message): void {
         this.node.addEventListener('mouseenter', () => { this.isMouseOver = true; });
         this.node.addEventListener('mouseleave', () => {
@@ -836,6 +1030,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
     }
 
     protected updateTabs(): void {
+        this.enforcePinnedTabsFirst();
         const content = [];
         if (this.dynamicTabOptions) {
 
@@ -857,14 +1052,31 @@ export class ScrollableTabBar extends TabBar<Widget> {
                     if (!this.openTabsContainer.classList.contains('lm-mod-hidden')) {
                         availableWidth += this.openTabsContainer.getBoundingClientRect().width;
                     }
-                    if (this.dynamicTabOptions.minimumTabSize * this.titles.length <= availableWidth) {
+                    const pinnedTabSize = this.dynamicTabOptions.pinnedTabSize;
+                    const pinnedCount = pinnedTabSize ? this.titles.filter(t => isPinned(t)).length : 0;
+                    const unpinnedCount = this.titles.length - pinnedCount;
+                    const pinnedWidth = pinnedCount * (pinnedTabSize ?? 0);
+                    const requiredWidth = pinnedWidth + this.dynamicTabOptions.minimumTabSize * unpinnedCount;
+                    if (requiredWidth <= availableWidth) {
                         effectiveWidth += this.openTabsContainer.getBoundingClientRect().width;
                         this.openTabsContainer.classList.add('lm-mod-hidden');
                     } else {
                         this.openTabsContainer.classList.remove('lm-mod-hidden');
                     }
-                    this.tabSize = Math.max(Math.min(effectiveWidth / this.titles.length,
-                        this.dynamicTabOptions.defaultTabSize), this.dynamicTabOptions.minimumTabSize);
+                    if (pinnedCount > 0 && pinnedTabSize) {
+                        this.pinnedTabWidth = pinnedTabSize;
+                        if (unpinnedCount > 0) {
+                            const remainingWidth = effectiveWidth - pinnedWidth;
+                            this.tabSize = Math.max(Math.min(remainingWidth / unpinnedCount,
+                                this.dynamicTabOptions.defaultTabSize), this.dynamicTabOptions.minimumTabSize);
+                        } else {
+                            this.tabSize = this.dynamicTabOptions.defaultTabSize;
+                        }
+                    } else {
+                        this.pinnedTabWidth = 0;
+                        this.tabSize = Math.max(Math.min(effectiveWidth / this.titles.length,
+                            this.dynamicTabOptions.defaultTabSize), this.dynamicTabOptions.minimumTabSize);
+                    }
                 }
             }
             this.node.classList.add('dynamic-tabs');
@@ -872,20 +1084,50 @@ export class ScrollableTabBar extends TabBar<Widget> {
             this.openTabsContainer.classList.add('lm-mod-hidden');
             this.node.classList.remove('dynamic-tabs');
         }
+        const sticky = this.pinnedTabsAreSticky;
+        const stickyPinnedCount = sticky ? this.titles.filter(t => isPinned(t)).length : 0;
         for (let i = 0, n = this.titles.length; i < n; ++i) {
             const title = this.titles[i];
             const current = title === this.currentTitle;
-            const zIndex = current ? n : n - i - 1;
+            const zIndex = sticky && isPinned(title) ? n + stickyPinnedCount - i : current ? n : n - i - 1;
             const renderData: ScrollableRenderData = { title: title, current: current, zIndex: zIndex };
             if (this.dynamicTabOptions && this.orientation === 'horizontal') {
-                renderData.tabWidth = this.tabSize;
+                renderData.tabWidth = this.pinnedTabWidth > 0 && isPinned(title)
+                    ? this.pinnedTabWidth
+                    : this.tabSize;
             }
             content[i] = this.renderer.renderTab(renderData);
         }
         VirtualDOM.render(content, this.contentNode);
+        this.updatePinnedTabOffsets();
         if (this.scrollBar) {
             if (!(this.dynamicTabOptions && this.isMouseOver)) {
                 this.scrollBar.update();
+            }
+        }
+    }
+
+    /**
+     * Apply the sticky offset of each shrunk pinned tab through the
+     * `PINNED_TAB_OFFSET_PROPERTY` custom property, consumed by the
+     * `theia-pinned-tab-shrink` rules in tabs.css. Sticky pinned tabs stack side
+     * by side at the left edge of the tab bar: each pinned tab sticks at its own
+     * natural position so that they do not overlap.
+     */
+    protected updatePinnedTabOffsets(): void {
+        const sticky = this.pinnedTabsAreSticky;
+        const tabs = this.contentNode.children;
+        let pinnedTabIndex = 0;
+        for (let i = 0, n = this.titles.length; i < n; ++i) {
+            const tab = tabs[i] as HTMLElement | undefined;
+            if (!tab) {
+                continue;
+            }
+            if (sticky && isPinned(this.titles[i])) {
+                tab.style.setProperty(PINNED_TAB_OFFSET_PROPERTY, `${pinnedTabIndex * this.getPinnedTabWidth()}px`);
+                pinnedTabIndex++;
+            } else {
+                tab.style.removeProperty(PINNED_TAB_OFFSET_PROPERTY);
             }
         }
     }
@@ -920,8 +1162,13 @@ export class ScrollableTabBar extends TabBar<Widget> {
                     if (this.orientation === 'horizontal') {
                         const scroll = parent.scrollLeft;
                         const left = tab.offsetLeft;
-                        if (scroll > left) {
-                            parent.scrollLeft = left;
+                        // Shrunk pinned tabs are sticky and cover the left edge of the tab bar.
+                        const pinnedWidth = this.getPinnedTabsWidth();
+                        if (pinnedWidth > 0 && isPinned(this.titles[index])) {
+                            // Sticky pinned tabs are always visible at the left edge: nothing to reveal.
+                        } else if (scroll > left - pinnedWidth) {
+                            // Reveal the tab to the right of the sticky pinned tabs.
+                            parent.scrollLeft = Math.max(0, left - pinnedWidth);
                         } else {
                             const right = left + tab.clientWidth - parent.clientWidth;
                             if (scroll < right && tab.clientWidth < parent.clientWidth) {
@@ -957,7 +1204,12 @@ export namespace ScrollableTabBar {
     export interface Options {
         minimumTabSize: number;
         defaultTabSize: number;
+        pinnedTabSize?: number;
     }
+
+    /** Sizing mode of pinned tabs, as configured by the `workbench.editor.pinnedTabSizing` preference. */
+    export type PinnedTabSizingMode = CoreConfiguration['workbench.editor.pinnedTabSizing'];
+
     export namespace Styles {
 
         export const TAB_BAR_CONTENT_CONTAINER = 'lm-TabBar-content-container';
