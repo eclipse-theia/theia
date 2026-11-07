@@ -348,7 +348,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }));
         this.toDispose.push(this.toDisposeOnConnect);
         this.toDispose.push(this.commandSeparatorDecorations);
-        this.toDispose.push(this.toDisposeOnCommandHistory);
+        this.toDispose.push(Disposable.create(
+            () => this.toDisposeOnCommandHistory.dispose()
+        ));
         this.toDispose.push(Disposable.create(() => {
             this.outputStartMarker?.dispose();
             this.promptStartMarker?.dispose();
@@ -1206,7 +1208,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.styleElement?.remove();
         this.webglAddon?.dispose();
         this._commandHistoryState?.dispose();
-        this.toDisposeOnCommandHistory.dispose();
         super.dispose();
     }
 
