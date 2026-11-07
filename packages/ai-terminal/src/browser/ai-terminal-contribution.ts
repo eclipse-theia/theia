@@ -127,7 +127,7 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
         }));
     }
 
-    private showInputOverlay(terminal: TerminalWidget, terminalHistoryIndex: number): void {
+    protected showInputOverlay(terminal: TerminalWidget, terminalHistoryIndex: number): void {
         this.cleanupInputOverlay();
         if (!(terminal instanceof TerminalWidgetImpl)) {
             return;
