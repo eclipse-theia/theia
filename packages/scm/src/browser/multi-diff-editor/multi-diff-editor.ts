@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { Emitter, Event, nls, URI } from '@theia/core';
+import { Disposable, DisposableCollection, Emitter, Event, nls, URI } from '@theia/core';
+import * as monaco from '@theia/monaco-editor-core';
 import {
     addEventListener, ApplicationShell, BaseWidget, BoxLayout, codicon, Key, LabelProvider, LabelProviderContribution,
     Message, MessageLoop, Navigatable, NavigatableWidgetOpenHandler, Panel, PanelLayout, StatefulWidget,
@@ -167,6 +168,7 @@ export class DiffEntryWidget extends BaseWidget {
     protected innerScrolling?: boolean;
     protected loading = false;
     protected loadAttempted = false;
+    protected pendingLoad?: Promise<void>;
 
     protected readonly onDidLoadEditorEmitter = new Emitter<void>();
     readonly onDidLoadEditor: Event<void> = this.onDidLoadEditorEmitter.event;
@@ -211,7 +213,58 @@ export class DiffEntryWidget extends BaseWidget {
         return this._isCollapsed;
     }
 
-    setCollapsed(collapsed: boolean): void {
+    /**
+     * The diff editor of this entry, if it is loaded.
+     */
+    getDiffEditor(): MonacoDiffEditor | undefined {
+        const editor = this._editorWidget && MonacoEditor.get(this._editorWidget);
+        return editor instanceof MonacoDiffEditor ? editor : undefined;
+    }
+
+    /**
+     * The changes of this entry, or `undefined` until the diff editor is loaded and has computed the diff.
+     */
+    get lineChanges(): readonly monaco.editor.ILineChange[] | undefined {
+        return this.getDiffEditor()?.diffEditor.getLineChanges() ?? undefined;
+    }
+
+    /**
+     * Load the diff editor if necessary and wait until it has computed the diff.
+     * Resolves to `undefined` if the entry is collapsed, the editor cannot be loaded, or the entry is disposed.
+     */
+    async waitForLineChanges(): Promise<readonly monaco.editor.ILineChange[] | undefined> {
+        await (this.loading ? this.pendingLoad : this.loadEditor());
+        const diffEditor = this.getDiffEditor()?.diffEditor;
+        if (this.isDisposed || !diffEditor) {
+            return undefined;
+        }
+        return diffEditor.getLineChanges() ?? new Promise(resolve => {
+            const toDispose = new DisposableCollection();
+            const done = (changes?: readonly monaco.editor.ILineChange[]) => {
+                toDispose.dispose();
+                resolve(changes);
+            };
+            toDispose.push(diffEditor.onDidUpdateDiff(() => {
+                const changes = diffEditor.getLineChanges();
+                if (changes) {
+                    done(changes);
+                }
+            }));
+            toDispose.push(this.toDispose.push(Disposable.create(() => done())));
+        });
+    }
+
+    /**
+     * Move the focus to the header without scrolling.
+     */
+    focusHeader(): void {
+        this.header.node.focus({ preventScroll: true });
+    }
+
+    /**
+     * Collapse or expand the entry. Expanding also loads the editor, unless `load` is `false`.
+     */
+    setCollapsed(collapsed: boolean, load = true): void {
         if (this._isCollapsed === collapsed) {
             return;
         }
@@ -225,7 +278,7 @@ export class DiffEntryWidget extends BaseWidget {
             this.setNodeHeight(this.lastExpandedHeight);
         }
         this.onDidChangeCollapsedEmitter.fire(collapsed);
-        if (!collapsed) {
+        if (!collapsed && load) {
             this.loadEditor();
         }
     }
@@ -237,8 +290,13 @@ export class DiffEntryWidget extends BaseWidget {
         this.loading = true;
         this.loadAttempted = true;
         this.replaceContent(new DiffEntryLoadingWidget());
+        this.pendingLoad = this.doLoadEditor(this.createEditor);
+        await this.pendingLoad;
+    }
+
+    protected async doLoadEditor(createEditor: () => Promise<EditorWidget>): Promise<void> {
         try {
-            const editorWidget = await this.createEditor();
+            const editorWidget = await createEditor();
             if (this.isDisposed) {
                 editorWidget.dispose();
                 return;
@@ -423,15 +481,24 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
     protected encodedUri: URI;
     protected entryObserver?: IntersectionObserver;
     protected lastFocusedEntry?: DiffEntryWidget;
+    /** Whether the last focus in {@link lastFocusedEntry} was inside its editor, and not on its header. */
+    protected focusInEditor = false;
 
     protected readonly onDidChangeTrackableWidgetsEmitter = new Emitter<Widget[]>();
     readonly onDidChangeTrackableWidgets: Event<Widget[]> = this.onDidChangeTrackableWidgetsEmitter.event;
+
+    protected readonly onDidChangeNavigationStateEmitter = new Emitter<void>();
+    /**
+     * Fires when the navigation and collapse state can change: the focused entry or its cursor moves,
+     * an entry is collapsed or expanded, or an entry computes its diff.
+     */
+    readonly onDidChangeNavigationState: Event<void> = this.onDidChangeNavigationStateEmitter.event;
 
     protected pendingReveal?: DiffEntryWidget;
 
     @postConstruct()
     protected init(): void {
-        this.toDispose.push(this.onDidChangeTrackableWidgetsEmitter);
+        this.toDispose.pushAll([this.onDidChangeTrackableWidgetsEmitter, this.onDidChangeNavigationStateEmitter]);
         this.addClass('theia-multi-diff-editor');
         this.encodedUri = MultiDiffEditorUri.encode(this.data);
         this.id = MultiDiffEditorOpenHandler.ID + ':' + this.encodedUri.toString();
@@ -458,7 +525,9 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
             this.toDispose.push({ dispose: () => this.entryObserver?.disconnect() });
         }
         this.addEventListener(this.entriesPanel.node, 'focusin', event => {
-            this.lastFocusedEntry = this.entryWidgets.find(entry => event.target instanceof Node && entry.node.contains(event.target));
+            const target = event.target instanceof Node ? event.target : undefined;
+            const entry = target && this.entryWidgets.find(candidate => candidate.node.contains(target));
+            this.setFocusedEntry(entry, !!target && !!entry?.editorWidget?.node.contains(target));
         });
     }
 
@@ -470,14 +539,37 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
         const entry = new DiffEntryWidget(resource, headerWidget, createEditor);
         this.entryWidgets.push(entry);
         this.entriesPanel.addWidget(entry);
-        this.toDispose.push(entry.onDidLoadEditor(() => {
-            this.notifyTrackableWidgetsChanged();
-            if (this.pendingReveal === entry) {
-                this.scrollToEntry(entry);
-            }
-        }));
+        this.toDispose.pushAll([
+            entry.onDidLoadEditor(() => {
+                this.notifyTrackableWidgetsChanged();
+                this.trackNavigationState(entry);
+                if (this.pendingReveal === entry) {
+                    this.scrollToEntry(entry);
+                }
+            }),
+            entry.onDidChangeCollapsed(() => this.onDidChangeNavigationStateEmitter.fire())
+        ]);
         this.entryObserver?.observe(entry.node);
+        this.onDidChangeNavigationStateEmitter.fire();
         return entry;
+    }
+
+    /**
+     * Fire {@link onDidChangeNavigationState} when the diff of a loaded entry or the cursor of the focused entry changes.
+     */
+    protected trackNavigationState(entry: DiffEntryWidget): void {
+        const diffEditor = entry.getDiffEditor()?.diffEditor;
+        if (diffEditor) {
+            this.toDispose.pushAll([
+                diffEditor.onDidUpdateDiff(() => this.onDidChangeNavigationStateEmitter.fire()),
+                diffEditor.getModifiedEditor().onDidChangeCursorPosition(() => {
+                    if (entry === this.lastFocusedEntry) {
+                        this.onDidChangeNavigationStateEmitter.fire();
+                    }
+                })
+            ]);
+        }
+        this.onDidChangeNavigationStateEmitter.fire();
     }
 
     /**
@@ -495,6 +587,227 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
         if (!entry) {
             return;
         }
+        this.revealEntry(entry);
+    }
+
+    hasPreviousEntry(): boolean {
+        return this.getFocusedIndex() > 0;
+    }
+
+    hasNextEntry(): boolean {
+        return this.getFocusedIndex() < this.entryWidgets.length - 1;
+    }
+
+    goToPreviousEntry(): void {
+        const index = this.getFocusedIndex();
+        if (index > 0) {
+            this.goToEntry(this.entryWidgets[index - 1]);
+        }
+    }
+
+    goToNextEntry(): void {
+        const entry = this.entryWidgets[this.getFocusedIndex() + 1];
+        if (entry) {
+            this.goToEntry(entry);
+        }
+    }
+
+    /**
+     * Check for a change before the cursor. Entries that are not loaded yet count as entries with changes.
+     */
+    hasPreviousChange(): boolean {
+        const index = this.getFocusedIndex();
+        if (index < 0) {
+            return false;
+        }
+        const line = this.getCursorLine();
+        const current = this.entryWidgets[index];
+        return !!this.getKnownChangeLines(current)?.some(candidate => candidate < line)
+            || this.entryWidgets.slice(0, index).some(entry => this.getKnownChangeLines(entry)?.length !== 0);
+    }
+
+    /**
+     * Check for a change after the cursor. Entries that are not loaded yet count as entries with changes.
+     */
+    hasNextChange(): boolean {
+        const index = this.getFocusedIndex();
+        const current = this.entryWidgets[index];
+        if (current) {
+            const lines = this.getKnownChangeLines(current);
+            const line = this.getCursorLine();
+            if (!lines || lines.some(candidate => candidate > line)) {
+                return true;
+            }
+        }
+        return this.entryWidgets.slice(index + 1).some(entry => this.getKnownChangeLines(entry)?.length !== 0);
+    }
+
+    /**
+     * Go to the previous change, in the focused entry or in a previous entry. Entries are expanded and loaded as necessary.
+     */
+    async goToPreviousChange(): Promise<void> {
+        const current = this.lastFocusedEntry;
+        if (!current) {
+            return;
+        }
+        const before = this.getCursorLine();
+        for (let index = this.entryWidgets.indexOf(current); index >= 0; index--) {
+            const entry = this.entryWidgets[index];
+            if (entry === current && before === 0) {
+                continue;
+            }
+            const lines = await this.getChangeLines(entry);
+            if (!lines) {
+                return;
+            }
+            const line = lines.filter(candidate => entry !== current || candidate < before).pop();
+            if (line !== undefined) {
+                this.revealLine(entry, line);
+                return;
+            }
+        }
+    }
+
+    /**
+     * Go to the next change, in the focused entry or in a following entry. Entries are expanded and loaded as necessary.
+     */
+    async goToNextChange(): Promise<void> {
+        const current = this.lastFocusedEntry;
+        const after = this.getCursorLine();
+        for (let index = Math.max(this.getFocusedIndex(), 0); index < this.entryWidgets.length; index++) {
+            const entry = this.entryWidgets[index];
+            const lines = await this.getChangeLines(entry);
+            if (!lines) {
+                return;
+            }
+            const line = lines.find(candidate => entry !== current || candidate > after);
+            if (line !== undefined) {
+                this.revealLine(entry, line);
+                return;
+            }
+        }
+    }
+
+    areAllEntriesCollapsed(): boolean {
+        return this.entryWidgets.every(entry => entry.isCollapsed);
+    }
+
+    collapseAll(): void {
+        for (const entry of this.entryWidgets) {
+            entry.setCollapsed(true);
+        }
+    }
+
+    /**
+     * Expand all entries. Only the entries near the viewport load their editors; the others load when they are scrolled into view.
+     */
+    expandAll(): void {
+        for (const entry of this.entryWidgets) {
+            entry.setCollapsed(false, false);
+        }
+        for (const entry of this.entryWidgets) {
+            if (this.entryObserver) {
+                // A new observation reports the current intersection, also for entries that were near the viewport while collapsed.
+                this.entryObserver.unobserve(entry.node);
+                this.entryObserver.observe(entry.node);
+            } else {
+                entry.loadEditor();
+            }
+        }
+    }
+
+    protected getFocusedIndex(): number {
+        return this.lastFocusedEntry ? this.entryWidgets.indexOf(this.lastFocusedEntry) : -1;
+    }
+
+    protected setFocusedEntry(entry: DiffEntryWidget | undefined, focusInEditor: boolean): void {
+        if (entry !== this.lastFocusedEntry || focusInEditor !== this.focusInEditor) {
+            this.lastFocusedEntry = entry;
+            this.focusInEditor = focusInEditor;
+            this.onDidChangeNavigationStateEmitter.fire();
+        }
+    }
+
+    /**
+     * The cursor line in the focused entry, or 0 if the focus is on its header or the entry is collapsed.
+     */
+    protected getCursorLine(): number {
+        const entry = this.lastFocusedEntry;
+        if (!entry || !this.focusInEditor || entry.isCollapsed) {
+            return 0;
+        }
+        return entry.getDiffEditor()?.diffEditor.getModifiedEditor().getPosition()?.lineNumber ?? 0;
+    }
+
+    /**
+     * The first modified line of each change, as used by Monaco's diff navigation, or `undefined` while the diff is not known.
+     */
+    protected getKnownChangeLines(entry: DiffEntryWidget): number[] | undefined {
+        const changes = entry.lineChanges;
+        if (!changes) {
+            return undefined;
+        }
+        const lineCount = entry.getDiffEditor()?.diffEditor.getModifiedEditor().getModel()?.getLineCount() ?? 1;
+        // A deletion has no modified lines, so it starts at the line after the deleted range.
+        return changes.map(change => Math.min(change.modifiedEndLineNumber === 0 ? change.modifiedStartLineNumber + 1 : change.modifiedStartLineNumber, lineCount));
+    }
+
+    /**
+     * Get the change lines of the entry. If the diff is not known yet, go to the entry and wait while it loads.
+     * Resolves to `undefined` if the focus moved to another entry in the meantime.
+     */
+    protected async getChangeLines(entry: DiffEntryWidget): Promise<number[] | undefined> {
+        const lines = this.getKnownChangeLines(entry);
+        if (lines) {
+            return lines;
+        }
+        this.goToEntry(entry);
+        await entry.waitForLineChanges();
+        if (this.isDisposed || this.lastFocusedEntry !== entry) {
+            return undefined;
+        }
+        return this.getKnownChangeLines(entry) ?? [];
+    }
+
+    /**
+     * Reveal the entry and move the focus to its header.
+     */
+    protected goToEntry(entry: DiffEntryWidget): void {
+        this.setFocusedEntry(entry, false);
+        this.revealEntry(entry);
+        entry.focusHeader();
+    }
+
+    /**
+     * Move the cursor of the entry to the line, focus the editor, and scroll the line to the middle of the entries panel.
+     */
+    protected revealLine(entry: DiffEntryWidget, lineNumber: number): void {
+        const editorWidget = entry.editorWidget;
+        const modifiedEditor = entry.getDiffEditor()?.diffEditor.getModifiedEditor();
+        if (!editorWidget || !modifiedEditor) {
+            return;
+        }
+        this.pendingReveal = undefined;
+        entry.setCollapsed(false);
+        modifiedEditor.setPosition({ lineNumber, column: 1 });
+        this.setFocusedEntry(entry, true);
+        this.focusEditor(editorWidget);
+        requestAnimationFrame(() => {
+            if (!this.isDisposed && entry.isAttached && this.lastFocusedEntry === entry) {
+                // Long diffs scroll inside the editor, so reveal the line there first.
+                modifiedEditor.revealLineInCenterIfOutsideViewport(lineNumber, monaco.editor.ScrollType.Immediate);
+                const panel = this.entriesPanel.node;
+                const editorTop = editorWidget.node.getBoundingClientRect().top - panel.getBoundingClientRect().top + panel.scrollTop;
+                const lineTop = modifiedEditor.getTopForLineNumber(lineNumber) - modifiedEditor.getScrollTop();
+                panel.scrollTop = Math.max(0, editorTop + lineTop - panel.clientHeight / 2);
+            }
+        });
+    }
+
+    /**
+     * Expand and load the entry, and scroll it to the top of the entries panel.
+     */
+    protected revealEntry(entry: DiffEntryWidget): void {
         this.pendingReveal = entry;
         entry.setCollapsed(false);
         entry.loadEditor();
@@ -533,19 +846,26 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
         const entry = this.lastFocusedEntry && isVisible(this.lastFocusedEntry)
             ? this.lastFocusedEntry : this.entryWidgets.find(isVisible);
         if (entry?.editorWidget) {
-            const scrollPositions: { node: HTMLElement; top: number; left: number }[] = [];
-            for (let node: HTMLElement | undefined = this.entriesPanel.node; node; node = node.parentElement ?? undefined) {
-                scrollPositions.push({ node, top: node.scrollTop, left: node.scrollLeft });
-            }
-            // Deliver activation synchronously so focus-induced ancestor scrolling can be restored.
-            MessageLoop.sendMessage(entry.editorWidget, Widget.Msg.ActivateRequest);
-            for (const position of scrollPositions) {
-                position.node.scrollTop = position.top;
-                position.node.scrollLeft = position.left;
-            }
+            this.focusEditor(entry.editorWidget);
         } else {
             this.node.tabIndex = -1;
             this.node.focus({ preventScroll: true });
+        }
+    }
+
+    /**
+     * Activate the editor without changing the scroll position of the entries panel and its ancestors.
+     */
+    protected focusEditor(editorWidget: EditorWidget): void {
+        const scrollPositions: { node: HTMLElement; top: number; left: number }[] = [];
+        for (let node: HTMLElement | undefined = this.entriesPanel.node; node; node = node.parentElement ?? undefined) {
+            scrollPositions.push({ node, top: node.scrollTop, left: node.scrollLeft });
+        }
+        // Deliver activation synchronously so focus-induced ancestor scrolling can be restored.
+        MessageLoop.sendMessage(editorWidget, Widget.Msg.ActivateRequest);
+        for (const position of scrollPositions) {
+            position.node.scrollTop = position.top;
+            position.node.scrollLeft = position.left;
         }
     }
 
