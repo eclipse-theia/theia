@@ -53,13 +53,7 @@ export default new ContainerModule(bind => {
         } satisfies AskAIInputConfiguration);
         container.bind(AskAIInputWidget).toSelf().inSingletonScope();
         const widget = container.get(AskAIInputWidget);
-        // Release the child container when the widget is disposed to prevent
-        // the parent container from retaining a reference to it indefinitely.
-        const originalDispose = widget.dispose.bind(widget);
-        widget.dispose = () => {
-            container.unbindAll();
-            originalDispose();
-        };
+        widget.onDidDispose(() => container.unbindAll());
         return widget;
     });
 });
