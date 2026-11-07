@@ -42,7 +42,10 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidgetImpl, nextTerminalCreationToken } from './terminal-widget-impl.js';
 import { TerminalService } from './base/terminal-service.js';
 import { TerminalWidgetOptions, TerminalWidget, TerminalBlock, TerminalBlockBoundary } from './base/terminal-widget.js';
-import { ContributedTerminalProfileStore, NULL_PROFILE, TerminalProfile, TerminalProfileService, TerminalProfileStore, UserTerminalProfileStore } from './terminal-profile-service.js';
+import {
+    ContributedTerminalProfileStore, NULL_PROFILE, TerminalProfile,
+    TerminalProfileService, TerminalProfileStore, UserTerminalProfileStore
+} from './terminal-profile-service.js';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol.js';
 import URI from '@theia/core/lib/common/uri';
