@@ -30,6 +30,7 @@ export interface TerminalBlockOverlay {
     element: HTMLElement;
     startMarker: IMarker;
     endMarker: IMarker;
+    block: TerminalBlock;
 }
 
 export const TerminalBlockOverlayControllerFactory = Symbol('TerminalBlockOverlayControllerFactory');
@@ -46,7 +47,7 @@ export class TerminalBlockOverlayController implements Disposable {
 
     protected container: HTMLElement | undefined;
     protected readonly blockOverlays: TerminalBlockOverlay[] = [];
-    protected readonly markerMap = new WeakMap<TerminalBlock, Record<TerminalBlockBoundary, IMarker | undefined>>();
+    protected markerMap = new WeakMap<TerminalBlock, Record<TerminalBlockBoundary, IMarker | undefined>>();
     protected readonly toDispose = new DisposableCollection();
     protected pendingOverlayUpdate = false;
     protected enabled = true;
@@ -136,7 +137,7 @@ export class TerminalBlockOverlayController implements Disposable {
         overlay.appendChild(this.createButton(block, term, overlay));
         this.container.appendChild(overlay);
 
-        this.blockOverlays.push({ element: overlay, startMarker: trackStart, endMarker: trackEnd });
+        this.blockOverlays.push({ element: overlay, startMarker: trackStart, endMarker: trackEnd, block: block });
         this.update();
     }
 
@@ -212,6 +213,7 @@ export class TerminalBlockOverlayController implements Disposable {
                 endMarker.dispose();
             }
         }
+        this.markerMap = new WeakMap<TerminalBlock, Record<TerminalBlockBoundary, IMarker | undefined>>();
         this.blockOverlays.length = 0;
     }
 
@@ -230,9 +232,10 @@ export class TerminalBlockOverlayController implements Disposable {
         const viewportY = this.term.buffer.active.viewportY;
         const termHeight = this.term.rows * rowHeight;
         for (let i = this.blockOverlays.length - 1; i >= 0; i--) {
-            const { element, startMarker, endMarker } = this.blockOverlays[i];
+            const { element, startMarker, endMarker, block } = this.blockOverlays[i];
             if (startMarker.isDisposed || endMarker.isDisposed) {
                 element.remove();
+                this.markerMap.delete(block);
                 this.blockOverlays.splice(i, 1);
                 continue;
             }
