@@ -32,6 +32,7 @@ import { AiTerminalCommandBlockVariableContribution } from './ai-terminal-comman
 
 import '../../src/browser/style/ai-terminal.css';
 import '../../src/browser/style/shell-execution-tool.css';
+import { AskAITerminalInputArgs, AskAITerminalInputConfiguration, AskAITerminalInputFactory, AskAITerminalInputWidget } from './ask-ai-terminal-widget.js';
 
 export default new ContainerModule(bind => {
     bind(AiTerminalCommandContribution).toSelf().inSingletonScope();
@@ -59,4 +60,19 @@ export default new ContainerModule(bind => {
 
     bind(AiTerminalCommandBlockVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(AiTerminalCommandBlockVariableContribution);
+    bind(AskAITerminalInputFactory).toFactory(ctx => (args: AskAITerminalInputArgs) => {
+        const container = ctx.container.createChild();
+        container.bind(AskAITerminalInputArgs).toConstantValue(args);
+        container.bind(AskAITerminalInputConfiguration).toConstantValue({
+            showContext: true,
+            showPinnedAgent: true,
+            showChangeSet: false,
+            showSuggestions: false,
+            showCapabilities: false
+        } satisfies AskAITerminalInputConfiguration);
+        container.bind(AskAITerminalInputWidget).toSelf().inTransientScope();
+        const widget = container.get(AskAITerminalInputWidget);
+        widget.onDidDispose(() => container.unbindAll());
+        return widget;
+    });
 });
