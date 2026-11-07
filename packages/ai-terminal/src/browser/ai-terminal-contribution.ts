@@ -27,7 +27,7 @@ import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-h
 import { AgentService } from '@theia/ai-core';
 import { nls } from '@theia/core/lib/common/nls';
 import { TerminalBlock, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
-import { AskAITerminalInputFactory, AskAITerminalOverlay } from './ask-ai-terminal-widget';
+import { AskAITerminalInputFactory, AskAITerminalOverlay } from './ask-ai-terminal-widget.js';
 import { ChatAgentLocation, ChatAgentService, ChatRequest, ChatService } from '@theia/ai-chat';
 
 const AI_TERMINAL_COMMAND = Command.toLocalizedCommand({

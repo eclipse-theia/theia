@@ -17,8 +17,8 @@
 import { ChatAgentLocation, ChatRequest, MutableChatModel } from '@theia/ai-chat';
 import { generateUuid, URI } from '@theia/core';
 import { injectable, postConstruct } from '@theia/core/shared/inversify';
-import { AIChatInputWidget } from './chat-input-widget';
-import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution';
+import { AIChatInputWidget } from './chat-input-widget.js';
+import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution.js';
 
 export interface AskAIInputBaseArgs {
     onSubmit: (request: ChatRequest) => void | Promise<void>;
