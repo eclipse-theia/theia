@@ -218,11 +218,12 @@ export abstract class TerminalWidget extends BaseWidget {
 
     /**
      * Scrolls the terminal viewport so that the given boundary of the block is visible.
-     * Only meaningful when command history is enabled.
+     * The default implementation does nothing. Subclasses supporting command history
+     * may override this method to provide scrolling.
      * @param block the terminal block to scroll to
      * @param boundary whether to scroll to the top or bottom of the block; defaults to `TerminalBlockBoundary.Top`
      */
-    abstract scrollToBlockBoundary(block: TerminalBlock, boundary?: TerminalBlockBoundary): void;
+    scrollToBlockBoundary(_block: TerminalBlock, _boundary?: TerminalBlockBoundary): void { }
 }
 
 /**
