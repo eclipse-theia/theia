@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
-import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, ILogger, MenuContribution, MenuModelRegistry } from '@theia/core';
 import { ApplicationShell, codicon, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
@@ -71,6 +71,9 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
 
     @inject(ChatAgentService)
     protected readonly chatAgentService: ChatAgentService;
+
+    @inject(ILogger) @named('ai-terminal:AiTerminalCommandContribution')
+    protected readonly logger: ILogger;
 
     protected askAiInputOverlay: AskAITerminalOverlay | undefined;
 
@@ -139,7 +142,8 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
         );
 
         this.askAiInputOverlay.onSubmit(request => {
-            this.createNewChatSession(request, terminal, terminalHistoryIndex);
+            this.createNewChatSession(request, terminal, terminalHistoryIndex)
+                .catch(error => this.logger.error('Failed to ask AI about terminal command', error));
             this.cleanupInputOverlay();
         });
 
@@ -170,12 +174,17 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
         terminalHistoryIndex: number
     ): Promise<void> {
         const coderAgent = this.chatAgentService.getAgent('Coder');
-        const cwd = (await currentTerminal.cwd).toString();
+        let cwd: string | undefined;
+        try {
+            cwd = (await currentTerminal.cwd).toString();
+        } catch (error) {
+            this.logger.warn('Could not retrieve terminal working directory', error);
+        }
         const shell = await this.getTerminalShell(currentTerminal);
         const text = [
             `#terminalCommand:${terminalHistoryIndex}`,
             '### Terminal Context',
-            `Cwd: ${cwd}`,
+            ...(cwd ? [`Cwd: ${cwd}`] : []),
             ...(shell ? [`ShellType: ${shell}`] : []),
             '### User Question',
             request.text
