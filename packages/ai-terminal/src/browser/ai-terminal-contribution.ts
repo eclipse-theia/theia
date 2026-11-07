@@ -126,7 +126,7 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
                 }
                 this.showInputOverlay(terminal, terminalHistoryIndex);
             },
-            isVisible: (terminalBlock: TerminalBlock) => (!!terminalBlock.command && !!terminalBlock.output)
+            isVisible: (terminalBlock?: TerminalBlock) => (!!terminalBlock?.command && !!terminalBlock?.output)
         }));
     }
 
