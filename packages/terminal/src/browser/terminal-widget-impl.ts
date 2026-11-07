@@ -652,7 +652,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.blockOverlayController?.setEnabled(this.enableCommandBlockActions);
     }
 
-    scrollToBlockBoundary(terminalBlock: TerminalBlock, boundary: TerminalBlockBoundary = TerminalBlockBoundary.Top): void {
+    override scrollToBlockBoundary(terminalBlock: TerminalBlock, boundary: TerminalBlockBoundary = TerminalBlockBoundary.Top): void {
         this.blockOverlayController?.scrollToBoundary(terminalBlock, boundary);
     }
 
