@@ -173,7 +173,6 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
         currentTerminal: TerminalWidgetImpl,
         terminalHistoryIndex: number
     ): Promise<void> {
-        const coderAgent = this.chatAgentService.getAgent('Coder');
         let cwd: string | undefined;
         try {
             cwd = (await currentTerminal.cwd).toString();
@@ -189,7 +188,7 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
             '### User Question',
             request.text
         ].join('\n');
-        const session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true }, coderAgent);
+        const session = this.chatService.createSession(ChatAgentLocation.Panel);
         this.chatService.sendRequest(session.id, { ...request, text });
     }
 
