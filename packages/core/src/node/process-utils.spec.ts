@@ -133,6 +133,32 @@ describe('ProcessUtils', () => {
             expect(sigkilledPids()).members([424244]);
         });
 
+        it('also kills the reparented members of the process group that the process leads', async () => {
+            // 9 was a child of a process of the group that exited: it is no longer a descendant of 2.
+            processes.set(9, { pid: 9, ppid: 1, pgid: 2, startTime: 'Thu Oct 29 10:00:05 2026' });
+            alivePids = new Set([9]);
+
+            const terminated = coreProcessManager['unixTerminateChildProcessTrees'](2);
+            await clock.tickAsync(delay);
+            await terminated;
+            expect(sigtermedPids()).members([40, 5, 6, 7, 9]);
+            expect(sigkilledPids()).members([9]);
+        });
+
+        it('measures the delay from the start of the call, including the time it takes to list the processes', async () => {
+            coreProcessManager['unixListProcessesAsync'] = () => new Promise(resolve => setTimeout(() => resolve(processes), 1500));
+
+            const terminated = coreProcessManager['unixTerminateChildProcessTrees'](2);
+            await clock.tickAsync(1500);
+            expect(sigtermedPids()).members([40, 5, 6, 7]);
+            await clock.tickAsync(delay - 1500 - 1);
+            expect(sigkilledPids()).to.be.empty;
+            // The listing before SIGKILL takes another 1500 ms.
+            await clock.tickAsync(1 + 1500);
+            await terminated;
+            expect(sigkilledPids()).members([40, 5, 6, 7]);
+        });
+
         it('only sends SIGTERM when the start times cannot be listed', async () => {
             coreProcessManager['unixListProcessesAsync'] = async () => { throw new Error('ps: bad -o argument'); };
             coreProcessManager['execFile'] = async () => ({ stdout: mockPsOutput, stderr: '' });
@@ -280,6 +306,43 @@ describe('ProcessUtils', () => {
             expect(warnStub.called).to.be.true;
             await clock.tickAsync(delay);
             expect(sigkilledPids()).to.be.empty;
+        });
+
+        it('checks again for the targets that are not due yet when the timer fires early', async () => {
+            coreProcessManager['unixTerminateProcessTree'](424243);
+            // As if the timer's clock were ahead of the clock of the deadlines.
+            for (const target of coreProcessManager['unixForceKillTargets'].values()) {
+                target.deadline += 1;
+            }
+            await clock.tickAsync(delay);
+            expect(sigkilledPids()).to.be.empty;
+            await clock.tickAsync(1);
+            expect(sigkilledPids()).members([424243, 424244, 424245, 424246]);
+        });
+
+        it('kills the processes of a later tree at their own deadline', async () => {
+            coreProcessManager['unixTerminateProcessTree'](424243);
+            await clock.tickAsync(1000);
+            processes.set(424248, { pid: 424248, ppid: 1000, pgid: 424247, startTime: 'Thu Oct 29 10:00:03 2026' });
+            alivePids.add(424248);
+            coreProcessManager['unixTerminateProcessTree'](424248);
+
+            await clock.tickAsync(delay - 1000);
+            expect(sigkilledPids()).members([424243, 424244, 424245, 424246]);
+            await clock.tickAsync(1000);
+            expect(sigkilledPids()).members([424243, 424244, 424245, 424246, 424248]);
+        });
+
+        it('kills the processes of earlier trees right away, once their start time is checked, when the current process exits', () => {
+            coreProcessManager['unixTerminateProcessTree'](424243);
+            processes = new Map(processes);
+            processes.set(424245, { pid: 424245, ppid: 1, pgid: 424245, startTime: 'Thu Oct 29 10:00:04 2026' });
+            coreProcessManager['unixGetChildrenRecursive'] = () => new Set();
+            coreProcessManager['unixGetPGID'] = () => 1;
+
+            coreProcessManager['unixTerminateProcessTree'](process.pid);
+            expect(sigkilledPids()).members([424243, 424244, 424246]);
+            expect(coreProcessManager['unixForceKillTargets'].size).to.equal(0);
         });
 
         it('does not kill the tree of the current process with SIGKILL', async () => {
