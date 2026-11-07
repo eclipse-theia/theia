@@ -531,18 +531,23 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
         // use requestPath rather than normalizedUri.path to preserve the scheme of the requested resource as a path segment
         const cacheUrl = new Endpoint({ path: requestPath }).getRestUrl().withQuery(decodeURIComponent(requestQuery)).toString();
 
+        // `http(s)` resources are fetched without a real modification time, so their eTag cannot tell when they change.
+        const cacheable = normalizedUri.scheme !== Schemes.http && normalizedUri.scheme !== Schemes.https;
+
         try {
             if (this.contentOptions.localResourceRoots) {
                 for (const root of this.contentOptions.localResourceRoots) {
-                    if (!new URI(root).path.isEqualOrParent(normalizedUri.path)) {
+                    if (!this.isInResourceRoot(new URI(root), normalizedUri)) {
                         continue;
                     }
-                    let cached = await this.resourceCache.match(cacheUrl);
+                    let cached = cacheable ? await this.resourceCache.match(cacheUrl) : undefined;
                     try {
                         const result = await this.fileService.readFileStream(normalizedUri, { etag: cached?.eTag });
                         const { buffer } = await BinaryBufferReadableStream.toBuffer(result.value);
                         cached = { body: () => buffer, eTag: result.etag };
-                        this.resourceCache.put(cacheUrl, cached);
+                        if (cacheable) {
+                            this.resourceCache.put(cacheUrl, cached);
+                        }
                     } catch (e) {
                         if (!(e instanceof FileOperationError && e.fileOperationResult === FileOperationResult.FILE_NOT_MODIFIED_SINCE)) {
                             throw e;
@@ -570,6 +575,15 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
             path: requestPath,
             query: requestQuery
         });
+    }
+
+    /**
+     * Like VS Code, a resource is in a root only if it has the same scheme and authority as the root, and its path is in the root's path.
+     */
+    protected isInResourceRoot(root: URI, resource: URI): boolean {
+        return root.scheme === resource.scheme
+            && root.authority.toLowerCase() === resource.authority.toLowerCase()
+            && root.path.isEqualOrParent(resource.path);
     }
 
     protected normalizeRequestUri(requestPath: string): URI {
