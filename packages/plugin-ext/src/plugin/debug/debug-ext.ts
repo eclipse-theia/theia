@@ -15,27 +15,27 @@
 // *****************************************************************************
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
-import { Path } from '@theia/core/lib/common/path';
 import * as theia from '@theia/plugin';
 import { URI } from '@theia/core/shared/vscode-uri';
-import { Breakpoint, DebugStackFrameDTO, DebugThreadDTO } from '../../common/plugin-api-rpc-model';
-import { DebugConfigurationProviderTriggerKind, DebugExt, DebugMain, PLUGIN_RPC_CONTEXT as Ext, TerminalOptionsExt } from '../../common/plugin-api-rpc';
-import { PluginPackageDebuggersContribution } from '../../common/plugin-protocol';
-import { RPCProtocol } from '../../common/rpc-protocol';
-import { CommandRegistryImpl } from '../command-registry';
-import { ConnectionImpl } from '../../common/connection';
+import { Breakpoint, DebugStackFrameDTO, DebugThreadDTO } from '../../common/plugin-api-rpc-model.js';
+import { DebugConfigurationProviderTriggerKind, DebugExt, DebugMain, PLUGIN_RPC_CONTEXT as Ext, TerminalOptionsExt } from '../../common/plugin-api-rpc.js';
+import { PluginPackageDebuggersContribution } from '../../common/plugin-protocol.js';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
+import { CommandRegistryImpl } from '../command-registry.js';
+import { ConnectionImpl } from '../../common/connection.js';
 import { DEBUG_SCHEME, SCHEME_PATTERN } from '@theia/debug/lib/common/debug-uri-utils';
-import { Disposable, Breakpoint as BreakpointExt, SourceBreakpoint, FunctionBreakpoint, Location, Range, URI as URIImpl, DebugStackFrame, DebugThread } from '../types-impl';
-import { PluginDebugAdapterSession } from './plugin-debug-adapter-session';
-import { PluginDebugAdapterTracker } from './plugin-debug-adapter-tracker';
+import { Disposable, Breakpoint as BreakpointExt, SourceBreakpoint, FunctionBreakpoint, Location, Range, URI as URIImpl, DebugStackFrame, DebugThread } from '../types-impl.js';
+import { PluginDebugAdapterSession } from './plugin-debug-adapter-session.js';
+import { PluginDebugAdapterTracker } from './plugin-debug-adapter-tracker.js';
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import { DebugAdapter } from '@theia/debug/lib/common/debug-model';
-import { PluginDebugAdapterCreator } from './plugin-debug-adapter-creator';
-import { NodeDebugAdapterCreator } from '../node/debug/plugin-node-debug-adapter-creator';
+import { PluginDebugAdapterCreator } from './plugin-debug-adapter-creator.js';
+import { NodeDebugAdapterCreator } from '../node/debug/plugin-node-debug-adapter-creator.js';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common/debug-configuration';
-import { checkTestRunInstance } from '../tests';
-import { PluginLogger } from '../logger';
+import { checkTestRunInstance } from '../tests.js';
+import { PluginLogger } from '../logger.js';
+import { WorkspaceExtImpl } from '../workspace.js';
 
 interface ConfigurationProviderRecord {
     handle: number;
@@ -50,6 +50,9 @@ interface ConfigurationProviderRecord {
 export class DebugExtImpl implements DebugExt {
     @inject(RPCProtocol)
     protected readonly rpc: RPCProtocol;
+
+    @inject(WorkspaceExtImpl)
+    protected readonly workspaceExt: WorkspaceExtImpl;
 
     // debug sessions by sessionId
     private sessions = new Map<string, PluginDebugAdapterSession>();
@@ -501,7 +504,7 @@ export class DebugExtImpl implements DebugExt {
         );
     }
 
-    protected async createDebugAdapterTracker(session: theia.DebugSession): Promise<theia.DebugAdapterTracker> {
+    protected async createDebugAdapterTracker(session: theia.DebugSession): Promise<theia.DebugAdapterTracker | undefined> {
         return PluginDebugAdapterTracker.create(session, this.trackerFactories);
     }
 
@@ -536,13 +539,8 @@ export class DebugExtImpl implements DebugExt {
             return undefined;
         }
 
-        const uri = URI.parse(folder);
-        const path = new Path(uri.path);
-        return {
-            uri: uri,
-            name: path.base,
-            index: 0
-        };
+        // As in VS Code, a URI that is not a workspace folder results in no folder.
+        return this.workspaceExt.resolveWorkspaceFolder(URI.parse(folder));
     }
 
     private getAdapterCreator(debugConfiguration: theia.DebugConfiguration): PluginDebugAdapterCreator {

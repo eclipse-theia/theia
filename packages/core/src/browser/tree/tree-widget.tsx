@@ -16,38 +16,37 @@
 
 import { injectable, inject, postConstruct } from 'inversify';
 import { Message } from '@lumino/messaging';
-import { Disposable, MenuPath, SelectionService, Event as TheiaEvent, Emitter } from '../../common';
-import { Key, KeyCode, KeyModifier } from '../keyboard/keys';
-import { ContextMenuRenderer } from '../context-menu-renderer';
-import { StatefulWidget } from '../shell';
+import { Disposable, MenuPath, SelectionService, Event as TheiaEvent, Emitter } from '../../common/index.js';
+import { Key, KeyCode, KeyModifier } from '../keyboard/keys.js';
+import { ContextMenuRenderer } from '../context-menu-renderer.js';
+import { StatefulWidget } from '../shell/index.js';
 import {
     EXPANSION_TOGGLE_CLASS, SELECTED_CLASS, COLLAPSED_CLASS, FOCUS_CLASS, BUSY_CLASS, CODICON_TREE_ITEM_CLASSES, CODICON_LOADING_CLASSES, Widget, UnsafeWidgetUtilities,
     addEventListener
-} from '../widgets';
-import { TreeNode, CompositeTreeNode } from './tree';
-import { TreeModel } from './tree-model';
-import { ExpandableTreeNode } from './tree-expansion';
-import { SelectableTreeNode, TreeSelection } from './tree-selection';
-import { TreeDecoratorService, TreeDecoration, DecoratedTreeNode } from './tree-decorator';
-import { notEmpty } from '../../common/objects';
-import { isOSX } from '../../common/os';
-import { ReactWidget } from '../widgets/react-widget';
+} from '../widgets/index.js';
+import { TreeNode, CompositeTreeNode } from './tree.js';
+import { TreeModel } from './tree-model.js';
+import { ExpandableTreeNode } from './tree-expansion.js';
+import { SelectableTreeNode, TreeSelection } from './tree-selection.js';
+import { TreeDecoratorService, TreeDecoration, DecoratedTreeNode } from './tree-decorator.js';
+import { notEmpty } from '../../common/objects.js';
+import { isOSX } from '../../common/os.js';
+import { ReactWidget } from '../widgets/react-widget.js';
 import * as React from 'react';
 import { Virtuoso, VirtuosoHandle, VirtuosoProps } from 'react-virtuoso';
-import { TopDownTreeIterator } from './tree-iterator';
-import { SearchBox, SearchBoxFactory, SearchBoxProps } from './search-box';
-import { TreeSearch } from './tree-search';
+import { TopDownTreeIterator } from './tree-iterator.js';
+import { SearchBox, SearchBoxFactory, SearchBoxProps } from './search-box.js';
+import { TreeSearch } from './tree-search.js';
 import { ElementExt } from '@lumino/domutils';
-import { TreeWidgetSelection } from './tree-widget-selection';
-import { MaybePromise } from '../../common/types';
-import { LabelProvider } from '../label-provider';
-import { CorePreferences } from '../../common/core-preferences';
-import { TreeFocusService } from './tree-focus-service';
+import { TreeWidgetSelection } from './tree-widget-selection.js';
+import { MaybePromise } from '../../common/types.js';
+import { LabelProvider } from '../label-provider.js';
+import { CorePreferences } from '../../common/core-preferences.js';
+import { TreeFocusService } from './tree-focus-service.js';
 import { useEffect } from 'react';
-import { PREFERENCE_NAME_TREE_INDENT } from '../../common/tree-preference';
-import { PreferenceService, PreferenceChange } from '../../common/preferences';
-
-const debounce = require('lodash.debounce');
+import { PREFERENCE_NAME_TREE_INDENT } from '../../common/tree-preference.js';
+import { PreferenceService, PreferenceChange } from '../../common/preferences/index.js';
+import debounce from '../../../shared/lodash.debounce/index.cjs';
 
 export const TREE_CLASS = 'theia-Tree';
 export const TREE_CONTAINER_CLASS = 'theia-TreeContainer';
@@ -270,8 +269,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             this.onAtBottomStateChangeEmitter,
             this.model,
             this.model.onChanged(() => this.updateRows()),
-            this.model.onSelectionChanged(() => this.scheduleUpdateScrollToRow({ resize: false })),
-            this.focusService.onDidChangeFocus(() => this.scheduleUpdateScrollToRow({ resize: false })),
+            this.model.onSelectionChanged(() => this.scheduleUpdateScrollToRow()),
+            this.focusService.onDidChangeFocus(() => this.scheduleUpdateScrollToRow()),
             this.model.onDidChangeBusy(() => this.update()),
             this.model.onDidUpdate(() => this.update()),
             this.model.onNodeRefreshed(() => this.updateDecorations()),

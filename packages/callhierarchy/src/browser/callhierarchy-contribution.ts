@@ -18,9 +18,9 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { MenuModelRegistry, Command, CommandRegistry } from '@theia/core/lib/common';
 import { AbstractViewContribution, OpenViewArguments, KeybindingRegistry } from '@theia/core/lib/browser';
 import { EDITOR_CONTEXT_MENU, CurrentEditorAccess, EditorManager } from '@theia/editor/lib/browser';
-import { CallHierarchyTreeWidget } from './callhierarchy-tree/callhierarchy-tree-widget';
-import { CALLHIERARCHY_ID, CALL_HIERARCHY_LABEL, CALL_HIERARCHY_TOGGLE_COMMAND_ID } from './callhierarchy';
-import { CallHierarchyServiceProvider } from './callhierarchy-service';
+import { CallHierarchyTreeWidget } from './callhierarchy-tree/callhierarchy-tree-widget.js';
+import { CALLHIERARCHY_ID, CALL_HIERARCHY_LABEL, CALL_HIERARCHY_TOGGLE_COMMAND_ID } from './callhierarchy.js';
+import { CallHierarchyServiceProvider } from './callhierarchy-service.js';
 import URI from '@theia/core/lib/common/uri';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 export { CALL_HIERARCHY_LABEL, CALL_HIERARCHY_TOGGLE_COMMAND_ID };

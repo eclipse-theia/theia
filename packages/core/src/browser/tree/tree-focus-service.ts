@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { Emitter, Event } from '../../common';
-import { Tree, TreeNode } from './tree';
-import { SelectableTreeNode } from './tree-selection';
+import { Emitter, Event } from '../../common/index.js';
+import { Tree, TreeNode } from './tree.js';
+import { SelectableTreeNode } from './tree-selection.js';
 
 export interface TreeFocusService {
     readonly focusedNode: SelectableTreeNode | undefined;

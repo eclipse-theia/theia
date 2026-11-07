@@ -1,10 +1,11 @@
 {
   "name": "@theia/property-view",
-  "version": "1.76.0",
+  "version": "1.77.0",
   "description": "Theia - Property View Extension",
+  "type": "module",
   "dependencies": {
-    "@theia/core": "1.76.0",
-    "@theia/filesystem": "1.76.0",
+    "@theia/core": "1.77.0",
+    "@theia/filesystem": "1.77.0",
     "tslib": "^2.8.1"
   },
   "publishConfig": {
@@ -40,10 +41,18 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.76.0"
+    "@theia/ext-scripts": "1.77.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "21358137e41342742707f660b8e222f940a27652",
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/browser/resource-property-view": "./lib/browser/resource-property-view/index.js",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  }
 }

@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { Range } from 'vscode-languageserver-protocol';
-import { CancellationToken } from './cancellation';
-import URI from './uri';
+import { CancellationToken } from './cancellation.js';
+import URI from './uri.js';
 
 /** Represents a textual diff. */
 export interface Diff {

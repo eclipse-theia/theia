@@ -24,23 +24,23 @@ import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shel
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
-import { CollaborationWorkspaceService } from './collaboration-workspace-service';
+import { CollaborationWorkspaceService } from './collaboration-workspace-service.js';
 import { Range as MonacoRange } from '@theia/monaco-editor-core';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EditorDecoration, EditorWidget, Selection, TextEditorDocument, TrackedRangeStickiness } from '@theia/editor/lib/browser';
 import { DecorationStyle, OpenerService, SaveReason } from '@theia/core/lib/browser';
-import { CollaborationFileSystemProvider, CollaborationURI } from './collaboration-file-system-provider';
+import { CollaborationFileSystemProvider, CollaborationURI } from './collaboration-file-system-provider.js';
 import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
-import { CollaborationColorService } from './collaboration-color-service';
+import { CollaborationColorService } from './collaboration-color-service.js';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileChange, FileChangeType, FileOperation } from '@theia/filesystem/lib/common/files';
 import { OpenCollaborationYjsProvider } from 'open-collaboration-yjs';
 import { createMutex } from 'lib0/mutex';
-import { CollaborationUtils } from './collaboration-utils';
-import { yTextDeltaToEdits } from './yjs-delta';
-import debounce = require('@theia/core/shared/lodash.debounce');
+import { CollaborationUtils } from './collaboration-utils.js';
+import { yTextDeltaToEdits } from './yjs-delta.js';
+import debounce from '@theia/core/shared/lodash.debounce';
 
 export const CollaborationInstanceFactory = Symbol('CollaborationInstanceFactory');
 export type CollaborationInstanceFactory = (connection: CollaborationInstanceOptions) => CollaborationInstance;
@@ -107,6 +107,7 @@ export class CollaborationInstance implements Disposable {
     protected peers = new Map<string, DisposablePeer>();
     protected yjs = new Y.Doc();
     protected yjsAwareness = new awarenessProtocol.Awareness(this.yjs);
+    protected sharedSelectionWidget?: EditorWidget;
     protected yjsProvider: OpenCollaborationYjsProvider;
     protected colorIndex = 0;
     protected editorDecorations = new Map<EditorWidget, string[]>();
@@ -161,7 +162,10 @@ export class CollaborationInstance implements Disposable {
             this.messageService.error(message);
             this.dispose();
         });
-        this.yjsProvider = new OpenCollaborationYjsProvider(connection, this.yjs, this.yjsAwareness);
+        // Repairs updates this peer missed; the other Open Collaboration Tools clients use the same interval.
+        this.yjsProvider = new OpenCollaborationYjsProvider(connection, this.yjs, this.yjsAwareness, {
+            resyncTimer: 10_000
+        });
         this.yjsProvider.connect();
         this.toDispose.push(Disposable.create(() => this.yjs.destroy()));
         this.toDispose.push(this.yjsProvider);
@@ -539,11 +543,9 @@ export class CollaborationInstance implements Disposable {
                 widgetDispose.dispose();
                 selectionChange.dispose();
                 // Remove presence information when the editor closes
-                const state = this.yjsAwareness.getLocalState();
-                if (state?.currentSelection?.path === path) {
-                    delete state.currentSelection;
+                if (this.sharedSelectionWidget === widget) {
+                    this.setSharedSelection(undefined);
                 }
-                this.yjsAwareness.setLocalState(state);
             });
             this.toDispose.push(selectionChange);
             this.toDispose.push(widgetDispose);
@@ -553,6 +555,9 @@ export class CollaborationInstance implements Disposable {
 
     protected updateEditorPresence(widget: EditorWidget): void {
         const uri = widget.getResourceUri();
+        if (!this.isSharedResource(uri)) {
+            return;
+        }
         const path = this.utils.getProtocolPath(uri);
         if (path) {
             const ytext = this.yjs.getText(path);
@@ -575,10 +580,12 @@ export class CollaborationInstance implements Disposable {
                 textSelections: [editorSelection]
             };
             this.setSharedSelection(textSelection);
+            this.sharedSelectionWidget = widget;
         }
     }
 
     protected setSharedSelection(selection?: types.ClientSelection): void {
+        this.sharedSelectionWidget = undefined;
         this.yjsAwareness.setLocalStateField('selection', selection);
     }
 

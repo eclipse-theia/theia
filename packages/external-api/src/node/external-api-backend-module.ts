@@ -17,14 +17,14 @@
 import { bindRootContributionProvider, ConnectionHandler, RpcConnectionHandler } from '@theia/core';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { Container, ContainerModule } from '@theia/core/shared/inversify';
-import { EXTERNAL_API_CONFIG_SERVICE_PATH, ExternalApiConfigService } from '../common/external-api-configuration';
-import { ExternalApiContribution } from './external-api-contribution';
-import { ExternalApiEventStream, ExternalApiEventStreamFactory, ExternalApiEventStreamImpl, ExternalApiEventStreamOptions } from './external-api-event-stream';
-import { ExternalApiResponseWriter, ExternalApiResponseWriterImpl } from './external-api-response-writer';
-import { ExternalApiRouter, ExternalApiRouterFactory, ExternalApiRouterImpl, ExternalApiRouterOptions } from './external-api-router';
-import { ExternalApiServer } from './external-api-server';
-import { OpenApiDocumentBuilder, OpenApiDocumentBuilderImpl } from './openapi-document-builder';
-import { OpenApiSpecContribution } from './openapi-spec-contribution';
+import { EXTERNAL_API_CONFIG_SERVICE_PATH, ExternalApiConfigService } from '../common/external-api-configuration.js';
+import { ExternalApiContribution } from './external-api-contribution.js';
+import { ExternalApiEventStream, ExternalApiEventStreamFactory, ExternalApiEventStreamImpl, ExternalApiEventStreamOptions } from './external-api-event-stream.js';
+import { ExternalApiResponseWriter, ExternalApiResponseWriterImpl } from './external-api-response-writer.js';
+import { ExternalApiRouter, ExternalApiRouterFactory, ExternalApiRouterImpl, ExternalApiRouterOptions } from './external-api-router.js';
+import { ExternalApiServer } from './external-api-server.js';
+import { OpenApiDocumentBuilder, OpenApiDocumentBuilderImpl } from './openapi-document-builder.js';
+import { OpenApiSpecContribution } from './openapi-spec-contribution.js';
 
 export default new ContainerModule(bind => {
     bind(ExternalApiServer).toSelf().inSingletonScope();

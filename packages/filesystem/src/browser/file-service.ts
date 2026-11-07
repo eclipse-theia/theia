@@ -52,22 +52,22 @@ import {
     ResolveFileResult, ResolveFileResultWithMetadata,
     MoveFileOptions, CopyFileOptions, BaseStatWithMetadata, FileDeleteOptions, FileOperationOptions, hasAccessCapability, hasUpdateCapability,
     hasFileReadStreamCapability, FileSystemProviderWithFileReadStreamCapability, ReadOnlyMessageFileSystemProvider
-} from '../common/files';
+} from '../common/files.js';
 import { BinaryBuffer, BinaryBufferReadable, BinaryBufferReadableStream, BinaryBufferReadableBufferedStream, BinaryBufferWriteableStream } from '@theia/core/lib/common/buffer';
 import { ReadableStream, isReadableStream, isReadableBufferedStream, transform, consumeStream, peekStream, peekReadable, Readable } from '@theia/core/lib/common/stream';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { FileSystemPreferences } from '../common/filesystem-preferences';
+import { FileSystemPreferences } from '../common/filesystem-preferences.js';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
-import { DelegatingFileSystemProvider } from '../common/delegating-file-system-provider';
+import { DelegatingFileSystemProvider } from '../common/delegating-file-system-provider.js';
 import type { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
 import { UTF8, UTF8_with_bom } from '@theia/core/lib/common/encodings';
 import { EncodingService, ResourceEncoding, DecodeStreamResult } from '@theia/core/lib/common/encoding-service';
 import { Minimatch } from 'minimatch';
 import { Mutable } from '@theia/core/lib/common/types';
-import { readFileIntoStream } from '../common/io';
-import { FileSystemWatcherErrorHandler } from './filesystem-watcher-error-handler';
-import { FileSystemUtils } from '../common/filesystem-utils';
+import { readFileIntoStream } from '../common/io.js';
+import { FileSystemWatcherErrorHandler } from './filesystem-watcher-error-handler.js';
+import { FileSystemUtils } from '../common/filesystem-utils.js';
 import { nls, ILogger } from '@theia/core';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
@@ -409,6 +409,15 @@ export class FileService {
         if (!activation) {
             const deferredActivation = new Deferred<FileSystemProvider>();
             this.activations.set(scheme, activation = deferredActivation.promise);
+            // Resolve the activation as soon as a provider is registered for the scheme. Otherwise a
+            // slow or dangling `onWillActivateFileSystemProvider` listener whose `waitUntil` promise
+            // never settles would wedge this activation (and everything awaiting it) forever. See #17506.
+            const registration = this.onDidChangeFileSystemProviderRegistrations(event => {
+                if (event.added && event.scheme === scheme && event.provider) {
+                    deferredActivation.resolve(event.provider);
+                }
+            });
+            deferredActivation.promise.then(() => registration.dispose(), () => registration.dispose());
             WaitUntilEvent.fire(this.onWillActivateFileSystemProviderEmitter, { scheme }).then(() => {
                 provider = this.providers.get(scheme);
                 if (!provider) {
@@ -1282,7 +1291,7 @@ export class FileService {
                 throw new Error(nls.localizeByDefault("Unable to move/copy when source '{0}' is parent of target '{1}'.", this.resourceForError(source), this.resourceForError(target)));
             }
 
-            if (!isSameResourceWithDifferentPathCase && target.isEqualOrParent(source, isPathCaseSensitive)) {
+            if (!isSameResourceWithDifferentPathCase && source.isEqualOrParent(target, isPathCaseSensitive)) {
                 throw new Error(nls.localizeByDefault("Unable to move/copy when source '{0}' is parent of target '{1}'.", this.resourceForError(source), this.resourceForError(target)));
             }
         }
@@ -1295,7 +1304,7 @@ export class FileService {
             // it as it would delete the source as well. In this case we have to throw
             if (sourceProvider === targetProvider) {
                 const isPathCaseSensitive = !!(sourceProvider.capabilities & FileSystemProviderCapabilities.PathCaseSensitive);
-                if (source.isEqualOrParent(target, isPathCaseSensitive)) {
+                if (target.isEqualOrParent(source, isPathCaseSensitive)) {
                     throw new Error(nls.localizeByDefault("Unable to move/copy '{0}' into '{1}' since a file would replace the folder it is contained in.", this.resourceForError(source), this.resourceForError(target)));
                 }
             }
@@ -2107,6 +2116,8 @@ export class FileService {
             }
         } else if (detectedEncoding) {
             preferredEncoding = detectedEncoding;
+        } else if (this.preferences.get('files.encoding', undefined, resource.toString()) === UTF8_with_bom) {
+            preferredEncoding = UTF8; // if we did not detect UTF 8 BOM before, this can only be UTF 8 then
         }
 
         return this.getEncodingForResource(resource, preferredEncoding);

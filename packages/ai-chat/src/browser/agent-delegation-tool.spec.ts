@@ -34,10 +34,10 @@ import {
     TextChatResponseContentImpl,
     ThinkingChatResponseContentImpl,
     ToolCallChatResponseContentImpl,
-} from '../common';
-import { ChatAgentServiceImpl } from '../common/chat-agent-service';
-import { AgentDelegationTool } from './agent-delegation-tool';
-import { TASK_CONTEXT_VARIABLE } from './task-context-variable';
+} from '../common/index.js';
+import { ChatAgentServiceImpl } from '../common/chat-agent-service.js';
+import { AgentDelegationTool } from './agent-delegation-tool.js';
+import { TASK_CONTEXT_VARIABLE } from './task-context-variable.js';
 
 disableJSDOM();
 

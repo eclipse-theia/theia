@@ -24,7 +24,7 @@ import {
     ShellExecutionServer,
     ShellExecutionToolResult,
     combineAndTruncate
-} from '../common/shell-execution-server';
+} from '../common/shell-execution-server.js';
 
 /** A single shell command to run through {@link AbstractShellExecutionTool.runShellCommand}. */
 export interface ShellCommandExecution {

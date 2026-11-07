@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
-import { CustomEditor, DeployedPlugin } from '../../../common';
+import { CustomEditor, DeployedPlugin } from '../../../common/index.js';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { CustomEditorOpener } from './custom-editor-opener';
+import { CustomEditorOpener } from './custom-editor-opener.js';
 import { Emitter, PreferenceService, ILogger } from '@theia/core';
 import { ApplicationShell, DefaultOpenerService, OpenWithService, WidgetManager } from '@theia/core/lib/browser';
-import { CustomEditorWidget } from './custom-editor-widget';
+import { CustomEditorWidget } from './custom-editor-widget.js';
 
 @injectable()
 export class PluginCustomEditorRegistry {

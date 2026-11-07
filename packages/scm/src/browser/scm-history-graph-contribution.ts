@@ -23,12 +23,12 @@ import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { QuickInputService } from '@theia/core/lib/browser';
 import { QuickPickItem, QuickPickSeparator } from '@theia/core/lib/common/quick-pick-service';
 import { codicon } from '@theia/core/lib/browser/widgets/widget';
-import { ScmHistoryGraphModel, ScmHistoryGraphModelProvider } from './scm-history-graph-model';
-import { ScmService } from './scm-service';
-import { ScmContextKeyService } from './scm-context-key-service';
-import { ScmHistoryItemRef, ScmHistoryProvider } from './scm-provider';
-import { SCM_HISTORY_TITLE_MENU } from './scm-history-graph-widget';
-import { getRefBadgeClass } from './scm-history-graph-helpers';
+import { ScmHistoryGraphModel, ScmHistoryGraphModelProvider } from './scm-history-graph-model.js';
+import { ScmService } from './scm-service.js';
+import { ScmContextKeyService } from './scm-context-key-service.js';
+import { ScmHistoryItemRef, ScmHistoryProvider } from './scm-provider.js';
+import { SCM_HISTORY_TITLE_MENU } from './scm-history-graph-widget.js';
+import { getRefBadgeClass } from './scm-history-graph-helpers.js';
 
 export namespace ScmHistoryGraphCommands {
     export const REFRESH = Command.toDefaultLocalizedCommand({

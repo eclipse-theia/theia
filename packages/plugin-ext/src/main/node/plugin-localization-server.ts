@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { PluginDeployer } from '../../common/plugin-protocol';
-import { PluginDeployerImpl } from './plugin-deployer-impl';
+import { PluginDeployer } from '../../common/plugin-protocol.js';
+import { PluginDeployerImpl } from './plugin-deployer-impl.js';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { LocalizationServerImpl } from '@theia/core/lib/node/i18n/localization-server';
 

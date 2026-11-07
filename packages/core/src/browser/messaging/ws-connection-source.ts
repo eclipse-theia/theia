@@ -18,19 +18,19 @@
 // would be circular.
 /* eslint-disable @theia/named-logger-check */
 
-import { Emitter, Event } from '../../common/event';
-import { ConnectionSource } from './connection-source';
+import { Emitter, Event } from '../../common/event.js';
+import { ConnectionSource } from './connection-source.js';
 import { Socket, io } from 'socket.io-client';
-import { Endpoint } from '../endpoint';
-import { AbstractChannel, Channel, ForwardingChannel } from '../../common/message-rpc/channel';
-import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
+import { Endpoint } from '../endpoint.js';
+import { AbstractChannel, Channel, ForwardingChannel } from '../../common/message-rpc/channel.js';
+import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer.js';
 import { inject, injectable, postConstruct } from 'inversify';
-import { FrontendIdProvider } from './frontend-id-provider';
-import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
-import { SocketWriteBuffer } from '../../common/messaging/socket-write-buffer';
-import { ConnectionManagementMessages } from '../../common/messaging/connection-management';
-import { servicesPath } from '../../common/messaging/handler';
-import { Disposable, DisposableCollection } from '../../common/disposable';
+import { FrontendIdProvider } from './frontend-id-provider.js';
+import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider.js';
+import { SocketWriteBuffer } from '../../common/messaging/socket-write-buffer.js';
+import { ConnectionManagementMessages } from '../../common/messaging/connection-management.js';
+import { servicesPath } from '../../common/messaging/handler.js';
+import { Disposable, DisposableCollection } from '../../common/disposable.js';
 
 @injectable()
 export class WebSocketConnectionSource implements ConnectionSource {

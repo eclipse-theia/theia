@@ -18,7 +18,7 @@ import { AbstractStreamParsingChatAgent } from '@theia/ai-chat';
 import { LanguageModelRequirement } from '@theia/ai-core/lib/common';
 import { ILogger, nls } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { PR_REVIEW_SYSTEM_PROMPT_ID, prReviewSystemPrompt } from './pr-review-prompt-template';
+import { PR_REVIEW_SYSTEM_PROMPT_ID, prReviewSystemPrompt } from './pr-review-prompt-template.js';
 
 export const PRReviewAgentId = 'pr-reviewer';
 

@@ -21,10 +21,10 @@ import * as path from 'path';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { PluginPaths } from '../common/paths/const';
-import { PluginPathsService } from '../common/plugin-paths-protocol';
-import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
-import { PluginStorageKind } from '../../common';
+import { PluginPaths } from '../common/paths/const.js';
+import { PluginPathsService } from '../common/plugin-paths-protocol.js';
+import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types.js';
+import { PluginStorageKind } from '../../common/index.js';
 import { ILogger } from '@theia/core';
 
 export interface Store {
@@ -92,7 +92,7 @@ export class PluginsKeyValueStorage {
         const configDirUri = await this.envServer.getConfigDirUri();
         const globalStorageFsPath = path.join(FileUri.fsPath(configDirUri), PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR);
         await fs.ensureDir(globalStorageFsPath);
-        return path.join(globalStorageFsPath, 'global-state.json');
+        return path.join(globalStorageFsPath, PluginPaths.PLUGINS_GLOBAL_STATE_FILE);
     }
 
     private async initializeStore(storePath: string): Promise<Store> {
@@ -137,7 +137,7 @@ export class PluginsKeyValueStorage {
         }
         const storagePath = await this.pluginPathsService.getHostStoragePath(kind.workspace, kind.roots);
         if (storagePath) {
-            return path.join(storagePath, 'workspace-state.json');
+            return path.join(storagePath, PluginPaths.PLUGINS_WORKSPACE_STATE_FILE);
         }
     }
 

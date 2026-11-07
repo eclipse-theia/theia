@@ -1,14 +1,22 @@
 {
   "name": "@theia/ai-core-ui",
-  "version": "1.76.0",
+  "version": "1.77.0",
   "description": "Theia - AI Core UI",
+  "type": "module",
   "dependencies": {
-    "@theia/ai-core": "1.76.0",
-    "@theia/core": "1.76.0",
-    "@theia/preferences": "1.76.0",
+    "@theia/ai-core": "1.77.0",
+    "@theia/core": "1.77.0",
+    "@theia/preferences": "1.77.0",
     "tslib": "^2.8.1"
   },
   "main": "lib/common",
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -43,7 +51,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.76.0"
+    "@theia/ext-scripts": "1.77.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

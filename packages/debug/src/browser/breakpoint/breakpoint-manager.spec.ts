@@ -33,13 +33,13 @@ import {
     FunctionBreakpointsChangeEvent,
     InstructionBreakpointsChangeEvent,
     DataBreakpointsChangeEvent
-} from './breakpoint-manager';
+} from './breakpoint-manager.js';
 import {
     SourceBreakpoint, FunctionBreakpoint,
     DataBreakpoint, DataBreakpointSourceType
-} from './breakpoint-marker';
-import { DebugDataBreakpoint } from '../model/debug-data-breakpoint';
-import { BPSessionData } from '../model/debug-breakpoint';
+} from './breakpoint-marker.js';
+import { DebugDataBreakpoint } from '../model/debug-data-breakpoint.js';
+import { BPSessionData } from '../model/debug-breakpoint.js';
 import { DebugProtocol } from '@vscode/debugprotocol';
 
 disableJSDOM();

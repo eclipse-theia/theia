@@ -16,9 +16,9 @@
 
 import '../../src/browser/style/toolbar.css';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { bindToolbarApplicationShell } from './application-shell-with-toolbar-override';
-import { bindToolbar } from './toolbar-command-contribution';
-import { bindToolbarContentHoverWidgetPatcher } from './toolbar-content-hover-widget-patcher';
+import { bindToolbarApplicationShell } from './application-shell-with-toolbar-override.js';
+import { bindToolbar } from './toolbar-command-contribution.js';
+import { bindToolbarContentHoverWidgetPatcher } from './toolbar-content-hover-widget-patcher.js';
 
 export default new ContainerModule((
     bind: interfaces.Bind,

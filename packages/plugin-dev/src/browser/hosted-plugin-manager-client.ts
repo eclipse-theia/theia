@@ -22,10 +22,10 @@ import { LabelProvider, isNative, AbstractDialog } from '@theia/core/lib/browser
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileDialogService } from '@theia/filesystem/lib/browser';
-import { PluginDebugConfiguration, PluginDevServer } from '../common/plugin-dev-protocol';
+import { PluginDebugConfiguration, PluginDevServer } from '../common/plugin-dev-protocol.js';
 import { LaunchVSCodeArgument, LaunchVSCodeRequest, LaunchVSCodeResult } from '@theia/debug/lib/browser/debug-contribution';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
-import { HostedPluginPreferences } from '../common/hosted-plugin-preferences';
+import { HostedPluginPreferences } from '../common/hosted-plugin-preferences.js';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { DebugSessionConnection } from '@theia/debug/lib/browser/debug-session-connection';
@@ -446,12 +446,12 @@ class OpenHostedInstanceLinkDialog extends AbstractDialog<string> {
         });
         this.windowService = windowService;
 
-        this.linkNode = document.createElement('a');
+        this.linkNode = this.node.ownerDocument.createElement('a');
         this.linkNode.target = '_blank';
         this.linkNode.setAttribute('style', 'color: var(--theia-editorWidget-foreground);');
         this.contentNode.appendChild(this.linkNode);
 
-        const messageNode = document.createElement('div');
+        const messageNode = this.node.ownerDocument.createElement('div');
         messageNode.innerText = nls.localize('theia/plugin-dev/running', 'Hosted instance is running at:') + ' ';
         messageNode.appendChild(this.linkNode);
         this.contentNode.appendChild(messageNode);

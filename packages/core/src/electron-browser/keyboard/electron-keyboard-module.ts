@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { KeyboardLayoutProvider, keyboardPath, KeyboardLayoutChangeNotifier } from '../../common/keyboard/keyboard-layout-provider';
-import { WebSocketConnectionProvider } from '../../browser/messaging/ws-connection-provider';
-import { ElectronKeyboardLayoutChangeNotifier } from './electron-keyboard-layout-change-notifier';
+import { KeyboardLayoutProvider, keyboardPath, KeyboardLayoutChangeNotifier } from '../../common/keyboard/keyboard-layout-provider.js';
+import { WebSocketConnectionProvider } from '../../browser/messaging/ws-connection-provider.js';
+import { ElectronKeyboardLayoutChangeNotifier } from './electron-keyboard-layout-change-notifier.js';
 
 export function createElectronKeyboardLayoutProvider(delegate: KeyboardLayoutProvider): KeyboardLayoutProvider {
     return {

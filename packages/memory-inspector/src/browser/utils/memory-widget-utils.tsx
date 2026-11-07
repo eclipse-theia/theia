@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import Long from 'long';
-import { VariableRange, VariableDecoration } from './memory-widget-variable-utils';
+import { VariableRange, VariableDecoration } from './memory-widget-variable-utils.js';
 
 export namespace Constants {
     export const DEBOUNCE_TIME = 200;

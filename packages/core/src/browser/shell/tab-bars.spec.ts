@@ -14,14 +14,30 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '../test/jsdom';
+import { enableJSDOM } from '../test/jsdom.js';
 let disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
 
-import { Title, Widget } from '@lumino/widgets';
-import { SideTabBar, TabBarRenderer } from './tab-bars';
+import { MessageLoop } from '@lumino/messaging';
+import { VirtualDOM } from '@lumino/virtualdom';
+import { TabBar, Title, Widget } from '@lumino/widgets';
+import { BreadcrumbsRenderer } from '../breadcrumbs/breadcrumbs-renderer.js';
+import { NativeTabDragService } from './native-tab-drag-service.js';
+import { TabBarToolbar, TabBarToolbarRegistry } from './tab-bar-toolbar/index.js';
+import { SideTabBar, TabBarRenderer, ToolbarAwareTabBar } from './tab-bars.js';
+import { pin } from '../widgets/widget.js';
 
 disableJSDOM();
+
+/** A toolbar without items, it does not need the services that it would get injected otherwise */
+class EmptyTabBarToolbar extends TabBarToolbar {
+    override updateTarget(): void { }
+}
+
+/** Breadcrumbs that are never shown, they do not need the services that they would get injected otherwise */
+class EmptyBreadcrumbsRenderer extends BreadcrumbsRenderer {
+    override async refresh(): Promise<void> { }
+}
 
 describe('tab bar', () => {
 
@@ -59,6 +75,26 @@ describe('tab bar', () => {
         expect(pathMap.get(tabPaths[4])).to.be.equal('root1/aaa/bbb');
         expect(pathMap.get(tabPaths[5])).to.be.equal('.../ccc');
         expect(pathMap.get(tabPaths[6])).to.be.equal(undefined);
+    });
+
+    it('should only render a close icon for closable or pinned tabs', () => {
+        class TestTabBarRenderer extends TabBarRenderer {
+            constructor() {
+                super();
+                this._tabBar = new TabBar<Widget>({ renderer: this });
+            }
+        }
+        const renderer = new TestTabBarRenderer();
+        const [closable, notClosable, pinned] = ['closable', 'notClosable', 'pinned'].map(label => new Title<Widget>({ owner: new Widget(), label }));
+        closable.closable = true;
+        notClosable.closable = false;
+        pin(pinned);
+
+        const closeIconTitles = [closable, notClosable, pinned].map(title => {
+            const tab = VirtualDOM.realize(renderer.renderTab({ title, current: false, zIndex: 0 }));
+            return tab.querySelector('.lm-TabBar-tabCloseIcon')?.getAttribute('title');
+        });
+        expect(closeIconTitles).to.deep.equal(['Close', undefined, 'Unpin']);
     });
 
     describe('side tab bar', () => {
@@ -153,6 +189,46 @@ describe('tab bar', () => {
             bar.setOverflowData();
 
             expect(bar.firstOverflowingIndex()).to.equal(-1);
+        });
+    });
+
+    describe('native tab drag', () => {
+
+        function addTab(tabBar: TabBar<Widget>): HTMLElement {
+            tabBar.addTab(new Widget().title);
+            MessageLoop.sendMessage(tabBar, Widget.Msg.UpdateRequest);
+            const tab = tabBar.contentNode.children[0] as HTMLElement;
+            tab.getBoundingClientRect = () => new DOMRect(0, 0, 100, 20);
+            return tab;
+        }
+
+        function pressTab(tabBar: TabBar<Widget>, tab: HTMLElement): MouseEvent {
+            const event = new MouseEvent('pointerdown', { button: 0, clientX: 10, clientY: 10, cancelable: true });
+            Object.defineProperty(event, 'target', { value: tab });
+            tabBar.handleEvent(event);
+            return event;
+        }
+
+        // Native tab drags rely on skipping Lumino's `preventDefault`, see `ToolbarAwareTabBar.handleNativeTabDragEvent`.
+        // If Lumino stops preventing the default action of tab presses, that override can be removed.
+        it('Lumino should prevent the default action of a press on a tab', () => {
+            const tabBar = new TabBar<Widget>();
+            try {
+                expect(pressTab(tabBar, addTab(tabBar)).defaultPrevented).to.be.true;
+            } finally {
+                tabBar.dispose();
+            }
+        });
+
+        it('should not prevent the default action of a press on a tab when native tab drag is enabled', () => {
+            const tabBar = new ToolbarAwareTabBar(new TabBarToolbarRegistry(), () => new EmptyTabBarToolbar(), () => new EmptyBreadcrumbsRenderer());
+            try {
+                tabBar.nativeTabDragService = {} as NativeTabDragService;
+                tabBar.enableNativeTabDrag();
+                expect(pressTab(tabBar, addTab(tabBar)).defaultPrevented).to.be.false;
+            } finally {
+                tabBar.dispose();
+            }
         });
     });
 });

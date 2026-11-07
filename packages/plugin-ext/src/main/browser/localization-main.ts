@@ -16,8 +16,8 @@
 
 import { nls } from '@theia/core';
 import { interfaces } from '@theia/core/shared/inversify';
-import { LocalizationMain } from '../../common/plugin-api-rpc';
-import { LanguagePackBundle, LanguagePackService } from '../../common/language-pack-service';
+import { LocalizationMain } from '../../common/plugin-api-rpc.js';
+import { LanguagePackBundle, LanguagePackService } from '../../common/language-pack-service.js';
 
 export class LocalizationMainImpl implements LocalizationMain {
 

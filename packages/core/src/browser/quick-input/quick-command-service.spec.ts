@@ -14,21 +14,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '../test/jsdom';
+import { enableJSDOM } from '../test/jsdom.js';
 let disableJSDOM = enableJSDOM();
 
-import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
+import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider.js';
 FrontendApplicationConfigProvider.set({});
 
 import * as chai from 'chai';
 import { Container } from 'inversify';
-import { CancellationToken, CommandRegistry, Emitter } from '../../common';
-import { CorePreferences } from '../../common/core-preferences';
-import { ContextKeyService, ContextKeyServiceDummyImpl } from '../context-key-service';
-import { KeybindingRegistry } from '../keybinding';
-import { QuickAccessRegistry } from './quick-access';
-import { QuickCommandService } from './quick-command-service';
-import { QuickInputService, QuickPickItem } from './quick-input-service';
+import { CancellationToken, CommandRegistry, Emitter } from '../../common/index.js';
+import { CorePreferences } from '../../common/core-preferences.js';
+import { ContextKeyService, ContextKeyServiceDummyImpl } from '../context-key-service.js';
+import { KeybindingRegistry } from '../keybinding.js';
+import { QuickAccessRegistry } from './quick-access.js';
+import { QuickCommandService } from './quick-command-service.js';
+import { QuickInputService, QuickPickItem } from './quick-input-service.js';
 
 disableJSDOM();
 

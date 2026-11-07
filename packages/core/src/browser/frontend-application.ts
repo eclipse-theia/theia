@@ -15,19 +15,19 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, CommandRegistry, MenuModelRegistry, isOSX, BackendStopwatch, LogLevel, MeasurementContext, Stopwatch } from '../common';
-import { MaybePromise } from '../common/types';
-import { KeybindingRegistry } from './keybinding';
-import { Widget } from './widgets';
-import { ApplicationShell } from './shell/application-shell';
-import { ShellLayoutRestorer, ApplicationShellLayoutMigrationError } from './shell/shell-layout-restorer';
-import { FrontendApplicationStateService } from './frontend-application-state';
-import { preventNavigation, parseCssTime, animationFrame } from './browser';
-import { CorePreferences } from '../common/core-preferences';
-import { WindowService } from './window/window-service';
-import { TooltipService } from './tooltip-service';
-import { FrontendApplicationContribution } from './frontend-application-contribution';
-import { ILogger } from '../common/logger';
+import { ContributionProvider, CommandRegistry, MenuModelRegistry, isOSX, BackendStopwatch, LogLevel, MeasurementContext, Stopwatch } from '../common/index.js';
+import { MaybePromise } from '../common/types.js';
+import { KeybindingRegistry } from './keybinding.js';
+import { Widget } from './widgets/index.js';
+import { ApplicationShell } from './shell/application-shell.js';
+import { ShellLayoutRestorer, ApplicationShellLayoutMigrationError } from './shell/shell-layout-restorer.js';
+import { FrontendApplicationStateService } from './frontend-application-state.js';
+import { preventNavigation, parseCssTime, animationFrame } from './browser.js';
+import { CorePreferences } from '../common/core-preferences.js';
+import { WindowService } from './window/window-service.js';
+import { TooltipService } from './tooltip-service.js';
+import { FrontendApplicationContribution } from './frontend-application-contribution.js';
+import { ILogger } from '../common/logger.js';
 
 const TIMER_WARNING_THRESHOLD = 100;
 
@@ -95,7 +95,7 @@ export class FrontendApplication {
         this.stateService.state = 'initialized_layout';
         await this.fireOnDidInitializeLayout();
 
-        await this.measure('revealShell', () => this.revealShell(host), 'Replace loading indicator with ready workbench UI (animation)', false);
+        await this.measure('revealShell', () => this.revealShell(host), 'Reveal the workbench UI (start fading out the loading indicator)', false);
         this.registerEventListeners();
         this.stateService.state = 'ready';
         this.settlementContext?.armAllSettled();
@@ -176,29 +176,33 @@ export class FrontendApplication {
     }
 
     /**
-     * If a startup indicator is present, it is first hidden with the `theia-hidden` CSS class and then
-     * removed after a while. The delay until removal is taken from the CSS transition duration.
+     * If a startup indicator is present, it is hidden with the `theia-hidden` CSS class, which starts its
+     * fade-out transition, and removed from the DOM once the CSS transition duration has elapsed.
+     *
+     * The returned promise resolves as soon as the fade-out has started, not when the indicator has been
+     * removed, so that the application reaches the `ready` state without waiting for the animation.
      */
     protected revealShell(host: HTMLElement): Promise<void> {
         const startupElem = this.getStartupIndicator(host);
-        if (startupElem) {
-            return new Promise(resolve => {
-                window.requestAnimationFrame(() => {
-                    startupElem.classList.add('theia-hidden');
-                    const preloadStyle = window.getComputedStyle(startupElem);
-                    const transitionDuration = parseCssTime(preloadStyle.transitionDuration, 0);
-                    window.setTimeout(() => {
-                        const parent = startupElem.parentElement;
-                        if (parent) {
-                            parent.removeChild(startupElem);
-                        }
-                        resolve();
-                    }, transitionDuration);
-                });
-            });
-        } else {
+        if (!startupElem) {
             return Promise.resolve();
         }
+        return new Promise(resolve => {
+            window.requestAnimationFrame(() => {
+                startupElem.classList.add('theia-hidden');
+                const preloadStyle = window.getComputedStyle(startupElem);
+                const transitionDuration = parseCssTime(preloadStyle.transitionDuration, 0);
+                window.setTimeout(() => this.removeStartupIndicator(startupElem), transitionDuration);
+                resolve();
+            });
+        });
+    }
+
+    /**
+     * Remove the startup indicator from the DOM once it has faded out.
+     */
+    protected removeStartupIndicator(startupElem: HTMLElement): void {
+        startupElem.remove();
     }
 
     /**

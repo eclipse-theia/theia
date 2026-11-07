@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 
-import { escapeForShell, BashQuotingFunctions, ShellQuoting, CmdQuotingFunctions, PowershellQuotingFunctions } from './shell-quoting';
+import { escapeForShell, BashQuotingFunctions, ShellQuoting, CmdQuotingFunctions, PowershellQuotingFunctions } from './shell-quoting.js';
 
 describe('Shell arguments escaping:', () => {
 

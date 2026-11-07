@@ -20,8 +20,8 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { TaskService } from '@theia/task/lib/browser/task-service';
 import { TaskConfiguration, TaskScope } from '@theia/task/lib/common/task-protocol';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
-import { LIST_TASKS_FUNCTION_ID, RUN_TASK_FUNCTION_ID } from '../common/workspace-functions';
-import { WorkspaceFunctionScope } from './workspace-functions';
+import { LIST_TASKS_FUNCTION_ID, RUN_TASK_FUNCTION_ID } from '../common/workspace-functions.js';
+import { WorkspaceFunctionScope } from './workspace-functions.js';
 
 import URI from '@theia/core/lib/common/uri';
 

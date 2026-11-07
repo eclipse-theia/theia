@@ -23,7 +23,7 @@ import { inject, injectable, optional, postConstruct, named } from '@theia/core/
 import { EditorOpenerOptions, EditorWidget, Position, Range } from '@theia/editor/lib/browser';
 import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { QuickFileSelectService } from './quick-file-select-service';
+import { QuickFileSelectService } from './quick-file-select-service.js';
 
 export const quickFileOpen = Command.toDefaultLocalizedCommand({
     id: 'file-search.openFile',
@@ -172,7 +172,7 @@ export class QuickFileOpenService implements QuickAccessProvider {
     }
 
     private getPlaceHolder(): string {
-        let placeholder = nls.localizeByDefault('Search files by name (append {0} to go to line or {1} to go to symbol)', ':', '@');
+        let placeholder = nls.localize('theia/file-search/placeholder', 'Search files by name (append {0} to go to line or {1} to go to symbol)', ':', '@');
         const keybinding = this.getKeyCommand();
         if (keybinding) {
             placeholder += nls.localize('theia/file-search/toggleExcludedFiles', ' (Press {0} to show/hide excluded files)', keybinding);

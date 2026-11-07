@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './handler';
-export * from './proxy-factory';
-export * from './connection-error-handler';
-export * from './socket-write-buffer';
+export * from './handler.js';
+export * from './proxy-factory.js';
+export * from './connection-error-handler.js';
+export * from './socket-write-buffer.js';

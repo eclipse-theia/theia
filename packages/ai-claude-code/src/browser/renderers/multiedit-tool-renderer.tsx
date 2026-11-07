@@ -24,8 +24,8 @@ import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
-import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
+import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content.js';
+import { CollapsibleToolRenderer } from './collapsible-tool-renderer.js';
 import { nls, ILogger } from '@theia/core';
 
 interface EditOperation {
@@ -183,7 +183,7 @@ const MultiEditToolComponent: React.FC<{
                         )}
                     </div>
                     <div className="claude-code-tool detail-row">
-                        <span className="claude-code-tool detail-label">{nls.localizeByDefault('From')}</span>
+                        <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/from', 'From')}</span>
                         <pre className="claude-code-tool detail-value code-preview">
                             {edit.old_string.length > 100
                                 ? edit.old_string.substring(0, 100) + '...'
@@ -191,7 +191,7 @@ const MultiEditToolComponent: React.FC<{
                         </pre>
                     </div>
                     <div className="claude-code-tool detail-row">
-                        <span className="claude-code-tool detail-label">{nls.localizeByDefault('To')}</span>
+                        <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/to', 'To')}</span>
                         <pre className="claude-code-tool detail-value code-preview">
                             {edit.new_string.length > 100
                                 ? edit.new_string.substring(0, 100) + '...'

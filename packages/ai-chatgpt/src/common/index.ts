@@ -13,6 +13,6 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export * from './chatgpt-auth-service';
-export * from './chatgpt-language-models-manager';
-export * from './chatgpt-preferences';
+export * from './chatgpt-auth-service.js';
+export * from './chatgpt-language-models-manager.js';
+export * from './chatgpt-preferences.js';

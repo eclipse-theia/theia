@@ -18,8 +18,8 @@ import { injectable } from '@theia/core/shared/inversify';
 import { Diff, DiffComputer } from '@theia/core/lib/common/diff';
 import URI from '@theia/core/lib/common/uri';
 import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { IEditorWorkerService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/editorWorker';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { IEditorWorkerService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/editorWorker.js';
 
 @injectable()
 export class MonacoDiffComputer implements DiffComputer {

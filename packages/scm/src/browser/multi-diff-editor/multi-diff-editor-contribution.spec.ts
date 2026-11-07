@@ -27,8 +27,8 @@ import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { TabBarToolbarAction, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { Container } from '@theia/core/shared/inversify';
 import { EditorWidget } from '@theia/editor/lib/browser';
-import { DiffEntryHeaderWidget, MultiDiffEditor, MultiDiffEditorData } from './multi-diff-editor';
-import { MULTI_DIFF_EDITOR_FOCUS, MultiDiffEditorCommands, MultiDiffEditorContribution } from './multi-diff-editor-contribution';
+import { DiffEntryHeaderWidget, MultiDiffEditor, MultiDiffEditorData } from './multi-diff-editor.js';
+import { MULTI_DIFF_EDITOR_FOCUS, MultiDiffEditorCommands, MultiDiffEditorContribution } from './multi-diff-editor-contribution.js';
 
 disableJSDOM();
 

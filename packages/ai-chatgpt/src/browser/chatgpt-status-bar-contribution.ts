@@ -19,8 +19,8 @@ import { Disposable, DisposableCollection, nls, PreferenceService } from '@theia
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/status-bar/status-bar-types';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { CHATGPT_ENABLED_PREF, ChatGptAuthService, ChatGptAuthState } from '../common';
-import { ChatGptCommands } from './chatgpt-command-contribution';
+import { CHATGPT_ENABLED_PREF, ChatGptAuthService, ChatGptAuthState } from '../common/index.js';
+import { ChatGptCommands } from './chatgpt-command-contribution.js';
 
 const CHATGPT_STATUS_BAR_ID = 'chatgpt-auth-status';
 

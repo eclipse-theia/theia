@@ -16,17 +16,17 @@
 
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ILogger, ContributionProvider, CommandContribution, Command, CommandRegistry, MenuContribution, MenuModelRegistry, nls } from '@theia/core/lib/common';
-import { QuickOpenTask, TaskTerminateQuickOpen, TaskRunningQuickOpen, TaskRestartRunningQuickOpen } from './quick-open-task';
+import { QuickOpenTask, TaskTerminateQuickOpen, TaskRunningQuickOpen, TaskRestartRunningQuickOpen } from './quick-open-task.js';
 import {
     FrontendApplication, FrontendApplicationContribution, QuickAccessContribution,
     KeybindingRegistry, KeybindingContribution, StorageService, StatusBar, StatusBarAlignment, CommonMenus
 } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
-import { TaskContribution, TaskResolverRegistry, TaskProviderRegistry } from './task-contribution';
-import { TaskService } from './task-service';
+import { TaskContribution, TaskResolverRegistry, TaskProviderRegistry } from './task-contribution.js';
+import { TaskService } from './task-service.js';
 import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
-import { TaskSchemaUpdater } from './task-schema-updater';
-import { TaskConfiguration, TaskWatcher } from '../common';
+import { TaskSchemaUpdater } from './task-schema-updater.js';
+import { TaskConfiguration, TaskWatcher } from '../common/index.js';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 

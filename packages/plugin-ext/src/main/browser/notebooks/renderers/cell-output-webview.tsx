@@ -28,14 +28,14 @@ import {
     NotebookCellOutputsSplice,
     NotebookContentChangedEvent
 } from '@theia/notebook/lib/browser';
-import { WebviewWidget } from '../../webview/webview';
+import { WebviewWidget } from '../../webview/webview.js';
 import { Message, WidgetManager } from '@theia/core/lib/browser';
-import { outputWebviewPreload, PreloadContext } from './output-webview-internal';
+import { outputWebviewPreload, PreloadContext } from './output-webview-internal.js';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser';
 import {
     CellOutputChange, CellsChangedMessage, CellsMoved, CellsSpliced,
     ChangePreferredMimetypeMessage, FromWebviewMessage, Output, OutputChangedMessage
-} from './webview-communication';
+} from './webview-communication.js';
 import { Disposable, DisposableCollection, Emitter, ILogger, QuickPickService, nls } from '@theia/core';
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 import { NotebookOptionsService, NotebookOutputOptions } from '@theia/notebook/lib/browser/service/notebook-options';
@@ -612,8 +612,10 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
         };
         // TS will try compiling `import()` in webviewPreloads, so use a helper function instead
         // of using `import(...)` directly
+        // The bundler keeps function names with calls to its `__name` helper, which isn't part of the source of `outputWebviewPreload`
         return `
             const __import = (x) => import(x);
+            const __name = (target, value) => Object.defineProperty(target, 'name', { value, configurable: true });
                 (${outputWebviewPreload})(JSON.parse(decodeURIComponent("${encodeURIComponent(JSON.stringify(ctx))}")))`;
     }
 

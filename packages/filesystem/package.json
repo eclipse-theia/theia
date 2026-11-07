@@ -1,13 +1,15 @@
 {
   "name": "@theia/filesystem",
-  "version": "1.76.0",
+  "version": "1.77.0",
   "description": "Theia - FileSystem Extension",
+  "type": "module",
   "dependencies": {
-    "@theia/core": "1.76.0",
+    "@theia/core": "1.77.0",
     "@types/body-parser": "^1.19.6",
     "@types/multer": "^1.4.13",
     "@types/tar-fs": "^1.16.3",
     "@types/tar-stream": "^3.1.5",
+    "@types/yauzl": "^3.4.0",
     "async-mutex": "^0.3.2",
     "body-parser": "^1.20.8",
     "http-status-codes": "^1.4.0",
@@ -21,7 +23,8 @@
     "tar-stream": "^3.2.2",
     "trash": "^7.2.0",
     "tslib": "^2.8.1",
-    "vscode-languageserver-textdocument": "^1.0.15"
+    "vscode-languageserver-textdocument": "^1.0.15",
+    "yauzl": "^3.4.0"
   },
   "publishConfig": {
     "access": "public"
@@ -77,10 +80,23 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.76.0"
+    "@theia/ext-scripts": "1.77.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "21358137e41342742707f660b8e222f940a27652",
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/browser": "./lib/browser/index.js",
+    "./lib/browser/file-dialog": "./lib/browser/file-dialog/index.js",
+    "./lib/browser/file-tree": "./lib/browser/file-tree/index.js",
+    "./lib/browser/location": "./lib/browser/location/index.js",
+    "./lib/common": "./lib/common/index.js",
+    "./lib/node/parcel-watcher": "./lib/node/parcel-watcher/index.js",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  }
 }

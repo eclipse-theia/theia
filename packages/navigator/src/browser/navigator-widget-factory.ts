@@ -22,8 +22,8 @@ import {
     WidgetFactory,
     WidgetManager
 } from '@theia/core/lib/browser';
-import { FILE_NAVIGATOR_ID } from './navigator-widget';
-import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-widget';
+import { FILE_NAVIGATOR_ID } from './navigator-widget.js';
+import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-widget.js';
 import { nls } from '@theia/core/lib/common/nls';
 
 export const EXPLORER_VIEW_CONTAINER_ID = 'explorer-view-container';
@@ -44,7 +44,6 @@ export class NavigatorWidgetFactory implements WidgetFactory {
         order: 0,
         canHide: true,
         initiallyCollapsed: true,
-        // this property currently has no effect (https://github.com/eclipse-theia/theia/issues/7755)
         weight: 20
     };
 

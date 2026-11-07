@@ -16,11 +16,11 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createProxyIdentifier, RPCProtocol } from './rpc-protocol';
+import { createProxyIdentifier, RPCProtocol } from './rpc-protocol.js';
 import * as theia from '@theia/plugin';
-import { PluginLifecycle, PluginModel, PluginMetadata, PluginPackage, IconUrl, PluginJsonValidationContribution } from './plugin-protocol';
-import { QueryParameters } from './env';
-import { TextEditorCursorStyle } from './editor-options';
+import { PluginLifecycle, PluginModel, PluginMetadata, PluginPackage, IconUrl, PluginJsonValidationContribution } from './plugin-protocol.js';
+import { QueryParameters } from './env.js';
+import { TextEditorCursorStyle } from './editor-options.js';
 import {
     ConfigurationTarget,
     TextEditorLineNumbersStyle,
@@ -30,8 +30,8 @@ import {
     TextDocumentChangeReason,
     IndentAction,
     NotebookRendererScript,
-} from '../plugin/types-impl';
-import { UriComponents } from './uri-components';
+} from '../plugin/types-impl.js';
+import { UriComponents } from './uri-components.js';
 import {
     SerializedDocumentFilter,
     CompletionContext,
@@ -58,6 +58,7 @@ import {
     ReferenceContext,
     TextDocumentShowOptions,
     WorkspaceRootsChangeEvent,
+    WorkspaceFolderToAdd,
     Location,
     Breakpoint,
     ColorPresentation,
@@ -94,9 +95,9 @@ import {
     DebugStackFrameDTO,
     DebugThreadDTO,
     HoverContext
-} from './plugin-api-rpc-model';
-import { ExtPluginApi } from './plugin-ext-api-contribution';
-import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
+} from './plugin-api-rpc-model.js';
+import { ExtPluginApi } from './plugin-ext-api-contribution.js';
+import { KeysToAnyValues, KeysToKeysToAnyValue } from './types.js';
 import {
     AuthenticationProviderAuthenticationSessionsChangeEvent,
     CancellationToken,
@@ -123,15 +124,15 @@ import { Severity } from '@theia/core/lib/common/severity';
 import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common/debug-configuration';
 import * as notebookCommon from '@theia/notebook/lib/common';
 import { CellExecutionUpdateType, CellRange, NotebookCellExecutionState } from '@theia/notebook/lib/common';
-import { LanguagePackBundle } from './language-pack-service';
+import { LanguagePackBundle } from './language-pack-service.js';
 import { AccessibilityInformation } from '@theia/core/lib/common/accessibility';
 import { TelemetryLevel } from '@theia/telemetry/lib/common/telemetry-types';
 
 import { TreeDelta } from '@theia/test/lib/common/tree-delta';
-import { TestItemDTO, TestOutputDTO, TestRunDTO, TestRunProfileDTO, TestRunRequestDTO, TestStateChangeDTO } from './test-types';
-import { ArgumentProcessor } from './commands';
-import { McpServerDefinitionRegistryMain, McpServerDefinitionRegistryExt } from './lm-protocol';
-import { LanguageModelToolsMain, LanguageModelToolsExt } from './lm-tool-protocol';
+import { TestItemDTO, TestOutputDTO, TestRunDTO, TestRunProfileDTO, TestRunRequestDTO, TestStateChangeDTO } from './test-types.js';
+import { ArgumentProcessor } from './commands.js';
+import { McpServerDefinitionRegistryMain, McpServerDefinitionRegistryExt } from './lm-protocol.js';
+import { LanguageModelToolsMain, LanguageModelToolsExt } from './lm-tool-protocol.js';
 
 export interface PreferenceData {
     [scope: number]: any;
@@ -783,7 +784,7 @@ export interface WorkspaceMain {
     $registerTextDocumentContentProvider(scheme: string): Promise<void>;
     $unregisterTextDocumentContentProvider(scheme: string): void;
     $onTextDocumentContentChange(uri: string, content: string): void;
-    $updateWorkspaceFolders(start: number, deleteCount?: number, ...rootsToAdd: string[]): Promise<void>;
+    $updateWorkspaceFolders(start: number, deleteCount?: number, ...rootsToAdd: WorkspaceFolderToAdd[]): Promise<void>;
     $getWorkspace(): Promise<files.FileStat | undefined>;
     $requestWorkspaceTrust(options?: theia.WorkspaceTrustRequestOptions): Promise<boolean | undefined>;
     $resolveProxy(url: string): Promise<string | undefined>;
@@ -1560,23 +1561,25 @@ export interface PreferenceRegistryMain {
         key: string,
         value: any,
         resource?: string,
-        withLanguageOverride?: boolean
+        withLanguageOverride?: boolean,
+        overrideIdentifier?: string
     ): PromiseLike<void>;
     $removeConfigurationOption(
         target: boolean | ConfigurationTarget | undefined,
         key: string,
         resource?: string,
         withLanguageOverride?: boolean,
+        overrideIdentifier?: string
     ): PromiseLike<void>;
 }
 
 export interface PreferenceChangeExt {
     preferenceName: string,
-    newValue: any,
     /**
      * The URI the folder affected, or undefined if User scope.
      */
     scope?: string;
+    affectedOverrides: readonly string[];
 }
 
 export interface TerminalOptionsExt {
@@ -1787,6 +1790,10 @@ export interface TaskPresentationOptionsDTO {
 export interface TaskExecutionDto {
     id: number;
     task: TaskDto;
+    /**
+     * The id passed to `TasksMain.$executeTask` by the plugin host, if the execution was started by that request.
+     */
+    executeRequestId?: number;
 }
 
 export interface ProcessTaskDto extends TaskDto, CommandProperties {
@@ -2560,7 +2567,7 @@ export interface TasksExt {
 export interface TasksMain {
     $registerTaskProvider(handle: number, type: string): void;
     $fetchTasks(taskVersion: string | undefined, taskType: string | undefined): Promise<TaskDto[]>;
-    $executeTask(taskDto: TaskDto): Promise<TaskExecutionDto | undefined>;
+    $executeTask(taskDto: TaskDto, executeRequestId: number): Promise<TaskExecutionDto | undefined>;
     $taskExecutions(): Promise<TaskExecutionDto[]>;
     $unregister(handle: number): void;
     $terminateTask(id: number): void;

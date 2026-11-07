@@ -15,23 +15,23 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from 'inversify';
-import { isOSX, isWindows } from '../common/os';
-import { Emitter, Event } from '../common/event';
-import { CommandRegistry, Command } from '../common/command';
-import { Disposable, DisposableCollection } from '../common/disposable';
+import { isOSX, isWindows } from '../common/os.js';
+import { Emitter, Event } from '../common/event.js';
+import { CommandRegistry, Command } from '../common/command.js';
+import { Disposable, DisposableCollection } from '../common/disposable.js';
 import {
     KeyCode, KeySequence, Key, NormalizedKeyboardInput, normalizeKeyboardInput,
     layoutModifiersIncludeAltGraph, layoutModifiersIncludeShift
-} from './keyboard/keys';
-import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
-import { ContributionProvider } from '../common/contribution-provider';
-import { ILogger } from '../common/logger';
-import { StatusBarAlignment, StatusBar } from './status-bar/status-bar';
-import { ContextKeyService } from './context-key-service';
-import { CorePreferences } from '../common/core-preferences';
-import * as common from '../common/keybinding';
-import { nls } from '../common/nls';
-import { TernarySearchTree } from '../common/ternary-search-tree';
+} from './keyboard/keys.js';
+import { KeyboardLayoutService } from './keyboard/keyboard-layout-service.js';
+import { ContributionProvider } from '../common/contribution-provider.js';
+import { ILogger } from '../common/logger.js';
+import { StatusBarAlignment, StatusBar } from './status-bar/status-bar.js';
+import { ContextKeyService } from './context-key-service.js';
+import { CorePreferences } from '../common/core-preferences.js';
+import * as common from '../common/keybinding.js';
+import { nls } from '../common/nls.js';
+import { TernarySearchTree } from '../common/ternary-search-tree.js';
 
 export enum KeybindingScope {
     DEFAULT,
@@ -651,19 +651,34 @@ export class KeybindingRegistry {
      * @returns an array of {@link ScopedKeybinding}
      */
     getKeybindingsForCommand(commandId: string): ScopedKeybinding[] {
+        return this.collectKeybindings(binding => this.commandRegistry.getCommand(binding.command)?.id === commandId);
+    }
+
+    /**
+     * Get the keybindings that don't execute a command but are shown as its accelerator.
+     * See {@link common.Keybinding#displayFor}.
+     *
+     * @param commandId The ID of the command for which we are looking for keybindings.
+     * @returns an array of {@link ScopedKeybinding}
+     */
+    protected getDisplayKeybindingsForCommand(commandId: string): ScopedKeybinding[] {
+        return this.collectKeybindings(binding => binding.displayFor === commandId);
+    }
+
+    /**
+     * Collect the keybindings of all scopes, highest scope first, that match the given predicate
+     * and have not been disabled by a `-command` keybinding of the same or a higher scope.
+     */
+    protected collectKeybindings(matches: (binding: common.Keybinding) => boolean): ScopedKeybinding[] {
         const result: ScopedKeybinding[] = [];
         const disabledBindings = new Set<string>();
         for (let scope = KeybindingScope.END - 1; scope >= KeybindingScope.DEFAULT; scope--) {
             this.keymaps[scope].forEach(binding => {
                 if (binding.command?.startsWith('-')) {
                     disabledBindings.add(JSON.stringify({ command: binding.command.substring(1), binding: binding.keybinding, context: binding.context, when: binding.when }));
-                } else {
-                    const command = this.commandRegistry.getCommand(binding.command);
-                    if (command
-                        && command.id === commandId
-                        && !disabledBindings.has(JSON.stringify({ command: binding.command, binding: binding.keybinding, context: binding.context, when: binding.when }))) {
-                        result.push({ ...binding, scope });
-                    }
+                } else if (matches(binding)
+                    && !disabledBindings.has(JSON.stringify({ command: binding.command, binding: binding.keybinding, context: binding.context, when: binding.when }))) {
+                    result.push({ ...binding, scope });
                 }
             });
         }
@@ -672,10 +687,14 @@ export class KeybindingRegistry {
 
     /**
      * Get the accelerator of the first keybinding of a command that is enabled in the given context.
+     * If no such keybinding exists and the command is enabled, the first enabled keybinding that is only displayed
+     * for the command is used, see {@link common.Keybinding#displayFor}.
      * Physical accelerators (for native menus) are omitted for inactive keybindings.
      */
     acceleratorForCommand(commandId: string, context: HTMLElement | undefined, form: AcceleratorForm = 'logical'): string[] {
-        const binding = this.getKeybindingsForCommand(commandId).find(candidate => this.isEnabledInScope(candidate, context));
+        const isEnabled = (candidate: ScopedKeybinding) => this.isEnabledInScope(candidate, context);
+        const binding = this.getKeybindingsForCommand(commandId).find(isEnabled)
+            ?? (this.commandRegistry.isEnabled(commandId) ? this.getDisplayKeybindingsForCommand(commandId).find(isEnabled) : undefined);
         if (!binding) {
             return [];
         }

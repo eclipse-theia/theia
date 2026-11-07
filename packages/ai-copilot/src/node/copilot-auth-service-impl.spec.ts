@@ -16,8 +16,8 @@
 
 import { expect } from 'chai';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { CopilotAuthState } from '../common/copilot-auth-service';
-import { CopilotAuthServiceImpl } from './copilot-auth-service-impl';
+import { CopilotAuthState } from '../common/copilot-auth-service.js';
+import { CopilotAuthServiceImpl } from './copilot-auth-service-impl.js';
 
 interface Stubs {
     /** Whether the sign-in of the previous integration had to be discarded. */

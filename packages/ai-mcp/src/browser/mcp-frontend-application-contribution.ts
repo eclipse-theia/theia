@@ -16,9 +16,9 @@
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { isRemoteMCPServerDescription, MCPOAuthFrontendDelegate, MCPServerDescription, MCPServerManager, MCPServerStatus } from '../common';
-import { MCP_SERVERS_PREF, MCP_USE_WORKSPACE_AS_ROOT_PREF } from '../common/mcp-preferences';
-import { MCPFrontendNotificationService, MCPFrontendService } from '../common/mcp-server-manager';
+import { isRemoteMCPServerDescription, MCPOAuthFrontendDelegate, MCPServerDescription, MCPServerManager, MCPServerStatus } from '../common/index.js';
+import { MCP_SERVERS_PREF, MCP_USE_WORKSPACE_AS_ROOT_PREF } from '../common/mcp-preferences.js';
+import { MCPFrontendNotificationService, MCPFrontendService } from '../common/mcp-server-manager.js';
 import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
 import { MessageService, PreferenceService, PreferenceUtils, Progress, ILogger } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
@@ -28,7 +28,7 @@ import {
     WorkspaceRestriction
 } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { filterValidValues, MCPServersPreference } from '../common/mcp-server-preference-validator';
+import { filterValidValues, MCPServersPreference } from '../common/mcp-server-preference-validator.js';
 
 @injectable()
 export class McpFrontendApplicationContribution implements FrontendApplicationContribution, WorkspaceRestrictionContribution {
@@ -82,7 +82,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
         this.preferenceService.ready.then(async () => {
             const servers = filterValidValues(this.preferenceService.get(
                 MCP_SERVERS_PREF,
-                {}
+                { fallback: {} }
             ));
             this.prevServers = this.convertToMap(servers);
             await this.syncServers(this.prevServers);
@@ -97,7 +97,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
 
             this.preferenceService.onPreferenceChanged(async event => {
                 if (event.preferenceName === MCP_SERVERS_PREF) {
-                    this.enqueueServerChanges(filterValidValues(this.preferenceService.get(MCP_SERVERS_PREF, {})));
+                    this.enqueueServerChanges(filterValidValues(this.preferenceService.get(MCP_SERVERS_PREF, { fallback: {} })));
                 }
                 if (event.preferenceName === MCP_USE_WORKSPACE_AS_ROOT_PREF) {
                     await this.updateWorkspaceRoots(true);

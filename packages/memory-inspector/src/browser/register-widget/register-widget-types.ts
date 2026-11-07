@@ -16,13 +16,13 @@
 
 import { nls } from '@theia/core';
 import { interfaces } from '@theia/core/shared/inversify';
-import { MemoryOptionsWidget } from '../memory-widget/memory-options-widget';
-import { MemoryTableWidget } from '../memory-widget/memory-table-widget';
-import { MemoryWidget } from '../memory-widget/memory-widget';
-import { MemoryWidgetOptions } from '../utils/memory-widget-utils';
-import { RegisterFilterService, RegisterFilterServiceImpl, RegisterFilterServiceOptions } from './register-filter-service';
-import { RegisterOptionsWidget } from './register-options-widget';
-import { RegisterTableWidget } from './register-table-widget';
+import { MemoryOptionsWidget } from '../memory-widget/memory-options-widget.js';
+import { MemoryTableWidget } from '../memory-widget/memory-table-widget.js';
+import { MemoryWidget } from '../memory-widget/memory-widget.js';
+import { MemoryWidgetOptions } from '../utils/memory-widget-utils.js';
+import { RegisterFilterService, RegisterFilterServiceImpl, RegisterFilterServiceOptions } from './register-filter-service.js';
+import { RegisterOptionsWidget } from './register-options-widget.js';
+import { RegisterTableWidget } from './register-table-widget.js';
 
 export type RegisterWidget = MemoryWidget<RegisterOptionsWidget, RegisterTableWidget>;
 export namespace RegisterWidget {

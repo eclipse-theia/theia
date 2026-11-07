@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as theia from '@theia/plugin';
-import { NotebookDocument } from './notebook-document';
+import { NotebookDocument } from './notebook-document.js';
 
 export class NotebookEditor {
 

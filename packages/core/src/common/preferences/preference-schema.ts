@@ -17,10 +17,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { JSONObject, JSONValue } from '@lumino/coreutils';
-import { IJSONSchema } from '../json-schema';
-import { PreferenceScope } from './preference-scope';
-import { Event } from '../event';
-import { Disposable } from '../disposable';
+import { IJSONSchema } from '../json-schema.js';
+import { PreferenceScope } from './preference-scope.js';
+import { Event } from '../event.js';
+import { Disposable } from '../disposable.js';
 
 export const PreferenceContribution = Symbol('PreferenceContribution');
 /**
@@ -93,10 +93,6 @@ export interface DefaultValueChangedEvent {
     key: string;
     /** The override identifier that the default changed for */
     overrideIdentifier?: string;
-    /**
-     * When the default for the base property changes, indicates which override identifiers will be affected
-     */
-    otherAffectedOverrides: string[];
     oldValue: JSONValue | undefined;
     newValue: JSONValue | undefined;
 }

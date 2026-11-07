@@ -18,7 +18,7 @@ import { CancellationToken } from '@theia/core';
 import {
     LanguageModelMetaData, LanguageModelParsedResponse, LanguageModelRequest, LanguageModelStreamResponsePart,
     LanguageModelTextResponse, ToolCallResult
-} from './language-model';
+} from './language-model.js';
 
 export const LanguageModelDelegateClient = Symbol('LanguageModelDelegateClient');
 export interface LanguageModelDelegateClient {

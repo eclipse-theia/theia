@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { isObject } from './types';
+import { isObject } from './types.js';
 
 /**
  * A Keybinding binds a specific key sequence ({@link Keybinding#keybinding}) to trigger a command ({@link Keybinding#command}). A Keybinding optionally may
@@ -50,6 +50,13 @@ export interface Keybinding {
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     args?: any;
+
+    /**
+     * Optional id of a command for which this keybinding is shown as the accelerator, e.g. in menus,
+     * although the keybinding doesn't execute that command itself. Use it for passthrough keybindings
+     * that let the browser handle a key natively on behalf of a command.
+     */
+    displayFor?: string;
 }
 export namespace Keybinding {
 
@@ -84,7 +91,8 @@ export namespace Keybinding {
             keybinding: retrieveKeybinding(binding),
             context: binding.context,
             when: binding.when,
-            args: binding.args
+            args: binding.args,
+            displayFor: binding.displayFor
         };
     }
 

@@ -30,7 +30,7 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Disposable, Emitter, ILogger, Logger, URI } from '@theia/core';
 import { FileChangesEvent, FileChangeType, FileOperation, FileOperationEvent, FileStatWithMetadata } from '@theia/filesystem/lib/common/files';
-import { DefaultAgentsMdService } from './agents-md-service';
+import { DefaultAgentsMdService } from './agents-md-service.js';
 
 disableJSDOM();
 

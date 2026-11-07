@@ -21,8 +21,8 @@ import { realpath, stat } from 'fs/promises';
 import { ILogger } from '@theia/core';
 import { inject, injectable, optional, multiInject, named } from '@theia/core/shared/inversify';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
-import { PluginMetadata, getPluginId, MetadataProcessor, PluginPackage, PluginContribution } from '../../common/plugin-protocol';
-import { MetadataScanner } from './metadata-scanner';
+import { PluginMetadata, getPluginId, MetadataProcessor, PluginPackage, PluginContribution } from '../../common/plugin-protocol.js';
+import { MetadataScanner } from './metadata-scanner.js';
 import { loadManifest } from '@theia/plugin-utils/lib/node/plugin-manifest';
 import { PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
 

@@ -18,8 +18,9 @@ import { LanguageModelStreamResponsePart, ToolCallResult, ToolCallTextResult } f
 import { CancellationError, CancellationToken } from '@theia/core';
 import { ChatCompletionStream, ChatCompletionStreamEvents } from 'openai/lib/ChatCompletionStream';
 import { ChatCompletionContentPartText } from 'openai/resources';
-import { AbstractStreamingResponseIterator } from './streaming-response-iterator';
+import { AbstractStreamingResponseIterator } from './streaming-response-iterator.js';
 
+/** @deprecated Use `ChatCompletionStreamingAsyncIterator` from './openai-chat-completion-stream' instead. */
 export class StreamingAsyncIterator extends AbstractStreamingResponseIterator {
 
     constructor(
@@ -69,8 +70,9 @@ export class StreamingAsyncIterator extends AbstractStreamingResponseIterator {
                 // Ensure tool_calls have type set (required by #emitToolCallDoneEvent and finalizeChatCompletion)
                 if (choice?.message?.tool_calls) {
                     for (const call of choice.message.tool_calls) {
-                        if (call.type === undefined) {
-                            call.type = 'function';
+                        const providerCall: { type?: string; function?: unknown } = call;
+                        if (providerCall.type === undefined && providerCall.function) {
+                            providerCall.type = 'function';
                         }
                     }
                 }

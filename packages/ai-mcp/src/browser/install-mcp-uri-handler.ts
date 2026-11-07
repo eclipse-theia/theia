@@ -20,11 +20,11 @@ import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 import { OpenHandler } from '@theia/core/lib/browser/opener-service';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
-import { MCP_SERVERS_PREF } from '../common/mcp-preferences';
-import { MCPServerEditor } from './mcp-server-editor';
-import { MCPInstallUriConfiguration } from './mcp-install-uri-configuration';
-import { MCPRegistryUiBridge } from './mcp-registry-ui-bridge';
-import { MCPServerInstallDialogFactory, MCPServerInstallTrust } from './mcp-server-install-dialog';
+import { MCP_SERVERS_PREF } from '../common/mcp-preferences.js';
+import { MCPServerEditor } from './mcp-server-editor.js';
+import { MCPInstallUriConfiguration } from './mcp-install-uri-configuration.js';
+import { MCPRegistryUiBridge } from './mcp-registry-ui-bridge.js';
+import { MCPServerInstallDialogFactory, MCPServerInstallTrust } from './mcp-server-install-dialog.js';
 
 const ID_PARAM = 'id';
 
@@ -137,7 +137,7 @@ export class InstallMcpUriHandler implements OpenHandler {
 
     /** True if a server with this name is already in `ai-features.mcp.mcpServers`. */
     protected isAlreadyInstalled(localName: string): boolean {
-        const stored = this.preferenceService.get<Record<string, unknown>>(MCP_SERVERS_PREF, {}) ?? {};
+        const stored = this.preferenceService.get<Record<string, unknown>>(MCP_SERVERS_PREF, {fallback: {}}) ?? {};
         return Object.prototype.hasOwnProperty.call(stored, localName);
     }
 

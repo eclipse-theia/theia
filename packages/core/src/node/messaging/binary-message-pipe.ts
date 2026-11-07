@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { Duplex } from 'stream';
-import { Disposable, Emitter, Event } from '../../common';
-import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
+import { Disposable, Emitter, Event } from '../../common/index.js';
+import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer.js';
 
 /**
  * A `BinaryMessagePipe` is capable of sending and retrieving binary messages i.e. {@link Uint8Array}s over

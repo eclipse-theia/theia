@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { RegistrySearchFilter } from './registry-search-filter';
+import { RegistrySearchFilter } from './registry-search-filter.js';
 
 describe('RegistrySearchFilter.meaningfulIdentifier', () => {
     const filter = new RegistrySearchFilter();

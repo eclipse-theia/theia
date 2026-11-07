@@ -16,12 +16,12 @@
 
 import { interfaces } from 'inversify';
 import { environment } from '@theia/application-package/lib/environment';
-import { SUPPORTED_ENCODINGS } from './supported-encodings';
-import { isOSX } from '../common/os';
-import { nls } from '../common/nls';
-import { PreferenceContribution, PreferenceSchema } from '../common/preferences/preference-schema';
-import { createPreferenceProxy, PreferenceProxy, PreferenceService } from '../common/preferences';
-import { PreferenceScope } from '../common/preferences/preference-scope';
+import { SUPPORTED_ENCODINGS } from './supported-encodings.js';
+import { isOSX } from '../common/os.js';
+import { nls } from '../common/nls.js';
+import { PreferenceContribution, PreferenceSchema } from '../common/preferences/preference-schema.js';
+import { createPreferenceProxy, PreferenceProxy, PreferenceService } from '../common/preferences/index.js';
+import { PreferenceScope } from '../common/preferences/preference-scope.js';
 
 /* eslint-disable max-len */
 const windowTitleDescription = [
@@ -149,6 +149,23 @@ export const corePreferenceSchema: PreferenceSchema = {
             type: 'boolean',
             default: false,
             description: nls.localize('theia/core/secondaryWindow/alwaysOnTop', 'When enabled, the secondary window stays above all other windows, including those of different applications.'),
+        },
+        'window.secondaryWindowCloseBehavior': {
+            type: 'string',
+            enum: ['close', 'moveToMainWindow'],
+            enumDescriptions: [
+                nls.localize('theia/core/secondaryWindow/closeBehavior/close',
+                    'The views of the secondary window are closed. Views that would lose state, e.g. editors with unsaved changes, are moved back to the main window.'),
+                nls.localize('theia/core/secondaryWindow/closeBehavior/moveToMainWindow', 'All views of the secondary window are moved back to the main window.'),
+            ],
+            default: 'close',
+            description: nls.localize('theia/core/secondaryWindow/closeBehavior', 'Controls what happens to the views of a secondary window when it is closed.'),
+        },
+        'window.restoreSecondaryWindows': {
+            type: 'boolean',
+            default: true,
+            description: nls.localize('theia/core/secondaryWindow/restore',
+                'Controls whether secondary windows are restored on startup. When disabled, their views are restored in the main window instead.'),
         },
         'http.proxy': {
             type: 'string',
@@ -319,6 +336,8 @@ export interface CoreConfiguration {
     'window.title': string;
     'window.titleSeparator': string;
     'window.tabCloseIconPlacement': 'end' | 'start';
+    'window.secondaryWindowCloseBehavior': 'close' | 'moveToMainWindow';
+    'window.restoreSecondaryWindows': boolean;
     'workbench.list.openMode': 'singleClick' | 'doubleClick';
     'workbench.commandPalette.history': number;
     'workbench.editor.highlightModifiedTabs': boolean;

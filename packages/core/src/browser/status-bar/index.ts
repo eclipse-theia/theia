@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { interfaces } from 'inversify';
-import { StatusBarImpl } from './status-bar';
-import { StatusBar } from './status-bar-types';
-import { StatusBarViewModel } from './status-bar-view-model';
-export * from './status-bar';
-export * from './status-bar-types';
-export * from './status-bar-view-model';
+import { StatusBarImpl } from './status-bar.js';
+import { StatusBar } from './status-bar-types.js';
+import { StatusBarViewModel } from './status-bar-view-model.js';
+export * from './status-bar.js';
+export * from './status-bar-types.js';
+export * from './status-bar-view-model.js';
 
 export function bindStatusBar(bind: interfaces.Bind): void {
     bind(StatusBarImpl).toSelf().inSingletonScope();

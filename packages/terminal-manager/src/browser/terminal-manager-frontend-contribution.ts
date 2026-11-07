@@ -13,9 +13,9 @@ import { CommandRegistry, PreferenceService, DisposableCollection } from '@theia
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalFrontendContribution, TerminalCommands } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { ApplicationShell, WidgetManager, FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
-import { TerminalManagerWidget } from './terminal-manager-widget';
-import { TerminalManagerFrontendViewContribution } from './terminal-manager-frontend-view-contribution';
-import { TerminalManagerPreferences } from './terminal-manager-preferences';
+import { TerminalManagerWidget } from './terminal-manager-widget.js';
+import { TerminalManagerFrontendViewContribution } from './terminal-manager-frontend-view-contribution.js';
+import { TerminalManagerPreferences } from './terminal-manager-preferences.js';
 import { ILogger } from '@theia/core';
 /**
  * Re-registers terminal commands (e.g. new terminal) to execute them via the terminal manager

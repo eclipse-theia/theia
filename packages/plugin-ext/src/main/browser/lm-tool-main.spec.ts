@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { LanguageModelToolsMainImpl } from './lm-tool-main';
+import { LanguageModelToolsMainImpl } from './lm-tool-main.js';
 import {
     ToolResultTextPartDto,
     ToolResultDataPartDto,
@@ -23,7 +23,7 @@ import {
     ToolResultUnknownPartDto,
     ToolResultPartDto,
     uint8ArrayToBase64,
-} from '../../common/lm-tool-protocol';
+} from '../../common/lm-tool-protocol.js';
 import { ToolCallContentResult } from '@theia/ai-core/lib/common/language-model';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 

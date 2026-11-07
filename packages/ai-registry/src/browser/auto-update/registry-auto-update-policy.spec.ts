@@ -16,8 +16,8 @@
 
 import { expect } from 'chai';
 import { PreferenceService } from '@theia/core';
-import { AUTO_UPDATE_OVERRIDES_PREF, AUTO_UPDATE_PREF, AutoUpdateMode } from '../../common/ai-registry-preferences';
-import { RegistryAutoUpdatePolicyImpl } from './registry-auto-update-policy';
+import { AUTO_UPDATE_OVERRIDES_PREF, AUTO_UPDATE_PREF, AutoUpdateMode } from '../../common/ai-registry-preferences.js';
+import { RegistryAutoUpdatePolicyImpl } from './registry-auto-update-policy.js';
 
 /** Minimal in-memory stand-in for the two preferences the policy reads and writes. */
 class TestPolicy extends RegistryAutoUpdatePolicyImpl {
@@ -36,7 +36,16 @@ class TestPolicy extends RegistryAutoUpdatePolicyImpl {
         // on the base class, so it can only be assigned in that class's own constructor.
         Object.assign(this, {
             preferenceService: {
-                get: (name: string, defaultValue: unknown) => this.values[name] ?? defaultValue,
+                get: (name: string, optionsOrFallback: unknown) => {
+                    if (this.values[name] !== undefined) {
+                        return this.values[name];
+                    }
+                    if (optionsOrFallback && typeof optionsOrFallback === 'object' && !Array.isArray(optionsOrFallback)
+                        && 'fallback' in optionsOrFallback) {
+                        return (optionsOrFallback as { fallback?: unknown }).fallback;
+                    }
+                    return optionsOrFallback;
+                },
                 // Mirrors the real service: `globalValue` is only set once someone has written
                 // the preference, which is what distinguishes a chosen default from the schema one.
                 inspect: (name: string) => ({ globalValue: this.values[name] }),

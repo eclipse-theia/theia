@@ -1,7 +1,8 @@
 {
   "name": "@theia/electron",
-  "version": "1.76.0",
+  "version": "1.77.0",
   "description": "Theia - Electron utility package",
+  "type": "module",
   "dependencies": {
     "electron-store": "^8.2.0",
     "fix-path": "^4.0.0",
@@ -9,11 +10,11 @@
     "tslib": "^2.8.1"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.76.0",
-    "@theia/re-exports": "1.76.0"
+    "@theia/ext-scripts": "1.77.0",
+    "@theia/re-exports": "1.77.0"
   },
   "peerDependencies": {
-    "electron": "44.4.5"
+    "electron": "44.9.1"
   },
   "theiaReExports": {
     "shared": {
@@ -54,5 +55,15 @@
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "21358137e41342742707f660b8e222f940a27652",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json",
+    "./shared/fix-path": "./shared/fix-path/index.js",
+    "./shared/*": "./shared/*/index.cjs",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  }
 }

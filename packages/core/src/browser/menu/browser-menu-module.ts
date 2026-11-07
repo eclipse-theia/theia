@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { FrontendApplicationContribution } from '../frontend-application-contribution';
-import { ContextMenuRenderer } from '../context-menu-renderer';
-import { BrowserMenuBarContribution, BrowserMainMenuFactory } from './browser-menu-plugin';
-import { BrowserContextMenuRenderer } from './browser-context-menu-renderer';
-import { BrowserMenuNodeFactory } from './browser-menu-node-factory';
-import { MenuNodeFactory } from '../../common';
+import { FrontendApplicationContribution } from '../frontend-application-contribution.js';
+import { ContextMenuRenderer } from '../context-menu-renderer.js';
+import { BrowserMenuBarContribution, BrowserMainMenuFactory } from './browser-menu-plugin.js';
+import { BrowserContextMenuRenderer } from './browser-context-menu-renderer.js';
+import { BrowserMenuNodeFactory } from './browser-menu-node-factory.js';
+import { MenuNodeFactory } from '../../common/index.js';
 
 export default new ContainerModule(bind => {
     bind(BrowserMainMenuFactory).toSelf().inSingletonScope();

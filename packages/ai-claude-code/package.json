@@ -1,17 +1,18 @@
 {
   "name": "@theia/ai-claude-code",
-  "version": "1.76.0",
+  "version": "1.77.0",
   "description": "Theia - Claude Code Integration",
+  "type": "module",
   "dependencies": {
-    "@theia/ai-chat": "1.76.0",
-    "@theia/ai-chat-ui": "1.76.0",
-    "@theia/ai-core": "1.76.0",
-    "@theia/core": "1.76.0",
-    "@theia/editor": "1.76.0",
-    "@theia/filesystem": "1.76.0",
+    "@theia/ai-chat": "1.77.0",
+    "@theia/ai-chat-ui": "1.77.0",
+    "@theia/ai-core": "1.77.0",
+    "@theia/core": "1.77.0",
+    "@theia/editor": "1.77.0",
+    "@theia/filesystem": "1.77.0",
     "@theia/monaco-editor-core": "1.108.201",
-    "@theia/output": "1.76.0",
-    "@theia/workspace": "1.76.0",
+    "@theia/output": "1.77.0",
+    "@theia/workspace": "1.77.0",
     "tslib": "^2.8.1"
   },
   "publishConfig": {
@@ -48,9 +49,17 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.76.0"
+    "@theia/ext-scripts": "1.77.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/common": "./lib/common/index.js",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
   }
 }

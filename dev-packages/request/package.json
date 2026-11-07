@@ -1,6 +1,6 @@
 {
   "name": "@theia/request",
-  "version": "1.76.0",
+  "version": "1.77.0",
   "description": "Theia Proxy-Aware Request Service",
   "publishConfig": {
     "access": "public"
@@ -20,6 +20,14 @@
   ],
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "scripts": {
     "build": "theiaext build",
     "clean": "theiaext clean",

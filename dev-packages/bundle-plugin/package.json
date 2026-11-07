@@ -1,6 +1,6 @@
 {
   "name": "@theia/bundle-plugin",
-  "version": "1.76.0",
+  "version": "1.77.0",
   "description": "Contains bundler plugins for Theia.",
   "publishConfig": {
     "access": "public"
@@ -20,6 +20,14 @@
   ],
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "scripts": {
     "build": "theiaext build",
     "clean": "theiaext clean",

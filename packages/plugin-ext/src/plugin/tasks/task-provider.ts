@@ -15,12 +15,15 @@
 // *****************************************************************************
 
 import * as theia from '@theia/plugin';
-import { TaskDto } from '../../common';
-import * as Converter from '../type-converters';
+import { TaskDto } from '../../common/index.js';
+import * as Converter from '../type-converters.js';
 
 export class TaskProviderAdapter {
 
-    constructor(private readonly provider: theia.TaskProvider) { }
+    constructor(
+        private readonly provider: theia.TaskProvider,
+        private readonly getWorkspaceFolder: (uri: theia.Uri) => theia.WorkspaceFolder | undefined
+    ) { }
 
     provideTasks(token: theia.CancellationToken): Promise<TaskDto[]> {
         return Promise.resolve(this.provider.provideTasks(token)).then(tasks => {
@@ -45,7 +48,7 @@ export class TaskProviderAdapter {
             return task;
         }
 
-        const item = Converter.toTask(task);
+        const item = Converter.toTask(task, this.getWorkspaceFolder);
         if (!item || item.execution) {
             return task;
         }

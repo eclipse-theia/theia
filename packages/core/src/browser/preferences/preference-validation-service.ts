@@ -14,13 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { JSONObject, JSONValue } from '../../../shared/@lumino/coreutils';
-import { inject, injectable, named } from '../../../shared/inversify';
-import { IJSONSchema, JsonType } from '../../common/json-schema';
-import { deepClone, unreachable } from '../../common';
-import { PreferenceLanguageOverrideService } from '../../common/preferences/preference-language-override-service';
-import { PreferenceSchemaService, PreferenceScope, PreferenceUtils, PreferenceDataProperty } from '../../common/preferences';
-import { ILogger } from '../../common/logger';
+import { JSONObject, JSONValue } from '../../../shared/@lumino/coreutils/index.cjs';
+import { inject, injectable, named } from '../../../shared/inversify/index.js';
+import { IJSONSchema, JsonType } from '../../common/json-schema.js';
+import { deepClone, unreachable } from '../../common/index.js';
+import { PreferenceLanguageOverrideService } from '../../common/preferences/preference-language-override-service.js';
+import { PreferenceSchemaService, PreferenceScope, PreferenceUtils, PreferenceDataProperty } from '../../common/preferences/index.js';
+import { ILogger } from '../../common/logger.js';
 
 export interface PreferenceValidator<T> {
     name: string;
@@ -122,11 +122,7 @@ export class PreferenceValidationService {
 
     protected getSchema(name: string): IJSONSchema | undefined {
         const combinedSchema = this.schemaService.getJSONSchema(PreferenceScope.Folder).properties!;
-        if (combinedSchema[name]) {
-            return combinedSchema[name];
-        }
-        const baseName = this.languageOverrideService.overriddenPreferenceName(name)?.preferenceName;
-        return baseName !== undefined ? combinedSchema[baseName] : undefined;
+        return combinedSchema[name];
     }
 
     protected validateMultiple(key: string, value: JSONValue, schema: IJSONSchema & { type: JsonType[] }): JSONValue {

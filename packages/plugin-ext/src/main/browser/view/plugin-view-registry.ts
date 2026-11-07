@@ -21,10 +21,10 @@ import {
     StatefulWidget, CommonMenus, TreeViewWelcomeWidget, ViewContainerPart, BaseWidget,
     CompositeTreeNode, ExpandableTreeNode,
 } from '@theia/core/lib/browser';
-import { ViewContainer, View, ViewWelcome, PluginViewType } from '../../../common';
-import { PluginSharedStyle } from '../plugin-shared-style';
+import { ViewContainer, View, ViewWelcome, PluginViewType } from '../../../common/index.js';
+import { PluginSharedStyle } from '../plugin-shared-style.js';
 import { DebugWidget } from '@theia/debug/lib/browser/view/debug-widget';
-import { PluginViewWidget, PluginViewWidgetIdentifier } from './plugin-view-widget';
+import { PluginViewWidget, PluginViewWidgetIdentifier } from './plugin-view-widget.js';
 import { SCM_VIEW_CONTAINER_ID, SCM_WIDGET_FACTORY_ID, ScmContribution } from '@theia/scm/lib/browser/scm-contribution';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { ScmTreeWidget } from '@theia/scm/lib/browser/scm-tree-widget';
@@ -36,21 +36,21 @@ import { CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { ViewContextKeyService } from './view-context-key-service';
+import { ViewContextKeyService } from './view-context-key-service.js';
 import { PROBLEMS_WIDGET_ID } from '@theia/markers/lib/browser/problem/problem-widget';
 import { OutputWidget } from '@theia/output/lib/browser/output-widget';
 import { DebugConsoleContribution } from '@theia/debug/lib/browser/console/debug-console-contribution';
-import { TreeViewWidget } from './tree-view-widget';
+import { TreeViewWidget } from './tree-view-widget.js';
 import { SEARCH_VIEW_CONTAINER_ID } from '@theia/search-in-workspace/lib/browser/search-in-workspace-factory';
 import { TEST_VIEW_CONTAINER_ID } from '@theia/test/lib/browser/view/test-view-contribution';
-import { WebviewView, WebviewViewResolver } from '../webview-views/webview-views';
-import { WebviewWidget, WebviewWidgetIdentifier } from '../webview/webview';
+import { WebviewView, WebviewViewResolver } from '../webview-views/webview-views.js';
+import { WebviewWidget, WebviewWidgetIdentifier } from '../webview/webview.js';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import { nls, ILogger } from '@theia/core';
 import { TheiaDockPanel } from '@theia/core/lib/browser/shell/theia-dock-panel';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables.js';
 
 export const PLUGIN_VIEW_FACTORY_ID = 'plugin-view';
 export const PLUGIN_VIEW_CONTAINER_FACTORY_ID = 'plugin-view-container';
@@ -134,6 +134,13 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         'scm',
         'search',
         'test',
+        'debug'
+    ]);
+
+    /** Built-in containers whose contributed views start collapsed regardless of their `visibility`, as in VS Code. */
+    private static readonly COLLAPSED_VIEW_CONTAINERS = new Set<string>([
+        'explorer',
+        'scm',
         'debug'
     ]);
 
@@ -305,11 +312,13 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     }
 
     protected isViewVisible(viewId: string): boolean {
-        const viewInfo = this.views.get(viewId);
-        if (!viewInfo) {
+        return this.isViewDefinitionVisible(this.views.get(viewId)?.[1]);
+    }
+
+    protected isViewDefinitionVisible(view: View | undefined): boolean {
+        if (!view) {
             return false;
         }
-        const [, view] = viewInfo;
         return view.when === undefined || view.when === 'true' || this.contextKeyService.match(view.when);
     }
 
@@ -872,13 +881,24 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             }
             const widget = await this.widgetManager.getOrCreateWidget<PluginViewWidget>(PLUGIN_VIEW_FACTORY_ID, identifier);
             if (containerWidget.getTrackableWidgets().indexOf(widget) === -1) {
+                const view = this.views.get(viewId)?.[1];
+                const hiddenByDefault = view?.visibility === 'hidden';
                 containerWidget.addWidget(widget, {
-                    initiallyCollapsed: !!containerWidget.getParts().length,
-                    initiallyHidden: !this.isViewVisible(viewId)
+                    initiallyCollapsed: this.isViewInitiallyCollapsed(view, viewContainerId),
+                    initiallyHidden: hiddenByDefault || !this.isViewDefinitionVisible(view),
+                    weight: view?.initialSize
                 });
+                if (hiddenByDefault) {
+                    // Treated like a view the user hid: its `when` clause must not show it again.
+                    widget.suppressUpdateViewVisibility = true;
+                }
             }
             this.registerWidgetPartEvents(widget, containerWidget);
         }
+    }
+
+    protected isViewInitiallyCollapsed(view: View | undefined, viewContainerId: string): boolean {
+        return view?.visibility === 'collapsed' || PluginViewRegistry.COLLAPSED_VIEW_CONTAINERS.has(viewContainerId);
     }
 
     protected registerWidgetPartEvents(widget: PluginViewWidget, containerWidget: ViewContainerWidget): ViewContainerPart | undefined {
@@ -951,8 +971,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         let viewContainer = await this.getPluginViewContainer(containerId);
         if (!viewContainer) {
             viewContainer = await this.openViewContainer(containerId);
-            if (viewContainer && !viewContainer.getParts().filter(part => !part.isHidden).length) {
-                // close view containers without any visible view parts
+            if (viewContainer && !this.getContainerViews(containerId).some(viewId => this.isViewVisible(viewId))) {
+                // A view hidden by default still keeps its container, so that it can be shown from the container's menu.
                 viewContainer.dispose();
             }
         } else {

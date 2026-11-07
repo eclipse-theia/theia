@@ -20,11 +20,11 @@ import {
 } from '@theia/ai-core';
 import { DiscoveringProviderContribution, ModelDiscoveryMessages } from '@theia/ai-core/lib/browser';
 import { DiscoveredModel } from '@theia/ai-core/lib/common';
-import { OpenAiLanguageModelsManager, OpenAiModelDescription, OPENAI_PROVIDER_ID } from '../common';
+import { OpenAiLanguageModelsManager, OpenAiModelDescription, OPENAI_PROVIDER_ID } from '../common/index.js';
 import {
     ALLOW_ENV_API_KEY_PREF, API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODEL_OVERRIDES_PREF, SERVER_SIDE_COMPACTION_PREF, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF,
     USE_RESPONSE_API_PREF
-} from '../common/openai-preferences';
+} from '../common/openai-preferences.js';
 import {
     AICorePreferences, PREFERENCE_NAME_MAX_RETRIES, PREFERENCE_NAME_SERVER_SIDE_COMPACTION,
     PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD

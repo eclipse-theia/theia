@@ -20,7 +20,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import { ChatResponseContent } from '@theia/ai-chat/lib/common';
-import { MermaidPartRenderer } from './mermaid-part-renderer';
+import { MermaidPartRenderer } from './mermaid-part-renderer.js';
 disableJSDOM();
 
 describe('MermaidPartRenderer', () => {

@@ -20,7 +20,7 @@ import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { LanguageModelRequest, LanguageModelTextResponse, ReasoningApi, ReasoningSupport, ToolCallExecutor, ToolCallExecutorImpl } from '@theia/ai-core';
 import type { GoogleGenAI } from '@google/genai';
-import { GoogleModel, GoogleModelParams } from './google-language-model';
+import { GoogleModel, GoogleModelParams } from './google-language-model.js';
 
 const GEMINI_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],

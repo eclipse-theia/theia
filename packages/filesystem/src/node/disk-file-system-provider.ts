@@ -56,17 +56,18 @@ import {
     FileChange,
     WatchOptions,
     FileUpdateOptions, FileUpdateResult, FileReadStreamOptions, FilePermission
-} from '../common/files';
-import { FileSystemWatcherServer } from '../common/filesystem-watcher-protocol';
-import trash = require('trash');
+} from '../common/files.js';
+import { FileSystemWatcherServer } from '../common/filesystem-watcher-protocol.js';
+import trash from 'trash';
 import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { ReadableStreamEvents, newWriteableStream } from '@theia/core/lib/common/stream';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
-import { readFileIntoStream } from '../common/io';
-import { Mode } from 'stat-mode';
+import { readFileIntoStream } from '../common/io.js';
+// A CommonJS module whose exports cannot be detected statically, so it is imported as a whole.
+import statMode from 'stat-mode';
 
 export namespace DiskFileSystemProvider {
     export interface StatAndLink {
@@ -156,7 +157,7 @@ export class DiskFileSystemProvider implements Disposable,
     async stat(resource: URI): Promise<Stat> {
         try {
             const { stat, symbolicLink } = await this.statLink(this.toFilePath(resource)); // cannot use fs.stat() here to support links properly
-            const mode = new Mode(stat);
+            const mode = new statMode.Mode(stat);
             return {
                 type: this.toType(stat, symbolicLink),
                 ctime: stat.birthtime.getTime(), // intentionally not using ctime here, we want the creation time

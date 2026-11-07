@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { LaunchArguments } from '../../common/launch-arguments';
+import { LaunchArguments } from '../../common/launch-arguments.js';
 
 export const WindowLaunchArgs = Symbol('WindowLaunchArgs');
 

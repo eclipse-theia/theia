@@ -28,8 +28,7 @@
           "title": "機能のオーバーライド"
         },
         "completionNotification": {
-          "mdDescription": "このエージェントがユーザーの対応を必要とする場合(タスクの完了や入力の要求など)の通知動作。                     設定されていない場合は、グローバルなデフォルトの通知設定が使用されます。\n                    - `os-notification`: OS/システム通知を表示する\n                    - `message`: ステータスバー/メッセージ領域に通知を表示する\n                    - `blink`: UIを点滅またはハイライト表示する\n                    - `off`: このエージェントの通知を無効にする",
-          "title": "通知"
+          "mdDescription": "このエージェントがユーザーの対応を必要とする場合(タスクの完了や入力の要求など)の通知動作。                     設定されていない場合は、グローバルなデフォルトの通知設定が使用されます。\n                    - `os-notification`: OS/システム通知を表示する\n                    - `message`: ステータスバー/メッセージ領域に通知を表示する\n                    - `blink`: UIを点滅またはハイライト表示する\n                    - `off`: このエージェントの通知を無効にする"
         },
         "enable": {
           "mdDescription": "エージェントを有効化(true)するか無効化(false)するかを指定します。",
@@ -206,6 +205,15 @@
           "label": "画像ファイル"
         },
         "imagePickerPlaceholder": "画像ファイルを選択するか、名前で検索してください",
+        "networkError": {
+          "dns": "AI プロバイダーのホストを解決できませんでした。モデル/エンドポイントの URL、および DNS またはインターネット接続を確認してください。",
+          "generic": "AI プロバイダーに接続できませんでした。インターネット接続、設定済みのエンドポイント URL、およびプロキシやファイアウォールの設定を確認してください。",
+          "refused": "AI プロバイダーのエンドポイントによる接続が拒否されました。ホストとポートを確認し、ローカルのモデルサーバー(Ollama など)が実行されていることを確認してください。",
+          "reset": "AIプロバイダーへの接続が、応答を受け取る前にリセットされました。これは一時的な現象であることが多いため、再試行してください。",
+          "timeout": "AIプロバイダーへの接続がタイムアウトしました。ネットワーク、VPN、またはプロキシの設定を確認してください。",
+          "tls": "AI プロバイダーのエンドポイントの TLS 証明書を確認できませんでした。カスタムまたは自己署名型のエンドポイントを使用している場合は、その証明書またはプロキシ設定を確認してください。",
+          "unreachable": "AI プロバイダーのホストに接続できません。ネットワーク接続、VPN、またはプロキシ設定を確認してください。"
+        },
         "orchestrator": {
           "description": "このエージェントは、利用可能な全チャットエージェントの説明とユーザーのリクエストを照合し、リクエストに応答するのに最適なエージェントを(AIを用いて)選択します。ユーザーのリクエストは、追加の確認なしに選択されたエージェントに直接委譲されます。",
           "vars": {
@@ -278,7 +286,6 @@
           "generating": "生成",
           "noRenderer": "エラー: レンダラーが見つかりません",
           "scrollToBottom": "最新のメッセージへ移動",
-          "waitingForInput": "入力待ち",
           "you": "You"
         },
         "chatInput": {
@@ -298,6 +305,7 @@
         },
         "collapseAll": "すべて折りたたむ",
         "collapseChangeSet": "変更セットを折りたたむ",
+        "collapseMessage": "メッセージを折りたたむ",
         "command-part-renderer": {
           "commandNotExecutable": "コマンドのIDは「{0}」ですが、チャットウィンドウからは実行できません。"
         },
@@ -308,6 +316,7 @@
         "couldNotSendRequestToSession": "セッション {1} へのリクエスト \"{0}\" を送信できませんでした",
         "delegatedSession": "委任",
         "delegation-response-renderer": {
+          "cancel": "デリゲーションのキャンセル",
           "interactionNeeded": "ユーザーによる操作が必要",
           "prompt": {
             "label": "委譲プロンプト:"
@@ -331,6 +340,7 @@
         "enterChatName": "チャット名を入力",
         "errorChatInvocation": "チャットサービスの呼び出し中にエラーが発生しました。",
         "expandChangeSet": "変更セットを展開",
+        "expandMessage": "メッセージを展開",
         "failedToDeleteSession": "チャットセッションの削除に失敗しました",
         "failedToLoadChats": "チャットセッションの読み込みに失敗しました",
         "failedToRestoreSession": "チャットセッションの復元に失敗しました",
@@ -355,7 +365,6 @@
           "wheelZoomHint": "{0} + スクロール"
         },
         "modelBadgeTooltip": "この回答に使用された言語モデル:{0}",
-        "modelUnavailable": "利用不可",
         "noChatAgentsAvailable": "チャットエージェントは利用できません。",
         "noMatchingCapabilities": "一致する機能はありません",
         "openImage": "画像を開く",
@@ -445,6 +454,45 @@
         "variantTooltip": "プロンプトのバリエーション: {0}",
         "yourMessage": "あなたのメッセージ"
       },
+      "chatgpt": {
+        "category": "ChatGPT",
+        "codePrompt": "ブラウザから認証コードまたは完全なリダイレクトURLを貼り付けてください",
+        "commands": {
+          "signIn": "サインイン",
+          "signOut": "サインアウト"
+        },
+        "compaction": {
+          "default": "グローバルチャットのサーバー側圧縮設定に従ってください。",
+          "description": "ChatGPTモデルに対して、プロバイダー固有のサーバーサイド圧縮機能をオーバーライドします。「default」はグローバルチャット設定({0})に従います。これが有効になっている場合、会話がプロバイダーのしきい値を超えると、Response APIに対して古いターン(会話のやり取り)の要約が要求されます。",
+          "disabled": "ChatGPTモデルに対して、サーバーサイドのコンパクションを要求してはいけません。",
+          "enabled": "ChatGPTモデルについては、常にサーバーサイドのコンパクションをリクエストしてください。"
+        },
+        "compactionTokenThreshold": {
+          "description": "ChatGPT モデルのサーバーサイド圧縮におけるグローバルな入力トークン閾値を上書きします。設定されていない場合は、グローバル設定またはプロバイダーのデフォルト値が適用されます。設定する場合は、値は 50,000 トークン以上である必要があります。"
+        },
+        "discovery": {
+          "overridden": "モデルリストは手動で設定されます。ChatGPTプランで利用可能なモデルを表示するには、リストをクリアしてください。",
+          "signedOut": "ChatGPTにはログインしていません。ChatGPTプランのモデルを使用するには、ログインしてください。"
+        },
+        "enabled": {
+          "mdDescription": "ChatGPTプロバイダーを有効にします。有効にすると、認証用のステータスバー項目が表示され、ChatGPTのサブスクリプションから利用可能なモデルが検出されます。"
+        },
+        "enterCode": "コードを手動で入力してください",
+        "models": {
+          "mdDescription": "ChatGPTのサブスクリプションを通じて提供するモデルです。これらは、ログインしている間のみ利用可能です。この欄を空欄のままにすると、ChatGPTプランで実際に利用可能なモデルが提供され、ログイン後にそれらのモデルが照会されます。",
+          "signIn": "ChatGPTでサインイン"
+        },
+        "signInFailed": "ChatGPTへのサインインに失敗しました:{0}",
+        "signOutConfirm": "ChatGPTからログアウトしてもよろしいですか?",
+        "signOutTitle": "ChatGPTからサインアウトする",
+        "signedIn": "ChatGPTにログインしました。",
+        "signedInAs": "{0}としてChatGPTにログインしました。",
+        "statusBar": {
+          "signedIn": "ChatGPTには{0}としてログインしています。クリックするとログアウトします。",
+          "signedOut": "ChatGPTにログインしていません。クリックしてログインしてください。"
+        },
+        "waiting": "ブラウザでChatGPTへのサインインを完了してください。"
+      },
       "claude-code": {
         "agentDescription": "Anthropicのコーディングエージェント",
         "allowSession": "このセッションを許可する",
@@ -466,7 +514,6 @@
         "currentDirectory": "現在のディレクトリ",
         "differentAgentRequestWarning": "前回のチャットリクエストは別のエージェントが対応しました。Claude Codeはそれらの他のメッセージを確認できません。",
         "editAutomatically": "自動編集",
-        "editing": "編集",
         "editsCount": "{0} 編集",
         "emptyTodoList": "No todos available",
         "entireFile": "ファイル全体",
@@ -493,6 +540,7 @@
         "findMatchingFiles": "現在のディレクトリ内で、グロブパターン「{0}」に一致するファイルを検索する",
         "findMatchingFilesWithPath": "{1} 内で、グロブパターン「{0}」に一致するファイルを検索する",
         "finding": "検索",
+        "from": "出典:",
         "globPattern": "globパターン",
         "grepOptions": {
           "caseInsensitive": "大文字小文字を区別しない",
@@ -535,7 +583,6 @@
         "project": "プロジェクト",
         "projectRoot": "プロジェクトルート",
         "readMode": "読み取りモード",
-        "reading": "読解",
         "replaceAllCount": "{0} replace-all",
         "replaceAllOccurrences": "すべての出現箇所を置換",
         "resumeCommand": {
@@ -545,10 +592,10 @@
           "description": "コードレビューを依頼する"
         },
         "searchPath": "検索パス",
-        "searching": "検索",
         "startingLine": "開始ライン",
         "timeout": "タイムアウト",
         "timeoutInMs": "タイムアウト: {0} ms",
+        "to": "宛先:",
         "todoList": "Todo List",
         "todoPriority": {
           "high": "high",
@@ -580,8 +627,6 @@
         "itemCount": "{0} 項目",
         "noItems": "項目なし",
         "oneItem": "1項目",
-        "searched": "検索",
-        "searching": "検索",
         "todoList": "Todo List"
       },
       "completion": {
@@ -706,6 +751,28 @@
           "usedGlobalVariables": "使用されたグローバル変数",
           "usedTools": "使用したツール"
         },
+        "agentsMd": {
+          "inactiveOverride": "非アクティブ",
+          "legacyOverrides": "これらの project-info プロンプトのオーバーライドは自動的に移行されず、AGENTS.md を使用する組み込みエージェントには反映されなくなりました。保持したい指示は、該当するプロジェクトの AGENTS.md に移動してください。これらは、project-info を参照するプロンプト({0})には引き続き適用されます。",
+          "migrationResult": {
+            "backedUp": "以前のプロジェクト情報は `{0}` として保持されました。",
+            "backupFailed": "{0}を`{1}`に名前変更できなかったため、{0}はそのまま残っており、{2}よりも優先されます。{2}を使用するには、{0}の名前を変更するか削除してください。",
+            "empty": "AGENTS.md の移行:移行対象はありません。",
+            "promptSyntax": "移行されたファイルのうち {0} には、{1} ではもはや解決されないプロンプトテンプレートの構文がまだ含まれています。これを確認して削除してください。",
+            "untrusted": "AGENTS.md の移行:ワークスペースが信頼されていないため、プロジェクト情報は移行されませんでした。"
+          },
+          "openOverrideSources": "オープンソースファイル",
+          "rerunMigration": "AGENTS.md の移行を再実行する"
+        },
+        "agentsMdAutoLoadedVariable": {
+          "description": "ワークスペースにルートが 1 つしかない場合、ワークスペースのルートにある AGENTS.md の内容を返す。これにより、常に文脈に沿った状態が保たれる。"
+        },
+        "agentsMdContentVariable": {
+          "description": "ワークスペース内の AGENTS.md ファイルの全内容を返します"
+        },
+        "agentsMdVariable": {
+          "description": "エージェントがオンデマンドで読み込む必要がある AGENTS.md ファイル、つまりまだ読み込まれていないファイルの一覧です。"
+        },
         "agentsVariable": {
           "description": "システム内で利用可能なエージェントのリストを返します"
         },
@@ -729,7 +796,11 @@
           },
           "scopeBanner": "{0}スコープの編集。",
           "searchPlaceholder": "AI設定を検索",
-          "selectCategory": "設定を行うカテゴリを選択してください。"
+          "selectCategory": "設定を行うカテゴリを選択してください。",
+          "sessionOverride": {
+            "tooltip": "--session-preference オプションでこのセッション用に設定されます。ここで変更またはリセットすると、ウィンドウが再読み込みされるまでセッションの値がクリアされます。",
+            "tooltipWithValue": "--session-preference: {0} を通じてこのセッション用に設定されます。ここで変更またはリセットすると、ウィンドウが再読み込みされるまでセッションの値がクリアされます。"
+          }
         },
         "blinkTitle": {
           "agentCompleted": "{0} - エージェントが完了しました",
@@ -745,6 +816,7 @@
           },
           "description": "デフォルトのオン/オフ設定に基づいてプロンプトフラグメントを条件付きで解決する"
         },
+        "category": "AI",
         "changeSetSummaryVariable": {
           "description": "変更セット内のファイルとその内容の概要を提供します。"
         },
@@ -836,10 +908,10 @@
           "windowBlink": "ウィンドウ点滅"
         },
         "openEditorsShortVariable": {
-          "description": "現在開いている全ファイルの簡易参照(相対パス、カンマ区切り)"
+          "description": "現在開かれているすべてのエディタの概要(状態を含む相対パス、カンマ区切り)"
         },
         "openEditorsVariable": {
-          "description": "現在開かれているすべてのファイルのカンマ区切りリスト(ワークスペース相対パス、例:my-project/src/index.ts)。"
+          "description": "現在開かれているすべてのエディタの、ワークスペース相対パスによるカンマ区切りのリスト。各パスの後には、状態がある場合はその状態が続きます(例:「my-project/src/index.ts」(アクティブ、未保存の変更あり))。"
         },
         "preference": {
           "languageModelAliases": {
@@ -879,7 +951,9 @@
           "category": "AIプロンプトテンプレート"
         },
         "reasoning": {
-          "mdDescription": "推論機能に対応するモデルに適用される、チャット入力の推論セレクタのデフォルト値。\n\nこれは UI レベルの設定です。選択されたレベルは、リクエスト時にプロバイダーのネイティブ API パラメーターに変換されます(例:Anthropic の `thinking` / `output_config.effort`、OpenAI の `reasoning.effort`、Gemini の `thinkingConfig`)。また、同じフィールドに対して `#ai-features.modelSettings.requestSettings#` 経由で提供される生の値よりも優先されます。\n\n各エントリは以下の構成です:\n- `scope`: 設定が適用されるタイミングを定義します(`modelId`、`providerId`、`agentId`)。\n- `reasoning.level`: `off`、`minimal`、`low`、`medium`、`high`、`auto` のいずれか。\n\n実行時の優先順位(高い順):セレクターによるセッションのオーバーライド → この設定 → モデルで宣言されたデフォルト。セレクターに表示される値が送信されます。`#ai-features.modelSettings.requestSettings#` 経由でプロバイダーの reasoning フィールドを手動で上書きするには、ここで `reasoning.level` を `off` に設定し、レベルに基づく変換を無効にしてください。\n\nエントリはスコープの特異性に基づいて照合されます(agent: 100、model: 10、provider: 1 ポイント)。\n\n例:\n```json\n[\n  { \"scope\": { \"providerId\": \"anthropic\" }, \"reasoning\": { \"level\": \"medium\" } },\n  { \"scope\": { \"modelId\": \"openai/gpt-5\" }, \"reasoning\": { \"level\": \"high\" } },\n  { \"scope\": { \"agentId\": \"Coder\" }, \"reasoning\": { \"level\": \"off\" } }\n]\n```",
+          "mdDescription": "チャット入力の推論セレクタのデフォルト値。推論をサポートするモデルに適用されます。\n\nこれは UI レベルの設定です。選択されたレベルは、リクエスト時にプロバイダーのネイティブ API パラメータに変換されます(例:Anthropic の `thinking` / `output_config.effort`、OpenAIの`reasoning.effort`、Geminiの`thinkingConfig`)に変換され、同じフィールドに対して`#ai-features.modelSettings.requestSettings#`経由で指定された生の値よりも優先されます。\n\n各エントリは以下の要素で構成されます:\n- `scope`:設定が適用される条件を定義します(`modelId`、`providerId`、`agentId`)。\n- `reasoning.level`:`off`、`none`、`minimal`、`low`、`medium`、`high`、`xhigh`、`max`、`auto` のいずれかです。\nサポートされるレベルはモデルによって異なります。`none` は明示的に推論を行わないことを要求し、`off` は Ollama での推論を無効にします。他のプロバイダーの場合、`off` は明示的な推論処理を省略し、プロバイダーのデフォルト設定または生のリクエスト設定が適用されるようにします。`auto` はプロバイダーのデフォルト設定を使用します。\n\n実行時の優先順位(高い順):セレクタによるセッションのオーバーライド → この設定 → モデルで宣言されたデフォルト。セレクタに表示されている値が送信されます。 `#ai-features.modelSettings.requestSettings#` を通じてプロバイダーの推論フィールドを手動で上書きするには、ここで `reasoning.level` を `off` に設定し、レベルに基づく変換を無効にしてください(Ollama を除く)。\n\nエントリはスコープの特異性に基づいて照合されます(エージェント:100、モデル:10、プロバイダー:1ポイント)。\n\n例:\n```json\n[\n  { \"scope\": { \"providerId\": \"anthropic\" }, \"reasoning\": { \"level\": \"medium\" } },\n  { \"scope\": { \"modelId\": \"openai/gpt-5\" }, \"reasoning\": { \"level\": \"high\" } },\n  { \"scope\": { \"agentId\": \"Coder\" }, \"reasoning\": { \"level\": \"off\" } }\n]\n```",
+          "noneDescription": "理由の説明は明示的に求めない。",
+          "offDescription": "明示的な推論処理を省略し、プロバイダーのデフォルト設定または生のリクエスト設定を適用できるようにします。Ollamaでは、推論機能を無効にします。",
           "title": "デフォルト設定の根拠"
         },
         "requestSettings": {
@@ -936,10 +1010,10 @@
           "builtInVariable": "{0} 組み込み変数",
           "currentAbsoluteFilePath": "現在開かれているファイルの絶対パス。",
           "currentFileContent": "現在開かれているファイルのプレーンテキスト。これには、コンテンツの出典に関する情報は含まれません。",
-          "currentRelativeDirPath": "現在開いているファイルが含まれるディレクトリの、ワークスペース相対パス(例:my-project/src)。",
-          "currentRelativeFilePath": "現在開いているファイルのワークスペース相対パス(例:my-project/src/index.ts)。",
+          "currentRelativeDirPath": "現在開かれているファイルが含まれるディレクトリの、ワークスペースのルートからの相対パス(ルート名(例:src)は含まない)。",
+          "currentRelativeFilePath": "ワークスペースのルートに対する、現在開かれているファイルのパス(ルート名は含まない)(例:src/index.ts)。",
           "currentSelectedText": "開いているファイル内で現在選択されているプレーンテキスト。これには、コンテンツの出典に関する情報は含まれません。",
-          "dotRelativePath": "現在開かれているファイルのワークスペース相対パス(「currentRelativeFilePath」)に関する簡易リファレンス。"
+          "dotRelativePath": "ワークスペースのルートに対する、現在開かれているファイルのパスを、ルート名を除いた形で示す簡易参照(「currentRelativeFilePath」)。"
         },
         "variantSet": {
           "unavailableVariant": "{0} (利用不可)",
@@ -1039,6 +1113,7 @@
         "agentConfiguration": {
           "agentMode": "Coderのエージェントモード",
           "behavior": "動作",
+          "closeGenericCapabilitiesEditor": "汎用機能エディタを閉じる",
           "customAgentLocationQuickPick": {
             "placeholder": "agents/<id>/agent.md ファイルを作成する場所を選択してください",
             "title": "新しいカスタムエージェントの配置場所を選択してください"
@@ -1047,6 +1122,7 @@
           "defaultChatAgentNone": "組み込みのデフォルト設定",
           "defaultChatAgentNoneDescription": "明示的なデフォルト設定はありません。Theiaがデフォルトのチャットエージェントを選択します。",
           "defaults": "デフォルト設定",
+          "editGenericCapabilities": "汎用機能の編集",
           "genericCapabilitiesSettings": "一般的な機能",
           "genericCapabilityType": {
             "agentDelegation": "エージェントの委任",
@@ -1183,7 +1259,7 @@
           "mdDescription": "この設定により、最新のAI機能にアクセスできます。            \n            これらの機能は、アクセスを許可した言語モデル(LLM)に対して継続的なリクエストを生成する可能性があることを認識することが重要です。これにより、注意深く監視する必要のあるコストが発生する可能性があります。 このオプションを有効化することで、これらのリスクを認識したものとみなされます。            \n            **ご注意！このセクションの以下の設定は、\n            メイン機能設定が有効になって初めて有効になります。機能を有効化した後、以下のLLMプロバイダーを少なくとも1つ設定する必要があります。詳細は[ドキュメント](https://theia-ide.org/docs/user_ai/)も参照してください**。"
         },
         "exploreAgent": {
-          "description": "コードベースから情報を抽出して要約する、コードベース探索アシスタント。         コードベースに何が存在するかに関する事実を報告し、コードの抜粋を提供し、観察されたパターンを説明します。"
+          "description": "コードベースから情報を抽出して要約する、コードベース探索アシスタントです。         存在する要素に関する事実を報告し、コードの抜粋を提供し、観察されたパターンを説明します。         設計は明確であるが、ファイル全体にわたって事実(呼び出し箇所、データフロー、パターン、リップルチェックなど)を収集する必要がある場合は、このアシスタントに任せてください。         計画立案は行いません。 既知のファイルが1～2つある場合や、単一のターゲットを絞った検索を行う場合は、代わりにツールを直接使用してください。"
         },
         "generalConfiguration": {
           "aboutCosts": "費用およびデータ使用量について",
@@ -1252,7 +1328,6 @@
           "noModels": "まだモデルは見つかっていません。",
           "noProviders": "言語モデルプロバイダーはインストールされていません。",
           "providers": "プロバイダー",
-          "ready": "準備完了",
           "refresh": "モデル一覧を更新する",
           "refreshUnavailable": "プロバイダーが認証情報を取得するまでは、更新される項目はありません",
           "released": "{0} をリリースしました",
@@ -1295,8 +1370,7 @@
               "description": "プルリクエストをローカルにチェックアウトし、既存のワークツリーの変更を保護します。"
             },
             "localValidation": {
-              "description": "プルリクエストに対して、ローカルでのインストール、ビルド、リンティング、テスト、またはこれらに相当する検証タスクを実行します。",
-              "name": "ビルド"
+              "description": "プルリクエストに対して、ローカルでのインストール、ビルド、リンティング、テスト、またはこれらに相当する検証タスクを実行します。"
             },
             "pendingGitHubReview": {
               "description": "ユーザーの明示的な確認後、GitHubエージェントに委任して、準備済みのインラインコメントを含む保留中のプルリクエストレビューを作成または更新します。",
@@ -1410,6 +1484,10 @@
             "title": "すべてのツール確認モードをリセット"
           },
           "resetAllTooltip": "すべてのツールをデフォルトにリセット",
+          "sessionOverride": {
+            "tooltip": "--session-preference オプションでこのセッションの設定を行います。ここでツールのモードを変更したり、すべてのツールをリセットしたりすると、ウィンドウが再読み込みされるまで、すべてのツールのセッション値がクリアされます。",
+            "tooltipWithValue": "--session-preference: {0} を通じてこのセッション用に設定されます。ここでツールのモードを変更したり、すべてのツールをリセットしたりすると、ウィンドウが再読み込みされるまで、すべてのツールのセッション値がクリアされます。"
+          },
           "shellExecution": "シェルコマンドの実行",
           "toolOptions": {
             "confirm": {
@@ -1616,8 +1694,7 @@
             "title": "認証ヘッダー名"
           },
           "serverUrl": {
-            "mdDescription": "リモートMCPサーバーのURL。指定された場合、サーバーはローカルプロセスを起動する代わりにこのURLに接続します。",
-            "title": "サーバーURL"
+            "mdDescription": "リモートMCPサーバーのURL。指定された場合、サーバーはローカルプロセスを起動する代わりにこのURLに接続します。"
           },
           "title": "MCP サーバー構成"
         },
@@ -1665,7 +1742,6 @@
         "deleteServerDialogMsg": "サーバー「{0}」を削除してもよろしいですか?",
         "deleteServerDialogTitle": "MCPサーバーを削除",
         "deleteServerError": "MCPサーバーの削除に失敗しました: {0}",
-        "environmentVariables": "環境変数",
         "form": {
           "argsPlaceholder": "スペース区切り、例:-y @modelcontextprotocol/server-brave-search",
           "authHeaderPlaceholder": "デフォルト: Bearerによる認証",
@@ -1710,8 +1786,6 @@
         "saveServerError": "MCPサーバー設定の保存に失敗しました: {0}",
         "serverAuthToken": "認証トークン",
         "serverAuthTokenHeader": "認証ヘッダー名",
-        "serverTypeLabel": "MCPサーバー",
-        "serverUrl": "サーバーURL",
         "serversListTitle": "サーバー",
         "showToolSettings": "ツールを表示",
         "signInServerFailed": "MCPサーバー「{0}」へのサインインに失敗しました。",
@@ -1762,7 +1836,7 @@
           "id": {
             "title": "UI内でカスタムモデルを識別するために使用される一意の識別子"
           },
-          "mdDescription": "OpenAI API と互換性のあるカスタムモデルを、例えば `vllm` などを介して統合します。必須の属性は `model` および `url` です。            \n            オプションで、以下の設定が可能です。            \n            - UI 上でカスタムモデルを識別するための一意の `id` を指定します。 指定がない場合、`model` が `id` として使用されます。            \n            - 指定された URL で提供される API にアクセスするための `apiKey` を指定します。グローバルな OpenAI API キーを使用する場合は `true` を指定します。            \n            - 指定された URL で提供される Azure の API にアクセスするための `apiVersion` を指定します。グローバルな OpenAI API バージョンを使用する場合は `true` を指定します。            \n            - Azure デプロイメントの `deployment` 名を指定します。            \n            - `developerMessageSettings` を `user`、`system`、`developer`、`mergeWithFollowingUserMessage`、または `skip` のいずれかに設定して、開発者メッセージの            組み込み方法を制御します (ここで、`user`、`system`、および `developer` はロールとして使用され、`mergeWithFollowingUserMessage` は、次のユーザーメッセージの先頭にシステムメッセージを付加するか、次のメッセージがユーザーメッセージでない場合はシステムメッセージをユーザーメッセージに変換します。`skip` はシステムメッセージを単に削除します)。            デフォルトは `developer` です。            \n            - 構造化出力を使用しない場合は、`supportsStructuredOutput: false` を指定します。            \n            - ストリーミングを使用しない場合は、`enableStreaming: false` を指定します。            \n            - `useResponseApi: true` を指定すると、Chat Completion API の代わりに新しい OpenAI Response API を使用します(互換性のあるエンドポイントが必要です)。            \n            - `reasoningSupport` を指定すると、チャット推論セレクタを有効にします。 `supportedLevels`(例:`[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`)と、オプションの `defaultLevel` を含むオブジェクトを指定します。            \n            - `headers` を指定すると、エンドポイントへのすべてのリクエストに追加の HTTP ヘッダーを送信できます。例:API の前に配置されたゲートウェイで必要なヘッダーなど。            \n            詳細については、[当社のドキュメント](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm)を参照してください。",
+          "mdDescription": "OpenAI API と互換性のあるカスタムモデルを、例えば `vllm` などを介して統合します。必須の属性は `model` および `url` です。            \n            オプションで、以下の設定が可能です。            \n            - UI 上でカスタムモデルを識別するための一意の `id` を指定します。 指定がない場合、`model` が `id` として使用されます。            \n            - 指定された URL で提供される API にアクセスするための `apiKey` を指定します。グローバルな OpenAI API キーを使用する場合は `true` を指定します。            \n            - 指定された URL で Azure 上で提供される API にアクセスするための `apiVersion` を指定します。グローバルな OpenAI API バージョンを使用する場合は `true` を指定します。            \n            - Azure デプロイメントの `deployment` 名を指定します。            \n            - `developerMessageSettings` を `user`、`system`、`developer`、`mergeWithFollowingUserMessage`、または `skip` のいずれかに設定して、開発者メッセージの            組み込み方法を制御します (ここで、`user`、`system`、および `developer` はロールとして使用され、`mergeWithFollowingUserMessage` は、次のユーザーメッセージの先頭にシステムメッセージを付加するか、次のメッセージがユーザーメッセージでない場合はシステムメッセージをユーザーメッセージに変換します。`skip` は単にシステムメッセージを削除します)。            デフォルトは `developer` です。            \n            - 構造化出力を使用しない場合は、`supportsStructuredOutput: false` を指定します。            \n            - ストリーミングを使用しない場合は、`enableStreaming: false` を指定します。            \n            - `useResponseApi: true` を指定すると、Chat Completion API の代わりに新しい OpenAI Response API を使用します(互換性のあるエンドポイントが必要です)。            \n            - `reasoningSupport` を指定すると、チャット推論セレクタを有効にします。 `supportedLevels`(選択肢:`off`、`none`、`minimal`、`low`、`medium`、`high`、`xhigh`、`max`、`auto`)と、オプションの `defaultLevel` を含むオブジェクトを指定します。            `none` を指定すると、明示的に推論を行わない処理が送信されます。 `off` は生成された推論設定を省略します。`auto` はプロバイダーのデフォルトの処理レベルを使用します。            エンドポイントでサポートされているレベルのみを宣言してください。            \n            - `headers` を指定して、エンドポイントへのすべてのリクエストに追加の HTTP ヘッダーを送信します(例:API の前段にあるゲートウェイで必要なヘッダーなど)。            \n            詳細については、[当社のドキュメント](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm)を参照してください。",
           "modelId": {
             "title": "モデルID"
           },
@@ -1810,6 +1884,9 @@
           "description": "現在のワークスペース内の特定ファイルへの相対パス一覧。プロンプトテンプレートとして使用されます。同一ID(ファイル名)のテンプレートが複数場所に存在する場合、優先度で競合を解決します:特定のテンプレートファイル(最高)＞ワークスペースディレクトリ＞グローバルディレクトリ(最低)。",
           "title": "ワークスペース固有のプロンプトテンプレートファイル"
         }
+      },
+      "registry": {
+        "from": "出典:"
       },
       "scanoss": {
         "changeSet": {
@@ -1896,52 +1973,15 @@
         "failedToGetTokenUsageData": "トークン使用状況データの取得に失敗しました: {0}",
         "inputTokens": "入力トークン",
         "label": "トークン使用例",
-        "lastUsed": "最後に使用した",
         "noData": "トークン使用データはまだ利用できません。",
         "note": "トークンの使用状況はアプリケーション起動時から追跡されますが、永続化されません。",
         "outputTokens": "出力トークン",
         "readCachedInputTokens": "キャッシュから読み込まれた入力トークン"
       },
-      "vercelai": {
-        "anthropicApiKey": {
-          "mdDescription": "Vercel AI SDKで使用されるAnthropicモデルのAPIキーを入力してください。                 **ご注意:** この設定を使用すると、APIキーはTheiaを実行しているマシン上に平文で保存されます。キーを安全に設定するには環境変数`ANTHROPIC_API_KEY`を使用してください。"
-        },
-        "customEndpoints": {
-          "apiKey": {
-            "title": "指定されたURLで提供されるAPIにアクセスするためのキー、またはグローバルAPIキーを使用する場合は`true`"
-          },
-          "enableStreaming": {
-            "title": "ストリーミングAPIを使用するかどうかを示します。デフォルトは`true`です。"
-          },
-          "id": {
-            "title": "UI内でカスタムモデルを識別するために使用される一意の識別子"
-          },
-          "mdDescription": "Vercel AI SDKと互換性のあるカスタムモデルを統合します。必須属性は`model`と`url`です。            \n            オプションで以下の設定が可能です:            \n            - UI上でカスタムモデルを識別するための一意の`id`を指定。未指定の場合、`model`が`id`として使用されます。            \n            - 指定されたURLで提供されるAPIにアクセスするための`apiKey`を指定。 グローバルAPIキーの使用を示すには`true`を使用します。            \n            - 構造化出力を使用しないことを示すには`supportsStructuredOutput: false`を指定します。            \n            - ストリーミングを使用しないことを示すには`enableStreaming: false`を指定します。            \n            - モデルの提供元(openai、anthropic)を示すには`provider`を指定します。",
-          "modelId": {
-            "title": "モデルID"
-          },
-          "supportsStructuredOutput": {
-            "title": "モデルが構造化出力をサポートするかどうかを示します。デフォルトは`true`です。"
-          },
-          "url": {
-            "title": "モデルがホストされているAPIエンドポイント"
-          }
-        },
-        "models": {
-          "description": "Vercel AI SDKで使用する公式モデル",
-          "id": {
-            "title": "モデルID"
-          },
-          "model": {
-            "provider": "プロバイダー",
-            "title": "モデル名"
-          }
-        },
-        "openaiApiKey": {
-          "mdDescription": "Vercel AI SDKで使用されるOpenAIモデルのAPIキーを入力してください。                 **ご注意:** この設定を使用すると、APIキーはTheiaを実行しているマシン上に平文で保存されます。キーを安全に設定するには環境変数`OPENAI_API_KEY`を使用してください。"
-        }
-      },
       "workspace": {
+        "agentsMdAgent": {
+          "description": "他のAIエージェントが使用するプロジェクトコンテキストを管理するためのAIアシスタントです。このエージェントは、他のエージェントツールでも読み取られるオープンなAGENTS.md標準に準拠し、ワークスペースのルートにあるAGENTS.mdファイルの作成、更新、および確認を支援します。 また、ワークスペースを分析してプロジェクト情報を提案したり、CLAUDE.md や copilot-instructions.md などの既存の指示ファイルを統合したり、要件に基づいてファイルを更新したりすることができます。"
+        },
         "allowedExternalPaths": {
           "description": "AIツールがアクセス可能な、ワークスペース外の絶対パスまたはファイルURI(ディレクトリまたはファイル)のリスト。ユーザーのホームディレクトリを指定するために `~` を使用できます。デフォルトでは空で、オプトインのみ有効です。 パスを引数として受け取るすべてのツール(ファイルを作成するツールを含む)で有効です。ワークスペースが信頼されていない場合、ワークスペーススコープの値は無視されます。許可リストに登録されたディレクトリ内のシンボリックリンクは追跡され、許可リスト外のファイルを指す可能性があります。内容に信頼できるディレクトリのみを追加してください。",
           "title": "許可される外部パス"
@@ -1964,15 +2004,16 @@
           "description": "getFileContent ツールが返すコンテンツの最大サイズ(キロバイト単位)。ファイル全体を読み込む場合(offset や limit を指定しない場合)、この制限を超えるファイルはエラーを返します。offset および limit を指定して使用する場合、要求された範囲のみがこの制限に対してチェックされます。",
           "title": "ファイル内容の最大サイズ(KB)"
         },
-        "projectInfoAgent": {
-          "description": "プロジェクト情報テンプレートを管理するAIアシスタント。このエージェントは、他のAIエージェントにプロジェクトのコンテキストを提供する.prompts/project-info.prompttemplateファイルの作成、更新、レビューを支援します。ワークスペースを分析してプロジェクト情報を提案したり、要件に基づいて既存のテンプレートを更新したりできます。"
-        },
         "searchMaxResults": {
           "description": "ワークスペース検索機能で返される検索結果の最大数。",
           "title": "最大検索結果"
         },
         "workspaceAgent": {
-          "description": "Theia IDEに統合されたAIアシスタント。ソフトウェア開発者を支援するために設計されています。このエージェントはユーザーのワークスペースにアクセスでき、利用可能な全ファイルとフォルダのリストを取得し、その内容を参照できます。ただしファイルの編集はできません。したがって、プロジェクトのビルド方法、ソースコードの保存場所、特定のコードや設定の所在など、ワークスペース内の現在のプロジェクト、プロジェクトファイル、ソースコードに関する質問に回答できます。"
+          "description": "{0}に統合された、ソフトウェア開発者を支援するために設計されたAIアシスタントです。このエージェントはユーザーのワークスペースにアクセスでき、利用可能なすべてのファイルやフォルダのリストを取得し、その内容を読み取ることができます。 ファイルの変更はできません。そのため、プロジェクトのビルド方法、ソースコードの配置場所、特定のコードや設定の場所など、現在のプロジェクト、プロジェクトファイル、およびワークスペース内のソースコードに関する質問に回答できます。また、状況を調査し、実装計画(タスクコンテキスト)を策定します。 「何を変更すべきか」という点が未定の場合(設計上の決定、3つ以上のファイルや2つ以上のパッケージにまたがる変更、あるいはアーキテクチャのレイヤーをまたぐ変更など)は、このエージェントに委任してください。"
+        },
+        "writeContentMaxSizeKB": {
+          "description": "ファイル全体書き込みツール(writeFileContent および suggestFileContent)が受け付けるコンテンツの最大サイズ(キロバイト単位)。これを超える書き込みは拒否され、代わりに置換ベースのツールを使用するようヒントが表示されます。",
+          "title": "コンテンツの最大サイズ(KB)を入力してください"
         }
       }
     },
@@ -2018,8 +2059,7 @@
         "description": "AIの設定は「AI設定」ビューに移動しました。このビューを開いて、プロバイダー、モデル、エージェントなどを設定してください。"
       },
       "preferences": {
-        "linuxEnvHint": "Linux では、デスクトップのショートカットからアプリケーションを起動する場合、変数が `~/.profile`(`~/.bashrc` だけでなく)に定義されていることを確認してください。詳細については、[ドキュメント](https://theia-ide.org/docs/user_ai/#setting-api-keys)を参照してください。",
-        "title": "AI機能"
+        "linuxEnvHint": "Linux では、デスクトップのショートカットからアプリケーションを起動する場合、変数が `~/.profile`(`~/.bashrc` だけでなく)に定義されていることを確認してください。詳細については、[ドキュメント](https://theia-ide.org/docs/user_ai/#setting-api-keys)を参照してください。"
       },
       "showChat": "チャットを表示"
     },
@@ -2149,6 +2189,7 @@
         "mdDescription": "`#ai-features.registry.autoUpdate#` のアーティファクトごとの上書き設定。キーは `skill:<skillId>`、`mcp:<serverId>`、または `plugin:<pluginId>` です。 エントリは通常、[Extensions] ビューの歯車メニューから管理されます。エントリがないアーティファクトは、デフォルト設定に従います。"
       },
       "mcp": {
+        "registryLatestVersion": "MCP レジストリ:{0}",
         "updated": "MCPサーバー「{0}」を更新しました。"
       },
       "plugin": {
@@ -2296,7 +2337,6 @@
       "configurePermissions": "シェルコマンドの権限を設定する",
       "confirmExecution": "シェルコマンドの確認",
       "denialReason": "理由",
-      "executionDenied": "拒否されました",
       "executionDeniedWithReason": "拒否されました(理由あり)",
       "partialOutput": "部分的な出力",
       "shellCommandAllowlist": {
@@ -2305,8 +2345,7 @@
       "shellCommandDenylist": {
         "description": "常に拒否すべきシェルコマンドパターンのリスト。これらのパターンに一致するコマンドは確認なしで自動拒否されます。パターン構文を使用: \"git push\"(完全一致)または \"git push *\"(任意の引数付き)。危険なコマンド(eval、exec、sudo、rm -rfなど)のデフォルトパターンが同梱されています。"
       },
-      "timeout": "タイムアウト",
-      "workingDirectory": "作業ディレクトリ"
+      "timeout": "タイムアウト"
     },
     "ai-tool-sketchpad": {
       "addItemProperty": "項目のプロパティを追加",
@@ -2385,7 +2424,6 @@
       "optional": "オプション",
       "selectAuth": "認証方法の選択",
       "selectCollaboration": "コラボレーションオプションを選択",
-      "serverUrl": "サーバーURL",
       "serverUrlDescription": "ライブコラボレーションセッション用のオープンコラボレーションツールサーバーインスタンスのURL",
       "sharedSession": "コラボレーションセッションを共有しました",
       "startSession": "コラボレーションセッションを開始または参加する",
@@ -2412,6 +2450,9 @@
         "collapseLeftPanel": "左パネルの表示/非表示を切り替える",
         "collapseRightPanel": "右パネルの切り替え",
         "collapseTab": "サイドパネルを折りたたむ",
+        "hideSidePanelItem": "サイドバーから非表示にする",
+        "keepSidePanelItem": "サイドバーに表示",
+        "resetHiddenSidePanelItems": "非表示のサイドバー項目をリセット",
         "showNextTabGroup": "次のタブグループに切り替える",
         "showNextTabInGroup": "グループ内の次のタブに切り替える",
         "showPreviousTabGroup": "前のタブグループに切り替える",
@@ -2427,10 +2468,23 @@
         "visual": "タブの視覚的なプレビューを表示する。"
       },
       "highlightModifiedTabs": "編集済み(変更済み)のエディタタブに上部の境界線を表示するかどうかを制御します。",
+      "http": {
+        "proxy": "使用するプロキシ設定。設定されていない場合は、`http_proxy` および `https_proxy` 環境変数から継承されます。",
+        "proxyAuthorization": "すべてのネットワークリクエストに対して、`Proxy-Authorization`ヘッダーとして送信する値。",
+        "proxyStrictSSL": "プロキシサーバーの証明書を、指定されたCAのリストと照合して検証するかどうかを制御します。",
+        "proxySupport": "拡張機能のプロキシ機能を利用してください。",
+        "systemCertificates": "OS から CA 証明書を読み込むかどうかを制御します。Windows および macOS では、これを無効にした後、ウィンドウを再読み込みする必要があります。"
+      },
       "jumpListName": "最近のワークスペース",
       "keybinding": {
+        "characterRequiresCodeDispatch": "文字キーのキーバインドを設定するには、設定項目「keyboard.dispatch」を「code」に設定する必要があります。",
+        "commandModifierAltGraphCharacterUnavailable": "現在のキーボードレイアウトでは、論理文字と{0}コマンド修飾子を同時に入力することはできません。",
         "duplicateModifierError": "キーバインディングを解析できません {0} 重複する修飾子",
+        "invalidCharacter": "無効な Unicode 文字 {0}。",
         "metaError": "{0}のキーバインディングを解析できません。metaはOSX専用です",
+        "shiftedAltGraphCharacterUnavailable": "現在のキーボードレイアウトでは、論理文字とShiftキーの組み合わせを入力することはできません。",
+        "unavailableCharacter": "現在のキーボードレイアウトでは、このキーは利用できません。",
+        "unknownScanCode": "不明なスキャンコード {0}。サポートされている KeyboardEvent.code 名を使用してください。",
         "unrecognizedKeyError": "{1} 内の認識されないキー {0}"
       },
       "keybindingStatus": "{0} キーが押されました、次のキー入力を待機中",
@@ -2464,10 +2518,15 @@
       },
       "secondaryWindow": {
         "alwaysOnTop": "有効化されている場合、セカンダリウィンドウは他のアプリケーションのウィンドウを含む全てのウィンドウの最前面に表示されます。",
+        "closeBehavior": {
+          "close": "セカンダリウィンドウのビューが閉じられます。状態が失われる可能性のあるビュー(例:未保存の変更があるエディタ)は、メインウィンドウに戻されます。",
+          "moveToMainWindow": "セカンダリウィンドウのすべてのビューがメインウィンドウに戻されます。"
+        },
         "description": "抽出されたセカンダリウィンドウの初期位置とサイズを設定します。",
         "fullSize": "抽出されたウィジェットの位置とサイズは、実行中のTheiaアプリケーションと同一になります。",
         "halfWidth": "抽出されたウィジェットの位置とサイズは、実行中のTheiaアプリケーションの幅の半分になります。",
-        "originalSize": "抽出されたウィジェットの位置とサイズは、元のウィジェットと同じになります。"
+        "originalSize": "抽出されたウィジェットの位置とサイズは、元のウィジェットと同じになります。",
+        "restore": "起動時にサブウィンドウを復元するかどうかを制御します。無効にしている場合、サブウィンドウの内容はメインウィンドウに復元されます。"
       },
       "severity": {
         "log": "ログ"
@@ -2526,6 +2585,8 @@
       "missingConfiguration": "動的構成「{0}: {1}」が存在しないか、適用対象外です",
       "pause": "pause",
       "pauseAll": "すべてを一時停止",
+      "restartFrameFailed": "フレームの再起動に失敗しました。",
+      "restartFrameNotSupported": "デバッグアダプタは、フレームの再起動をサポートしていません。",
       "step": "ステップ",
       "taskTerminatedBySignal": "タスク '{0}' がシグナル {1} により終了しました。",
       "taskTerminatedForUnknownReason": "タスク「{0}」が不明な理由で終了しました。",
@@ -2562,6 +2623,10 @@
       "editor.inlineSuggest.edits.experimental.useInterleavedLinesDiff": "インライン提案における実験的な行間差分表示を有効化するかどうかを制御します。",
       "editor.inlineSuggest.edits.experimental.useMixedLinesDiff": "インライン提案での実験的編集を有効にするかどうかを制御します。",
       "editor.insertSpaces": "`Tab`キーを押した際にスペースを挿入します。`#editor.detectIndentation#`が有効な場合、この設定はファイルの内容に基づいて上書きされます。",
+      "editor.multiCursorPaste": {
+        "description": "貼り付けられたテキストの行数がカーソルの位置と一致する場合の貼り付け動作を制御します。",
+        "spread": "カーソルを移動するたびに、テキストが1行ずつ貼り付けられます。"
+      },
       "editor.quickSuggestions": "入力中に候補を自動表示するかどうかを制御します。コメント、文字列、その他のコード入力時に個別に設定可能です。クイック候補はゴーストテキスト表示または候補ウィジェット表示で設定できます。また、特殊文字で候補を表示するかどうかを制御する`#editor.suggestOnTriggerCharacters#`設定にも注意してください。",
       "editor.suggestFontSize": "提案ウィジェットのフォントサイズ。`0`に設定すると、`#editor.fontSize#`の値が使用されます。",
       "editor.suggestLineHeight": "サジェストウィジェットの行間。`0`に設定すると、`#editor.lineHeight#`の値が使用されます。最小値は8です。",
@@ -2611,6 +2676,7 @@
       "cwd": "新しい外部ターミナル用の現在の作業ディレクトリを選択"
     },
     "file-search": {
+      "placeholder": "名前でファイルを検索({0} を追加すると行へ、{1} を追加するとシンボルへ移動します)",
       "toggleExcludedFiles": " ({0}を押すと、除外されたファイルの表示/非表示を切り替えられます)"
     },
     "fileDialog": {
@@ -2672,6 +2738,8 @@
       "editKeybindingTitle": "{0} のキーバインドを編集",
       "editWhenExpression": "式を編集...",
       "editWhenExpressionTitle": "{0} 用 Edit When Expression",
+      "inactiveKeybinding": "現在のキーボードレイアウトでは無効",
+      "interpretationShadowing": "コマンド修飾子の解釈は、このキーバインディングよりも優先されます。",
       "keybinding": {
         "copy": "キーバインディングのコピー",
         "copyCommandId": "キーバインディング コマンド ID をコピー",
@@ -2680,10 +2748,13 @@
         "editWhenExpression": "式が...のときにキーバインドを編集"
       },
       "keybindingCollidesValidation": "キーバインディングが現在競合しています",
+      "keybindingDescription": "スペースで区切られた論理キーまたはキーシーケンス。物理キーの場合は [ScanCode] を、予約済みの Unicode 文字の場合は [char:0x...] を使用してください。",
+      "physicalRealizationUnavailable": "物理的な実装は利用不可",
       "requiredKeybindingValidation": "キーバインディングの値が必要です",
       "resetKeybindingConfirmation": "このキーバインディングを本当にデフォルト値にリセットしますか?",
       "resetKeybindingTitle": "{0} のキーバインドをリセットする",
-      "resetMultipleKeybindingsWarning": "このコマンドに複数のキーバインドが存在する場合、それら全てがリセットされます。"
+      "resetMultipleKeybindingsWarning": "このコマンドに複数のキーバインドが存在する場合、それら全てがリセットされます。",
+      "windowsRecorderGuidance": "目的のキーの組み合わせを押してから、Enterキーを押してください。AltGrの組み合わせは、その論理的な文字として保存されます。"
     },
     "localize": {
       "offlineTooltip": "バックエンドに接続できません。"
@@ -2849,11 +2920,16 @@
       "webviewWarnIfUnsecure": "WebViewが現在安全でない状態でデプロイされていることをユーザーに警告します。"
     },
     "preferences": {
-      "ai-features": "AI機能",
-      "hostedPlugin": "ホスト型プラグイン",
-      "input": {
-        "browse": "閲覧"
+      "ai-features": {
+        "ai-enable": "AI対応",
+        "code-completion": "コード補完",
+        "model-settings": "モデル設定",
+        "open-ai-custom": "{0} カスタムモデル",
+        "open-ai-official": "{0} 公式モデル",
+        "promptTemplates": "プロンプトテンプレート",
+        "workspace-functions": "ワークスペースの機能"
       },
+      "hostedPlugin": "ホスト型プラグイン",
       "sessionOverride": {
         "suffix": "セッションによって上書きされます",
         "suffixTooltip": "この設定には、--session-preference を通じて設定されるセッション値があります。ここで編集すると、そのセッションの残りの期間、セッションによる上書き設定が解除されます。"
@@ -2862,9 +2938,7 @@
         "statusBar": "セッション設定 ({0})",
         "tooltipBody": "これらは --session-preference オプションを介して渡され、メモリ上にのみ存在します。設定名をクリックすると、[設定] ビューの該当項目に移動します。",
         "tooltipChangeNote": "これらのいずれかを編集すると、その実行におけるセッションのオーバーライド設定がクリアされます。次回以降の起動から保存された値を使用するには、--session-preference 引数を指定せずに再起動してください。",
-        "tooltipHeader": "これらの設定は、このセッションでは上書きされます",
-        "valueOff": "オフ",
-        "valueOn": "on"
+        "tooltipHeader": "これらの設定は、このセッションでは上書きされます"
       },
       "toolbar": "ツールバー"
     },
@@ -2945,13 +3019,14 @@
       "mergeEditor": {
         "resetConfirmationTitle": "このエディターでマージ結果を本当にリセットしますか?"
       },
+      "multiDiffEditor": {
+        "loadFailed": "差分の読み込みに失敗しました:{0}"
+      },
       "noChanges": "変更されたファイルはありません。",
       "noHistory": "ソース管理の履歴はありません。",
-      "noHistoryForError": "{0}には履歴がありません",
       "openCommit": "コミットを開く",
       "pickHistoryItemRefs": "履歴項目を選択...",
       "pickHistoryItemRefsPlaceholder": "1つ以上の履歴項目の参照を選択してください",
-      "prepositionIn": "および",
       "refPickerBranches": "ブランチ",
       "refPickerRemoteBranches": "リモートブランチ",
       "refPickerTags": "タグ",
@@ -2966,7 +3041,9 @@
       "searchOnEditorModification": "編集中のファイルが変更された際に、アクティブなエディタを検索します。"
     },
     "secondary-window": {
-      "extract-widget": "ビューをセカンダリウィンドウに移動"
+      "extract-widget": "ビューをセカンダリウィンドウに移動",
+      "restore-all-widgets": "すべてのビューをメインウィンドウに移動",
+      "restore-widget": "ビューをメインウィンドウに移動"
     },
     "shell-area": {
       "secondary": "セカンダリウィンドウ"
@@ -3151,7 +3228,10 @@
       "restrictedModeFeatures": "潜在的に有害なコードから保護するため、タスクの実行、デバッグ、拡張機能、AI などの機能は無効化されています。",
       "schema": {
         "folders": {
-          "description": "ワークスペース内のルートフォルダ"
+          "description": "ワークスペース内のルートフォルダ",
+          "name": {
+            "description": "フォルダ名の代わりに表示される、任意のフォルダ名"
+          }
         },
         "title": "ワークスペースファイル"
       },

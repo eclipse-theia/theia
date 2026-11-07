@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { ToolProvider, ToolRequest } from '@theia/ai-core/lib/common';
-import { TODO_WRITE_FUNCTION_ID, isValidTodoItem } from '../common/todo-tool';
+import { TODO_WRITE_FUNCTION_ID, isValidTodoItem } from '../common/todo-tool.js';
 
 @injectable()
 export class TodoWriteTool implements ToolProvider {

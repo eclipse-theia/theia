@@ -17,14 +17,13 @@
 import * as cookie from 'cookie';
 import * as crypto from 'crypto';
 import * as http from 'http';
-import express = require('express');
+import * as express from '../../../shared/express/index.cjs';
 import { inject, injectable, named } from 'inversify';
-import { environment } from '../../common/index';
-import { MaybePromise } from '../../common';
-import { BackendApplicationContribution, EarlyExpressMiddleware } from '../backend-application';
-import { WsRequestValidatorContribution } from '../ws-request-validators';
-import { generateUuid } from '../../common/uuid';
-import { ILogger } from '../../common/logger';
+import { environment, MaybePromise } from '../../common/index.js';
+import { BackendApplicationContribution, EarlyExpressMiddleware } from '../backend-application.js';
+import { WsRequestValidatorContribution } from '../ws-request-validators.js';
+import { generateUuid } from '../../common/uuid.js';
+import { ILogger } from '../../common/logger.js';
 
 export const BrowserConnectionToken = Symbol('BrowserConnectionToken');
 

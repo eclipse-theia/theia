@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable, multiInject, optional } from 'inversify';
-import { ContributionFilterRegistry, ContributionType, FilterContribution } from './contribution-filter';
-import { Filter } from './filter';
+import { ContributionFilterRegistry, ContributionType, FilterContribution } from './contribution-filter.js';
+import { Filter } from './filter.js';
 
 /**
  * Registry of contribution filters.

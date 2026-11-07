@@ -19,7 +19,7 @@ import { Command, CommandContribution, CommandHandler, CommandRegistry, Emitter,
 import { ApplicationShell, codicon, KeybindingContribution, KeybindingRegistry, Widget, WidgetManager } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { MultiDiffEditor } from './multi-diff-editor';
+import { MultiDiffEditor } from './multi-diff-editor.js';
 
 export namespace MultiDiffEditorCommands {
     export const GO_TO_PREVIOUS_FILE: Command = {

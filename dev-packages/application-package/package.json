@@ -1,6 +1,6 @@
 {
   "name": "@theia/application-package",
-  "version": "1.76.0",
+  "version": "1.77.0",
   "description": "Theia application package API.",
   "publishConfig": {
     "access": "public"
@@ -20,7 +20,16 @@
   ],
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "scripts": {
+    "afterInstall": "npm run build",
     "build": "theiaext build",
     "clean": "theiaext clean",
     "compile": "theiaext compile",
@@ -29,7 +38,7 @@
     "watch": "theiaext watch"
   },
   "dependencies": {
-    "@theia/request": "1.76.0",
+    "@theia/request": "1.77.0",
     "@types/fs-extra": "^4.0.15",
     "@types/semver": "^7.8.0",
     "@types/write-json-file": "^2.2.1",
@@ -43,7 +52,7 @@
     "write-json-file": "^2.3.0"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.76.0"
+    "@theia/ext-scripts": "1.77.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

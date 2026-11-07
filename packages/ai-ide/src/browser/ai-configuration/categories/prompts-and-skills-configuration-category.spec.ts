@@ -28,7 +28,7 @@ import { AgentPluginUiBridge, InstalledAgentPluginInfo } from '@theia/ai-core/li
 import { SkillRegistryUiBridge } from '@theia/ai-core/lib/browser/skill-registry-ui-bridge';
 import { AiConfigurationCategoryId } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
 import { CollapsibleRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/collapsible-list';
-import { PromptsAndSkillsConfigurationCategory } from './prompts-and-skills-configuration-category';
+import { PromptsAndSkillsConfigurationCategory } from './prompts-and-skills-configuration-category.js';
 
 disableJSDOM();
 

@@ -17,7 +17,7 @@
 import { expect } from 'chai';
 import { OS } from '@theia/core';
 import { RemotePlatform } from '@theia/core/lib/node/remote/remote-cli-contribution';
-import { AppNativeDependencyContribution } from './app-native-dependency-contribution';
+import { AppNativeDependencyContribution } from './app-native-dependency-contribution.js';
 
 class TestableAppNativeDependencyContribution extends AppNativeDependencyContribution {
     publicGetDefaultURLForFile(remotePlatform: RemotePlatform, theiaVersion: string): string {

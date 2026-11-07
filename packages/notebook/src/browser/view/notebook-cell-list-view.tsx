@@ -14,16 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import * as React from '@theia/core/shared/react';
-import { CellEditType, CellKind, NotebookCellsChangeType } from '../../common';
-import { NotebookCellModel } from '../view-model/notebook-cell-model';
-import { NotebookModel } from '../view-model/notebook-model';
-import { NotebookCellToolbarFactory } from './notebook-cell-toolbar-factory';
+import { CellEditType, CellKind, NotebookCellsChangeType } from '../../common/index.js';
+import { NotebookCellModel } from '../view-model/notebook-cell-model.js';
+import { NotebookModel } from '../view-model/notebook-model.js';
+import { NotebookCellToolbarFactory } from './notebook-cell-toolbar-factory.js';
 import { animationFrame, onDomEvent } from '@theia/core/lib/browser';
 import { CommandMenu, CommandRegistry, DisposableCollection, MenuModelRegistry, nls } from '@theia/core';
-import { NotebookCommands, NotebookMenus } from '../contributions/notebook-actions-contribution';
-import { NotebookCellActionContribution } from '../contributions/notebook-cell-actions-contribution';
-import { NotebookContextManager } from '../service/notebook-context-manager';
-import { NotebookViewModel } from '../view-model/notebook-view-model';
+import { NotebookCommands, NotebookMenus } from '../contributions/notebook-actions-contribution.js';
+import { NotebookCellActionContribution } from '../contributions/notebook-cell-actions-contribution.js';
+import { NotebookContextManager } from '../service/notebook-context-manager.js';
+import { NotebookViewModel } from '../view-model/notebook-view-model.js';
 
 export interface CellRenderer {
     render(notebookData: NotebookModel, cell: NotebookCellModel, index: number): React.ReactNode
