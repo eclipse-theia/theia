@@ -104,6 +104,15 @@ export namespace TerminalManagerCommands {
 
 export const TERMINAL_MANAGER_TREE_CONTEXT_MENU = ['terminal-manager-tree-context-menu'];
 
+/** The dropdown menu of the new terminal page toolbar item. */
+export const TERMINAL_MANAGER_NEW_TERMINAL_MENU = ['terminal-manager-new-terminal-menu'];
+export namespace TerminalManagerNewTerminalMenus {
+    export const NEW = [...TERMINAL_MANAGER_NEW_TERMINAL_MENU, '1_new'];
+    export const PROFILES = [...TERMINAL_MANAGER_NEW_TERMINAL_MENU, '2_profiles'];
+    export const SPLIT_PROFILE = [...TERMINAL_MANAGER_NEW_TERMINAL_MENU, '3_split', 'split-profile'];
+    export const CONFIGURE = [...TERMINAL_MANAGER_NEW_TERMINAL_MENU, '4_configure'];
+}
+
 /**
  * Configuration for special pages in the terminal manager tree.
  * Each entry maps a terminal `kind` to its page ID, display label, and icon.
