@@ -110,6 +110,11 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
 
     handleSocketDisconnect(socket: Socket, channel: ReconnectableSocketChannel, frontEndId: string): void {
         socket.on('disconnect', evt => {
+            if (this.connectionsByFrontend.get(frontEndId) !== channel || !channel.isConnectedTo(socket)) {
+                // The front end has moved to another socket since: leave its connection alone.
+                this.logger.info(`superseded socket closed for ${frontEndId}`);
+                return;
+            }
             this.logger.info('socket closed');
             channel.disconnect();
 
@@ -181,6 +186,10 @@ export class ReconnectableSocketChannel extends AbstractChannel {
     disconnect(): void {
         this.disposables.dispose();
         this.socket = undefined;
+    }
+
+    isConnectedTo(socket: Socket): boolean {
+        return this.socket === socket;
     }
 
     drainBuffer(): void {
