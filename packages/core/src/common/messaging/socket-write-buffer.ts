@@ -21,8 +21,8 @@ import { WebSocket } from './web-socket-channel.js';
 export class SocketWriteBuffer {
     private static readonly DEFAULT_DISCONNECTED_BUFFER_SIZE = 100 * 1024;
 
-    protected disconnectedBuffer: Uint8Array | undefined;
-    protected bufferWritePosition = 0;
+    protected bufferedMessages: Uint8Array[] = [];
+    protected bufferedBytes = 0;
 
     protected get maxBufferSize(): number {
         return SocketWriteBuffer.DEFAULT_DISCONNECTED_BUFFER_SIZE;
@@ -30,29 +30,29 @@ export class SocketWriteBuffer {
 
     buffer(data: Uint8Array): void {
         this.ensureWriteBuffer(data.byteLength);
-        this.disconnectedBuffer?.set(data, this.bufferWritePosition);
-        this.bufferWritePosition += data.byteLength;
+        this.bufferedMessages.push(data);
+        this.bufferedBytes += data.byteLength;
     }
 
     protected ensureWriteBuffer(byteLength: number): void {
-        if (!this.disconnectedBuffer) {
-            this.disconnectedBuffer = new Uint8Array(this.maxBufferSize);
-            this.bufferWritePosition = 0;
-        }
-
-        if (this.bufferWritePosition + byteLength > this.disconnectedBuffer.byteLength) {
+        if (this.bufferedBytes + byteLength > this.maxBufferSize) {
             throw new Error(`Max disconnected buffer size exceeded by adding ${byteLength} bytes`);
         }
     }
 
+    /**
+     * Sends each buffered message on its own: the receiving side reads one message per socket message.
+     */
     flush(socket: WebSocket): void {
-        if (this.disconnectedBuffer) {
-            socket.send(this.disconnectedBuffer.slice(0, this.bufferWritePosition));
-            this.disconnectedBuffer = undefined;
+        const messages = this.bufferedMessages;
+        this.drain();
+        for (const message of messages) {
+            socket.send(message);
         }
     }
 
     drain(): void {
-        this.disconnectedBuffer = undefined;
+        this.bufferedMessages = [];
+        this.bufferedBytes = 0;
     }
 }
