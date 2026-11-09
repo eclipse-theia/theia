@@ -183,8 +183,8 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
         const text = [
             `#terminalCommand:${terminalHistoryIndex}`,
             '### Terminal Context',
-            ...(cwd ? [`Cwd: ${cwd}`] : []),
-            ...(shell ? [`ShellType: ${shell}`] : []),
+            ...(cwd ? [`**Cwd:** ${cwd}  `] : []),
+            ...(shell ? [`**Shell Type:** ${shell}`] : []),
             '### User Question',
             request.text
         ].join('\n');
