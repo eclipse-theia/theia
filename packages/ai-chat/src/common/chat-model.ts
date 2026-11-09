@@ -2614,7 +2614,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _result?: ToolCallResult;
     protected _data?: Record<string, string>;
     protected _confirmationTimeout?: number;
-    confirmationDeadline?: number;
+    protected _confirmationDeadline?: number;
     protected _needsUserConfirmation: Promise<void>;
     protected _needsUserConfirmationResolver?: () => void;
     protected _isAwaitingUserConfirmation = false;
@@ -2678,6 +2678,14 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
 
     set confirmationTimeout(value: number | undefined) {
         this._confirmationTimeout = value;
+    }
+
+    get confirmationDeadline(): number | undefined {
+        return this._confirmationDeadline;
+    }
+
+    set confirmationDeadline(value: number | undefined) {
+        this._confirmationDeadline = value;
     }
 
     get interactionId(): string | undefined {

@@ -1166,16 +1166,15 @@ button.agent-chip:focus-visible {
 
 .theia-chat-session-item-status-icon .theia-tool-confirmation-countdown {
   position: absolute;
-  top: calc(100% - 3px);
+  top: 100%;
   left: 50%;
   transform: translateX(-50%);
   padding: 0 2px;
   border: 1px solid var(--theia-editorWarning-foreground);
   border-radius: 3px;
-  background-color: var(--theia-editor-background);
   color: var(--theia-editorWarning-foreground);
-  font-size: 10px;
-  line-height: 12px;
+  font-size: var(--theia-ui-font-size0);
+  line-height: 1.2;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   opacity: 1;

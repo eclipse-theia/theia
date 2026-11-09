@@ -142,6 +142,10 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
             const recompute = () => {
                 setStatus(s.model.status);
                 setHasError(s.model.status === 'failed');
+                if (s.model.status !== 'awaitingApproval') {
+                    setPendingConfirmation(undefined);
+                    return;
+                }
                 const pending = s.model.getRequests()
                     .flatMap(request => request.response.response.content)
                     .filter(ToolCallChatResponseContent.is)

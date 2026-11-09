@@ -20,7 +20,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { ChatAgentLocation, ChatAgentService, ChatService, ChatSession, ToolCallChatResponseContentImpl } from '@theia/ai-chat';
+import { ChatAgentLocation, ChatAgentService, ChatService, ChatSession, ChatSessionStatus, ToolCallChatResponseContentImpl } from '@theia/ai-chat';
 import { Emitter, Event } from '@theia/core';
 import { HoverService } from '@theia/core/lib/browser';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
@@ -53,6 +53,20 @@ describe('ChatSessionItem approval countdown', () => {
         disableJSDOM();
     });
 
+    async function renderSession(session: ChatSession): Promise<void> {
+        await React.act(async () => root.render(<ChatSessionItem
+            session={{ sessionId: 'background', title: 'Background chat', saveDate: 0, location: ChatAgentLocation.Panel }}
+            isRestored={false}
+            chatService={{ getSession: () => session } as unknown as ChatService}
+            chatAgentService={{ getAgent: () => undefined } as unknown as ChatAgentService}
+            hoverService={{} as HoverService}
+            markdownRenderer={{} as MarkdownRenderer}
+            unreadState={{ isUnread: () => false, onUnreadChanged: Event.None }}
+            onClick={() => { }}
+            formatTimeAgo={() => 'just now'}
+        />));
+    }
+
     it('shows the earliest pending approval for an unfocused session and updates when it is resolved', async () => {
         const first = new ToolCallChatResponseContentImpl('first', 'test', '{}');
         const second = new ToolCallChatResponseContentImpl('second', 'test', '{}');
@@ -68,17 +82,7 @@ describe('ChatSessionItem approval countdown', () => {
             }
         } as unknown as ChatSession;
         clock.tick(10_000);
-        await React.act(async () => root.render(<ChatSessionItem
-            session={{ sessionId: 'background', title: 'Background chat', saveDate: 0, location: ChatAgentLocation.Panel }}
-            isRestored={false}
-            chatService={{ getSession: () => session } as unknown as ChatService}
-            chatAgentService={{ getAgent: () => undefined } as unknown as ChatAgentService}
-            hoverService={{} as HoverService}
-            markdownRenderer={{} as MarkdownRenderer}
-            unreadState={{ isUnread: () => false, onUnreadChanged: Event.None }}
-            onClick={() => { }}
-            formatTimeAgo={() => 'just now'}
-        />));
+        await renderSession(session);
         const countdown = () => container.querySelector('.theia-chat-session-item-status-icon .theia-tool-confirmation-countdown');
         expect(countdown()?.textContent).to.equal('0:20');
         expect(countdown()?.getAttribute('aria-label')).to.equal('Auto-cancels in 0:20');
@@ -96,5 +100,33 @@ describe('ChatSessionItem approval countdown', () => {
         second.deny();
         await React.act(async () => changed.fire());
         expect(container.querySelector('.theia-tool-confirmation-countdown')).not.to.exist;
+    });
+
+    it('only scans requests while awaiting approval and clears the countdown in other states', async () => {
+        const content = new ToolCallChatResponseContentImpl('pending', 'test', '{}');
+        content.confirmationDeadline = Date.now() + 30_000;
+        content.requestUserConfirmation();
+        const getRequests = sinon.spy(() => [{ response: { response: { content: [content] } } }]);
+        const model = {
+            status: 'running' as ChatSessionStatus,
+            getRequests,
+            onDidChange: changed.event
+        };
+        await renderSession({ model } as unknown as ChatSession);
+        await React.act(async () => changed.fire());
+        expect(getRequests.callCount).to.equal(0);
+        expect(container.querySelector('.theia-tool-confirmation-countdown')).not.to.exist;
+
+        for (const status of ChatSessionStatus.VALUES.filter(value => value !== 'awaitingApproval')) {
+            model.status = 'awaitingApproval';
+            await React.act(async () => changed.fire());
+            expect(container.querySelector('.theia-tool-confirmation-countdown')?.textContent).to.equal('0:30');
+            getRequests.resetHistory();
+
+            model.status = status;
+            await React.act(async () => changed.fire());
+            expect(getRequests.callCount, status).to.equal(0);
+            expect(container.querySelector('.theia-tool-confirmation-countdown'), status).not.to.exist;
+        }
     });
 });
