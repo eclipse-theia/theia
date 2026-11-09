@@ -23,6 +23,12 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ChangeSetFileService } from './change-set-file-service.js';
 
+interface CacheEntry {
+    readonly generation: number;
+    status: 'pending' | 'resolved' | 'missing';
+    uri?: URI;
+}
+
 @injectable()
 export class ContextFileVariableLabelProvider implements LabelProviderContribution, Disposable {
 
@@ -41,9 +47,8 @@ export class ContextFileVariableLabelProvider implements LabelProviderContributi
     @inject(FileService) @optional()
     protected readonly fileService?: FileService;
 
-    protected readonly resolvedUris = new Map<string, URI>();
-    protected readonly resolvingPaths = new Set<string>();
-    protected readonly failedResolutionPaths = new Set<string>();
+    protected readonly cache = new Map<string, CacheEntry>();
+    protected currentGeneration = 0;
 
     protected readonly onDidChangeEmitter = new Emitter<DidChangeLabelEvent>();
     readonly onDidChange: Event<DidChangeLabelEvent> = this.onDidChangeEmitter.event;
@@ -54,17 +59,17 @@ export class ContextFileVariableLabelProvider implements LabelProviderContributi
     init(): void {
         if (this.fileService?.onDidFilesChange) {
             this.toDispose.push(this.fileService.onDidFilesChange(() => {
-                this.invalidateAndReResolve();
+                this.handleFilesOrWorkspaceChanged();
             }));
         }
         if (this.workspaceService?.onWorkspaceChanged) {
             this.toDispose.push(this.workspaceService.onWorkspaceChanged(() => {
-                this.invalidateAndReResolve();
+                this.handleFilesOrWorkspaceChanged();
             }));
         }
         if (this.workspaceService?.onWorkspaceLocationChanged) {
             this.toDispose.push(this.workspaceService.onWorkspaceLocationChanged(() => {
-                this.invalidateAndReResolve();
+                this.handleFilesOrWorkspaceChanged();
             }));
         }
     }
@@ -88,8 +93,19 @@ export class ContextFileVariableLabelProvider implements LabelProviderContributi
         if (event.affects(element)) {
             return true;
         }
-        const uri = this.getUri(element);
-        return uri ? event.affects(uri) : false;
+        const rawArg = this.getRawArg(element);
+        if (!rawArg) {
+            return false;
+        }
+        const directUri = this.parseDirectUri(rawArg);
+        if (directUri) {
+            return event.affects(directUri);
+        }
+        const entry = this.cache.get(rawArg);
+        if (entry?.status === 'resolved' && entry.generation === this.currentGeneration && entry.uri) {
+            return event.affects(entry.uri);
+        }
+        return false;
     }
 
     getIcon(element: object): string | undefined {
@@ -97,12 +113,10 @@ export class ContextFileVariableLabelProvider implements LabelProviderContributi
         if (uri) {
             return this.labelProvider.getIcon(uri);
         }
-        const rawArg = this.getRawArg(element);
-        if (!rawArg) {
+        const path = this.getFallbackPath(element);
+        if (!path) {
             return undefined;
         }
-        const normalized = Path.normalizePathSeparator(rawArg);
-        const path = new Path(normalized).normalize();
         const syntheticUri = URI.fromFilePath('/' + path.toString());
         return this.labelProvider.getIcon(syntheticUri);
     }
@@ -112,13 +126,8 @@ export class ContextFileVariableLabelProvider implements LabelProviderContributi
         if (uri) {
             return this.labelProvider.getName(uri);
         }
-        const rawArg = this.getRawArg(element);
-        if (!rawArg) {
-            return undefined;
-        }
-        const normalized = Path.normalizePathSeparator(rawArg);
-        const path = new Path(normalized).normalize();
-        return path.base || rawArg;
+        const path = this.getFallbackPath(element);
+        return path ? (path.base || path.toString()) : undefined;
     }
 
     getLongName(element: object): string | undefined {
@@ -126,13 +135,7 @@ export class ContextFileVariableLabelProvider implements LabelProviderContributi
         if (uri) {
             return this.labelProvider.getLongName(uri);
         }
-        const rawArg = this.getRawArg(element);
-        if (!rawArg) {
-            return undefined;
-        }
-        const normalized = Path.normalizePathSeparator(rawArg);
-        const path = new Path(normalized).normalize();
-        return path.toString();
+        return this.getFallbackPath(element)?.toString();
     }
 
     getDetails(element: object): string | undefined {
@@ -140,86 +143,17 @@ export class ContextFileVariableLabelProvider implements LabelProviderContributi
         if (uri) {
             return this.labelProvider.getDetails(uri);
         }
-        const rawArg = this.getRawArg(element);
-        if (!rawArg) {
+        const path = this.getFallbackPath(element);
+        if (!path) {
             return undefined;
         }
-        const normalized = Path.normalizePathSeparator(rawArg);
-        const path = new Path(normalized).normalize();
-        const segments = path.toString().split('/').filter(s => s.length > 0);
-        segments.pop();
-        return segments.join('/');
+        return path.hasDir ? path.dir.toString() : '';
     }
 
-    async resolveUri(element: object): Promise<URI | undefined> {
-        const rawArg = this.getRawArg(element);
-        if (!rawArg) {
-            return undefined;
-        }
-
-        const directUri = this.parseDirectUri(rawArg);
-        if (directUri) {
-            return directUri;
-        }
-
-        if (this.resolvedUris.has(rawArg)) {
-            return this.resolvedUris.get(rawArg);
-        }
-
-        if (this.pathResolver) {
-            const resolved = await this.pathResolver.resolveExistingRelativePath(rawArg);
-            if (resolved) {
-                this.resolvedUris.set(rawArg, resolved);
-                return resolved;
-            }
-        }
-
-        return undefined;
-    }
-
-    async invalidateAndReResolve(): Promise<void> {
-        const paths = Array.from(new Set([...this.resolvedUris.keys(), ...this.failedResolutionPaths]));
-        if (paths.length === 0) {
-            return;
-        }
-
-        this.failedResolutionPaths.clear();
-
-        if (!this.pathResolver) {
-            this.resolvedUris.clear();
-            this.fireDidChange();
-            return;
-        }
-
-        await Promise.all(paths.map(async rawArg => {
-            this.resolvingPaths.add(rawArg);
-            try {
-                const oldUri = this.resolvedUris.get(rawArg);
-                const newUri = await this.pathResolver!.resolveExistingRelativePath(rawArg);
-                if (newUri) {
-                    this.resolvedUris.set(rawArg, newUri);
-                    if (!oldUri || !oldUri.isEqual(newUri)) {
-                        this.fireDidChange(rawArg);
-                    }
-                } else {
-                    const wasResolved = this.resolvedUris.has(rawArg);
-                    this.resolvedUris.delete(rawArg);
-                    this.failedResolutionPaths.add(rawArg);
-                    if (wasResolved) {
-                        this.fireDidChange(rawArg);
-                    }
-                }
-            } catch {
-                const wasResolved = this.resolvedUris.has(rawArg);
-                this.resolvedUris.delete(rawArg);
-                this.failedResolutionPaths.add(rawArg);
-                if (wasResolved) {
-                    this.fireDidChange(rawArg);
-                }
-            } finally {
-                this.resolvingPaths.delete(rawArg);
-            }
-        }));
+    protected handleFilesOrWorkspaceChanged(): void {
+        this.currentGeneration++;
+        this.cache.clear();
+        this.fireDidChange();
     }
 
     protected getUri(element: object): URI | undefined {
@@ -233,12 +167,59 @@ export class ContextFileVariableLabelProvider implements LabelProviderContributi
             return directUri;
         }
 
-        if (this.resolvedUris.has(rawArg)) {
-            return this.resolvedUris.get(rawArg);
+        const entry = this.cache.get(rawArg);
+        if (!entry || entry.generation !== this.currentGeneration) {
+            const newEntry: CacheEntry = {
+                generation: this.currentGeneration,
+                status: 'pending'
+            };
+            this.cache.set(rawArg, newEntry);
+            this.lookup(rawArg, newEntry);
+            return undefined;
         }
 
-        this.resolveExistingRelativePath(rawArg);
+        if (entry.status === 'resolved') {
+            return entry.uri;
+        }
+
         return undefined;
+    }
+
+    protected lookup(rawArg: string, entry: CacheEntry): void {
+        if (!this.pathResolver) {
+            if (this.cache.get(rawArg) === entry && entry.generation === this.currentGeneration) {
+                entry.status = 'missing';
+            }
+            return;
+        }
+
+        this.pathResolver.resolveExistingRelativePath(rawArg).then(resolved => {
+            if (this.cache.get(rawArg) !== entry || entry.generation !== this.currentGeneration) {
+                return;
+            }
+            if (resolved) {
+                entry.status = 'resolved';
+                entry.uri = resolved;
+            } else {
+                entry.status = 'missing';
+                entry.uri = undefined;
+            }
+            this.fireDidChange(rawArg);
+        }).catch(() => {
+            if (this.cache.get(rawArg) === entry && entry.generation === this.currentGeneration) {
+                entry.status = 'missing';
+                entry.uri = undefined;
+                this.fireDidChange(rawArg);
+            }
+        });
+    }
+
+    protected getFallbackPath(element: object): Path | undefined {
+        const rawArg = this.getRawArg(element);
+        if (!rawArg) {
+            return undefined;
+        }
+        return new Path(Path.normalizePathSeparator(rawArg)).normalize();
     }
 
     protected parseDirectUri(rawArg: string): URI | undefined {
@@ -254,28 +235,6 @@ export class ContextFileVariableLabelProvider implements LabelProviderContributi
         }
 
         return undefined;
-    }
-
-    protected resolveExistingRelativePath(rawArg: string): void {
-        if (!this.pathResolver || this.resolvingPaths.has(rawArg) || this.failedResolutionPaths.has(rawArg)) {
-            return;
-        }
-        this.resolvingPaths.add(rawArg);
-        this.pathResolver.resolveExistingRelativePath(rawArg).then(resolved => {
-            this.resolvingPaths.delete(rawArg);
-            if (resolved) {
-                const current = this.resolvedUris.get(rawArg);
-                if (!current || !current.isEqual(resolved)) {
-                    this.resolvedUris.set(rawArg, resolved);
-                    this.fireDidChange(rawArg);
-                }
-            } else {
-                this.failedResolutionPaths.add(rawArg);
-            }
-        }).catch(() => {
-            this.resolvingPaths.delete(rawArg);
-            this.failedResolutionPaths.add(rawArg);
-        });
     }
 
     protected fireDidChange(rawArg?: string): void {

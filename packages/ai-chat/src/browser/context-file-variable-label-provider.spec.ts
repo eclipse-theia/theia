@@ -26,6 +26,7 @@ import { expect } from 'chai';
 import { Emitter, Event, URI, bindContributionProvider } from '@theia/core';
 import { ApplicationShell, LabelProvider, LabelProviderContribution, WidgetManager } from '@theia/core/lib/browser';
 import { Container } from '@theia/core/shared/inversify';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { MockEnvVariablesServerImpl } from '@theia/core/lib/browser/test/mock-env-variables-server';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -168,16 +169,64 @@ describe('ContextFileVariableLabelProvider', () => {
         });
     });
 
+    describe('fallback-path helper and Path.hasDir handling', () => {
+        let provider: ContextFileVariableLabelProvider;
+
+        beforeEach(() => {
+            const container = new Container();
+            container.bind(LabelProvider).toConstantValue({
+                getIcon: () => 'default-file-icon',
+                getName: (uri: URI) => uri.path.base,
+                getLongName: (uri: URI) => uri.path.toString(),
+                getDetails: (uri: URI) => uri.parent.path.toString()
+            } as unknown as LabelProvider);
+            container.bind(WorkspaceService).toConstantValue({} as WorkspaceService);
+            container.bind(ChangeSetFileService).toConstantValue({} as ChangeSetFileService);
+            container.bind(ContextFileVariableLabelProvider).toSelf();
+            provider = container.get(ContextFileVariableLabelProvider);
+        });
+
+        it('preserves empty details for root-level files', () => {
+            const request: AIVariableResolutionRequest = {
+                variable: { id: 'file', name: 'file', description: 'File' },
+                arg: 'package.json'
+            };
+            expect(provider.getName(request)).to.equal('package.json');
+            expect(provider.getDetails(request)).to.equal('');
+            expect(provider.getLongName(request)).to.equal('package.json');
+        });
+
+        it('returns normalized parent details for nested relative path', () => {
+            const request: AIVariableResolutionRequest = {
+                variable: { id: 'file', name: 'file', description: 'File' },
+                arg: 'src/service.ts'
+            };
+            expect(provider.getName(request)).to.equal('service.ts');
+            expect(provider.getDetails(request)).to.equal('src');
+            expect(provider.getLongName(request)).to.equal('src/service.ts');
+        });
+
+        it('returns normalized parent details for deeply nested relative path', () => {
+            const request: AIVariableResolutionRequest = {
+                variable: { id: 'file', name: 'file', description: 'File' },
+                arg: 'a/b/c.ts'
+            };
+            expect(provider.getName(request)).to.equal('c.ts');
+            expect(provider.getDetails(request)).to.equal('a/b');
+            expect(provider.getLongName(request)).to.equal('a/b/c.ts');
+        });
+    });
+
     describe('relative-path root selection and cache lifecycle', () => {
         let provider: ContextFileVariableLabelProvider;
         let fileChangesEmitter: Emitter<FileChangesEvent>;
         let workspaceChangeEmitter: Emitter<FileStat[]>;
-        let resolvedMap: Map<string, URI | undefined>;
+        let resolverFunction: (arg: string) => Promise<URI | undefined>;
 
         beforeEach(() => {
             fileChangesEmitter = new Emitter<FileChangesEvent>();
             workspaceChangeEmitter = new Emitter<FileStat[]>();
-            resolvedMap = new Map();
+            resolverFunction = async () => undefined;
 
             const container = new Container();
             const mockLabelProvider = {
@@ -210,7 +259,7 @@ describe('ContextFileVariableLabelProvider', () => {
             } as unknown as WorkspaceService;
 
             const mockPathResolver = {
-                resolveExistingRelativePath: async (arg: string) => resolvedMap.get(arg)
+                resolveExistingRelativePath: async (arg: string) => resolverFunction(arg)
             } as unknown as WorkspaceRelativePathResolver;
 
             container.bind(LabelProvider).toConstantValue(mockLabelProvider);
@@ -230,7 +279,12 @@ describe('ContextFileVariableLabelProvider', () => {
         });
 
         it('uses neutral pending label until async result is ready and refreshes UI', async () => {
-            resolvedMap.set('src/service.ts', new URI('file:///ws/backend/src/service.ts'));
+            resolverFunction = async (arg: string) => {
+                if (arg === 'src/service.ts') {
+                    return new URI('file:///ws/backend/src/service.ts');
+                }
+                return undefined;
+            };
 
             const request: AIVariableResolutionRequest = {
                 variable: { id: 'file', name: 'file', description: 'File' },
@@ -251,83 +305,132 @@ describe('ContextFileVariableLabelProvider', () => {
             expect(provider.getDetails(request)).to.equal('backend • src');
         });
 
-        it('invalidates and re-resolves cached URI when file moves between roots', async () => {
-            // Initially in backend
-            resolvedMap.set('src/service.ts', new URI('file:///ws/backend/src/service.ts'));
-
-            const request: AIVariableResolutionRequest = {
-                variable: { id: 'file', name: 'file', description: 'File' },
-                arg: 'src/service.ts'
+        it('invalidates pending lookup when file is created during in-flight lookup (deferred promise test)', async () => {
+            const deferredFirstLookup = new Deferred<URI | undefined>();
+            resolverFunction = async (arg: string) => {
+                if (arg === 'src/generated.ts') {
+                    return deferredFirstLookup.promise;
+                }
+                return undefined;
             };
-
-            let onDidChange = Event.toPromise(provider.onDidChange);
-            provider.getDetails(request);
-            await onDidChange;
-            expect(provider.getDetails(request)).to.equal('backend • src');
-
-            // Move file to frontend
-            resolvedMap.set('src/service.ts', new URI('file:///ws/frontend/src/service.ts'));
-
-            onDidChange = Event.toPromise(provider.onDidChange);
-            fileChangesEmitter.fire(new FileChangesEvent([
-                { resource: new URI('file:///ws/frontend/src/service.ts'), type: FileChangeType.ADDED },
-                { resource: new URI('file:///ws/backend/src/service.ts'), type: FileChangeType.DELETED }
-            ]));
-            await onDidChange;
-
-            // Details must now return the updated frontend URI, not the stale cached backend URI
-            expect(provider.getDetails(request)).to.equal('frontend • src');
-        });
-
-        it('retries previously failed lookup when missing file is created', async () => {
-            // Initially missing
-            resolvedMap.set('src/generated.ts', undefined);
 
             const request: AIVariableResolutionRequest = {
                 variable: { id: 'file', name: 'file', description: 'File' },
                 arg: 'src/generated.ts'
             };
 
-            // Initial call triggers lookup which fails
-            expect(provider.getDetails(request)).to.equal('src');
-            // Give microtasks time to complete failed resolution
-            await new Promise(resolve => setTimeout(resolve, 10));
+            // Initial call triggers lookup which is pending
             expect(provider.getDetails(request)).to.equal('src');
 
-            // Now file is created in backend
-            resolvedMap.set('src/generated.ts', new URI('file:///ws/backend/src/generated.ts'));
+            // While the first lookup is still pending, the missing file is created
+            // Switch resolver function to return the created file for new lookups
+            resolverFunction = async (arg: string) => {
+                if (arg === 'src/generated.ts') {
+                    return new URI('file:///ws/backend/src/generated.ts');
+                }
+                return undefined;
+            };
 
-            const onDidChange = Event.toPromise(provider.onDidChange);
+            // Fire file creation event
             fileChangesEmitter.fire(new FileChangesEvent([
                 { resource: new URI('file:///ws/backend/src/generated.ts'), type: FileChangeType.ADDED }
             ]));
-            await onDidChange;
 
-            // Lookup must have been retried and successfully resolved
+            // Now resolve the first lookup with undefined (pre-creation miss)
+            deferredFirstLookup.resolve(undefined);
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            // Re-query label on demand (as UI does when notified of changes)
+            const onResolved = Event.toPromise(provider.onDidChange);
+            provider.getDetails(request);
+            await onResolved;
+
+            // Must resolve to the newly created backend file, not blocked by the outdated pre-creation miss
             expect(provider.getDetails(request)).to.equal('backend • src');
         });
 
-        it('invalidates and re-resolves when workspace roots change', async () => {
-            resolvedMap.set('src/service.ts', new URI('file:///ws/backend/src/service.ts'));
+        it('discards stale completion when older lookup finishes after newer lookup (reverse completion order test)', async () => {
+            const deferredBackendLookup = new Deferred<URI | undefined>();
+
+            // Initial state: older lookup is delayed
+            resolverFunction = async (arg: string) => {
+                if (arg === 'src/service.ts') {
+                    return deferredBackendLookup.promise;
+                }
+                return undefined;
+            };
 
             const request: AIVariableResolutionRequest = {
                 variable: { id: 'file', name: 'file', description: 'File' },
                 arg: 'src/service.ts'
             };
 
-            let onDidChange = Event.toPromise(provider.onDidChange);
+            // Start older lookup (representing delayed backend result)
+            provider.getDetails(request);
+
+            // File moves to frontend: fire event and point resolver to frontend
+            resolverFunction = async (arg: string) => {
+                if (arg === 'src/service.ts') {
+                    return new URI('file:///ws/frontend/src/service.ts');
+                }
+                return undefined;
+            };
+
+            fileChangesEmitter.fire(new FileChangesEvent([
+                { resource: new URI('file:///ws/frontend/src/service.ts'), type: FileChangeType.ADDED },
+                { resource: new URI('file:///ws/backend/src/service.ts'), type: FileChangeType.DELETED }
+            ]));
+
+            // Start newer lookup (representing frontend result) and wait for it to complete FIRST
+            const onFrontendResolved = Event.toPromise(provider.onDidChange);
+            provider.getDetails(request);
+            await onFrontendResolved;
+            expect(provider.getDetails(request)).to.equal('frontend • src');
+
+            // Now older backend lookup completes LAST
+            deferredBackendLookup.resolve(new URI('file:///ws/backend/src/service.ts'));
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            // Stale completion must not overwrite the newer frontend URI
+            expect(provider.getDetails(request)).to.equal('frontend • src');
+        });
+
+        it('invalidates and re-resolves when workspace roots change', async () => {
+            resolverFunction = async (arg: string) => {
+                if (arg === 'src/service.ts') {
+                    return new URI('file:///ws/backend/src/service.ts');
+                }
+                return undefined;
+            };
+
+            const request: AIVariableResolutionRequest = {
+                variable: { id: 'file', name: 'file', description: 'File' },
+                arg: 'src/service.ts'
+            };
+
+            const onDidChange = Event.toPromise(provider.onDidChange);
             provider.getDetails(request);
             await onDidChange;
             expect(provider.getDetails(request)).to.equal('backend • src');
 
             // Roots change and file now resolves to frontend
-            resolvedMap.set('src/service.ts', new URI('file:///ws/frontend/src/service.ts'));
+            resolverFunction = async (arg: string) => {
+                if (arg === 'src/service.ts') {
+                    return new URI('file:///ws/frontend/src/service.ts');
+                }
+                return undefined;
+            };
 
-            onDidChange = Event.toPromise(provider.onDidChange);
+            const onInvalidated = Event.toPromise(provider.onDidChange);
             workspaceChangeEmitter.fire([
                 FileStat.dir('file:///ws/frontend')
             ]);
-            await onDidChange;
+            await onInvalidated;
+
+            // On-demand query after root change
+            const onResolved = Event.toPromise(provider.onDidChange);
+            provider.getDetails(request);
+            await onResolved;
 
             expect(provider.getDetails(request)).to.equal('frontend • src');
         });
