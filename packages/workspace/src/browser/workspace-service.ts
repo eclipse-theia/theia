@@ -175,11 +175,6 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
                 this.updateWorkspace();
             }
         });
-        this.fsPreferences.onPreferenceChanged(event => {
-            if (event.preferenceName === 'files.watcherExclude') {
-                this.refreshRootWatchers();
-            }
-        });
         this._ready.resolve();
     }
 
@@ -799,10 +794,10 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         if (this.rootWatchers.has(uriStr)) {
             return;
         }
-        const excludes = this.getExcludes(uriStr);
+        // `FileService` adds `files.watcherExclude` to every watcher and applies changes to it.
         const watcher = this.fileService.watch(new URI(uriStr), {
             recursive: true,
-            excludes
+            excludes: []
         });
         this.rootWatchers.set(uriStr, new DisposableCollection(
             watcher,
@@ -810,6 +805,9 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         ));
     }
 
+    /**
+     * @deprecated since 1.78.0. `FileService` applies `files.watcherExclude` to all watchers, so root watchers no longer use this.
+     */
     protected getExcludes(uri: string): string[] {
         const patterns = this.fsPreferences.get('files.watcherExclude', undefined, uri);
         return Object.keys(patterns).filter(pattern => patterns[pattern]);
