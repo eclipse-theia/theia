@@ -23,7 +23,7 @@ import {
     MAXIMIZED_CLASS,
     Widget,
 } from '@theia/core/lib/browser';
-import { CommandRegistry, Disposable, DisposableCollection, Event, MenuModelRegistry, nls } from '@theia/core';
+import { CommandMenu, CommandRegistry, Disposable, DisposableCollection, Event, MenuModelRegistry, nls } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { BOTTOM_AREA_ID } from '@theia/core/lib/browser/shell/theia-dock-panel';
 import { TerminalCommands } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
@@ -343,28 +343,36 @@ export class TerminalManagerFrontendViewContribution extends AbstractViewContrib
 
     /**
      * Registers an entry per terminal profile to create a new terminal and to split the active terminal with that profile.
-     * Menu items execute their command with the widget as argument, so each entry gets its own command passing the profile ID.
      */
     protected updateProfileMenus(menus: MenuModelRegistry): void {
         this.profileMenuDisposables.dispose();
         const { defaultProfile } = this.profileService;
         this.profileService.all.forEach(([profileId, profile], index) => {
-            const order = String(index).padStart(4, '0');
+            const sortString = String(index).padStart(4, '0');
             const profileLabel = profile.label ?? profileId;
             const label = profile === defaultProfile ? nls.localizeByDefault('{0} (Default)', profileLabel) : profileLabel;
-            const newCommandId = `terminal-manager:new-with-profile:${profileId}`;
-            const splitCommandId = `terminal-manager:split-with-profile:${profileId}`;
             this.profileMenuDisposables.pushAll([
-                this.commandRegistry.registerCommand({ id: newCommandId }, {
-                    execute: () => this.commandRegistry.executeCommand(TerminalCommands.PROFILE_NEW.id, profileId),
-                }),
-                this.commandRegistry.registerCommand({ id: splitCommandId }, {
-                    execute: () => this.commandRegistry.executeCommand(TerminalCommands.PROFILE_SPLIT.id, profileId),
-                }),
-                menus.registerMenuAction(TerminalManagerNewTerminalMenus.PROFILES, { commandId: newCommandId, label, order }),
-                menus.registerMenuAction(TerminalManagerNewTerminalMenus.SPLIT_PROFILE, { commandId: splitCommandId, label, order }),
+                menus.registerCommandMenu(TerminalManagerNewTerminalMenus.PROFILES,
+                    this.createProfileMenu(`terminal-manager:new-with-profile:${profileId}`, TerminalCommands.PROFILE_NEW.id, profileId, label, sortString)),
+                menus.registerCommandMenu(TerminalManagerNewTerminalMenus.SPLIT_PROFILE,
+                    this.createProfileMenu(`terminal-manager:split-with-profile:${profileId}`, TerminalCommands.PROFILE_SPLIT.id, profileId, label, sortString)),
             ]);
         });
+    }
+
+    /**
+     * Creates a menu entry executing the given command with the profile ID, rather than with the arguments of the menu, e.g. the widget.
+     */
+    protected createProfileMenu(id: string, commandId: string, profileId: string, label: string, sortString: string): CommandMenu {
+        return {
+            id,
+            label,
+            sortString,
+            isVisible: () => this.commandRegistry.isVisible(commandId, profileId),
+            isEnabled: () => this.commandRegistry.isEnabled(commandId, profileId),
+            isToggled: () => false,
+            run: () => this.commandRegistry.executeCommand(commandId, profileId),
+        };
     }
 
     registerToolbarItems(toolbar: TabBarToolbarRegistry): void {
