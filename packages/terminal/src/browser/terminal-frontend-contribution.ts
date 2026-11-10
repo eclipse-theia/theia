@@ -362,12 +362,12 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                 shellPath: await this.resolveShellPath([
                     '${env:windir}\\Sysnative\\cmd.exe',
                     '${env:windir}\\System32\\cmd.exe'
-                ])!
+                ])
             }));
         } else {
             const shellPath = await this.resolveShellPath('${env:SHELL}');
             this.contributedProfileStore.registerTerminalProfile('SHELL', new ShellTerminalProfile(this, {
-                shellPath: shellPath!,
+                shellPath,
                 shellArgs: ['-l'],
                 iconClass: 'codicon codicon-terminal'
             }, shellPath ? new Path(shellPath).base : undefined));
