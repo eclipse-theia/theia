@@ -49,8 +49,7 @@ export class CommonVariableContribution implements VariableContribution {
     @inject(ApplicationServer)
     protected readonly appServer: ApplicationServer;
 
-    async registerVariables(variables: VariableRegistry): Promise<void> {
-        // Don't await anything before registering the variables: they need to be available to other contributions' `onStart`
+    registerVariables(variables: VariableRegistry): void {
         variables.registerVariable({
             name: 'execPath',
             resolve: () => this.env.getExecPath()
