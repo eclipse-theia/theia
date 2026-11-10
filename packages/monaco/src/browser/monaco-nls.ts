@@ -20,15 +20,26 @@
  *
  * The bundler resolves the original module to this file via the `monacoNlsPlugin` of
  * `@theia/bundle-plugin`, which the generated esbuild configuration registers for the
- * browser build (see `bundler-generator.ts`). We import from `nls.messages` directly so
- * the redirect does not create a circular reference.
+ * browser build (see `bundler-generator.ts`).
  */
-
-// Re-export the message store — imported via a path that is NOT aliased.
-export { getNLSLanguage, getNLSMessages } from '@theia/monaco-editor-core/esm/vs/nls.messages.js';
 
 import { nls } from '@theia/core/lib/common/nls';
 import { FormatType, Localization } from '@theia/core/lib/common/i18n/localization';
+
+interface MonacoNlsGlobals {
+    _VSCODE_NLS_MESSAGES?: string[];
+    _VSCODE_NLS_LANGUAGE?: string;
+}
+
+// The message store accessors of the original module. They are defined here rather than re-exported,
+// because newer Monaco versions declare them in `vs/nls` itself, which is redirected to this file.
+export function getNLSMessages(): string[] | undefined {
+    return (globalThis as MonacoNlsGlobals)._VSCODE_NLS_MESSAGES;
+}
+
+export function getNLSLanguage(): string | undefined {
+    return (globalThis as MonacoNlsGlobals)._VSCODE_NLS_LANGUAGE;
+}
 
 // Duplicate the interface declarations from the original nls module so that
 // consumers get the same types without importing from the aliased path.

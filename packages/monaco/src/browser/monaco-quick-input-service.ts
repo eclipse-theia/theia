@@ -24,8 +24,9 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import {
     IInputBox, IInputOptions, IKeyMods, IPickOptions, IQuickInput, IQuickInputButton,
     IQuickInputService, IQuickNavigateConfiguration, IQuickPick, IQuickPickItem, IQuickPickItemButtonEvent,
-    IQuickPickSeparator, IQuickTree, IQuickTreeItem, IQuickWidget, QuickPickInput
+    IQuickPickSeparator, IQuickTree, IQuickTreeItem, IQuickWidget, QuickInputAlignment, QuickPickInput
 } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickInput.js';
+import { IObservable } from '@theia/monaco-editor-core/esm/vs/base/common/observable.js';
 import { IQuickInputOptions, IQuickInputStyles } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/browser/quickInput.js';
 import { QuickInputController } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/browser/quickInputController.js';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding.js';
@@ -44,17 +45,12 @@ import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor
 import { ILayoutService } from '@theia/monaco-editor-core/esm/vs/platform/layout/browser/layoutService.js';
 import { IHoverDelegate, IHoverDelegateOptions } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hoverDelegate.js';
 import { IHoverWidget } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hover.js';
-import MonacoSeverityModule from '@theia/monaco-editor-core/esm/vs/base/common/severity.js';
+import MonacoSeverity from '@theia/monaco-editor-core/esm/vs/base/common/severity.js';
 import { Severity } from '@theia/core/lib/common/severity';
 import { IStorageService } from '@theia/monaco-editor-core/esm/vs/platform/storage/common/storage.js';
 import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/contextview/browser/contextView.js';
 import { WindowFocusService } from '@theia/core/lib/browser/window/window-focus-service';
 import { SecondaryWindowService } from '@theia/core/lib/browser/window/secondary-window-service';
-
-// `@theia/monaco-editor-core` ships ES modules without declaring `"type": "module"`, so the compiler assumes CommonJS semantics
-// for their default exports. At runtime, the default export is the `Severity` enum.
-const MonacoSeverity = MonacoSeverityModule as unknown as typeof MonacoSeverityModule.default;
-type MonacoSeverity = MonacoSeverityModule.default;
 
 /**
  * Converts Theia's {@link Severity} to Monaco's {@link MonacoSeverity}.
@@ -159,14 +155,18 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
     get backButton(): IQuickInputButton { return this.controller.backButton; }
     get onShow(): monaco.IEvent<void> { return this.controller.onShow; }
     get onHide(): monaco.IEvent<void> { return this.controller.onHide; }
+    get alignment(): IObservable<QuickInputAlignment> { return this.controller.alignment; }
+
+    withQuickInputAnchor<T>(anchor: IQuickInput['anchor'], anchorPosition: IQuickInput['anchorPosition'], operation: () => Promise<T>): Promise<T> {
+        return this.controller.withQuickInputAnchor(anchor, anchorPosition, operation);
+    }
 
     @postConstruct()
     protected init(): void {
         this.initContainer();
         this.initController();
-        this.quickAccess = new QuickAccessController(this, StandaloneServices.get(IInstantiationService));
-
         const contextService = StandaloneServices.get(IContextKeyService);
+        this.quickAccess = new QuickAccessController(this, StandaloneServices.get(IInstantiationService), contextService);
 
         this.inQuickOpen = contextService.createKey<boolean>('inQuickOpen', false);
 
@@ -498,6 +498,7 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
                 buttonSeparator: this.asCssVariable('button.separator'),
                 buttonSecondaryForeground: this.asCssVariable('button.secondaryForeground'),
                 buttonSecondaryBackground: this.asCssVariable('button.secondaryBackground'),
+                buttonSecondaryBorder: this.asCssVariable('button.secondaryBorder'),
                 buttonSecondaryHoverBackground: this.asCssVariable('button.secondaryHoverBackground'),
             },
             progressBar: {

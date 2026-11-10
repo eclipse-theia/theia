@@ -10,7 +10,7 @@
     "@theia/filesystem": "1.77.0",
     "@theia/markers": "1.77.0",
     "@theia/monaco": "1.77.0",
-    "@theia/monaco-editor-core": "1.108.201",
+    "@theia/monaco-editor-core": "1.144.1",
     "@theia/output": "1.77.0",
     "@theia/process": "1.77.0",
     "@theia/task": "1.77.0",
