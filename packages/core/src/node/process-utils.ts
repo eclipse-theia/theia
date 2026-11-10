@@ -374,7 +374,8 @@ export class ProcessUtils {
 
     /**
      * Kills the {@link unixForceKillTargets} whose deadline has passed with `SIGKILL`, if they are still running
-     * and their PID has not been reused since. Never rejects.
+     * and their PID has not been reused since. They stay in the map until the processes have been listed, so that
+     * a shutdown in the meantime still finds them. Never rejects.
      */
     protected async unixForceKillDueTargets(): Promise<void> {
         const now = performance.now();
@@ -382,17 +383,28 @@ export class ProcessUtils {
         for (const [pid, target] of this.unixForceKillTargets) {
             if (target.deadline <= now) {
                 due.set(pid, target);
-                this.unixForceKillTargets.delete(pid);
             }
         }
         const survivors = this.unixGetSurvivors(due);
+        for (const pid of due.keys()) {
+            if (!survivors.has(pid)) {
+                this.unixForceKillTargets.delete(pid);
+            }
+        }
         if (survivors.size === 0) {
             return;
         }
+        let processes: Map<number, UnixProcessInfo> | undefined;
         try {
-            this.unixForceKillSurvivors(survivors, await this.unixListProcessesAsync());
+            processes = await this.unixListProcessesAsync();
         } catch (error) {
             this.logger.error('Failed to kill the remaining processes of a process tree', error);
+        }
+        // Leave out the targets that were handled or replaced in the meantime, e.g. on exit.
+        const pending = new Map(Array.from(survivors).filter(([pid, target]) => this.unixForceKillTargets.get(pid) === target));
+        pending.forEach((_, pid) => this.unixForceKillTargets.delete(pid));
+        if (processes) {
+            this.unixForceKillSurvivors(pending, processes);
         }
     }
 

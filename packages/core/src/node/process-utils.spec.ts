@@ -345,6 +345,29 @@ describe('ProcessUtils', () => {
             expect(coreProcessManager['unixForceKillTargets'].size).to.equal(0);
         });
 
+        it('keeps the targets that are due until the processes have been listed', async () => {
+            coreProcessManager['unixTerminateProcessTree'](424243);
+            listAsyncStub.callsFake(() => new Promise(resolve => setTimeout(() => resolve(processes), 500)));
+            await clock.tickAsync(delay);
+            expect(Array.from(coreProcessManager['unixForceKillTargets'].keys())).members([424243, 424244, 424245, 424246]);
+            expect(sigkilledPids()).to.be.empty;
+            await clock.tickAsync(500);
+            expect(sigkilledPids()).members([424243, 424244, 424245, 424246]);
+            expect(coreProcessManager['unixForceKillTargets'].size).to.equal(0);
+        });
+
+        it('does not kill the targets again that the exit handler killed while the processes were being listed', async () => {
+            coreProcessManager['unixTerminateProcessTree'](424243);
+            listAsyncStub.callsFake(() => new Promise(resolve => setTimeout(() => resolve(processes), 500)));
+            await clock.tickAsync(delay);
+            coreProcessManager['unixGetChildrenRecursive'] = () => new Set();
+            coreProcessManager['unixGetPGID'] = () => 1;
+            coreProcessManager['unixTerminateProcessTree'](process.pid);
+            expect(sigkilledPids()).members([424243, 424244, 424245, 424246]);
+            await clock.tickAsync(500);
+            expect(sigkilledPids()).to.have.lengthOf(4);
+        });
+
         it('does not kill the tree of the current process with SIGKILL', async () => {
             coreProcessManager['unixGetChildrenRecursive'] = () => new Set();
             coreProcessManager['unixGetPGID'] = () => 1;
