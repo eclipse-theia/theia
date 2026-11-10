@@ -32,9 +32,9 @@ import { QuickPickItem } from '@theia/core/lib/browser';
 import { Command, CommandHandler, CommandRegistry } from '@theia/core/lib/common/command';
 import URI from '@theia/core/lib/common/uri';
 import { DuplicateExtensionError, PluginDeployOptions } from '@theia/plugin-ext/lib/common/plugin-protocol';
-import { VSXExtension } from './vsx-extension';
-import { VSXExtensionsCommands } from './vsx-extension-commands';
-import { VSXExtensionsContribution } from './vsx-extensions-contribution';
+import { VSXExtension } from './vsx-extension.js';
+import { VSXExtensionsCommands } from './vsx-extension-commands.js';
+import { VSXExtensionsContribution } from './vsx-extensions-contribution.js';
 
 after(() => disableJSDOM());
 

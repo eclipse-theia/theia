@@ -30,20 +30,20 @@ import {
     WorkspaceMain,
     PLUGIN_RPC_CONTEXT as Ext,
     MainMessageType,
-} from '../common/plugin-api-rpc';
+} from '../common/plugin-api-rpc.js';
 import { Path } from '@theia/core/lib/common/path';
-import { RPCProtocol } from '../common/rpc-protocol';
-import { WorkspaceRootsChangeEvent, SearchInWorkspaceResult, Range } from '../common/plugin-api-rpc-model';
-import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
-import { Disposable, URI } from './types-impl';
+import { RPCProtocol } from '../common/rpc-protocol.js';
+import { WorkspaceRootsChangeEvent, SearchInWorkspaceResult, Range } from '../common/plugin-api-rpc-model.js';
+import { EditorsAndDocumentsExtImpl } from './editors-and-documents.js';
+import { Disposable, URI } from './types-impl.js';
 import { normalize } from '@theia/core/lib/common/paths';
-import { relative } from '../common/paths-util';
-import { Schemes, UriComponents } from '../common/uri-components';
-import { MessageRegistryExt } from './message-registry';
-import * as Converter from './type-converters';
+import { relative } from '../common/paths-util.js';
+import { Schemes, UriComponents } from '../common/uri-components.js';
+import { MessageRegistryExt } from './message-registry.js';
+import * as Converter from './type-converters.js';
 import { FileStat } from '@theia/filesystem/lib/common/files';
-import { isUndefinedOrNull, isUndefined } from '../common/types';
-import { PluginLogger } from './logger';
+import { isUndefinedOrNull, isUndefined } from '../common/types.js';
+import { PluginLogger } from './logger.js';
 import { consumeStream } from '@theia/core/lib/common/stream';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BinaryBuffer, BinaryBufferReadableStream } from '@theia/core/lib/common/buffer';
@@ -374,11 +374,16 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         return workspaceFolder;
     }
 
+    /**
+     * Returns the workspace folder whose URI is the given URI, unlike `getWorkspaceFolder` which also returns the folder containing it.
+     */
+    resolveWorkspaceFolder(uri: theia.Uri): theia.WorkspaceFolder | undefined {
+        const uriString = uri.toString();
+        return this.folders?.find(folder => folder.uri.toString() === uriString);
+    }
+
     private hasFolder(uri: URI): boolean {
-        if (!this.folders) {
-            return false;
-        }
-        return this.folders.some(folder => folder.uri.toString() === uri.toString());
+        return !!this.resolveWorkspaceFolder(uri);
     }
 
     getRelativePath(pathOrUri: string | theia.Uri, includeWorkspace?: boolean): string | undefined {

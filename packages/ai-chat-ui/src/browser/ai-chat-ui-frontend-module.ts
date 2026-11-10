@@ -23,10 +23,10 @@ import { bindViewContribution, FrontendApplicationContribution, WidgetFactory, K
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { EditorSelectionResolver } from '@theia/editor/lib/browser/editor-manager';
-import { AIChatContribution } from './ai-chat-ui-contribution';
-import { AIChatInputConfiguration, AIChatInputWidget } from './chat-input-widget';
-import { ChatNodeToolbarActionContribution, DefaultChatNodeToolbarActionContribution } from './chat-node-toolbar-action-contribution';
-import { ChatResponsePartRenderer } from './chat-response-part-renderer';
+import { AIChatContribution } from './ai-chat-ui-contribution.js';
+import { AIChatInputConfiguration, AIChatInputWidget } from './chat-input-widget.js';
+import { ChatNodeToolbarActionContribution, DefaultChatNodeToolbarActionContribution } from './chat-node-toolbar-action-contribution.js';
+import { ChatResponsePartRenderer } from './chat-response-part-renderer.js';
 import {
     CodePartRenderer,
     CodePartRendererAction,
@@ -45,42 +45,42 @@ import {
     ProgressPartRenderer,
     DelegationToolRenderer,
     TextPartRenderer,
-} from './chat-response-renderer';
-import { UnknownPartRenderer } from './chat-response-renderer/unknown-part-renderer';
+} from './chat-response-renderer/index.js';
+import { UnknownPartRenderer } from './chat-response-renderer/unknown-part-renderer.js';
 import {
     GitHubSelectionResolver,
     TextFragmentSelectionResolver,
     TypeDocSymbolSelectionResolver,
-} from './chat-response-renderer/ai-selection-resolver';
-import { QuestionPartRenderer } from './chat-response-renderer/question-part-renderer';
-import { ExternalResourceAllowlistContribution } from './chat-response-renderer/external-resource-allowlist-contribution';
-import { ChatFindContribution } from './chat-find/chat-find-contribution';
-import { ChatFindMatcher } from './chat-find/chat-find-matcher';
-import { createChatViewTreeWidget, ChatWelcomeMessageProvider } from './chat-tree-view';
-import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
-import { ChatViewMenuContribution } from './chat-view-contribution';
-import { ChatViewLanguageContribution } from './chat-view-language-contribution';
-import { bindChatViewPreferences } from './chat-view-preferences';
-import { ChatViewWidget } from './chat-view-widget';
-import { ChatBannerProvider } from './chat-banner-provider';
-import { ChatBannerWidget } from './chat-banner-widget';
-import { ChatViewWidgetToolbarContribution } from './chat-view-widget-toolbar-contribution';
-import { ContextVariablePicker } from './context-variable-picker';
-import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-actions/change-set-action-service';
-import { ChangeSetAcceptAction } from './change-set-actions/change-set-accept-action';
-import { AIChatTreeInputArgs, AIChatTreeInputConfiguration, AIChatTreeInputFactory, AIChatTreeInputWidget } from './chat-tree-view/chat-view-tree-input-widget';
-import { SubChatWidget, SubChatWidgetFactory } from './chat-tree-view/sub-chat-widget';
-import { ChatInputHistoryService } from './chat-input-history';
-import { ChatInputHistoryContribution } from './chat-input-history-contribution';
-import { ChatInputModeContribution } from './chat-input-mode-contribution';
-import { ChatInputPasteContribution } from './chat-input-paste-contribution';
-import { ChatInputFocusService } from './chat-input-focus-service';
-import { ChatFocusContribution } from './chat-focus-contribution';
-import { ChatCapabilitiesService, ChatCapabilitiesServiceImpl } from './chat-capabilities-service';
-import { ChatInputCapabilitiesContribution } from './chat-input-capabilities-contribution';
-import { GenericCapabilitiesContribution, GenericCapabilitiesService, GenericCapabilitiesServiceImpl } from './generic-capabilities-service';
-import { ToolConfirmationKeybindingContribution } from './tool-confirmation-keybinding-contribution';
-import { ChatSessionNotificationContribution } from './chat-session-notification-contribution';
+} from './chat-response-renderer/ai-selection-resolver.js';
+import { QuestionPartRenderer } from './chat-response-renderer/question-part-renderer.js';
+import { ExternalResourceAllowlistContribution } from './chat-response-renderer/external-resource-allowlist-contribution.js';
+import { ChatFindContribution } from './chat-find/chat-find-contribution.js';
+import { ChatFindMatcher } from './chat-find/chat-find-matcher.js';
+import { createChatViewTreeWidget, ChatWelcomeMessageProvider } from './chat-tree-view/index.js';
+import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget.js';
+import { ChatViewMenuContribution } from './chat-view-contribution.js';
+import { ChatViewLanguageContribution } from './chat-view-language-contribution.js';
+import { bindChatViewPreferences } from './chat-view-preferences.js';
+import { ChatViewWidget } from './chat-view-widget.js';
+import { ChatBannerProvider } from './chat-banner-provider.js';
+import { ChatBannerWidget } from './chat-banner-widget.js';
+import { ChatViewWidgetToolbarContribution } from './chat-view-widget-toolbar-contribution.js';
+import { ContextVariablePicker } from './context-variable-picker.js';
+import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-actions/change-set-action-service.js';
+import { ChangeSetAcceptAction } from './change-set-actions/change-set-accept-action.js';
+import { AIChatTreeInputArgs, AIChatTreeInputConfiguration, AIChatTreeInputFactory, AIChatTreeInputWidget } from './chat-tree-view/chat-view-tree-input-widget.js';
+import { SubChatWidget, SubChatWidgetFactory } from './chat-tree-view/sub-chat-widget.js';
+import { ChatInputHistoryService } from './chat-input-history.js';
+import { ChatInputHistoryContribution } from './chat-input-history-contribution.js';
+import { ChatInputModeContribution } from './chat-input-mode-contribution.js';
+import { ChatInputPasteContribution } from './chat-input-paste-contribution.js';
+import { ChatInputFocusService } from './chat-input-focus-service.js';
+import { ChatFocusContribution } from './chat-focus-contribution.js';
+import { ChatCapabilitiesService, ChatCapabilitiesServiceImpl } from './chat-capabilities-service.js';
+import { ChatInputCapabilitiesContribution } from './chat-input-capabilities-contribution.js';
+import { GenericCapabilitiesContribution, GenericCapabilitiesService, GenericCapabilitiesServiceImpl } from './generic-capabilities-service.js';
+import { ToolConfirmationKeybindingContribution } from './tool-confirmation-keybinding-contribution.js';
+import { ChatSessionNotificationContribution } from './chat-session-notification-contribution.js';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindChatViewPreferences(bind);

@@ -17,8 +17,8 @@
 import * as chai from 'chai';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
-import { URI } from './types-impl';
-import { WorkspaceExtImpl } from './workspace';
+import { URI } from './types-impl.js';
+import { WorkspaceExtImpl } from './workspace.js';
 
 const expect = chai.expect;
 
@@ -239,5 +239,26 @@ describe('WorkspaceExtImpl workspace folders', () => {
         workspace.$onWorkspaceFoldersChanged({ roots: ['file:///project/frontend'], names: { 'file:///project/frontend': 'Web Client' } });
         expect(events).to.deep.equal([{ added: [], removed: [] }]);
         expect(workspace.workspaceFolders![0].name).to.equal('Web Client');
+    });
+});
+
+describe('WorkspaceExtImpl#resolveWorkspaceFolder', () => {
+
+    let workspace: WorkspaceExtImpl;
+
+    beforeEach(() => {
+        workspace = new WorkspaceExtImpl();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (workspace as any).proxy = { $getWorkspace: async () => undefined };
+        workspace.$onWorkspaceFoldersChanged({ roots: ['file:///project/backend', 'file:///project/frontend'] });
+    });
+
+    it('should return the workspace folder with the given URI', () => {
+        expect(workspace.resolveWorkspaceFolder(URI.parse('file:///project/frontend'))).to.equal(workspace.workspaceFolders![1]);
+    });
+
+    it('should not return the workspace folder containing the given URI', () => {
+        expect(workspace.resolveWorkspaceFolder(URI.parse('file:///project/frontend/src'))).to.be.undefined;
+        expect(workspace.resolveWorkspaceFolder(URI.parse('file:///other'))).to.be.undefined;
     });
 });

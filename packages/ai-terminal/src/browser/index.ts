@@ -14,5 +14,5 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './shell-command-permission-service';
-export * from './predefined-shell-tool';
+export * from './shell-command-permission-service.js';
+export * from './predefined-shell-tool.js';

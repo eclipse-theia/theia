@@ -21,10 +21,10 @@ import type {
     JSONObject,
     PreferenceSchema,
     TaskDefinition,
-} from './protocol-shims';
-import type { PluginManifest } from './manifest-types';
+} from './protocol-shims.js';
+import type { PluginManifest } from './manifest-types.js';
 
-export type { JSONObject } from './protocol-shims';
+export type { JSONObject } from './protocol-shims.js';
 
 /**
  * Raw `contributes` section from `package.json` before normalization.
@@ -213,11 +213,17 @@ export enum PluginViewType {
     Webview = 'webview'
 }
 
+export const PLUGIN_VIEW_VISIBILITIES = ['visible', 'collapsed', 'hidden'] as const;
+export type PluginViewVisibility = typeof PLUGIN_VIEW_VISIBILITIES[number];
+
 export interface PluginPackageView {
     id: string;
     name: string;
     when?: string;
     type?: string;
+    visibility?: PluginViewVisibility;
+    /** Initial size of the view relative to the other views in its container, like the CSS `flex` property. */
+    initialSize?: number;
 }
 
 export interface PluginPackageViewWelcome {

@@ -40,8 +40,8 @@ import { AiConfigurationItemRow } from '@theia/ai-core-ui/lib/browser/ai-configu
 import { AiSettingsRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row';
 import { AiSettingsRowService } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row-service';
 import { AiArrayInput, AiTextInput, AiToggleSwitch } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-controls';
-import type { MCPServerFormData } from './mcp-server-edit-dialog';
-import { MCP_SERVERS_PREF, MCP_USE_WORKSPACE_AS_ROOT_PREF } from '../common/mcp-preferences';
+import type { MCPServerFormData } from './mcp-server-edit-dialog.js';
+import { MCP_SERVERS_PREF, MCP_USE_WORKSPACE_AS_ROOT_PREF } from '../common/mcp-preferences.js';
 import {
     isLocalMCPServerDescription,
     isRemoteMCPServerDescription,
@@ -49,11 +49,11 @@ import {
     MCPFrontendService,
     MCPServerDescription,
     MCPServerStatus
-} from '../common/mcp-server-manager';
-import { MCPRegistryUiBridge } from './mcp-registry-ui-bridge';
-import { MCPServerEditor } from './mcp-server-editor';
-import { MCPOAuthConfig } from '../common/mcp-oauth';
-import { isHttpOrHttpsUrl } from '../common/mcp-server-preference-validator';
+} from '../common/mcp-server-manager.js';
+import { MCPRegistryUiBridge } from './mcp-registry-ui-bridge.js';
+import { MCPServerEditor } from './mcp-server-editor.js';
+import { MCPOAuthConfig } from '../common/mcp-oauth.js';
+import { isHttpOrHttpsUrl } from '../common/mcp-server-preference-validator.js';
 
 /**
  * The MCP Servers category (in `@theia/ai-mcp`): a `collection` porting the MCP server surface
@@ -344,10 +344,10 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
             {local && this.renderArrayField(nls.localizeByDefault('Arguments'), server.args ?? [],
                 nls.localize('theia/ai/mcpConfiguration/addArgument', 'Add argument…'),
                 values => this.updateServer(server, { args: values }))}
-            {local && this.renderKeyValueField(nls.localize('theia/ai/mcpConfiguration/environmentVariables', 'Environment Variables'), server.env ?? {},
+            {local && this.renderKeyValueField(nls.localizeByDefault('Environment Variables'), server.env ?? {},
                 lines => this.updateServer(server, { env: lines }))}
             {local && this.renderPluginPathsSection(server)}
-            {remote && this.renderTextField(nls.localize('theia/ai/mcpConfiguration/serverUrl', 'Server URL'), server.serverUrl, false, false,
+            {remote && this.renderTextField(nls.localizeByDefault('Server URL'), server.serverUrl, false, false,
                 value => this.updateServer(server, { serverUrl: value }),
                 server.serverUrl.trim() ? undefined : nls.localize('theia/ai/mcpConfiguration/form/serverUrlRequired', 'Server URL is required for remote servers'))}
             {remote && !oauth && this.renderTextField(
@@ -597,7 +597,7 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
     }
 
     getSearchItems(): AiConfigurationSearchItem[] {
-        const serverTypeLabel = nls.localize('theia/ai/mcpConfiguration/serverTypeLabel', 'MCP server');
+        const serverTypeLabel = nls.localizeByDefault('MCP server');
         const toolTypeLabel = nls.localizeByDefault('Tool');
         const items: AiConfigurationSearchItem[] = [];
         for (const server of this.servers) {

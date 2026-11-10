@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { ProgressMessage } from '../chat-progress-message';
-import { ChatViewTreeWidget, ResponseNode } from './chat-view-tree-widget';
+import { ProgressMessage } from '../chat-progress-message.js';
+import { ChatViewTreeWidget, ResponseNode } from './chat-view-tree-widget.js';
 import * as React from '@theia/core/shared/react';
 import { ContributionProvider, ILogger } from '@theia/core';
-import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
-import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution';
+import { ChatResponsePartRenderer } from '../chat-response-part-renderer.js';
+import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution.js';
 import { ChatResponseContent } from '@theia/ai-chat';
 import { ContextMenuRenderer, TreeNode } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';

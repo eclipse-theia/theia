@@ -19,7 +19,7 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as jsoncparser from 'jsonc-parser';
-import { deepClone, isColorDefaults, isENOENT, isObject, isStringArray } from '../common/utils';
+import { deepClone, isColorDefaults, isENOENT, isObject, isStringArray } from '../common/utils.js';
 import {
     ICON_NAME_SEGMENT,
     type ColorDefinition,
@@ -30,9 +30,10 @@ import {
     type PreferenceSchema,
     PreferenceScope,
     type TaskDefinition,
-} from '../common/protocol-shims';
+} from '../common/protocol-shims.js';
 import {
     CustomEditorPriority,
+    PLUGIN_VIEW_VISIBILITIES,
     type AutoClosingPair,
     type AutoClosingPairConditional,
     type CharacterPair,
@@ -77,9 +78,9 @@ import {
     type WalkthroughStepContribution,
     type WalkthroughStepMedia,
     type PluginPackageWalkthroughStepMedia,
-} from '../common/contribution-types';
-import { rawContributes, type PluginManifest } from '../common/manifest-types';
-import { UNPUBLISHED } from '../common/constants';
+} from '../common/contribution-types.js';
+import { rawContributes, type PluginManifest } from '../common/manifest-types.js';
+import { UNPUBLISHED } from '../common/constants.js';
 
 function isPluginUiTheme(value: unknown): value is PluginUiTheme {
     return value === 'vs' || value === 'vs-dark' || value === 'hc-black' || value === 'hc-light';
@@ -261,8 +262,13 @@ export async function normalizeContributions<TContrib extends object>(
     try {
         if (contributes.views) {
             const views: { [location: string]: RawView[] } = {};
+            // As in VS Code, a view may set its initial size only within a view container of its own plugin.
+            const ownViewContainerIds = new Set(Object.values(output.viewsContainers ?? {}).flat().map(container => container.id));
             for (const location of Object.keys(contributes.views)) {
-                views[location] = readViewsFn(contributes.views[location]);
+                const locationViews = readViewsFn(contributes.views[location]);
+                views[location] = ownViewContainerIds.has(location)
+                    ? locationViews
+                    : locationViews.map(view => ({ ...view, initialSize: undefined }));
             }
             output.views = views;
         }
@@ -853,7 +859,9 @@ export function readView(rawView: RawView): RawView {
         id: rawView.id,
         name: rawView.name,
         when: rawView.when,
-        type: rawView.type
+        type: rawView.type,
+        visibility: PLUGIN_VIEW_VISIBILITIES.find(visibility => visibility === rawView.visibility),
+        initialSize: Number.isFinite(rawView.initialSize) && rawView.initialSize! > 0 ? rawView.initialSize : undefined
     };
 }
 

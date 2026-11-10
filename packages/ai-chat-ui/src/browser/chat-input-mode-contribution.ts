@@ -17,8 +17,8 @@
 import { Command, CommandContribution, CommandRegistry } from '@theia/core';
 import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { AIChatInputWidget } from './chat-input-widget';
-import { ChatInputFocusService } from './chat-input-focus-service';
+import { AIChatInputWidget } from './chat-input-widget.js';
+import { ChatInputFocusService } from './chat-input-focus-service.js';
 
 const CHAT_INPUT_CYCLE_MODE_COMMAND = Command.toLocalizedCommand({
     id: 'chat-input:cycle-mode',

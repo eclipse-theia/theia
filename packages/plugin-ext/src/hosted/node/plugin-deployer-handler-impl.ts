@@ -20,12 +20,12 @@ import { ILogger } from '@theia/core';
 import {
     PluginDeployerHandler, PluginDeployerEntry, PluginEntryPoint, DeployedPlugin,
     PluginDependencies, PluginType, PluginIdentifiers
-} from '../../common/plugin-protocol';
-import { HostedPluginReader } from './plugin-reader';
+} from '../../common/plugin-protocol.js';
+import { HostedPluginReader } from './plugin-reader.js';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
+import { HostedPluginLocalizationService } from './hosted-plugin-localization-service.js';
 import { Stopwatch } from '@theia/core/lib/common';
-import { PluginUninstallationManager } from '../../main/node/plugin-uninstallation-manager';
+import { PluginUninstallationManager } from '../../main/node/plugin-uninstallation-manager.js';
 
 @injectable()
 export class PluginDeployerHandlerImpl implements PluginDeployerHandler {

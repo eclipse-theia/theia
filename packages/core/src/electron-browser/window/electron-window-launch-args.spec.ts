@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { LaunchArguments } from '../../common/launch-arguments';
-import { ElectronWindowLaunchArgs } from './electron-window-launch-args';
+import { LaunchArguments } from '../../common/launch-arguments.js';
+import { ElectronWindowLaunchArgs } from './electron-window-launch-args.js';
 
 class TestElectronWindowLaunchArgs extends ElectronWindowLaunchArgs {
     constructor(protected readonly metadata: { webcontentId: string, launchArgs?: LaunchArguments }) {

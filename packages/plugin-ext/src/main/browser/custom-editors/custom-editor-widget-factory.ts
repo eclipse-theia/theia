@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CustomEditorWidget } from '../custom-editors/custom-editor-widget';
+import { CustomEditorWidget } from '../custom-editors/custom-editor-widget.js';
 import { interfaces } from '@theia/core/shared/inversify';
-import { WebviewWidgetIdentifier, WebviewWidgetExternalEndpoint } from '../webview/webview';
-import { WebviewEnvironment } from '../webview/webview-environment';
+import { WebviewWidgetIdentifier, WebviewWidgetExternalEndpoint } from '../webview/webview.js';
+import { WebviewEnvironment } from '../webview/webview-environment.js';
 
 export class CustomEditorWidgetFactory {
 

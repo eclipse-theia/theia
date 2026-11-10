@@ -23,7 +23,7 @@ import { flushSync } from '@theia/core/shared/react-dom';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { HoverRequest, HoverService, OpenerService } from '@theia/core/lib/browser';
 import { ServerToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
-import { ServerToolCallPartRenderer } from './server-toolcall-part-renderer';
+import { ServerToolCallPartRenderer } from './server-toolcall-part-renderer.js';
 
 disableJSDOM();
 

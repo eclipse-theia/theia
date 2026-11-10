@@ -20,17 +20,17 @@ import { inject, injectable, postConstruct, named } from '@theia/core/shared/inv
 import {
     PromptFragmentCustomizationService, CustomAgentDescription, CustomAgentPromptVariant, CustomizedPromptFragment, CommandPromptFragmentMetadata, CustomAgentsLocation,
     PromptFragmentCustomizationSource
-} from '../common';
-import { ConfigurableInMemoryResources } from '../common/configurable-in-memory-resources';
-import { parseFrontmatter, serializeFrontmatter } from '../common/frontmatter';
+} from '../common/index.js';
+import { ConfigurableInMemoryResources } from '../common/configurable-in-memory-resources.js';
+import { parseFrontmatter, serializeFrontmatter } from '../common/frontmatter.js';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
-import { AICorePreferences, PREFERENCE_NAME_PROMPT_TEMPLATES } from '../common/ai-core-preferences';
+import { AICorePreferences, PREFERENCE_NAME_PROMPT_TEMPLATES } from '../common/ai-core-preferences.js';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { dump, load } from 'js-yaml';
-import { PROMPT_TEMPLATE_EXTENSION } from './prompttemplate-contribution';
-import { parseTemplateWithMetadata, ParsedTemplate } from './prompttemplate-parser';
+import { PROMPT_TEMPLATE_EXTENSION } from './prompttemplate-contribution.js';
+import { parseTemplateWithMetadata, ParsedTemplate } from './prompttemplate-parser.js';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 /**

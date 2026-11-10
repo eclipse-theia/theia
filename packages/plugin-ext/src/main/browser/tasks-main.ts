@@ -21,9 +21,9 @@ import {
     TasksExt,
     TaskDto,
     TaskPresentationOptionsDTO
-} from '../../common/plugin-api-rpc';
-import { RPCProtocol } from '../../common/rpc-protocol';
-import { Disposable, DisposableCollection } from '@theia/core/lib/common';
+} from '../../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
+import { Disposable, DisposableCollection, generateUuid } from '@theia/core/lib/common';
 import { TaskProviderRegistry, TaskResolverRegistry, TaskProvider, TaskResolver } from '@theia/task/lib/browser/task-contribution';
 import { interfaces } from '@theia/core/shared/inversify';
 import { TaskInfo, TaskExitedEvent, TaskConfiguration, TaskOutputPresentation, RevealKind, PanelKind } from '@theia/task/lib/common/task-protocol';
@@ -53,6 +53,9 @@ const panelKindMap = new Map<number | PanelKind, PanelKind | number>(
     ]
 );
 
+/** The property of a task configuration that holds the tag of the `$executeTask` request that runs it. */
+const EXECUTE_REQUEST_ID = '_executeRequestId';
+
 export class TasksMainImpl implements TasksMain, Disposable {
     private readonly proxy: TasksExt;
     private readonly taskProviderRegistry: TaskProviderRegistry;
@@ -62,6 +65,8 @@ export class TasksMainImpl implements TasksMain, Disposable {
     private readonly taskDefinitionRegistry: TaskDefinitionRegistry;
 
     private readonly taskProviders = new Map<number, Disposable>();
+    /** The ids of the `$executeTask` requests, by the tag of the configuration they run, until `runTask` settles for them. */
+    private readonly pendingExecuteRequests = new Map<string, number>();
     private readonly toDispose = new DisposableCollection();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
@@ -75,7 +80,8 @@ export class TasksMainImpl implements TasksMain, Disposable {
         this.toDispose.push(this.taskWatcher.onTaskCreated((event: TaskInfo) => {
             this.proxy.$onDidStartTask({
                 id: event.taskId,
-                task: this.fromTaskConfiguration(event.config)
+                task: this.fromTaskConfiguration(event.config),
+                executeRequestId: this.getExecuteRequestId(event)
             }, event.terminalId!);
         }));
 
@@ -151,14 +157,36 @@ export class TasksMainImpl implements TasksMain, Disposable {
         return result;
     }
 
-    async $executeTask(taskDto: TaskDto): Promise<TaskExecutionDto | undefined> {
-        const taskConfig = this.toTaskConfiguration(taskDto);
-        const taskInfo = await this.taskService.runTask(taskConfig);
+    async $executeTask(taskDto: TaskDto, executeRequestId: number): Promise<TaskExecutionDto | undefined> {
+        const tag = generateUuid();
+        const taskConfig: TaskConfiguration = { ...this.toTaskConfiguration(taskDto), [EXECUTE_REQUEST_ID]: tag };
+        this.pendingExecuteRequests.set(tag, executeRequestId);
+        let taskInfo: TaskInfo | undefined;
+        try {
+            taskInfo = await this.taskService.runTask(taskConfig);
+        } finally {
+            this.pendingExecuteRequests.delete(tag);
+        }
         if (taskInfo) {
             return {
                 id: taskInfo.taskId,
-                task: this.fromTaskConfiguration(taskInfo.config)
+                task: this.fromTaskConfiguration(taskInfo.config),
+                executeRequestId
             };
+        }
+    }
+
+    /**
+     * The configuration passed to `runTask` by `$executeTask` is tagged with a unique id, which is kept in the configuration of the started task.
+     * A tag is only trusted while its request is pending and for a task of this client,
+     * because a tagged configuration may be run again later, e.g. as a recent task, which is persisted across sessions.
+     * @returns the id of the pending request that started the task, if any
+     */
+    protected getExecuteRequestId(event: TaskInfo): number | undefined {
+        const tag = event.config[EXECUTE_REQUEST_ID];
+        const executeRequestId = typeof tag === 'string' ? this.pendingExecuteRequests.get(tag) : undefined;
+        if (executeRequestId !== undefined && this.taskService.isEventForThisClient(event.ctx)) {
+            return executeRequestId;
         }
     }
 
@@ -195,9 +223,13 @@ export class TasksMainImpl implements TasksMain, Disposable {
     protected createTaskResolver(handle: number): TaskResolver {
         return {
             resolveTask: taskConfig =>
-                this.proxy.$resolveTask(handle, this.fromTaskConfiguration(taskConfig)).then(task =>
-                    this.toTaskConfiguration(task)
-                )
+                this.proxy.$resolveTask(handle, this.fromTaskConfiguration(taskConfig)).then(task => {
+                    const resolvedConfig = this.toTaskConfiguration(task);
+                    if (EXECUTE_REQUEST_ID in taskConfig) {
+                        resolvedConfig[EXECUTE_REQUEST_ID] = taskConfig[EXECUTE_REQUEST_ID];
+                    }
+                    return resolvedConfig;
+                })
         };
     }
 
@@ -223,7 +255,7 @@ export class TasksMainImpl implements TasksMain, Disposable {
     }
 
     protected fromTaskConfiguration(task: TaskConfiguration): TaskDto {
-        const { group, presentation, _scope, _source, ...common } = task;
+        const { group, presentation, _scope, _source, [EXECUTE_REQUEST_ID]: executeRequestId, ...common } = task;
         const partialDto: Partial<TaskDto> = {};
         if (presentation) {
             partialDto.presentation = this.convertTaskPresentation(presentation);

@@ -20,7 +20,7 @@ import {
     SelectableTreeNode,
     TreeModelImpl,
 } from '@theia/core/lib/browser/tree';
-import { TimelineItem } from '../common/timeline-model';
+import { TimelineItem } from '../common/timeline-model.js';
 import { Command, nls } from '@theia/core';
 
 export const LOAD_MORE_COMMAND: Command = {

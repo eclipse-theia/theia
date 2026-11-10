@@ -17,11 +17,11 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { bindRootContributionProvider, CommandContribution } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { VariableRegistry, VariableContribution } from './variable';
-import { VariableQuickOpenService } from './variable-quick-open-service';
-import { VariableResolverFrontendContribution } from './variable-resolver-frontend-contribution';
-import { VariableResolverService } from './variable-resolver-service';
-import { CommonVariableContribution } from './common-variable-contribution';
+import { VariableRegistry, VariableContribution } from './variable.js';
+import { VariableQuickOpenService } from './variable-quick-open-service.js';
+import { VariableResolverFrontendContribution } from './variable-resolver-frontend-contribution.js';
+import { VariableResolverService } from './variable-resolver-service.js';
+import { CommonVariableContribution } from './common-variable-contribution.js';
 
 export default new ContainerModule(bind => {
     bind(VariableRegistry).toSelf().inSingletonScope();

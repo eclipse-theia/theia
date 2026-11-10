@@ -23,7 +23,7 @@ import { Emitter } from '@theia/core';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { Theme, ThemeChangeEvent } from '@theia/core/lib/common/theme';
-import { TerminalThemeService } from './terminal-theme-service';
+import { TerminalThemeService } from './terminal-theme-service.js';
 
 disableJSDOM();
 

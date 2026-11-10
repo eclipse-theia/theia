@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { DebugSessionManager } from './debug-session-manager';
-import { DebugWidget } from './view/debug-widget';
+import { DebugSessionManager } from './debug-session-manager.js';
+import { DebugWidget } from './view/debug-widget.js';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
 import { Title, Widget } from '@theia/core/lib/browser';

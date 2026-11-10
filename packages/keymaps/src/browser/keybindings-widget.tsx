@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import React = require('@theia/core/shared/react');
-import debounce = require('@theia/core/shared/lodash.debounce');
+import * as React from '@theia/core/shared/react';
+import debounce from '@theia/core/shared/lodash.debounce';
 import * as fuzzy from '@theia/core/shared/fuzzy';
 import { injectable, inject, postConstruct, unmanaged, named } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
@@ -27,7 +27,7 @@ import {
     KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message, KeybindingScope,
     SingleTextInputDialogProps, Key, ScopedKeybinding, codicon, StatefulWidget, Widget, ContextMenuRenderer, SELECTED_CLASS
 } from '@theia/core/lib/browser';
-import { KeymapsService } from './keymaps-service';
+import { KeymapsService } from './keymaps-service.js';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import { DisposableCollection, Disposable, isOSX, isWindows, isObject, ILogger } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';

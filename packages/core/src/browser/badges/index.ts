@@ -14,5 +14,5 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './badge-service';
-export * from './tabbar-badge-decorator';
+export * from './badge-service.js';
+export * from './tabbar-badge-decorator.js';

@@ -52,9 +52,9 @@ import {
     type ReactWidget
 } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { ChatFindHighlighter } from '../chat-find/chat-find-highlighter';
-import { ChatFindMatch } from '../chat-find/chat-find-matcher';
-import { ChatFindState, ChatFindWidget } from '../chat-find/chat-find-widget';
+import { ChatFindHighlighter } from '../chat-find/chat-find-highlighter.js';
+import { ChatFindMatch } from '../chat-find/chat-find-matcher.js';
+import { ChatFindState, ChatFindWidget } from '../chat-find/chat-find-widget.js';
 import { nls } from '@theia/core/lib/common/nls';
 import {
     inject,
@@ -65,14 +65,14 @@ import {
 import * as React from '@theia/core/shared/react';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
-import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution';
-import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
-import { formatTokenCount } from '../chat-token-usage-indicator-util';
-import { MarkdownRendering, useMarkdownRendering } from '../chat-response-renderer/markdown-part-renderer';
-import { ProgressMessage } from '../chat-progress-message';
-import { AIChatTreeInputFactory, type AIChatTreeInputWidget } from './chat-view-tree-input-widget';
-import { PromptVariantBadge } from './prompt-variant-badge';
-import { ModelBadge } from './model-badge';
+import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution.js';
+import { ChatResponsePartRenderer } from '../chat-response-part-renderer.js';
+import { formatTokenCount } from '../chat-token-usage-indicator-util.js';
+import { MarkdownRendering, useMarkdownRendering } from '../chat-response-renderer/markdown-part-renderer.js';
+import { ProgressMessage } from '../chat-progress-message.js';
+import { AIChatTreeInputFactory, type AIChatTreeInputWidget } from './chat-view-tree-input-widget.js';
+import { PromptVariantBadge } from './prompt-variant-badge.js';
+import { ModelBadge } from './model-badge.js';
 
 // TODO Instead of directly operating on the ChatRequestModel we could use an intermediate view model
 export interface RequestNode extends TreeNode {
@@ -714,7 +714,7 @@ export class ChatViewTreeWidget extends TreeWidget {
                 {inProgress && waitingForInput &&
                     <span className='theia-ChatContentInProgress' role='status' aria-live='polite'>
                         <span className={`${codicon('loading')} codicon-modifier-spin`} aria-hidden={true}></span>
-                        {nls.localize('theia/ai/chat-ui/chat-view-tree-widget/waitingForInput', 'Waiting for input')}
+                        {nls.localizeByDefault('Waiting for input')}
                     </span>}
                 {!inProgress &&
                     <div className='theia-ChatNodeToolbar'>

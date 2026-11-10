@@ -15,20 +15,22 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import {
     isCompactionResponsePart, isTextResponsePart, LanguageModelMessage, LanguageModelResponse, LanguageModelStreamResponsePart, ReasoningSupport,
     ToolCallExecutor, ToolCallExecutorImpl, UserRequest
 } from '@theia/ai-core';
 import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-model-utils';
+import { OpenAiStreamingRetry } from '@theia/ai-openai/lib/node/openai-streaming-retry';
 import { OPENAI_WEB_SEARCH } from '@theia/ai-openai/lib/node/openai-server-tools';
 import { OpenAI } from 'openai';
 import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Container } from '@theia/core/shared/inversify';
-import { CHATGPT_RESPONSES_BASE_URL, ChatGptCredentials } from '../common';
-import { CHATGPT_ORIGINATOR } from './chatgpt-oauth';
-import { ChatGptModel } from './chatgpt-language-model';
-import { ChatGptResponseApiUtils, DEFAULT_CHATGPT_INSTRUCTIONS } from './chatgpt-response-api-utils';
+import { CHATGPT_RESPONSES_BASE_URL, ChatGptCredentials } from '../common/index.js';
+import { CHATGPT_ORIGINATOR } from './chatgpt-oauth.js';
+import { ChatGptModel } from './chatgpt-language-model.js';
+import { ChatGptResponseApiUtils, DEFAULT_CHATGPT_INSTRUCTIONS } from './chatgpt-response-api-utils.js';
 
 interface CapturedRequest {
     openai: OpenAI;
@@ -222,11 +224,67 @@ describe('ChatGptResponseApiUtils', () => {
 
     const utils = new ChatGptResponseApiUtils();
 
+    for (const maxRetries of [0, 2]) {
+        it(`uses the client's ${maxRetries} retry budget for raw busy response failures`, async () => {
+            const clock = sinon.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+            try {
+                const container = new Container();
+                container.bind(ILogger).to(MockLogger);
+                container.bind(ToolCallExecutor).to(ToolCallExecutorImpl).inSingletonScope();
+                container.bind(OpenAiStreamingRetry).toSelf();
+                container.bind(ChatGptResponseApiUtils).toSelf();
+                const responseUtils = container.get(ChatGptResponseApiUtils);
+                let create: sinon.SinonStub;
+                async function* failure(): AsyncIterable<unknown> {
+                    yield { type: 'response.created', response: { id: 'busy' } };
+                    yield { type: 'response.failed', response: { error: { code: 'server_error', message: 'Model too busy' } } };
+                }
+                async function* success(): AsyncIterable<unknown> {
+                    yield { type: 'response.output_text.delta', delta: 'Recovered' };
+                    yield { type: 'response.completed', response: {} };
+                }
+                class StreamingModel extends ChatGptModel {
+                    protected override async initializeOpenAi(): Promise<OpenAI> {
+                        const client = await super.initializeOpenAi();
+                        expect(client.maxRetries).to.equal(maxRetries);
+                        create = sinon.stub(client.responses, 'create').resolves(success() as never);
+                        create.onCall(0).resolves(failure() as never);
+                        create.onCall(1).resolves(failure() as never);
+                        return client;
+                    }
+                }
+                const model = new StreamingModel('chatgpt/gpt-5.5', 'gpt-5.5', { status: 'ready' }, async () => CREDENTIALS,
+                    responseUtils, new OpenAiModelUtils(), maxRetries);
+                const parts: LanguageModelStreamResponsePart[] = [];
+                const settled = (async () => {
+                    const response = await model.request(createRequest());
+                    expect('stream' in response).to.equal(true);
+                    if ('stream' in response) {
+                        for await (const part of response.stream) { parts.push(part); }
+                    }
+                })().then(() => undefined, caught => caught);
+                await clock.tickAsync(3000);
+                const error = await settled;
+                expect(create!.callCount).to.equal(maxRetries + 1);
+                if (maxRetries) {
+                    expect(error).to.equal(undefined);
+                    expect(parts).to.deep.equal([{ content: 'Recovered' }]);
+                } else {
+                    expect(error).to.be.instanceOf(Error).with.property('message', 'Model too busy');
+                    expect(parts).to.be.empty;
+                }
+            } finally {
+                clock.restore();
+            }
+        });
+    }
+
     for (const withTools of [false, true]) {
         it(`tolerates ChatGPT metadata events using the SDK transport ${withTools ? 'with client tools' : 'without tools'}`, async () => {
             const container = new Container();
             container.bind(ILogger).to(MockLogger);
             container.bind(ToolCallExecutor).to(ToolCallExecutorImpl).inSingletonScope();
+            container.bind(OpenAiStreamingRetry).toSelf();
             container.bind(ChatGptResponseApiUtils).toSelf();
             const responseUtils = container.get(ChatGptResponseApiUtils);
             const events = [
@@ -260,6 +318,7 @@ describe('ChatGptResponseApiUtils', () => {
             const container = new Container();
             container.bind(ILogger).to(MockLogger);
             container.bind(ToolCallExecutor).to(ToolCallExecutorImpl).inSingletonScope();
+            container.bind(OpenAiStreamingRetry).toSelf();
             container.bind(ChatGptResponseApiUtils).toSelf();
             const responseUtils = container.get(ChatGptResponseApiUtils);
             const event = { type: 'response.failed', response: { error: { message: 'Upstream failure' } } };
@@ -287,6 +346,7 @@ describe('ChatGptResponseApiUtils', () => {
             const container = new Container();
             container.bind(ILogger).to(MockLogger);
             container.bind(ToolCallExecutor).to(ToolCallExecutorImpl).inSingletonScope();
+            container.bind(OpenAiStreamingRetry).toSelf();
             container.bind(ChatGptResponseApiUtils).toSelf();
             const responseUtils = container.get(ChatGptResponseApiUtils);
             const payloads: Record<string, unknown>[] = [];

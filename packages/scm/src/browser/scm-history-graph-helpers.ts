@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ScmHistoryItemRef, ScmHistoryItemChange, ScmHistoryProvider } from './scm-provider';
+import { ScmHistoryItemRef, ScmHistoryItemChange, ScmHistoryProvider } from './scm-provider.js';
 
 /**
  * Returns the CSS color variable for the given color index.

@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { AIViewContribution } from '@theia/ai-core/lib/browser';
-import { SketchedToolWidget } from './sketched-tool-widget';
+import { SketchedToolWidget } from './sketched-tool-widget.js';
 
 export const SKETCHED_TOOL_TOGGLE_COMMAND_ID = 'aiToolSketchpad:toggle';
 

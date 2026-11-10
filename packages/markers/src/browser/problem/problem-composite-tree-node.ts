@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { CompositeTreeNode } from '@theia/core/lib/browser/tree/tree';
-import { MarkerInfoNode } from '../marker-tree';
+import { MarkerInfoNode } from '../marker-tree.js';
 import URI from '@theia/core/lib/common/uri';
-import { Marker } from '../../common/marker';
+import { Marker } from '../../common/marker.js';
 import { Diagnostic, DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-protocol';
-import { ProblemUtils } from './problem-utils';
+import { ProblemUtils } from './problem-utils.js';
 
 export namespace ProblemCompositeTreeNode {
 

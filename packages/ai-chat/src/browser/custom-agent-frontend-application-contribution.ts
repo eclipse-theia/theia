@@ -19,8 +19,8 @@ import { Command, CommandContribution, CommandRegistry, ILogger, MessageService,
 import { FrontendApplicationContribution, LocalStorageService } from '@theia/core/lib/browser';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { inject, injectable, optional, named } from '@theia/core/shared/inversify';
-import { ChatAgentService } from '../common';
-import { CustomAgentFactory } from './custom-agent-factory';
+import { ChatAgentService } from '../common/index.js';
+import { CustomAgentFactory } from './custom-agent-factory.js';
 
 type CustomAgentMigrationReports = Awaited<ReturnType<PromptFragmentCustomizationService['migrateCustomAgentsYaml']>>;
 

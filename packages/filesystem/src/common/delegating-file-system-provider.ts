@@ -22,7 +22,7 @@ import {
     hasReadWriteCapability, hasFileFolderCopyCapability, hasOpenReadWriteCloseCapability, hasAccessCapability, FileUpdateOptions, hasUpdateCapability, FileUpdateResult,
     FileReadStreamOptions,
     hasFileReadStreamCapability
-} from './files';
+} from './files.js';
 import type { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ReadableStreamEvents } from '@theia/core/lib/common/stream';
 

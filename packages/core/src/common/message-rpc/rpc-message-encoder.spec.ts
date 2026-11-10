@@ -17,8 +17,8 @@
 import { expect } from 'chai';
 import {
     EncodingError, MsgPackMessageDecoder, MsgPackMessageEncoder
-} from './rpc-message-encoder';
-import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from './uint8-array-message-buffer';
+} from './rpc-message-encoder.js';
+import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from './uint8-array-message-buffer.js';
 
 describe('PPC Message Encoder & Decoder', () => {
     describe('MsgPack  Encoder & Decoder', () => {

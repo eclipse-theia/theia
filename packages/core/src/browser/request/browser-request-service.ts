@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import { BackendRequestService, RequestConfiguration, RequestContext, RequestOptions, RequestService, CancellationToken } from '@theia/request';
-import { PreferenceService } from '../../common';
+import { PreferenceService } from '../../common/index.js';
 
 @injectable()
 export abstract class AbstractBrowserRequestService implements RequestService {
@@ -78,15 +78,6 @@ export class ProxyingBrowserRequestService extends AbstractBrowserRequestService
 @injectable()
 export class XHRBrowserRequestService extends ProxyingBrowserRequestService {
 
-    protected authorization?: string;
-
-    override configure(config: RequestConfiguration): Promise<void> {
-        if (config.proxyAuthorization !== undefined) {
-            this.authorization = config.proxyAuthorization;
-        }
-        return super.configure(config);
-    }
-
     override async request(options: RequestOptions, token?: CancellationToken): Promise<RequestContext> {
         try {
             const xhrResult = await this.xhrRequest(options, token);
@@ -103,14 +94,6 @@ export class XHRBrowserRequestService extends ProxyingBrowserRequestService {
     }
 
     protected xhrRequest(options: RequestOptions, token?: CancellationToken): Promise<RequestContext> {
-        const authorization = this.authorization || options.proxyAuthorization;
-        if (authorization) {
-            options.headers = {
-                ...(options.headers || {}),
-                'Proxy-Authorization': authorization
-            };
-        }
-
         const xhr = new XMLHttpRequest();
         return new Promise<RequestContext>((resolve, reject) => {
 

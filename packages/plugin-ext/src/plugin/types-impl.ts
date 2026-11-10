@@ -22,16 +22,16 @@
 /* eslint-disable no-null/no-null */
 
 import { UUID } from '@theia/core/shared/@lumino/coreutils';
-import { illegalArgument } from '../common/errors';
+import { illegalArgument } from '../common/errors.js';
 import type * as theia from '@theia/plugin';
 import { URI as CodeURI } from '@theia/core/shared/vscode-uri';
-import { UriComponents } from '../common/uri-components';
-import { relative } from '../common/paths-util';
+import { UriComponents } from '../common/uri-components.js';
+import { relative } from '../common/paths-util.js';
 import { startsWithIgnoreCase } from '@theia/core/lib/common/strings';
-import { SymbolKind } from '../common/plugin-api-rpc-model';
+import { SymbolKind } from '../common/plugin-api-rpc-model.js';
 import { FileSystemProviderErrorCode, markAsFileSystemProviderError } from '@theia/filesystem/lib/common/files';
 import * as paths from 'path';
-import { es5ClassCompat } from '../common/types';
+import { es5ClassCompat } from '../common/types.js';
 import { isObject, isStringArray } from '@theia/core/lib/common';
 import { CellEditType, CellMetadataEdit, NotebookDocumentMetadataEdit } from '@theia/notebook/lib/common';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
@@ -114,7 +114,7 @@ export class URI extends CodeURI implements theia.Uri {
 
 @es5ClassCompat
 export class Disposable {
-    private disposable: undefined | (() => void);
+    #disposable: undefined | (() => void);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static from(...disposables: { dispose(): any }[]): Disposable {
@@ -130,15 +130,15 @@ export class Disposable {
     }
 
     constructor(func: () => void) {
-        this.disposable = func;
+        this.#disposable = func;
     }
     /**
      * Dispose this object.
      */
     dispose(): void {
-        if (this.disposable) {
-            this.disposable();
-            this.disposable = undefined;
+        if (this.#disposable) {
+            this.#disposable();
+            this.#disposable = undefined;
         }
     }
 

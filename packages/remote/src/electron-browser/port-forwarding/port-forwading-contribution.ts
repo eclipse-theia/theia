@@ -17,7 +17,7 @@
 import { Command, nls } from '@theia/core';
 import { AbstractViewContribution } from '@theia/core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
-import { PortForwardingWidget, PORT_FORWARDING_WIDGET_ID } from './port-forwarding-widget';
+import { PortForwardingWidget, PORT_FORWARDING_WIDGET_ID } from './port-forwarding-widget.js';
 
 export namespace PortForwardingCommands {
     export const TOGGLE = Command.toLocalizedCommand({

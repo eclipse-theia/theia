@@ -19,8 +19,8 @@ import { dirname, join } from 'path';
 import { pathToFileURL } from 'url';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ILogger, nls } from '@theia/core';
-import { CopilotCliLocator } from './copilot-cli-locator';
-import type { CopilotClientConstructor, RuntimeConnectionFactory } from './copilot-sdk-types';
+import { CopilotCliLocator } from './copilot-cli-locator.js';
+import type { CopilotClientConstructor, RuntimeConnectionFactory } from './copilot-sdk-types.js';
 
 /**
  * The part of the Copilot SDK this integration uses at runtime.
@@ -117,7 +117,7 @@ export class CopilotSdkLoader {
      */
     protected importInstalled(): unknown {
         // A real require is needed here: the ambient one is rewritten when the backend is bundled.
-        return createRequire(__filename)('@github/copilot-sdk');
+        return createRequire(import.meta.filename)('@github/copilot-sdk');
     }
 
     /**

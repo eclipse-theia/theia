@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { CodeActionProviderDocumentation, Range, SerializedDocumentFilter, WorkspaceSymbolParams } from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
-import { PluginMetricsResolver } from './plugin-metrics-resolver';
+import { PluginMetricsResolver } from './plugin-metrics-resolver.js';
 import { LanguagesMainImpl } from '@theia/plugin-ext/lib/main/browser/languages-main';
 import { SymbolInformation } from '@theia/core/shared/vscode-languageserver-protocol';
 import { injectable, inject } from '@theia/core/shared/inversify';

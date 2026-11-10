@@ -18,10 +18,11 @@ import { PluginDeployerFileHandler, PluginDeployerEntry, PluginDeployerFileHandl
 import filenamify from 'filenamify';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as fs from '@theia/core/shared/fs-extra';
-import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
+import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment.js';
 import { FileUri } from '@theia/core/lib/common/file-uri';
-import { unpackToDeploymentDir } from './plugin-vscode-utils';
+import { unpackToDeploymentDir } from './plugin-vscode-utils.js';
 import { ILogger } from '@theia/core';
+import { ArchiveExtractor } from '@theia/filesystem/lib/node/archive/archive-extractor';
 
 export const isVSCodePluginFile = (pluginPath?: string) => Boolean(pluginPath && (pluginPath.endsWith('.vsix') || pluginPath.endsWith('.tgz')));
 
@@ -32,6 +33,9 @@ export class PluginVsCodeFileHandler implements PluginDeployerFileHandler {
 
     @inject(ILogger) @named('plugin-ext-vscode:PluginVsCodeFileHandler')
     protected readonly logger: ILogger;
+
+    @inject(ArchiveExtractor)
+    protected readonly archiveExtractor: ArchiveExtractor;
 
     async accept(resolvedPlugin: PluginDeployerEntry): Promise<boolean> {
         return resolvedPlugin.isFile().then(file => {
@@ -44,7 +48,7 @@ export class PluginVsCodeFileHandler implements PluginDeployerFileHandler {
 
     async handle(context: PluginDeployerFileHandlerContext): Promise<void> {
         const id = this.getNormalizedExtensionId(context.pluginEntry().id());
-        const extensionDeploymentDir = await unpackToDeploymentDir(this.environment, context.pluginEntry().path(), id);
+        const extensionDeploymentDir = await unpackToDeploymentDir(this.environment, context.pluginEntry().path(), id, this.archiveExtractor);
         context.pluginEntry().updatePath(extensionDeploymentDir);
         this.logger.info(`root path: ${context.pluginEntry().rootPath}`);
         const originalPath = context.pluginEntry().originalPath();

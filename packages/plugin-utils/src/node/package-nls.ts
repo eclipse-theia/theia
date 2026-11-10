@@ -15,12 +15,13 @@
 // *****************************************************************************
 
 import * as path from 'path';
-import * as fs from 'fs-extra';
-import { isENOENT } from '../common/utils';
+// A CommonJS module whose exports cannot be detected statically, so it is imported as a whole.
+import fs from 'fs-extra';
+import { isENOENT } from '../common/utils.js';
 import {
     coerceLocalizations,
     type PackageTranslation,
-} from '../common/package-nls';
+} from '../common/package-nls.js';
 
 export async function loadPackageTranslations(pluginPath: string, locale?: string): Promise<PackageTranslation> {
     const defaultPath = path.join(pluginPath, 'package.nls.json');

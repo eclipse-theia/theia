@@ -21,7 +21,7 @@ import { expect } from 'chai';
 import { DisposableCollection, Emitter } from '@theia/core/lib/common';
 import { PINNED_CLASS, Saveable } from '@theia/core/lib/browser';
 import { TabBar, Widget } from '@theia/core/shared/@lumino/widgets';
-import { PREVIEW_TITLE_CLASS, PreviewTabHost, PreviewTabSupport } from './preview-tab-widget';
+import { PREVIEW_TITLE_CLASS, PreviewTabHost, PreviewTabSupport } from './preview-tab-widget.js';
 
 disableJSDOM();
 

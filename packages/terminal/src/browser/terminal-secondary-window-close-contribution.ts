@@ -17,8 +17,8 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Widget } from '@theia/core/lib/browser/widgets';
 import { SecondaryWindowCloseContribution } from '@theia/core/lib/browser/window/secondary-window-close-contribution';
-import { TerminalWidget } from './base/terminal-widget';
-import { TerminalPreferences } from '../common/terminal-preferences';
+import { TerminalWidget } from './base/terminal-widget.js';
+import { TerminalPreferences } from '../common/terminal-preferences.js';
 
 /**
  * Moves terminals back to the main window when their secondary window is closed if closing the application

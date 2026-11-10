@@ -21,8 +21,8 @@
 import { UriComponents, URI } from '@theia/core/lib/common/uri';
 import { CellRange } from '@theia/notebook/lib/common';
 import { NotebookEditorWidget, NotebookService } from '@theia/notebook/lib/browser';
-import { MAIN_RPC_CONTEXT, NotebookDocumentShowOptions, NotebookEditorRevealType, NotebookEditorsExt, NotebookEditorsMain } from '../../../common';
-import { RPCProtocol } from '../../../common/rpc-protocol';
+import { MAIN_RPC_CONTEXT, NotebookDocumentShowOptions, NotebookEditorRevealType, NotebookEditorsExt, NotebookEditorsMain } from '../../../common/index.js';
+import { RPCProtocol } from '../../../common/rpc-protocol.js';
 import { interfaces } from '@theia/core/shared/inversify';
 import { NotebookOpenHandler } from '@theia/notebook/lib/browser/notebook-open-handler';
 

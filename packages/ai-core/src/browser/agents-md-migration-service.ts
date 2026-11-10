@@ -22,9 +22,9 @@ import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
-import { AiConfigurationService, AISettings } from '../common';
-import { AGENTS_MD_FILE_NAME } from '../common/agents-md';
-import { AISettingsServiceImpl } from './ai-settings-service';
+import { AiConfigurationService, AISettings } from '../common/index.js';
+import { AGENTS_MD_FILE_NAME } from '../common/agents-md.js';
+import { AISettingsServiceImpl } from './ai-settings-service.js';
 
 /** Workspace-relative location of the prompt fragment that `AGENTS.md` replaces. */
 export const LEGACY_PROJECT_INFO_PATH = '.prompts/project-info.prompttemplate';

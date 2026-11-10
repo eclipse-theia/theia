@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MAIN_RPC_CONTEXT, ThemingMain, ThemingExt } from '../../common/plugin-api-rpc';
-import { RPCProtocol } from '../../common/rpc-protocol';
+import { MAIN_RPC_CONTEXT, ThemingMain, ThemingExt } from '../../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { Disposable } from '@theia/core/lib/common/disposable';
 

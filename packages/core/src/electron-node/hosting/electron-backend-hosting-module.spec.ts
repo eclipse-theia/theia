@@ -16,8 +16,8 @@
 
 import { expect } from 'chai';
 import { Container } from 'inversify';
-import electronBackendHostingModule from './electron-backend-hosting-module';
-import { HttpConnectionValidator } from '../../node/hosting/browser-connection-token';
+import electronBackendHostingModule from './electron-backend-hosting-module.js';
+import { HttpConnectionValidator } from '../../node/hosting/browser-connection-token.js';
 
 describe('electron-backend-hosting-module', () => {
 

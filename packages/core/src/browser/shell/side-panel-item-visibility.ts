@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { Emitter, Event } from '../../common/event';
-import { Deferred } from '../../common/promise-util';
-import { LocalStorageService } from '../storage-service';
+import { Emitter, Event } from '../../common/event.js';
+import { Deferred } from '../../common/promise-util.js';
+import { LocalStorageService } from '../storage-service.js';
 
 export const SidePanelItemVisibility = Symbol('SidePanelItemVisibility');
 /**

@@ -16,12 +16,12 @@
 
 import { URI } from '@theia/core/shared/vscode-uri';
 import * as theia from '@theia/plugin';
-import { DocumentsExtImpl } from '../documents';
-import * as types from '../types-impl';
-import * as Converter from '../type-converters';
-import { Position } from '../../common/plugin-api-rpc';
-import { MultiDocumentHighlightDto } from '../../common/plugin-api-rpc-model';
-import { UriComponents } from '../../common/uri-components';
+import { DocumentsExtImpl } from '../documents.js';
+import * as types from '../types-impl.js';
+import * as Converter from '../type-converters.js';
+import { Position } from '../../common/plugin-api-rpc.js';
+import { MultiDocumentHighlightDto } from '../../common/plugin-api-rpc-model.js';
+import { UriComponents } from '../../common/uri-components.js';
 
 export class MultiDocumentHighlightAdapter {
 

@@ -14,5 +14,5 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './shell-command-analyzer';
-export * from './shell-command-preferences';
+export * from './shell-command-analyzer.js';
+export * from './shell-command-preferences.js';

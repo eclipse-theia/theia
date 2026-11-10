@@ -19,10 +19,11 @@ import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { DuplicateExtensionError, PluginDeployerHandler, PluginDeployerResolverContext, PluginDeployOptions, PluginIdentifiers, PluginType } from '@theia/plugin-ext';
 import { LocalPluginDeployerResolver } from '@theia/plugin-ext/lib/main/node/resolvers/local-plugin-deployer-resolver';
 import { PluginUninstallationManager } from '@theia/plugin-ext/lib/main/node/plugin-uninstallation-manager';
-import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
-import { isVSCodePluginFile } from './plugin-vscode-file-handler';
-import { existsInDeploymentDir, replaceInDeploymentDir, unpackToDeploymentDir, extractExtensionIdentityFromVsix } from './plugin-vscode-utils';
+import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment.js';
+import { isVSCodePluginFile } from './plugin-vscode-file-handler.js';
+import { existsInDeploymentDir, replaceInDeploymentDir, unpackToDeploymentDir, extractExtensionIdentityFromVsix } from './plugin-vscode-utils.js';
 import { ILogger } from '@theia/core';
+import { ArchiveExtractor } from '@theia/filesystem/lib/node/archive/archive-extractor';
 
 @injectable()
 export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerResolver {
@@ -36,6 +37,9 @@ export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerReso
     @inject(ILogger) @named('plugin-ext-vscode:LocalVSIXFilePluginDeployerResolver')
     protected override readonly logger: ILogger;
 
+    @inject(ArchiveExtractor)
+    protected readonly archiveExtractor: ArchiveExtractor;
+
     protected get supportedScheme(): string {
         return LocalVSIXFilePluginDeployerResolver.LOCAL_FILE;
     }
@@ -48,7 +52,7 @@ export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerReso
         // Extract the true extension identity from the VSIX package.json
         // This prevents duplicate installations when the same extension is installed from VSIX files with different filenames
         // See: https://github.com/eclipse-theia/theia/issues/16845
-        const components = await extractExtensionIdentityFromVsix(localPath);
+        const components = await extractExtensionIdentityFromVsix(localPath, this.archiveExtractor);
 
         if (!components) {
             // Fallback to filename-based ID if package.json cannot be read
@@ -61,7 +65,7 @@ export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerReso
                 return;
             }
 
-            const fallbackDeploymentDir = await unpackToDeploymentDir(this.environment, localPath, fallbackId);
+            const fallbackDeploymentDir = await unpackToDeploymentDir(this.environment, localPath, fallbackId, this.archiveExtractor);
             pluginResolverContext.addPlugin(fallbackId, fallbackDeploymentDir);
             return;
         }
@@ -87,10 +91,10 @@ export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerReso
         // Other versions need no removal here: the handler uninstalls them when it deploys this one.
         let extensionDeploymentDir: string;
         if (existsOnDisk) {
-            extensionDeploymentDir = await replaceInDeploymentDir(this.environment, localPath, versionedId, () => this.pluginDeployerHandler.undeployPlugin(versionedId));
+            extensionDeploymentDir = await replaceInDeploymentDir(this.environment, localPath, versionedId, () => this.pluginDeployerHandler.undeployPlugin(versionedId), this.archiveExtractor);
         } else {
             await this.pluginDeployerHandler.undeployPlugin(versionedId);
-            extensionDeploymentDir = await unpackToDeploymentDir(this.environment, localPath, versionedId);
+            extensionDeploymentDir = await unpackToDeploymentDir(this.environment, localPath, versionedId, this.archiveExtractor);
         }
         pluginResolverContext.addPlugin(versionedId, extensionDeploymentDir);
     }

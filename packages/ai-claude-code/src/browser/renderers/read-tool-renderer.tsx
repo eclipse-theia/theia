@@ -24,8 +24,8 @@ import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
-import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
+import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content.js';
+import { CollapsibleToolRenderer } from './collapsible-tool-renderer.js';
 import { nls, ILogger } from '@theia/core';
 
 interface ReadToolInput {
@@ -120,7 +120,7 @@ const ReadToolComponent: React.FC<{
     const compactHeader = (
         <>
             <div className="claude-code-tool header-left">
-                <span className="claude-code-tool title">{nls.localize('theia/ai/claude-code/reading', 'Reading')}</span>
+                <span className="claude-code-tool title">{nls.localizeByDefault('Reading')}</span>
                 <span className={`${getIcon(input.file_path)} claude-code-tool icon`} />
                 <span
                     className="claude-code-tool file-name clickable-element"

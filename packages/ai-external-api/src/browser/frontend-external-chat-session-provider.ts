@@ -27,7 +27,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import {
     ExternalChatMessage, ExternalChatPrompt, ExternalChatPromptResult, ExternalChatSessionCreateRequest, ExternalChatSessionCreateResult,
     ExternalChatSessionDetail, ExternalChatSessionProvider, ExternalChatSessionSummary
-} from '../common/external-chat-session-provider';
+} from '../common/external-chat-session-provider.js';
 
 /**
  * Answers the backend's external session queries from this frontend's {@link ChatService}.

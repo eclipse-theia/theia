@@ -32,7 +32,7 @@
  * └──────┴───────────────┴──────┴─────┘
  */
 
-import { OS } from './os';
+import { OS } from './os.js';
 
 export class Path {
     static separator: '/' = '/';

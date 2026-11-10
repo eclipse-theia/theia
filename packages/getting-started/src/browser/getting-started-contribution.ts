@@ -21,7 +21,7 @@ import {
 } from '@theia/core/lib/common';
 import { CommonCommands, CommonMenus, AbstractViewContribution, FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
-import { GettingStartedWidget } from './getting-started-widget';
+import { GettingStartedWidget } from './getting-started-widget.js';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -30,8 +30,8 @@ import { URI as VSCodeURI } from '@theia/core/shared/vscode-uri';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { Color } from '@theia/core/lib/common/color';
-import { WalkthroughService } from './walkthrough-service';
-import { WalkthroughCommands } from '../common/walkthrough-commands';
+import { WalkthroughService } from './walkthrough-service.js';
+import { WalkthroughCommands } from '../common/walkthrough-commands.js';
 
 /**
  * Triggers opening the `GettingStartedWidget`.

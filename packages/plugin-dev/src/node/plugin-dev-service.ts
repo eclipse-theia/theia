@@ -14,13 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PluginDebugConfiguration, PluginDevServer, PluginDevClient } from '../common/plugin-dev-protocol';
+import { PluginDebugConfiguration, PluginDevServer, PluginDevClient } from '../common/plugin-dev-protocol.js';
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { HostedInstanceManager } from './hosted-instance-manager';
+import { HostedInstanceManager } from './hosted-instance-manager.js';
 import { PluginMetadata } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import URI from '@theia/core/lib/common/uri';
-import { HostedPluginReader } from './hosted-plugin-reader';
-import { HostedPluginsManager } from './hosted-plugins-manager';
+import { HostedPluginReader } from './hosted-plugin-reader.js';
+import { HostedPluginsManager } from './hosted-plugins-manager.js';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin';
 
 @injectable()

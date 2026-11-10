@@ -28,10 +28,10 @@ const canvasContext = sinon.stub(HTMLCanvasElement.prototype, 'getContext');
 import { expect } from 'chai';
 import { cancelled } from '@theia/core/lib/common/cancellation';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { RunTaskOption, TaskConfiguration, TaskInfo, TaskScope } from '../common';
-import { TaskResolverRegistry } from './task-contribution';
-import { TaskDefinitionRegistry } from './task-definition-registry';
-import { TaskService } from './task-service';
+import { RunTaskOption, TaskConfiguration, TaskInfo, TaskScope } from '../common/index.js';
+import { TaskResolverRegistry } from './task-contribution.js';
+import { TaskDefinitionRegistry } from './task-definition-registry.js';
+import { TaskService } from './task-service.js';
 
 canvasContext.restore();
 disableJSDOM();

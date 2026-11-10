@@ -16,7 +16,7 @@
 
 import { isWindows } from '@theia/core';
 import * as assert from 'assert';
-import * as types from './types-impl';
+import * as types from './types-impl.js';
 
 describe('API Type Implementations:', () => {
 
@@ -105,6 +105,21 @@ describe('API Type Implementations:', () => {
             const rPattern = new types.RelativePattern('/initial/unrelated/path', 'not relevant');
             rPattern.base = testUri.fsPath;
             assert.strictEqual(rPattern.baseUri.toString(), testUri.toString());
+        });
+    });
+
+    describe('Disposable:', () => {
+        // Issue: #13906
+        it('should run its callback when a subclass declares its own disposable field', () => {
+            let disposed = 0;
+            class Subclass extends types.Disposable {
+                disposable = 'not a function';
+                constructor() {
+                    super(() => disposed++);
+                }
+            }
+            new Subclass().dispose();
+            assert.strictEqual(disposed, 1);
         });
     });
 });

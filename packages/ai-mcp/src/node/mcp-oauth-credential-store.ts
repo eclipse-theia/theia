@@ -16,7 +16,7 @@
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { KeyStoreService } from '@theia/core/lib/common/key-store';
-import { MCPOAuthConfig } from '../common/mcp-oauth';
+import { MCPOAuthConfig } from '../common/mcp-oauth.js';
 import { ILogger } from '@theia/core';
 import {
     deriveCredentialScope,
@@ -25,7 +25,7 @@ import {
     mcpOAuthAccount,
     parseStoredTokens,
     StoredOAuthTokens
-} from './mcp-oauth-keystore';
+} from './mcp-oauth-keystore.js';
 
 /**
  * Reads and clears MCP OAuth credentials in the keystore without needing an active provider — used

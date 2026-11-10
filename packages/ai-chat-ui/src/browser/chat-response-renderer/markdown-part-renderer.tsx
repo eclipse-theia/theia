@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
+import { ChatResponsePartRenderer } from '../chat-response-part-renderer.js';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import {
     ChatResponseContent,
@@ -35,7 +35,7 @@ import {
     BLOCKED_RESOURCE_CLASS,
     BLOCKED_RESOURCE_WRAPPER_CLASS,
     restoreBlockedResource
-} from './block-external-resources';
+} from './block-external-resources.js';
 
 export interface MarkdownRenderProps {
     text: string | MarkdownString;

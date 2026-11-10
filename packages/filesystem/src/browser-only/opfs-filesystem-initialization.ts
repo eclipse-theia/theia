@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import type { OPFSFileSystemProvider } from './opfs-filesystem-provider';
+import type { OPFSFileSystemProvider } from './opfs-filesystem-provider.js';
 import { injectable } from '@theia/core/shared/inversify';
 
 export const OPFSInitialization = Symbol('OPFSInitialization');

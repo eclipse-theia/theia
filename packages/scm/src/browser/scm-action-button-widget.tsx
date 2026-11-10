@@ -19,9 +19,9 @@ import { CommandService, DisposableCollection, MenuNode, CommandMenu, nls } from
 import { Message } from '@theia/core/shared/@lumino/messaging';
 import * as React from '@theia/core/shared/react';
 import { codicon, ContextMenuRenderer, ReactWidget } from '@theia/core/lib/browser';
-import { ScmService } from './scm-service';
-import { ScmRepository } from './scm-repository';
-import { ScmActionButton, ScmCommand, ScmProvider } from './scm-provider';
+import { ScmService } from './scm-service.js';
+import { ScmRepository } from './scm-repository.js';
+import { ScmActionButton, ScmCommand, ScmProvider } from './scm-provider.js';
 import { LabelParser } from '@theia/core/lib/browser/label-parser';
 import { BrowserMenuNodeFactory } from '@theia/core/lib/browser/menu/browser-menu-node-factory';
 

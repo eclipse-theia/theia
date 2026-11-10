@@ -21,10 +21,10 @@ import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
 import { ContributionProvider, Emitter, ILogger, PreferenceService } from '@theia/core';
 import { AgentService, AISettings, AISettingsService } from '@theia/ai-core';
-import { ChatAgent, ChatAgentLocation } from './chat-agents';
-import { ChatAgentService, ChatAgentServiceImpl, DefaultChatAgentId, FallbackChatAgentId } from './chat-agent-service';
-import { ParsedChatRequest, ParsedChatRequestAgentPart, ParsedChatRequestTextPart } from './parsed-chat-request';
-import { DEFAULT_CHAT_AGENT_PREF } from './ai-chat-preferences';
+import { ChatAgent, ChatAgentLocation } from './chat-agents.js';
+import { ChatAgentService, ChatAgentServiceImpl, DefaultChatAgentId, FallbackChatAgentId } from './chat-agent-service.js';
+import { ParsedChatRequest, ParsedChatRequestAgentPart, ParsedChatRequestTextPart } from './parsed-chat-request.js';
+import { DEFAULT_CHAT_AGENT_PREF } from './ai-chat-preferences.js';
 
 describe('ChatAgentServiceImpl', () => {
 
@@ -303,11 +303,11 @@ describe('ChatAgentServiceImpl', () => {
             private readonly onPreferenceChangedEmitter = new Emitter<{ preferenceName: string; newValue: unknown }>();
             readonly onPreferenceChanged = this.onPreferenceChangedEmitter.event;
 
-            get<T>(preferenceName: string, defaultValue?: T): T {
+            get<T>(preferenceName: string, options?: { fallback?: T }): T | undefined {
                 if (this.preferences.has(preferenceName)) {
                     return this.preferences.get(preferenceName) as T;
                 }
-                return defaultValue as T;
+                return options?.fallback;
             }
 
             set(preferenceName: string, value: unknown): void {

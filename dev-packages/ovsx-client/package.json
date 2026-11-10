@@ -1,6 +1,6 @@
 {
   "name": "@theia/ovsx-client",
-  "version": "1.76.0",
+  "version": "1.77.0",
   "description": "Theia Open-VSX Client",
   "publishConfig": {
     "access": "public"
@@ -20,6 +20,15 @@
   ],
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json",
+    "./lib/ovsx-router-filters": "./lib/ovsx-router-filters/index.js",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "scripts": {
     "build": "theiaext build",
     "clean": "theiaext clean",
@@ -29,7 +38,7 @@
     "watch": "theiaext watch"
   },
   "dependencies": {
-    "@theia/request": "1.76.0",
+    "@theia/request": "1.77.0",
     "limiter": "^2.1.0",
     "semver": "^7.8.5",
     "tslib": "^2.8.1"

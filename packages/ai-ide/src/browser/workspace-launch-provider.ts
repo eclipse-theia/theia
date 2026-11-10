@@ -26,8 +26,8 @@ import {
     LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID,
     RUN_LAUNCH_CONFIGURATION_FUNCTION_ID,
     STOP_LAUNCH_CONFIGURATION_FUNCTION_ID
-} from '../common/workspace-functions';
-import { WorkspaceFunctionScope } from './workspace-functions';
+} from '../common/workspace-functions.js';
+import { WorkspaceFunctionScope } from './workspace-functions.js';
 
 /**
  * Sentinel value returned (and accepted) as `workspaceRoot` for launch

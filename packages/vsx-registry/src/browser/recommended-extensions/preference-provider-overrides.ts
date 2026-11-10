@@ -20,7 +20,7 @@ import {
     FolderPreferenceProviderFolder,
 } from '@theia/preferences/lib/browser';
 import { Container, injectable, interfaces } from '@theia/core/shared/inversify';
-import { extensionsConfigurationSchema } from './recommended-extensions-json-schema';
+import { extensionsConfigurationSchema } from './recommended-extensions-json-schema.js';
 import {
     WorkspaceFilePreferenceProvider,
     WorkspaceFilePreferenceProviderFactory,
@@ -37,8 +37,8 @@ import { bindFactory } from '@theia/core';
 
 @injectable()
 export class FolderPreferenceProviderWithExtensions extends FolderPreferenceProvider {
-    protected override getPath(preferenceName: string): string[] | undefined {
-        const path = super.getPath(preferenceName);
+    protected override getPath(preferenceName: string, overrideIdentifier?: string): string[] | undefined {
+        const path = super.getPath(preferenceName, overrideIdentifier);
         if (this.section !== 'extensions' || !path?.length) {
             return path;
         }
@@ -52,8 +52,8 @@ export class FolderPreferenceProviderWithExtensions extends FolderPreferenceProv
 
 @injectable()
 export class UserPreferenceProviderWithExtensions extends UserPreferenceProvider {
-    protected override getPath(preferenceName: string): string[] | undefined {
-        const path = super.getPath(preferenceName);
+    protected override getPath(preferenceName: string, overrideIdentifier?: string): string[] | undefined {
+        const path = super.getPath(preferenceName, overrideIdentifier);
         if (this.section !== 'extensions' || !path?.length) {
             return path;
         }

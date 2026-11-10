@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { NotificationContentRenderer } from './notification-content-renderer';
+import { NotificationContentRenderer } from './notification-content-renderer.js';
 
 describe('notification-content-renderer', () => {
 

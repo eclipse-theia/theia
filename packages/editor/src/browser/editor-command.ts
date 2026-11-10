@@ -16,12 +16,12 @@
 
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { CommonCommands, LabelProvider, ApplicationShell, QuickInputService, QuickPickValue, SaveableService } from '@theia/core/lib/browser';
-import { EditorManager } from './editor-manager';
+import { EditorManager } from './editor-manager.js';
 import { CommandContribution, CommandRegistry, Command, ResourceProvider, MessageService, nls } from '@theia/core';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
 import { SUPPORTED_ENCODINGS } from '@theia/core/lib/common/supported-encodings';
-import { EncodingMode } from './editor';
-import { EditorLanguageQuickPickService } from './editor-language-quick-pick-service';
+import { EncodingMode } from './editor.js';
+import { EditorLanguageQuickPickService } from './editor-language-quick-pick-service.js';
 import { PreferenceService } from '@theia/core/lib/common/preferences';
 
 export namespace EditorCommands {
@@ -339,7 +339,7 @@ export class EditorCommandContribution implements CommandContribution {
         }
         const isReopenWithEncoding = (selectedEncoding.value === reopenWithEncodingPick.value);
 
-        const configuredEncoding = this.preferencesService.get<string>('files.encoding', 'utf8', editor.uri.toString());
+        const configuredEncoding = this.preferencesService.get<string>('files.encoding', { fallback: 'utf8', resource: editor.uri.toString() });
 
         const resource = await this.resourceProvider(editor.uri);
         const guessedEncoding = resource.guessEncoding ? await resource.guessEncoding() : undefined;

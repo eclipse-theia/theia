@@ -26,16 +26,15 @@ import {
     ReasoningSupport,
     ServerToolDescriptor
 } from '@theia/ai-core';
-import { OpenAiModelUtils } from './openai-model-utils';
+import { OpenAiModelUtils } from './openai-model-utils.js';
 import { CancellationToken, ILogger } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { OpenAI, AzureOpenAI } from 'openai';
 import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources';
-import { StreamingAsyncIterator } from './openai-streaming-iterator';
-import { ChatCompletionStreamingAsyncIteratorFactory } from './openai-chat-completion-stream';
-import { OPENAI_PROVIDER_ID } from '../common';
-import { OpenAiResponseApiUtils } from './openai-response-api-utils';
-import { applyResponseApiCompaction, getOpenAiRequestSettings } from './openai-request-settings';
+import { ChatCompletionStreamingAsyncIteratorFactory } from './openai-chat-completion-stream.js';
+import { OPENAI_PROVIDER_ID } from '../common/index.js';
+import { OpenAiResponseApiUtils } from './openai-response-api-utils.js';
+import { applyResponseApiCompaction, getOpenAiRequestSettings } from './openai-request-settings.js';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
 
 // The SDK finalizes method and path before this hook; its equivalent internal type is not exported.
@@ -83,6 +82,7 @@ export interface OpenAiClientOptions {
     readonly apiVersion?: string;
     readonly deployment?: string;
     readonly proxyUrl?: string;
+    readonly maxRetries?: number;
     /** Additional HTTP headers sent with every request, e.g. headers required by a gateway in front of the API. */
     readonly headers?: Record<string, string>;
 }
@@ -98,9 +98,25 @@ export function createOpenAiClient(options: OpenAiClientOptions): OpenAI {
     const proxyFetch = createProxyFetch(options.proxyUrl);
     return options.apiVersion
         ? new AzureOpenAI({
-            apiKey, baseURL: options.baseURL, apiVersion: options.apiVersion, deployment: options.deployment, fetch: proxyFetch, defaultHeaders: options.headers
+            apiKey, baseURL: options.baseURL, apiVersion: options.apiVersion, deployment: options.deployment,
+            fetch: proxyFetch, defaultHeaders: azureDefaultHeaders(options), maxRetries: options.maxRetries
         })
-        : new MistralFixedOpenAI({ apiKey, baseURL: options.baseURL, fetch: proxyFetch, defaultHeaders: options.headers });
+        : new MistralFixedOpenAI({ apiKey, baseURL: options.baseURL, fetch: proxyFetch, defaultHeaders: options.headers, maxRetries: options.maxRetries });
+}
+
+/**
+ * The Azure client sends its key in the `api-key` header, so without a key it would send the `no-key` placeholder.
+ * When no key is configured the placeholder is removed: it only satisfies the SDK constructor and is never a valid
+ * credential, gateways may reject a request with an invalid `api-key` (whether they authenticate with a Microsoft
+ * Entra ID token in `Authorization`, a subscription-key header or not at all), and the SDK stops following redirects
+ * for requests that carry one. An `api-key` header set explicitly in the configured headers is kept.
+ */
+function azureDefaultHeaders(options: OpenAiClientOptions): Record<string, string | null> | undefined {
+    const names = Object.keys(options.headers ?? {}).map(name => name.toLowerCase());
+    if (options.apiKey || names.includes('api-key')) {
+        return options.headers;
+    }
+    return { ...options.headers, 'api-key': null }; // eslint-disable-line no-null/no-null
 }
 
 export interface OpenAiModelParams {
@@ -238,30 +254,18 @@ export class OpenAiModel implements LanguageModel {
         if (cancellationToken?.isCancellationRequested) {
             return { text: '' };
         }
-        const tools = this.createTools(request);
-
-        if (tools) {
-            return {
-                stream: this.chatCompletionStreamFactory({
-                    openai,
-                    model: this.model,
-                    request,
-                    messages: this.processMessages(request.messages),
-                    settings,
-                    tools,
-                    maxRetries: this.maxRetries,
-                    cancellationToken
-                })
-            };
-        }
-
-        const runner = openai.chat.completions.stream({
-            model: this.model,
-            messages: this.processMessages(request.messages),
-            stream: true,
-            ...settings
-        });
-        return { stream: new StreamingAsyncIterator(runner, cancellationToken) };
+        return {
+            stream: this.chatCompletionStreamFactory({
+                openai,
+                model: this.model,
+                request,
+                messages: this.processMessages(request.messages),
+                settings,
+                tools: this.createTools(request),
+                maxRetries: this.maxRetries,
+                cancellationToken
+            })
+        };
     }
 
     protected async handleNonStreamingRequest(openai: OpenAI, request: UserRequest): Promise<LanguageModelTextResponse> {
@@ -334,6 +338,7 @@ export class OpenAiModel implements LanguageModel {
             apiVersion: this.apiVersion(),
             deployment: this.deployment,
             proxyUrl: this.proxy,
+            maxRetries: this.maxRetries,
             headers: this.headers
         });
     }

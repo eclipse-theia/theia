@@ -17,22 +17,23 @@
 import * as path from 'path';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { ConnectionHandler, RpcConnectionHandler, ILogger } from '@theia/core/lib/common';
-import { FileSystemWatcherServer, FileSystemWatcherService } from '../common/filesystem-watcher-protocol';
-import { FileSystemWatcherServerClient } from './filesystem-watcher-client';
-import { FileSystemWatcherServiceImpl } from './filesystem-watcher-service-impl';
-import { ParcelFileSystemWatcherServerOptions } from './parcel-watcher/parcel-watcher';
-import { NodeFileUploadService } from './upload/node-file-upload-service';
-import { ParcelWatcherOptions } from './parcel-watcher/parcel-options';
-import { DiskFileSystemProvider } from './disk-file-system-provider';
+import { FileSystemWatcherServer, FileSystemWatcherService } from '../common/filesystem-watcher-protocol.js';
+import { FileSystemWatcherServerClient } from './filesystem-watcher-client.js';
+import { FileSystemWatcherServiceImpl } from './filesystem-watcher-service-impl.js';
+import { ParcelFileSystemWatcherServerOptions } from './parcel-watcher/parcel-watcher.js';
+import { NodeFileUploadService } from './upload/node-file-upload-service.js';
+import { ParcelWatcherOptions } from './parcel-watcher/parcel-options.js';
+import { DiskFileSystemProvider } from './disk-file-system-provider.js';
 import {
     remoteFileSystemPath, RemoteFileSystemServer, RemoteFileSystemClient, FileSystemProviderServer, RemoteFileSystemProxyFactory
-} from '../common/remote-file-system-provider';
-import { FileSystemProvider } from '../common/files';
+} from '../common/remote-file-system-provider.js';
+import { FileSystemProvider } from '../common/files.js';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BackendApplicationContribution, IPCConnectionProvider } from '@theia/core/lib/node';
 import { RpcProxyFactory, ConnectionErrorHandler } from '@theia/core';
-import { FileSystemWatcherServiceDispatcher } from './filesystem-watcher-dispatcher';
-import { bindFileSystemPreferences } from '../common';
+import { FileSystemWatcherServiceDispatcher } from './filesystem-watcher-dispatcher.js';
+import { bindFileSystemPreferences } from '../common/index.js';
+import { ArchiveExtractor, ArchiveExtractorImpl } from './archive/archive-extractor.js';
 
 export const WATCHER_SINGLE_THREADED = process.argv.includes('--no-cluster');
 export const WATCHER_VERBOSE = process.argv.includes('--watcher-verbose');
@@ -66,6 +67,8 @@ export default new ContainerModule(bind => {
     bind(NodeFileUploadService).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(NodeFileUploadService);
     bindFileSystemPreferences(bind);
+    bind(ArchiveExtractorImpl).toSelf().inSingletonScope();
+    bind(ArchiveExtractor).toService(ArchiveExtractorImpl);
 });
 
 export function bindFileSystemWatcherServer(bind: interfaces.Bind): void {
@@ -77,7 +80,7 @@ export function bindFileSystemWatcherServer(bind: interfaces.Bind): void {
     bind(FileSystemWatcherServer).toService(FileSystemWatcherServerClient);
 
     bind<FileSystemWatcherServiceProcessOptions>(FileSystemWatcherServiceProcessOptions).toDynamicValue(ctx => ({
-        entryPoint: path.join(__dirname, 'parcel-watcher'),
+        entryPoint: path.join(import.meta.dirname, 'parcel-watcher'),
     })).inSingletonScope();
     bind<ParcelFileSystemWatcherServerOptions>(ParcelFileSystemWatcherServerOptions).toDynamicValue(ctx => {
         const logger = ctx.container.get<ILogger>(ILogger);

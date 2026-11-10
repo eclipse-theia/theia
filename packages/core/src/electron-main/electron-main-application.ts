@@ -17,41 +17,42 @@
 import { inject, injectable, named } from 'inversify';
 import {
     screen, app, BrowserWindow, WebContents, Event as ElectronEvent, BrowserWindowConstructorOptions, nativeImage,
-    nativeTheme, shell, dialog
-} from '../../electron-shared/electron';
+    nativeTheme, shell, dialog, session
+} from '../../electron-shared/electron/index.cjs';
 import * as path from 'path';
-import { Argv } from 'yargs';
+import { Argv } from '../../shared/yargs/index.cjs';
+import yargsFactory from 'yargs/yargs';
 import { AddressInfo } from 'net';
 import { promises as fs } from 'fs';
-import { existsSync, mkdirSync } from 'fs-extra';
+import { existsSync, mkdirSync } from '../../shared/fs-extra/index.cjs';
 import { fork, ForkOptions } from 'child_process';
 import { DefaultTheme, ElectronFrontendApplicationConfig, FrontendApplicationConfig } from '@theia/application-package/lib/application-props';
-import URI from '../common/uri';
-import { FileUri } from '../common/file-uri';
-import { Deferred, timeout } from '../common/promise-util';
-import { MaybePromise } from '../common/types';
-import { Stopwatch } from '../common/performance';
-import { ContributionProvider } from '../common/contribution-provider';
-import { ElectronSecurityTokenService } from './electron-security-token-service';
-import { ElectronSecurityToken } from '../electron-common/electron-token';
-import Storage = require('electron-store');
-import { CancellationTokenSource, Disposable, DisposableCollection, Path, isOSX, isWindows } from '../common';
-import { DEFAULT_WINDOW_HASH, WindowSearchParams } from '../common/window';
-import { LaunchArguments } from '../common/launch-arguments';
-import { LaunchArgvParser } from './launch-argv-parser';
-import { LaunchArgsStore } from './launch-args-store';
-import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory } from './theia-electron-window';
-import { ElectronMainApplicationGlobals } from './electron-main-constants';
-import { createDisposableListener } from './event-utils';
-import { TheiaRendererAPI } from './electron-api-main';
-import { StopReason } from '../common/frontend-application-state';
-import { dynamicRequire } from '../node/dynamic-require';
-import { ThemeMode } from '../common/theme';
-import { backendGlobal } from '../node/backend-global';
+import URI from '../common/uri.js';
+import { FileUri } from '../common/file-uri.js';
+import { Deferred, timeout } from '../common/promise-util.js';
+import { MaybePromise } from '../common/types.js';
+import { Stopwatch } from '../common/performance/index.js';
+import { ContributionProvider } from '../common/contribution-provider.js';
+import { ElectronSecurityTokenService } from './electron-security-token-service.js';
+import { ElectronSecurityToken } from '../electron-common/electron-token.js';
+import Storage from '../../electron-shared/electron-store/index.cjs';
+import { CancellationTokenSource, Disposable, DisposableCollection, Path, isOSX, isWindows } from '../common/index.js';
+import { DEFAULT_WINDOW_HASH, WindowSearchParams } from '../common/window.js';
+import { LaunchArguments } from '../common/launch-arguments.js';
+import { LaunchArgvParser } from './launch-argv-parser.js';
+import { LaunchArgsStore } from './launch-args-store.js';
+import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory } from './theia-electron-window.js';
+import { ElectronMainApplicationGlobals } from './electron-main-constants.js';
+import { createDisposableListener } from './event-utils.js';
+import { TheiaRendererAPI } from './electron-api-main.js';
+import { StopReason } from '../common/frontend-application-state.js';
+import { dynamicRequire } from '../node/dynamic-require.js';
+import { ThemeMode } from '../common/theme.js';
+import { backendGlobal } from '../node/backend-global.js';
 
 export { ElectronMainApplicationGlobals };
 
-const createYargs: (argv?: string[], cwd?: string) => Argv = require('yargs/yargs');
+const createYargs: (argv?: string[], cwd?: string) => Argv = yargsFactory;
 
 const ELECTRON_TIMER_WARNING_THRESHOLD = 50;
 
@@ -848,9 +849,20 @@ export class ElectronMainApplication {
                 await this.getForkOptions(),
             );
             return new Promise((resolve, reject) => {
-                // The backend server main file is also supposed to send the resolved http(s) server port via IPC.
-                backendProcess.on('message', (address: AddressInfo) => {
-                    resolve(address.port);
+                backendProcess.on('message', (msg: AddressInfo | { type: string, id: string, url: string }) => {
+                    // The backend server main file is supposed to send the resolved proxy via IPC.
+                    if (msg && typeof msg === 'object' && 'type' in msg && msg.type === 'resolve-proxy') {
+                        session.defaultSession.resolveProxy(msg.url).then(
+                            result => backendProcess.send({ type: 'resolve-proxy-response', id: msg.id, result }),
+                            error => {
+                                console.warn(`Proxy resolution failed for ${msg.url}:`, error);
+                                backendProcess.send({ type: 'resolve-proxy-response', id: msg.id, result: undefined });
+                            }
+                        );
+                        return;
+                    }
+                    // The backend server main file is also supposed to send the resolved http(s) server port via IPC.
+                    resolve((msg as AddressInfo).port);
                 });
                 backendProcess.on('error', error => {
                     reject(error);
@@ -959,10 +971,7 @@ export class ElectronMainApplication {
                 const defaultOptions = this.getDefaultOptions();
                 const options: BrowserWindowConstructorOptions = {
                     ...this.getDefaultTheiaSecondaryWindowBounds(),
-                    // We always need the native window frame for now because the secondary window does not have Theia's title bar by default.
-                    // In 'custom' title bar mode this would leave the window without any window controls (close, min, max)
-                    // TODO set to this.useNativeWindowFrame when secondary windows support a custom title bar.
-                    frame: true,
+                    frame: this.didUseNativeWindowFrameOnStart.get(webContents.id) ?? this.useNativeWindowFrame,
                     minWidth: defaultOptions.minWidth,
                     minHeight: defaultOptions.minHeight,
                     webPreferences: {
@@ -970,12 +979,12 @@ export class ElectronMainApplication {
                     }
                 };
 
-                if (!this.useNativeWindowFrame) {
-                    // If the main window does not have a native window frame, do not show  an icon in the secondary window's native title bar.
-                    // The data url is a 1x1 transparent png
-                    options.icon = nativeImage.createFromDataURL(
-                        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12P4DwQACfsD/WMmxY8AAAAASUVORK5CYII=');
+                const appIcon = this.config.electron?.windowOptions?.icon;
+                if (appIcon) {
+                    const iconPath = path.resolve(this.globals.THEIA_APP_PROJECT_PATH, appIcon as string);
+                    options.icon = nativeImage.createFromPath(iconPath);
                 }
+
                 return {
                     action: 'allow',
                     overrideBrowserWindowOptions: options,

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import type { IKeyboardLayoutInfo, IKeyboardMapping } from 'native-keymap';
-import { Event } from '../event';
+import { Event } from '../event.js';
 
 export const keyboardPath = '/services/keyboard';
 

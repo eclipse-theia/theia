@@ -26,7 +26,7 @@ import 'reflect-metadata';
 import { expect } from 'chai';
 import { ApplicationShell } from '@theia/core/lib/browser';
 import { ChatService, ChatSession } from '@theia/ai-chat';
-import { isChatSessionFocused } from './chat-session-focus';
+import { isChatSessionFocused } from './chat-session-focus.js';
 
 disableJSDOM();
 

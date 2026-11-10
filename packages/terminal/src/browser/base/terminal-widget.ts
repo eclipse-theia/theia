@@ -19,8 +19,8 @@ import { BaseWidget } from '@theia/core/lib/browser';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import { ThemeIcon } from '@theia/core/lib/common/theme';
 import { CommandLineOptions } from '@theia/process/lib/common/shell-command-builder';
-import { TerminalSearchWidget } from '../search/terminal-search-widget';
-import { TerminalProcessInfo, TerminalExitReason } from '../../common/base-terminal-protocol';
+import { TerminalSearchWidget } from '../search/terminal-search-widget.js';
+import { TerminalProcessInfo, TerminalExitReason } from '../../common/base-terminal-protocol.js';
 import URI from '@theia/core/lib/common/uri';
 
 export interface TerminalDimensions {

@@ -1,7 +1,8 @@
 {
   "name": "@theia/plugin-utils",
-  "version": "1.76.0",
+  "version": "1.77.0",
   "description": "Theia - Shared plugin manifest utilities",
+  "type": "module",
   "dependencies": {
     "@types/fs-extra": "^4.0.15",
     "fs-extra": "^4.0.3",
@@ -33,9 +34,16 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.76.0"
+    "@theia/ext-scripts": "1.77.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
   }
 }

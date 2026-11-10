@@ -18,74 +18,75 @@ import '../../src/browser/style/index.css';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import {
     MenuContribution, CommandContribution, quickInputServicePath, createPreferenceProxy,
-    OVERRIDE_PROPERTY_PATTERN, PreferenceChange, PreferenceScope, PreferenceService,
+    PreferenceChange, PreferenceScope, PreferenceService,
     PreferenceSchemaService
 } from '@theia/core/lib/common';
 import {
     FrontendApplicationContribution, KeybindingContribution, QuickInputService, StylingParticipant, WebSocketConnectionProvider, UndoRedoHandler, WidgetStatusBarContribution
 } from '@theia/core/lib/browser';
 import { TextEditorProvider, DiffNavigatorProvider, TextEditor, FormatterService } from '@theia/editor/lib/browser';
-import { MonacoEditorProvider, MonacoEditorFactory, SaveParticipant } from './monaco-editor-provider';
-import { MonacoEditorMenuContribution } from './monaco-menu';
-import { MonacoEditorCommandHandlers } from './monaco-command';
-import { MonacoKeybindingContribution } from './monaco-keybinding';
-import { MonacoLanguages } from './monaco-languages';
-import { MonacoWorkspace } from './monaco-workspace';
-import { ActiveMonacoEditorContribution, MonacoEditorService, MonacoEditorServiceFactory, VSCodeContextKeyService, VSCodeThemeService } from './monaco-editor-service';
-import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
-import { MonacoTextModelService, MonacoEditorModelFactory, MonacoEditorModelFilter } from './monaco-text-model-service';
-import { MonacoContextMenuService } from './monaco-context-menu';
-import { MonacoOutlineContribution } from './monaco-outline-contribution';
-import { MonacoStatusBarContribution } from './monaco-status-bar-contribution';
-import { MonacoCommandService } from './monaco-command-service';
-import { MonacoCommandRegistry } from './monaco-command-registry';
-import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory';
-import { MonacoFrontendApplicationContribution } from './monaco-frontend-application-contribution';
-import MonacoTextmateModuleBinder from './textmate/monaco-textmate-frontend-bindings';
-import { MonacoBulkEditService } from './monaco-bulk-edit-service';
-import { MonacoOutlineDecorator } from './monaco-outline-decorator';
+import { MonacoEditorProvider, MonacoEditorFactory, SaveParticipant } from './monaco-editor-provider.js';
+import { MonacoEditorMenuContribution } from './monaco-menu.js';
+import { MonacoEditorCommandHandlers } from './monaco-command.js';
+import { MonacoKeybindingContribution } from './monaco-keybinding.js';
+import { MonacoLanguages } from './monaco-languages.js';
+import { MonacoWorkspace } from './monaco-workspace.js';
+import { ActiveMonacoEditorContribution, MonacoEditorService, MonacoEditorServiceFactory, VSCodeContextKeyService, VSCodeThemeService } from './monaco-editor-service.js';
+import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService.js';
+import { MonacoTextModelService, MonacoEditorModelFactory, MonacoEditorModelFilter } from './monaco-text-model-service.js';
+import { MonacoContextMenuService } from './monaco-context-menu.js';
+import { MonacoOutlineContribution } from './monaco-outline-contribution.js';
+import { MonacoStatusBarContribution } from './monaco-status-bar-contribution.js';
+import { MonacoCommandService } from './monaco-command-service.js';
+import { MonacoCommandRegistry } from './monaco-command-registry.js';
+import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory.js';
+import { MonacoFrontendApplicationContribution } from './monaco-frontend-application-contribution.js';
+import MonacoTextmateModuleBinder from './textmate/monaco-textmate-frontend-bindings.js';
+import { MonacoBulkEditService } from './monaco-bulk-edit-service.js';
+import { MonacoOutlineDecorator } from './monaco-outline-decorator.js';
 import { OutlineTreeDecorator } from '@theia/outline-view/lib/browser/outline-decorator-service';
-import { MonacoSnippetSuggestProvider } from './monaco-snippet-suggest-provider';
+import { MonacoSnippetSuggestProvider } from './monaco-snippet-suggest-provider.js';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { MonacoContextKeyService } from './monaco-context-key-service';
-import { MonacoMimeService } from './monaco-mime-service';
+import { MonacoContextKeyService } from './monaco-context-key-service.js';
+import { MonacoMimeService } from './monaco-mime-service.js';
 import { MimeService } from '@theia/core/lib/browser/mime-service';
-import { MonacoEditorServices } from './monaco-editor';
-import { MonacoColorRegistry } from './monaco-color-registry';
+import { MonacoEditorServices } from './monaco-editor.js';
+import { MonacoColorRegistry } from './monaco-color-registry.js';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
-import { MonacoIconRegistry } from './monaco-icon-registry';
+import { MonacoIconRegistry } from './monaco-icon-registry.js';
 import { IconRegistry } from '@theia/core/lib/browser/icon-registry';
-import { MonacoThemingService } from './monaco-theming-service';
+import { MonacoThemingService } from './monaco-theming-service.js';
 import { bindRootContributionProvider } from '@theia/core';
-import { WorkspaceSymbolCommand } from './workspace-symbol-command';
+import { WorkspaceSymbolCommand } from './workspace-symbol-command.js';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
-import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
-import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
-import { MonacoFormattingConflictsContribution } from './monaco-formatting-conflicts';
-import { MonacoFormatterService } from './monaco-formatter-service';
-import { MonacoQuickInputImplementation, MonacoQuickInputService } from './monaco-quick-input-service';
-import { GotoLineQuickAccessContribution } from './monaco-gotoline-quick-access';
-import { GotoSymbolQuickAccessContribution } from './monaco-gotosymbol-quick-access';
+import { MonacoToProtocolConverter } from './monaco-to-protocol-converter.js';
+import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter.js';
+import { MonacoFormattingConflictsContribution } from './monaco-formatting-conflicts.js';
+import { MonacoFormatterService } from './monaco-formatter-service.js';
+import { MonacoQuickInputImplementation, MonacoQuickInputService } from './monaco-quick-input-service.js';
+import { GotoLineQuickAccessContribution } from './monaco-gotoline-quick-access.js';
+import { GotoSymbolQuickAccessContribution } from './monaco-gotosymbol-quick-access.js';
 import { QuickAccessContribution, QuickAccessRegistry } from '@theia/core/lib/browser/quick-input/quick-access';
-import { MonacoQuickAccessRegistry } from './monaco-quick-access-registry';
-import { ConfigurationTarget, IConfigurationChangeEvent, IConfigurationService } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration.js';
-import { StandaloneConfigurationService, StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { MonacoQuickAccessRegistry } from './monaco-quick-access-registry.js';
+import { ConfigurationTarget, IConfigurationChangeEvent,
+    IConfigurationOverrides, IConfigurationService } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration.js';
+import { StandaloneConfigurationService, StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
 import { Configuration } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configurationModels.js';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
-import { MonacoMarkdownRenderer } from './markdown-renderer/monaco-markdown-renderer';
+import { MonacoMarkdownRenderer } from './markdown-renderer/monaco-markdown-renderer.js';
 import { ThemeService } from '@theia/core/lib/browser/theming';
-import { ThemeServiceWithDB } from './monaco-indexed-db';
+import { ThemeServiceWithDB } from './monaco-indexed-db.js';
 import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey.js';
 import { IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService.js';
-import { ActiveMonacoUndoRedoHandler, FocusedMonacoUndoRedoHandler } from './monaco-undo-redo-handler';
-import { ILogService } from '@theia/monaco-editor-core/esm/vs/platform/log/common/log';
-import { DefaultContentHoverWidgetPatcher } from './default-content-hover-widget-patcher';
-import { MonacoWorkspaceContextService } from './monaco-workspace-context-service';
-import { MonacoCodeActionSaveParticipant } from './monaco-code-action-save-participant';
-import { MonacoCodeActionService, MonacoCodeActionServiceImpl } from './monaco-code-action-service';
-import { MonacoDiffComputer } from './monaco-diff-computer';
+import { ActiveMonacoUndoRedoHandler, FocusedMonacoUndoRedoHandler } from './monaco-undo-redo-handler.js';
+import { ILogService } from '@theia/monaco-editor-core/esm/vs/platform/log/common/log.js';
+import { DefaultContentHoverWidgetPatcher } from './default-content-hover-widget-patcher.js';
+import { MonacoWorkspaceContextService } from './monaco-workspace-context-service.js';
+import { MonacoCodeActionSaveParticipant } from './monaco-code-action-save-participant.js';
+import { MonacoCodeActionService, MonacoCodeActionServiceImpl } from './monaco-code-action-service.js';
+import { MonacoDiffComputer } from './monaco-diff-computer.js';
 import { DiffComputer } from '@theia/core/lib/common/diff';
-import { MonacoEditorContentMenuContribution } from './monaco-editor-content-menu';
+import { MonacoEditorContentMenuContribution } from './monaco-editor-content-menu.js';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(MonacoThemingService).toSelf().inSingletonScope();
@@ -224,11 +225,9 @@ export function createMonacoConfigurationService(container: interfaces.Container
     const service = new StandaloneConfigurationService(StandaloneServices.get(ILogService));
     const _configuration: Configuration = service['_configuration'];
 
-    _configuration.getValue = (section, overrides) => {
-        const overrideIdentifier: string | undefined = (overrides && 'overrideIdentifier' in overrides && typeof overrides.overrideIdentifier === 'string')
-            ? overrides['overrideIdentifier']
-            : undefined;
-        const resourceUri: string | undefined = (overrides && 'resource' in overrides && !!overrides['resource']) ? overrides['resource'].toString() : undefined;
+    _configuration.getValue = (section, overrides: IConfigurationOverrides) => {
+        const overrideIdentifier = overrides.overrideIdentifier || undefined;
+        const resourceUri = overrides.resource?.toString();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const proxy = createPreferenceProxy<{ [key: string]: any }>(preferences, preferenceSchemaService.getJSONSchema(PreferenceScope.Folder), {
             resourceUri, overrideIdentifier, style: 'both'
@@ -296,15 +295,8 @@ export function createMonacoConfigurationService(container: interfaces.Container
                     return false;
                 }
                 for (const change of context.changes) {
-                    const overridden = preferences.overriddenPreferenceName(change.preferenceName);
-                    const preferenceName = overridden ? overridden.preferenceName : change.preferenceName;
-                    if (preferenceName.startsWith(prefix)) {
-                        if (options?.overrideIdentifier !== undefined) {
-                            if (overridden && overridden.overrideIdentifier !== options?.overrideIdentifier) {
-                                continue;
-                            }
-                        }
-                        if (change.affects(options?.resource?.toString())) {
+                    if (change.preferenceName.startsWith(prefix)) {
+                        if (change.affects(options?.resource?.toString(), options?.overrideIdentifier || undefined)) {
                             return true;
                         }
                     }
@@ -317,8 +309,7 @@ export function createMonacoConfigurationService(container: interfaces.Container
     preferences.onPreferencesChanged(event => {
         let source: ConfigurationTarget | undefined;
         let context = newFireDidChangeConfigurationContext();
-        for (let key of Object.keys(event)) {
-            const change = event[key];
+        for (const change of event) {
             const target = toTarget(change.scope);
             if (source !== undefined && target !== source) {
                 fireDidChangeConfiguration(source, context);
@@ -327,27 +318,22 @@ export function createMonacoConfigurationService(container: interfaces.Container
             context.changes.push(change);
             source = target;
 
-            let overrideKeys: Set<string> | undefined;
-            if (key.startsWith('[')) {
-                const index = key.indexOf('.');
-                const override = key.substring(0, index);
-                const overrideIdentifier = override.match(OVERRIDE_PROPERTY_PATTERN)?.[1];
-                if (overrideIdentifier) {
-                    context.keys.add(override);
-                    context.affectedKeys.add(override);
-                    overrideKeys = context.overrides.get(overrideIdentifier) || new Set<string>();
-                    context.overrides.set(overrideIdentifier, overrideKeys);
-                    key = key.substring(index + 1);
-                }
-            }
+            let key = change.preferenceName;
+            const overrideKeys = new Set<string>();
             while (key) {
-                if (overrideKeys) {
-                    overrideKeys.add(key);
-                }
+                overrideKeys.add(key);
                 context.keys.add(key);
                 context.affectedKeys.add(key);
                 const index = key.lastIndexOf('.');
                 key = key.substring(0, index);
+            }
+
+            if (preferenceSchemaService.getSchemaProperty(change.preferenceName)?.overridable) {
+                for (const override of change.affectedOverrides) {
+                    const existingOverrides = context.overrides.get(override) || new Set<string>();
+                    context.overrides.set(override, existingOverrides);
+                    overrideKeys.forEach(k => existingOverrides.add(k));
+                }
             }
         }
         if (source) {

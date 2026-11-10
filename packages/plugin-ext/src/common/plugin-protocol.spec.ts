@@ -18,7 +18,7 @@ import { expect } from 'chai';
 import '@theia/core/lib/common/message-rpc';
 import { MsgPackMessageDecoder, MsgPackMessageEncoder } from '@theia/core/lib/common/message-rpc/rpc-message-encoder';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '@theia/core/lib/common/message-rpc/uint8-array-message-buffer';
-import { DuplicateExtensionError } from './plugin-protocol';
+import { DuplicateExtensionError } from './plugin-protocol.js';
 
 describe('DuplicateExtensionError', () => {
 

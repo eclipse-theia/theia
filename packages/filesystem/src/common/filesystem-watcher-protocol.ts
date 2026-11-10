@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { RpcServer } from '@theia/core';
-import { FileChangeType } from './files';
+import { FileChangeType } from './files.js';
 export { FileChangeType };
 
 export const FileSystemWatcherService = Symbol('FileSystemWatcherServer2');

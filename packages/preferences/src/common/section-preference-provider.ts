@@ -16,7 +16,7 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { AbstractResourcePreferenceProvider } from './abstract-resource-preference-provider';
+import { AbstractResourcePreferenceProvider } from './abstract-resource-preference-provider.js';
 import { PreferenceConfigurations } from '@theia/core';
 
 export const SectionPreferenceProviderUri = Symbol('SectionPreferenceProviderUri');
@@ -64,9 +64,9 @@ export abstract class SectionPreferenceProvider extends AbstractResourcePreferen
         }
     }
 
-    protected override getPath(preferenceName: string): string[] | undefined {
+    protected override getPath(preferenceName: string, overrideIdentifier?: string): string[] | undefined {
         if (!this.isSection) {
-            return super.getPath(preferenceName);
+            return super.getPath(preferenceName, overrideIdentifier);
         }
         if (preferenceName === this.section) {
             return [];

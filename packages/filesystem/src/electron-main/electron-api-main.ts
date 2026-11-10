@@ -18,7 +18,7 @@ import { injectable } from '@theia/core/shared/inversify';
 
 import { ElectronMainApplication, ElectronMainApplicationContribution } from '@theia/core/lib/electron-main/electron-main-application';
 import { MaybePromise } from '@theia/core';
-import { CHANNEL_SHOW_OPEN, CHANNEL_SHOW_SAVE, OpenDialogOptions, SaveDialogOptions } from '../electron-common/electron-api';
+import { CHANNEL_SHOW_OPEN, CHANNEL_SHOW_SAVE, OpenDialogOptions, SaveDialogOptions } from '../electron-common/electron-api.js';
 import { ipcMain, OpenDialogOptions as ElectronOpenDialogOptions, SaveDialogOptions as ElectronSaveDialogOptions, BrowserWindow, dialog }
     from '@theia/core/electron-shared/electron';
 
@@ -50,7 +50,9 @@ export class ElectronApi implements ElectronMainApplicationContribution {
             };
 
             if (options.modal) {
-                const win = BrowserWindow.fromWebContents(event.sender);
+                const win = options.windowName
+                    ? BrowserWindow.getAllWindows().find(w => w.webContents.mainFrame.name === options.windowName)
+                    : BrowserWindow.fromWebContents(event.sender);
                 if (win) {
                     return (await dialog.showOpenDialog(win, dialogOpts)).filePaths;
                 }
@@ -66,7 +68,9 @@ export class ElectronApi implements ElectronMainApplicationContribution {
                 title: options.title
             };
             if (options.modal) {
-                const win = BrowserWindow.fromWebContents(event.sender);
+                const win = options.windowName
+                    ? BrowserWindow.getAllWindows().find(w => w.webContents.mainFrame.name === options.windowName)
+                    : BrowserWindow.fromWebContents(event.sender);
                 if (win) {
                     return (await dialog.showSaveDialog(win, dialogOpts)).filePath;
                 }

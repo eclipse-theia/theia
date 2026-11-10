@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { UserPreferenceProvider, UserPreferenceProviderFactory } from '../common/user-preference-provider';
-import { SectionPreferenceProviderUri, SectionPreferenceProviderSection } from '../common/section-preference-provider';
+import { UserPreferenceProvider, UserPreferenceProviderFactory } from '../common/user-preference-provider.js';
+import { SectionPreferenceProviderUri, SectionPreferenceProviderSection } from '../common/section-preference-provider.js';
 import { bindFactory, PreferenceProvider, PreferenceScope, URI } from '@theia/core';
-import { UserConfigsPreferenceProvider, UserStorageLocationProvider } from '../common/user-configs-preference-provider';
+import { UserConfigsPreferenceProvider, UserStorageLocationProvider } from '../common/user-configs-preference-provider.js';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 
 export function bindPreferenceProviders(bind: interfaces.Bind): void {

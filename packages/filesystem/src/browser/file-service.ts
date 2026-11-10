@@ -52,22 +52,22 @@ import {
     ResolveFileResult, ResolveFileResultWithMetadata,
     MoveFileOptions, CopyFileOptions, BaseStatWithMetadata, FileDeleteOptions, FileOperationOptions, hasAccessCapability, hasUpdateCapability,
     hasFileReadStreamCapability, FileSystemProviderWithFileReadStreamCapability, ReadOnlyMessageFileSystemProvider
-} from '../common/files';
+} from '../common/files.js';
 import { BinaryBuffer, BinaryBufferReadable, BinaryBufferReadableStream, BinaryBufferReadableBufferedStream, BinaryBufferWriteableStream } from '@theia/core/lib/common/buffer';
 import { ReadableStream, isReadableStream, isReadableBufferedStream, transform, consumeStream, peekStream, peekReadable, Readable } from '@theia/core/lib/common/stream';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { FileSystemPreferences } from '../common/filesystem-preferences';
+import { FileSystemPreferences } from '../common/filesystem-preferences.js';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
-import { DelegatingFileSystemProvider } from '../common/delegating-file-system-provider';
+import { DelegatingFileSystemProvider } from '../common/delegating-file-system-provider.js';
 import type { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
 import { UTF8, UTF8_with_bom } from '@theia/core/lib/common/encodings';
 import { EncodingService, ResourceEncoding, DecodeStreamResult } from '@theia/core/lib/common/encoding-service';
 import { Minimatch } from 'minimatch';
 import { Mutable } from '@theia/core/lib/common/types';
-import { readFileIntoStream } from '../common/io';
-import { FileSystemWatcherErrorHandler } from './filesystem-watcher-error-handler';
-import { FileSystemUtils } from '../common/filesystem-utils';
+import { readFileIntoStream } from '../common/io.js';
+import { FileSystemWatcherErrorHandler } from './filesystem-watcher-error-handler.js';
+import { FileSystemUtils } from '../common/filesystem-utils.js';
 import { nls, ILogger } from '@theia/core';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 

@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { isObject } from './types';
-import URI from './uri';
+import { isObject } from './types.js';
+import URI from './uri.js';
 
 export interface UriSelection {
     readonly uri: URI

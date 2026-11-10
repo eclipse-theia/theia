@@ -16,15 +16,22 @@
 
 import { Container, injectable } from 'inversify';
 import type { IWindowsKeyMapping } from 'native-keymap';
-import { Emitter, Event } from '../../common/event';
-import { Key, KeyCode, LayoutModifiers, NormalizedKeyboardInput } from './keys';
-import { KeyboardLayoutService } from './keyboard-layout-service';
+import { Emitter, Event } from '../../common/event.js';
+import { Key, KeyCode, LayoutModifiers, NormalizedKeyboardInput } from './keys.js';
+import { KeyboardLayoutService } from './keyboard-layout-service.js';
 import {
     KeyboardLayoutProvider, NativeKeyboardLayout, KeyboardLayoutChangeNotifier, KeyValidationInput, KeyValidator, KeyboardLayoutSource
-} from '../../common/keyboard/keyboard-layout-provider';
-import * as os from '../../common/os';
+} from '../../common/keyboard/keyboard-layout-provider.js';
 import * as chai from 'chai';
-import * as sinon from 'sinon';
+import deGermanMacLayout from '../../common/keyboard/layouts/de-German-mac.json' with { type: 'json' };
+import deGermanPcLayout from '../../common/keyboard/layouts/de-German-pc.json' with { type: 'json' };
+import frFrenchMacLayout from '../../common/keyboard/layouts/fr-French-mac.json' with { type: 'json' };
+import frFrenchPcLayout from '../../common/keyboard/layouts/fr-French-pc.json' with { type: 'json' };
+import deSwissGermanPcLayout from '../../common/keyboard/layouts/de-Swiss_German-pc.json' with { type: 'json' };
+import enUSMacLayout from '../../common/keyboard/layouts/en-US-mac.json' with { type: 'json' };
+import enUSPcLayout from '../../common/keyboard/layouts/en-US-pc.json' with { type: 'json' };
+import frBepoPcLayout from '../../common/keyboard/layouts/fr-Bepo-pc.json' with { type: 'json' };
+import { OSStub, stubOS } from '../../common/test/stub-os.js';
 
 class TestKeyboardLayoutService extends KeyboardLayoutService {
     public override getWindowsKeyCodeInterpretations(keyCode: KeyCode, input: NormalizedKeyboardInput,
@@ -46,10 +53,19 @@ const RUSSIAN_LAYOUT: NativeKeyboardLayout = {
     }
 };
 
+const deGermanMac = deGermanMacLayout as unknown as NativeKeyboardLayout;
+const deGermanPc = deGermanPcLayout as unknown as NativeKeyboardLayout;
+const frFrenchMac = frFrenchMacLayout as unknown as NativeKeyboardLayout;
+const frFrenchPc = frFrenchPcLayout as unknown as NativeKeyboardLayout;
+const deSwissGermanPc = deSwissGermanPcLayout as unknown as NativeKeyboardLayout;
+const enUSMac = enUSMacLayout as unknown as NativeKeyboardLayout;
+const enUSPc = enUSPcLayout as unknown as NativeKeyboardLayout;
+const frBepoPc = frBepoPcLayout as unknown as NativeKeyboardLayout;
+
 describe('keyboard layout service', function (): void {
 
-    let stubOSX: sinon.SinonStub;
-    let stubWindows: sinon.SinonStub;
+    let stubOSX: OSStub;
+    let stubWindows: OSStub;
 
     const setup = async (
         layout: NativeKeyboardLayout,
@@ -59,16 +75,16 @@ describe('keyboard layout service', function (): void {
     ) => {
         switch (system) {
             case 'mac':
-                stubOSX = sinon.stub(os, 'isOSX').value(true);
-                stubWindows = sinon.stub(os, 'isWindows').value(false);
+                stubOSX = stubOS('isOSX', true);
+                stubWindows = stubOS('isWindows', false);
                 break;
             case 'win':
-                stubOSX = sinon.stub(os, 'isOSX').value(false);
-                stubWindows = sinon.stub(os, 'isWindows').value(true);
+                stubOSX = stubOS('isOSX', false);
+                stubWindows = stubOS('isWindows', true);
                 break;
             default:
-                stubOSX = sinon.stub(os, 'isOSX').value(false);
-                stubWindows = sinon.stub(os, 'isWindows').value(false);
+                stubOSX = stubOS('isOSX', false);
+                stubWindows = stubOS('isWindows', false);
         }
         const container = new Container();
         container.bind(KeyboardLayoutService).to(TestKeyboardLayoutService).inSingletonScope();
@@ -109,7 +125,7 @@ describe('keyboard layout service', function (): void {
     });
 
     it('resolves correct key bindings with German Mac layout', async () => {
-        const macGerman = require('../../../src/common/keyboard/layouts/de-German-mac.json');
+        const macGerman = deGermanMac;
         const service = await setup(macGerman, 'mac');
 
         const toggleComment = service.resolveKeyCode(KeyCode.createKeyCode('Slash+M1'));
@@ -126,7 +142,7 @@ describe('keyboard layout service', function (): void {
     });
 
     it('resolves correct key bindings with French Mac layout', async () => {
-        const macFrench = require('../../../src/common/keyboard/layouts/fr-French-mac.json');
+        const macFrench = frFrenchMac;
         const service = await setup(macFrench, 'mac');
 
         const toggleComment = service.resolveKeyCode(KeyCode.createKeyCode('Slash+M1'));
@@ -187,7 +203,7 @@ describe('keyboard layout service', function (): void {
     });
 
     it('matches shifted physical scan-code bindings through the command interpretation', async () => {
-        const us = require('../../../src/common/keyboard/layouts/en-US-pc.json');
+        const us = enUSPc;
         const service = await setup(us, 'linux');
         const physical = service.resolveKeyCode(KeyCode.parse('ctrl+shift+[BracketRight]'));
         const interpretations = service.getKeyCodeInterpretations({
@@ -198,7 +214,7 @@ describe('keyboard layout service', function (): void {
     });
 
     it('keeps BÉPO logical bindings distinct from their former US-position collisions', async () => {
-        const bepo = require('../../../src/common/keyboard/layouts/fr-Bepo-pc.json');
+        const bepo = frBepoPc;
         const service = await setup(bepo, 'linux');
 
         const undo = service.resolveKeyCode(KeyCode.parse('ctrl+z'));
@@ -244,7 +260,7 @@ describe('keyboard layout service', function (): void {
     });
 
     it('does not override Latin letters produced elsewhere on the layout', async () => {
-        const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
+        const german = deGermanPc;
         const service = await setup(german, 'linux');
 
         chai.expect(service.resolveKeyCode(KeyCode.parse('ctrl+z')).key).to.equal(Key.KEY_Y);
@@ -368,8 +384,8 @@ describe('keyboard layout service', function (): void {
             stubOSX.restore();
             stubWindows.restore();
         }
-        stubOSX = sinon.stub(os, 'isOSX').value(false);
-        stubWindows = sinon.stub(os, 'isWindows').value(false);
+        stubOSX = stubOS('isOSX', false);
+        stubWindows = stubOS('isWindows', false);
     });
 
     it('retains the Windows vkey fallback for value-less mappings', async () => {
@@ -384,7 +400,7 @@ describe('keyboard layout service', function (): void {
     });
 
     it('absorbs authored Shift when it selects a US character or layout shift layer', async () => {
-        const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
+        const german = deGermanPc;
         const service = await setup(german, 'linux');
         const legacy = service.resolveKeyCode(KeyCode.parse('ctrl+shift+['));
         chai.expect(legacy.shift).to.be.false;
@@ -392,7 +408,7 @@ describe('keyboard layout service', function (): void {
     });
 
     it('retains authored Shift when it is not consumed by the logical character', async () => {
-        const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
+        const german = deGermanPc;
         const service = await setup(german, 'linux');
 
         const umlaut = service.resolveKeyCode(KeyCode.parse('ctrl+shift+ü'));
@@ -406,14 +422,14 @@ describe('keyboard layout service', function (): void {
     });
 
     it('requires Option for a macOS Shift+AltGraph layer', async () => {
-        const macUS = require('../../../src/common/keyboard/layouts/en-US-mac.json');
+        const macUS = enUSMac;
         const service = await setup(macUS, 'mac');
         chai.expect(service.detectLayoutModifiers({ key: '±', code: 'IntlBackslash', shiftKey: true })).to.equal('shift');
         chai.expect(service.detectLayoutModifiers({ key: '±', code: 'IntlBackslash', shiftKey: true, altKey: true })).to.equal('shiftAltGraph');
     });
 
     it('interprets macOS Option as a command modifier besides the Option layer', async () => {
-        const macUS = require('../../../src/common/keyboard/layouts/en-US-mac.json');
+        const macUS = enUSMac;
         const service = await setup(macUS, 'mac');
 
         const optionShift = service.getKeyCodeInterpretations({ key: '∏', code: 'KeyP', shiftKey: true, altKey: true }, 'code');
@@ -430,7 +446,7 @@ describe('keyboard layout service', function (): void {
     });
 
     it('records the base character for dead Option keys on macOS', async () => {
-        const service = await setup(require('../../../src/common/keyboard/layouts/en-US-mac.json'), 'mac');
+        const service = await setup(enUSMac, 'mac');
 
         const option = service.getKeyCodeInterpretations({ key: 'Dead', code: 'KeyE', altKey: true }, 'code');
         chai.expect(option).to.have.length(1);
@@ -448,7 +464,7 @@ describe('keyboard layout service', function (): void {
     });
 
     it('normalizes the character to the layout layer when Caps Lock inverts the case', async () => {
-        const us = await setup(require('../../../src/common/keyboard/layouts/en-US-pc.json'), 'linux');
+        const us = await setup(enUSPc, 'linux');
         const capsShift = us.getKeyCodeInterpretations({ key: 'p', code: 'KeyP', ctrlKey: true, shiftKey: true }, 'code');
         chai.expect(capsShift.map(candidate => candidate.character)).to.deep.equal(['P', 'P']);
         chai.expect(capsShift.map(candidate => candidate.dispatchString())).to.deep.equal(['shift+ctrl+p', 'ctrl+p@shift']);
@@ -457,7 +473,7 @@ describe('keyboard layout service', function (): void {
         stubOSX.restore();
         stubWindows.restore();
 
-        const german = await setup(require('../../../src/common/keyboard/layouts/de-German-pc.json'), 'linux');
+        const german = await setup(deGermanPc, 'linux');
         const capsBase = german.getKeyCodeInterpretations({ key: 'Ü', code: 'BracketLeft', ctrlKey: true }, 'code');
         chai.expect(capsBase).to.have.length(1);
         chai.expect(capsBase[0].character).to.equal('ü');
@@ -465,7 +481,7 @@ describe('keyboard layout service', function (): void {
     });
 
     it('normalizes the character to the macOS Option layer when Caps Lock inverts the case', async () => {
-        const service = await setup(require('../../../src/common/keyboard/layouts/en-US-mac.json'), 'mac');
+        const service = await setup(enUSMac, 'mac');
         const capsOption = service.getKeyCodeInterpretations({ key: 'Å', code: 'KeyA', altKey: true }, 'code');
         chai.expect(capsOption.map(candidate => candidate.character)).to.deep.equal(['a', 'å']);
         chai.expect(capsOption.map(candidate => candidate.dispatchString())).to.deep.equal(['alt+a', 'a@altgraph']);
@@ -477,7 +493,7 @@ describe('keyboard layout service', function (): void {
 
     it('attributes Shift to the Shift layer when input reports the base character', async () => {
         // Test automation such as Puppeteer can report the base character while Shift is held.
-        const us = require('../../../src/common/keyboard/layouts/en-US-pc.json');
+        const us = enUSPc;
         const service = await setup(us, 'linux');
         const input: NormalizedKeyboardInput = { key: '`', code: 'Backquote', ctrlKey: true, shiftKey: true };
 
@@ -525,7 +541,7 @@ describe('keyboard layout service', function (): void {
     });
 
     it('does not add an AltGraph layer to Linux Alt+Shift input', async () => {
-        const service = await setup(require('../../../src/common/keyboard/layouts/en-US-pc.json'), 'linux');
+        const service = await setup(enUSPc, 'linux');
         chai.expect(service.getKeyCodeInterpretations({ key: 'P', code: 'KeyP', shiftKey: true, altKey: true }, 'code')
             .map(candidate => candidate.dispatchString())).to.deep.equal(['shift+alt+p', 'alt+p@shift']);
     });
@@ -560,7 +576,7 @@ describe('keyboard layout service', function (): void {
     });
 
     it('constructs Linux layout modifier interpretations only for participating AltGraph', async () => {
-        const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
+        const german = deGermanPc;
         const service = await setup(german, 'linux');
 
         const participating = service.getKeyCodeInterpretations({ key: '[', code: 'Digit8', altGraph: true }, 'code');
@@ -580,7 +596,7 @@ describe('keyboard layout service', function (): void {
     });
 
     it('keeps shifted printable bindings symmetric in keyCode dispatch mode', async () => {
-        const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
+        const german = deGermanPc;
         const service = await setup(german, 'linux');
 
         const commandPalette = KeyCode.parse('ctrl+shift+p');
@@ -592,7 +608,7 @@ describe('keyboard layout service', function (): void {
     });
 
     it('constructs command-first and layout modifier Windows interpretations', async () => {
-        const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
+        const german = deGermanPc;
         const service = await setup(german, 'win');
 
         const interpretations = service.getKeyCodeInterpretations({
@@ -616,7 +632,7 @@ describe('keyboard layout service', function (): void {
     });
 
     it('preserves authored command modifiers alongside explicit Windows AltGraph', async () => {
-        const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
+        const german = deGermanPc;
         const service = await setup(german, 'win');
         const cases = [
             { ctrlKey: false, altKey: false, metaKey: false, expected: '8@altgraph' },
@@ -637,7 +653,7 @@ describe('keyboard layout service', function (): void {
     });
 
     it('keeps legacy Windows AltGraph reporting typing-safe and preserves Meta', async () => {
-        const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
+        const german = deGermanPc;
         const service = await setup(german, 'win');
 
         for (const metaKey of [false, true]) {
@@ -670,7 +686,7 @@ describe('keyboard layout service', function (): void {
     it('passes Linux AltGraph evidence to the key validator', async () => {
         let validated: KeyValidationInput | undefined;
         const validator: KeyValidator = { validateKey: validation => validated = validation };
-        const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
+        const german = deGermanPc;
         const service = await setup(german, 'linux', undefined, validator);
         const input = { key: '[', code: 'Digit8', ctrlKey: true, altGraph: true, shiftKey: false };
 
@@ -682,7 +698,7 @@ describe('keyboard layout service', function (): void {
     it('passes macOS Option evidence to the key validator', async () => {
         let validated: KeyValidationInput | undefined;
         const validator: KeyValidator = { validateKey: validation => validated = validation };
-        const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
+        const german = deGermanPc;
         const service = await setup(german, 'mac', undefined, validator);
         const input = { key: '[', code: 'Digit8', altKey: true, shiftKey: false };
 
@@ -694,7 +710,7 @@ describe('keyboard layout service', function (): void {
     it('passes emulated Windows AltGraph evidence to the key validator', async () => {
         let validated: KeyValidationInput | undefined;
         const validator: KeyValidator = { validateKey: validation => validated = validation };
-        const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
+        const german = deGermanPc;
         const service = await setup(german, 'win', undefined, validator);
         const input = { key: '[', code: 'Digit8', ctrlKey: true, altKey: true, shiftKey: false };
 
@@ -719,10 +735,10 @@ describe('keyboard layout service', function (): void {
 
     it('ingests all Windows layout modifier layers across representative PC layouts', async () => {
         const fixtures = [
-            { layout: require('../../../src/common/keyboard/layouts/de-German-pc.json'), assertions: [['²', Key.DIGIT2, false, true], ['ẞ', Key.MINUS, true, true]] },
-            { layout: require('../../../src/common/keyboard/layouts/fr-French-pc.json'), assertions: [['€', Key.KEY_E, false, true]] },
-            { layout: require('../../../src/common/keyboard/layouts/de-Swiss_German-pc.json'), assertions: [['@', Key.DIGIT2, false, true]] },
-            { layout: require('../../../src/common/keyboard/layouts/fr-Bepo-pc.json'), assertions: [['Æ', Key.KEY_A, true, true]] }
+            { layout: deGermanPc, assertions: [['²', Key.DIGIT2, false, true], ['ẞ', Key.MINUS, true, true]] },
+            { layout: frFrenchPc, assertions: [['€', Key.KEY_E, false, true]] },
+            { layout: deSwissGermanPc, assertions: [['@', Key.DIGIT2, false, true]] },
+            { layout: frBepoPc, assertions: [['Æ', Key.KEY_A, true, true]] }
         ] as const;
 
         for (const fixture of fixtures) {
@@ -737,8 +753,8 @@ describe('keyboard layout service', function (): void {
             stubOSX.restore();
             stubWindows.restore();
         }
-        stubOSX = sinon.stub(os, 'isOSX').value(false);
-        stubWindows = sinon.stub(os, 'isWindows').value(false);
+        stubOSX = stubOS('isOSX', false);
+        stubWindows = stubOS('isWindows', false);
     });
 
     it('handles missing Windows layer values defensively', async () => {
@@ -754,9 +770,9 @@ describe('keyboard layout service', function (): void {
 
     it('resolves logical plus on US, German, and macOS layouts', async () => {
         const fixtures = [
-            { layout: require('../../../src/common/keyboard/layouts/en-US-pc.json'), system: 'win' as const, key: Key.EQUAL, shift: true },
-            { layout: require('../../../src/common/keyboard/layouts/de-German-pc.json'), system: 'win' as const, key: Key.BRACKET_RIGHT, shift: false },
-            { layout: require('../../../src/common/keyboard/layouts/en-US-mac.json'), system: 'mac' as const, key: Key.EQUAL, shift: true }
+            { layout: enUSPc, system: 'win' as const, key: Key.EQUAL, shift: true },
+            { layout: deGermanPc, system: 'win' as const, key: Key.BRACKET_RIGHT, shift: false },
+            { layout: enUSMac, system: 'mac' as const, key: Key.EQUAL, shift: true }
         ];
         for (const fixture of fixtures) {
             const service = await setup(fixture.layout, fixture.system);
@@ -766,12 +782,12 @@ describe('keyboard layout service', function (): void {
             stubOSX.restore();
             stubWindows.restore();
         }
-        stubOSX = sinon.stub(os, 'isOSX').value(false);
-        stubWindows = sinon.stub(os, 'isWindows').value(false);
+        stubOSX = stubOS('isOSX', false);
+        stubWindows = stubOS('isWindows', false);
     });
 
     it('resolves correct key bindings with German Windows layout', async () => {
-        const winGerman = require('../../../src/common/keyboard/layouts/de-German-pc.json');
+        const winGerman = deGermanPc;
         const service = await setup(winGerman, 'win');
 
         const toggleComment = service.resolveKeyCode(KeyCode.createKeyCode('Slash+M1'));
@@ -788,7 +804,7 @@ describe('keyboard layout service', function (): void {
     });
 
     it('resolves correct key bindings with French Windows layout', async () => {
-        const winFrench = require('../../../src/common/keyboard/layouts/fr-French-pc.json');
+        const winFrench = frFrenchPc;
         const service = await setup(winFrench, 'win');
 
         const toggleComment = service.resolveKeyCode(KeyCode.createKeyCode('Slash+M1'));

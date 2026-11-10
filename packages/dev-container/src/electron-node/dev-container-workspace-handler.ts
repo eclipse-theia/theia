@@ -17,7 +17,7 @@ import { URI } from '@theia/core';
 import * as fs from '@theia/core/shared/fs-extra';
 import { injectable } from '@theia/core/shared/inversify';
 import { WorkspaceHandlerContribution } from '@theia/workspace/lib/node/default-workspace-server';
-import { DEV_CONTAINER_PATH_QUERY, DEV_CONTAINER_WORKSPACE_SCHEME } from '../electron-common/dev-container-workspaces';
+import { DEV_CONTAINER_PATH_QUERY, DEV_CONTAINER_WORKSPACE_SCHEME } from '../electron-common/dev-container-workspaces.js';
 
 @injectable()
 export class DevContainerWorkspaceHandler implements WorkspaceHandlerContribution {

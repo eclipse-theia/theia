@@ -14,4 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export const THEIA_VERSION: string = require('../../package.json').version;
+import packageJson from '../../package.json' with { type: 'json' };
+
+export const THEIA_VERSION: string = packageJson.version;

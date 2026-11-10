@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { ContainerModule } from 'inversify';
-import { WebSocketConnectionSource } from '../../browser/messaging/ws-connection-source';
-import { FrontendOnlyConnectionSource, FrontendOnlyServiceConnectionProvider } from './frontend-only-service-connection-provider';
-import { ConnectionSource } from '../../browser/messaging/connection-source';
-import { LocalConnectionProvider, RemoteConnectionProvider } from '../../browser/messaging/service-connection-provider';
+import { WebSocketConnectionSource } from '../../browser/messaging/ws-connection-source.js';
+import { FrontendOnlyConnectionSource, FrontendOnlyServiceConnectionProvider } from './frontend-only-service-connection-provider.js';
+import { ConnectionSource } from '../../browser/messaging/connection-source.js';
+import { LocalConnectionProvider, RemoteConnectionProvider } from '../../browser/messaging/service-connection-provider.js';
 
 // is loaded directly after the regular message frontend module
 export const messagingFrontendOnlyModule = new ContainerModule((bind, unbind, isBound, rebind) => {

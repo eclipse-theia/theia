@@ -17,8 +17,10 @@
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { CancellationToken, CancellationTokenSource, ILogger, generateUuid } from '@theia/core';
 import {
+    LanguageModel,
     LanguageModelMetaData,
     LanguageModelRegistry,
+    LanguageModelResponse,
     isLanguageModelStreamResponse,
     isLanguageModelTextResponse,
     LanguageModelStreamResponsePart,
@@ -29,8 +31,9 @@ import {
     LanguageModelRegistryClient,
     isLanguageModelParsedResponse,
     UserRequest,
-} from '../common';
-import { BackendLanguageModelRegistryImpl } from './backend-language-model-registry';
+    extractErrorMessageWithCause,
+} from '../common/index.js';
+import { BackendLanguageModelRegistryImpl } from './backend-language-model-registry.js';
 
 @injectable()
 export class LanguageModelRegistryFrontendDelegateImpl implements LanguageModelRegistryFrontendDelegate {
@@ -87,7 +90,7 @@ export class LanguageModelFrontendDelegateImpl implements LanguageModelFrontendD
             cancellationToken = tokenSource.token;
             this.requestCancellationTokenMap.set(requestId, tokenSource);
         }
-        const response = await model.request(request, cancellationToken);
+        const response = await this.requestAndFlattenErrors(model, request, cancellationToken);
         if (isLanguageModelTextResponse(response) || isLanguageModelParsedResponse(response)) {
             return response;
         }
@@ -105,6 +108,44 @@ export class LanguageModelFrontendDelegateImpl implements LanguageModelFrontendD
         return response;
     }
 
+    /**
+     * Calls the backend model and flattens any thrown error's `cause` chain into its message.
+     *
+     * This is the single choke point where backend errors are still complete: the RPC error
+     * extension that serializes this rejection to the frontend only keeps `code`, `data`, `message`,
+     * `name` and `stack`, dropping `cause`. Node's `fetch` (undici) reports network failures as an
+     * opaque `TypeError: fetch failed` with the actionable reason (`ECONNREFUSED`, `ENOTFOUND`, TLS
+     * errors, ...) on `error.cause`, so without flattening here the frontend would only ever see
+     * "fetch failed". Flattening the chain into the message preserves the real reason across RPC.
+     */
+    protected async requestAndFlattenErrors(
+        model: LanguageModel,
+        request: UserRequest,
+        cancellationToken?: CancellationToken
+    ): Promise<LanguageModelResponse> {
+        try {
+            return await model.request(request, cancellationToken);
+        } catch (error) {
+            throw this.flattenError(error);
+        }
+    }
+
+    /**
+     * Builds an {@link Error} whose message incorporates the `cause` chain (see
+     * {@link requestAndFlattenErrors}), while preserving the original stack and name. Non-error
+     * inputs are returned unchanged.
+     */
+    protected flattenError(error: unknown): unknown {
+        if (!(error instanceof Error)) {
+            return error;
+        }
+        const enrichedMessage = extractErrorMessageWithCause(error);
+        if (!enrichedMessage || enrichedMessage === error.message) {
+            return error;
+        }
+        return Object.assign(new Error(enrichedMessage), { stack: error.stack, name: error.name });
+    }
+
     protected sendTokens(id: string, stream: AsyncIterable<LanguageModelStreamResponsePart>, cancellationToken?: CancellationToken): void {
         (async () => {
             try {
@@ -113,7 +154,9 @@ export class LanguageModelFrontendDelegateImpl implements LanguageModelFrontendD
                 }
             } catch (e) {
                 if (!cancellationToken?.isCancellationRequested) {
-                    this.frontendDelegateClient.error(id, e);
+                    // Flatten the cause chain before it crosses RPC (which drops `cause`), see
+                    // requestAndFlattenErrors.
+                    this.frontendDelegateClient.error(id, this.flattenError(e) as Error);
                 }
             } finally {
                 this.frontendDelegateClient.send(id, undefined);

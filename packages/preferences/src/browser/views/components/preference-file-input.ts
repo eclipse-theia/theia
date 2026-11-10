@@ -20,10 +20,10 @@ import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { OpenFileDialogProps } from '@theia/filesystem/lib/browser';
 import { FileDialogService } from '@theia/filesystem/lib/browser/file-dialog/file-dialog-service';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
-import { Preference } from '../../util/preference-types';
-import { PreferenceNodeRenderer } from './preference-node-renderer';
-import { PreferenceLeafNodeRendererContribution } from './preference-node-renderer-creator';
-import { PreferenceStringInputRenderer } from './preference-string-input';
+import { Preference } from '../../util/preference-types.js';
+import { PreferenceNodeRenderer } from './preference-node-renderer.js';
+import { PreferenceLeafNodeRendererContribution } from './preference-node-renderer-creator.js';
+import { PreferenceStringInputRenderer } from './preference-string-input.js';
 
 export interface FileNodeTypeDetails {
     isFilepath: true;
@@ -79,7 +79,7 @@ export class PreferenceSingleFilePathInputRenderer extends PreferenceStringInput
     protected createBrowseButton(parent: HTMLElement): void {
         const button = document.createElement('button');
         button.classList.add('theia-button', 'main', 'preference-file-button');
-        button.textContent = nls.localize('theia/preferences/input/browse', 'Browse');
+        button.textContent = nls.localizeByDefault('Browse');
         const handler = this.browse.bind(this);
         button.onclick = handler;
         button.onkeydown = handler;

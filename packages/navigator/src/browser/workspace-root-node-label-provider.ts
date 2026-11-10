@@ -18,7 +18,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 import { FileTreeLabelProvider } from '@theia/filesystem/lib/browser/file-tree/file-tree-label-provider';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { WorkspaceRootNode } from './navigator-tree';
+import { WorkspaceRootNode } from './navigator-tree.js';
 
 /**
  * Shows the name given to a workspace root in the workspace file on its node in the navigator.

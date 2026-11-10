@@ -24,18 +24,19 @@ import {
     PluginDeployerResolverInit,
     PluginDeployerEntryType, PluginDeployerHandler, PluginType, UnresolvedPluginEntry, PluginIdentifiers, PluginDeployOptions,
     DuplicateExtensionError
-} from '../../common/plugin-protocol';
-import { PluginDeployerEntryImpl } from './plugin-deployer-entry-impl';
+} from '../../common/plugin-protocol.js';
+import { PluginDeployerEntryImpl } from './plugin-deployer-entry-impl.js';
 import {
     PluginDeployerResolverContextImpl,
     PluginDeployerResolverInitImpl
-} from './plugin-deployer-resolver-context-impl';
-import { ProxyPluginDeployerEntry } from './plugin-deployer-proxy-entry-impl';
-import { PluginDeployerFileHandlerContextImpl } from './plugin-deployer-file-handler-context-impl';
-import { PluginDeployerDirectoryHandlerContextImpl } from './plugin-deployer-directory-handler-context-impl';
+} from './plugin-deployer-resolver-context-impl.js';
+import { ProxyPluginDeployerEntry } from './plugin-deployer-proxy-entry-impl.js';
+import { PluginDeployerFileHandlerContextImpl } from './plugin-deployer-file-handler-context-impl.js';
+import { PluginDeployerDirectoryHandlerContextImpl } from './plugin-deployer-directory-handler-context-impl.js';
 import { ILogger, Emitter, ContributionProvider } from '@theia/core';
-import { PluginCliContribution } from './plugin-cli-contribution';
+import { PluginCliContribution } from './plugin-cli-contribution.js';
 import { Measurement, Stopwatch } from '@theia/core/lib/common';
+import { ArchiveExtractor } from '@theia/filesystem/lib/node/archive/archive-extractor';
 
 @injectable()
 export class PluginDeployerImpl implements PluginDeployer {
@@ -54,6 +55,9 @@ export class PluginDeployerImpl implements PluginDeployer {
 
     @inject(Stopwatch)
     protected readonly stopwatch: Stopwatch;
+
+    @inject(ArchiveExtractor)
+    protected readonly archiveExtractor: ArchiveExtractor;
 
     /**
      * Inject all plugin resolvers found at runtime.
@@ -340,7 +344,7 @@ export class PluginDeployerImpl implements PluginDeployer {
             this.pluginDeployerFileHandlers.map(async pluginFileHandler => {
                 const proxyPluginDeployerEntry = new ProxyPluginDeployerEntry(pluginFileHandler, (pluginDeployerEntry) as PluginDeployerEntryImpl);
                 if (await pluginFileHandler.accept(proxyPluginDeployerEntry)) {
-                    const pluginDeployerFileHandlerContext = new PluginDeployerFileHandlerContextImpl(proxyPluginDeployerEntry);
+                    const pluginDeployerFileHandlerContext = new PluginDeployerFileHandlerContextImpl(proxyPluginDeployerEntry, this.archiveExtractor);
                     await pluginFileHandler.handle(pluginDeployerFileHandlerContext);
                 }
             })

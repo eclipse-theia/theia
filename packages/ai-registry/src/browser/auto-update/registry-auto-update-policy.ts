@@ -21,7 +21,7 @@ import {
     AUTO_UPDATE_PREF,
     AutoUpdateMode,
     RegistryArtifactKind
-} from '../../common/ai-registry-preferences';
+} from '../../common/ai-registry-preferences.js';
 
 type Overrides = Record<string, AutoUpdateMode>;
 
@@ -111,6 +111,6 @@ export class RegistryAutoUpdatePolicyImpl implements RegistryAutoUpdatePolicy {
     }
 
     protected readOverrides(): Overrides {
-        return this.preferenceService.get<Overrides>(AUTO_UPDATE_OVERRIDES_PREF, {}) ?? {};
+        return this.preferenceService.get<Overrides>(AUTO_UPDATE_OVERRIDES_PREF, {fallback: {}}) ?? {};
     }
 }

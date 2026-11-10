@@ -20,13 +20,11 @@ import * as temp from 'temp';
 import * as fs from '@theia/core/shared/fs-extra';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node';
-import { FileSystemWatcherServiceImpl } from '../filesystem-watcher-service-impl';
+import { FileSystemWatcherServiceImpl } from '../filesystem-watcher-service-impl.js';
 
-// We require the *same* module object that the production code imports from, so that
-// stubbing its `subscribe` export is observed by `ParcelWatcher`. The `@theia/core/shared`
-// shim simply re-exports `require('@parcel/watcher')`, so this is the identical reference.
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const parcel = require('@theia/core/shared/@parcel/watcher');
+// The default export is the same module object that the production code calls `subscribe` on,
+// so that stubbing its `subscribe` export is observed by `ParcelWatcher`.
+import parcel from '@theia/core/shared/@parcel/watcher';
 
 const expect = chai.expect;
 const track = temp.track();

@@ -14,35 +14,35 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import PerfectScrollbar from 'perfect-scrollbar';
+import { PerfectScrollbar } from '../widgets/perfect-scrollbar.js';
 import { TabBar, Title, Widget } from '@lumino/widgets';
 import { VirtualElement, h, VirtualDOM, ElementInlineStyle } from '@lumino/virtualdom';
-import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService, CommandService, nls, ArrayUtils } from '../../common';
-import { ContextMenuRenderer } from '../context-menu-renderer';
+import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService, CommandService, nls, ArrayUtils } from '../../common/index.js';
+import { ContextMenuRenderer } from '../context-menu-renderer.js';
 import { Signal, Slot } from '@lumino/signaling';
 import { Message } from '@lumino/messaging';
 import { ArrayExt } from '@lumino/algorithm';
 import { ElementExt } from '@lumino/domutils';
-import { TabBarToolbarRegistry, TabBarToolbar } from './tab-bar-toolbar';
-import { TheiaDockPanel, MAIN_AREA_ID, BOTTOM_AREA_ID } from './theia-dock-panel';
-import { WidgetDecoration } from '../widget-decoration';
-import { TabBarDecoratorService } from './tab-bar-decorator';
-import { IconThemeService } from '../icon-theme-service';
-import { BreadcrumbsRenderer, BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
-import { NavigatableWidget } from '../navigatable-types';
+import { TabBarToolbarRegistry, TabBarToolbar } from './tab-bar-toolbar/index.js';
+import { TheiaDockPanel, MAIN_AREA_ID, BOTTOM_AREA_ID } from './theia-dock-panel.js';
+import { WidgetDecoration } from '../widget-decoration.js';
+import { TabBarDecoratorService } from './tab-bar-decorator.js';
+import { IconThemeService } from '../icon-theme-service.js';
+import { BreadcrumbsRenderer, BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer.js';
+import { NavigatableWidget } from '../navigatable-types.js';
 import { Drag } from '@lumino/dragdrop';
-import { LOCKED_CLASS, PINNED_CLASS } from '../widgets/widget';
-import { CorePreferences } from '../../common/core-preferences';
-import { HoverService } from '../hover-service';
+import { isPinned, LOCKED_CLASS } from '../widgets/widget.js';
+import { CorePreferences } from '../../common/core-preferences.js';
+import { HoverService } from '../hover-service.js';
 import { Root, createRoot } from 'react-dom/client';
-import { SelectComponent } from '../widgets/select-component';
+import { SelectComponent } from '../widgets/select-component.js';
 import { createElement } from 'react';
-import { PreviewableWidget } from '../widgets/previewable-widget';
-import { EnhancedPreviewWidget } from '../widgets/enhanced-preview-widget';
-import { isContextMenuEvent } from '../browser';
-import { NativeTabDragService } from './native-tab-drag-service';
-import { TabDropHelper } from './tab-drop-helper';
-import { ContextKeyService } from '../context-key-service';
+import { PreviewableWidget } from '../widgets/previewable-widget.js';
+import { EnhancedPreviewWidget } from '../widgets/enhanced-preview-widget.js';
+import { isContextMenuEvent } from '../browser.js';
+import { NativeTabDragService } from './native-tab-drag-service.js';
+import { TabDropHelper } from './tab-drop-helper.js';
+import { ContextKeyService } from '../context-key-service.js';
 
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
 const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
@@ -183,9 +183,6 @@ export class TabBarRenderer extends TabBar.Renderer {
         const style = this.createTabStyle(data);
         const className = `${this.createTabClass(data)}${tabCloseIconStart ? ' closeIcon-start' : ''}`;
         const dataset = this.createTabDataset(data);
-        const closeIconTitle = data.title.className.includes(PINNED_CLASS)
-            ? nls.localizeByDefault('Unpin')
-            : nls.localizeByDefault('Close');
 
         const hover = {
             onmouseenter: this.handleMouseEnterEvent
@@ -199,13 +196,15 @@ export class TabBarRenderer extends TabBar.Renderer {
             this.renderBadge(data, isInSidePanel),
             this.renderLock(data, isInSidePanel)
         );
-        const tabCloseIcon = h.div({
-            className: 'lm-TabBar-tabCloseIcon action-label',
-            title: closeIconTitle,
-            onclick: this.handleCloseClickEvent,
-        });
-
-        const tabContents = tabCloseIconStart ? [tabCloseIcon, tabLabel] : [tabLabel, tabCloseIcon];
+        const tabContents = [tabLabel];
+        if (title.closable || isPinned(title)) {
+            const tabCloseIcon = this.renderCloseIcon(data);
+            if (tabCloseIconStart) {
+                tabContents.unshift(tabCloseIcon);
+            } else {
+                tabContents.push(tabCloseIcon);
+            }
+        }
         const draggable = this.tabBar instanceof ToolbarAwareTabBar && this.tabBar.isNativeTabDragEnabled ? { draggable: 'true' } : {};
 
         return h.li(
@@ -222,6 +221,20 @@ export class TabBarRenderer extends TabBar.Renderer {
             },
             ...tabContents
         );
+    }
+
+    /**
+     * Render the close icon of a tab, which unpins the tab if it is pinned.
+     * Only called for tabs that are closable or pinned.
+     * @param {SideBarRenderData} data Data used to render the tab.
+     * @returns {VirtualElement} The virtual element of the close icon.
+     */
+    override renderCloseIcon(data: SideBarRenderData): VirtualElement {
+        return h.div({
+            className: 'lm-TabBar-tabCloseIcon action-label',
+            title: isPinned(data.title) ? nls.localizeByDefault('Unpin') : nls.localizeByDefault('Close'),
+            onclick: this.handleCloseClickEvent,
+        });
     }
 
     override createTabClass(data: SideBarRenderData): string {
@@ -698,7 +711,7 @@ export class TabBarRenderer extends TabBar.Renderer {
         if (this.tabBar && event.currentTarget instanceof HTMLElement) {
             const id = event.currentTarget.parentElement!.id;
             const title = this.tabBar.titles.find(t => this.createTabId(t) === id);
-            if (title?.closable === false && title?.className.includes(PINNED_CLASS) && this.commandService) {
+            if (title && isPinned(title) && this.commandService) {
                 this.commandService.executeCommand('workbench.action.unpinEditor', event);
             }
         }

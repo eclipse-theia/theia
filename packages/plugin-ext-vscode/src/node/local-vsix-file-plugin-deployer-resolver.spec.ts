@@ -20,7 +20,7 @@ import * as path from 'path';
 import * as fs from '@theia/core/shared/fs-extra';
 import { FileUri } from '@theia/core/lib/node';
 import { DeployedPlugin, DuplicateExtensionError, PluginDeployerResolverContext, PluginDeployOptions, PluginType } from '@theia/plugin-ext';
-import { LocalVSIXFilePluginDeployerResolver } from './local-vsix-file-plugin-deployer-resolver';
+import { LocalVSIXFilePluginDeployerResolver } from './local-vsix-file-plugin-deployer-resolver.js';
 
 /** Writes a minimal archive with an `extension/package.json`. `decompress` detects the format from the content, so a tar is enough. */
 async function writeVsix(file: string, version: string): Promise<void> {

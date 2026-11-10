@@ -17,9 +17,9 @@
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { CommandContribution } from '@theia/core/lib/common';
 import { KeybindingContribution, WebSocketConnectionProvider } from '@theia/core/lib/browser';
-import { bindExternalTerminalPreferences } from './external-terminal-preference';
-import { ExternalTerminalFrontendContribution } from './external-terminal-contribution';
-import { ExternalTerminalService, externalTerminalServicePath } from '../common/external-terminal';
+import { bindExternalTerminalPreferences } from './external-terminal-preference.js';
+import { ExternalTerminalFrontendContribution } from './external-terminal-contribution.js';
+import { ExternalTerminalService, externalTerminalServicePath } from '../common/external-terminal.js';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bind(ExternalTerminalFrontendContribution).toSelf().inSingletonScope();

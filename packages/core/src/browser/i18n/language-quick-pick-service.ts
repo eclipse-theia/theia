@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { nls } from '../../common/nls';
-import { AsyncLocalizationProvider, LanguageInfo } from '../../common/i18n/localization';
-import { QuickInputService, QuickPickItem, QuickPickSeparator } from '../quick-input';
-import { WindowService } from '../window/window-service';
+import { nls } from '../../common/nls.js';
+import { AsyncLocalizationProvider, LanguageInfo } from '../../common/i18n/localization.js';
+import { QuickInputService, QuickPickItem, QuickPickSeparator } from '../quick-input/index.js';
+import { WindowService } from '../window/window-service.js';
 
 export interface LanguageQuickPickItem extends QuickPickItem, LanguageInfo {
     execute?(): Promise<void>

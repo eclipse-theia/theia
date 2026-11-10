@@ -21,8 +21,8 @@ import {
     TheiaSplitPanel,
 } from '@theia/core/lib/browser';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
-import { Toolbar, ToolbarFactory } from './toolbar-interfaces';
-import { ToolbarPreferences, TOOLBAR_ENABLE_PREFERENCE_ID } from '../common/toolbar-preference-contribution';
+import { Toolbar, ToolbarFactory } from './toolbar-interfaces.js';
+import { ToolbarPreferences, TOOLBAR_ENABLE_PREFERENCE_ID } from '../common/toolbar-preference-contribution.js';
 import { PreferenceService } from '@theia/core';
 
 @injectable()
