@@ -45,6 +45,9 @@ describe('DefaultTerminalProfileService', () => {
         contributedStore.registerTerminalProfile('zsh', zsh);
         contributedStore.registerTerminalProfile('bash', bash);
         contributedStore.registerTerminalProfile('fish', fish);
+        // registering the first profile makes it the default
+        expect(defaultShellChanges).to.deep.equal(['/bin/zsh']);
+        defaultShellChanges = [];
     });
 
     it('should use the first profile as default if none is set', () => {
@@ -92,6 +95,17 @@ describe('DefaultTerminalProfileService', () => {
         userStore.registerTerminalProfile('fish', NULL_PROFILE);
         expect(service.defaultProfile).to.equal(zsh);
         expect(defaultShellChanges).to.deep.equal(['/usr/bin/fish', '/bin/zsh']);
+    });
+
+    it('should notify when the first profile is removed while no default is set', () => {
+        contributedStore.unregisterTerminalProfile('zsh');
+        expect(service.defaultProfile).to.equal(bash);
+        expect(defaultShellChanges).to.deep.equal(['/bin/bash']);
+    });
+
+    it('should not notify when a profile other than the effective default is removed', () => {
+        contributedStore.unregisterTerminalProfile('fish');
+        expect(defaultShellChanges).to.deep.equal([]);
     });
 
     it('should not report a default profile if there are no profiles', () => {
