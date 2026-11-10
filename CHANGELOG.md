@@ -14,6 +14,7 @@
 - [filesystem] upgraded opfs-worker from 1.3.1 to 2.3.1. `OPFSFileSystemProvider.writeFile` now writes through opfs-worker's `writeFile` instead of `open`/`write`/`close`, and `OPFSInitialization.getBroadcastChannel()` is replaced by `getBroadcastChannelName()`, which returns the name of the channel instead of a `BroadcastChannel`. Implementations and subclasses that override `getBroadcastChannel()` must implement `getBroadcastChannelName()` instead [#18215](https://github.com/eclipse-theia/theia/pull/18215) - Contributed on behalf of CodeSignal
 - [keymaps] `@theia/keymaps` no longer depends on `@theia/preferences` [#18362](https://github.com/eclipse-theia/theia/pull/18362)
 - [preferences] `PreferenceTransaction` reads and writes the preference file through the `FileService` instead of a Monaco text model: its `reference` field and its `textModelService` and `jsoncEditor: MonacoJSONCEditor` injections were removed. `MonacoJSONCEditor` moved to `@theia/monaco/lib/browser/monaco-jsonc-editor`, and `@theia/preferences` no longer depends on `@theia/monaco` [#18362](https://github.com/eclipse-theia/theia/pull/18362)
+- [terminal] replaced the protected `DefaultTerminalProfileService.defaultProfileIndex` with `defaultProfileId`; the first profile is the default while the default profile is not set or not available [#18282](https://github.com/eclipse-theia/theia/pull/18282)
 
 ## 1.77.0 - 11/5/2026
 
