@@ -49,6 +49,7 @@ import MonacoSeverity from '@theia/monaco-editor-core/esm/vs/base/common/severit
 import { Severity } from '@theia/core/lib/common/severity';
 import { IStorageService } from '@theia/monaco-editor-core/esm/vs/platform/storage/common/storage.js';
 import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/contextview/browser/contextView.js';
+import { IOpenerService } from '@theia/monaco-editor-core/esm/vs/platform/opener/common/opener.js';
 import { WindowFocusService } from '@theia/core/lib/browser/window/window-focus-service';
 import { SecondaryWindowService } from '@theia/core/lib/browser/window/secondary-window-service';
 
@@ -391,8 +392,8 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
             setContextKey: (id?: string) => this.setContextKey(id),
             returnFocus: () => this.container.focus(),
             hoverDelegate: new HoverDelegate(),
-            linkOpenerDelegate: () => {
-                // @monaco-uplift: not sure what to do here
+            linkOpenerDelegate: content => {
+                StandaloneServices.get(IOpenerService).open(content, { allowCommands: true, fromUserGesture: true });
             }
         };
         const contextMenuService = StandaloneServices.get(IContextMenuService);
@@ -419,7 +420,8 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
     }
 
     // @monaco-uplift
-    // Keep the styles up to date with https://github.com/microsoft/vscode/blob/7888ff3a6b104e9e2e3d0f7890ca92dd0828215f/src/vs/platform/quickinput/browser/quickInput.ts#L171.
+    // Keep the styles up to date with `QuickInputService.computeStyles` in VS Code (`src/vs/platform/quickinput/browser/quickInputService.ts`)
+    // and the `default*Styles` it uses from `src/vs/platform/theme/browser/defaultStyles.ts`. Theia deliberately keeps its own list colors.
     private computeStyles(): IQuickInputStyles {
         return {
             toggle: {
