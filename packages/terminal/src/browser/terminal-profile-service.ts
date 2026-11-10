@@ -89,6 +89,8 @@ export class DefaultProfileStore implements TerminalProfileStore {
 export class DefaultTerminalProfileService implements TerminalProfileService {
     /** The ID of the default profile. The first profile is the default if it is not set or not available. */
     protected defaultProfileId: string | undefined;
+    /** The default profile last reported by `onDidChangeDefaultShell`, to detect changes of the effective default. */
+    protected lastDefaultProfile: TerminalProfile | undefined;
     protected order: string[] = [];
     protected readonly stores: TerminalProfileStore[];
 
@@ -127,9 +129,7 @@ export class DefaultTerminalProfileService implements TerminalProfileService {
             // the profile was removed, but it's still in the `order` array
             this.order.splice(index, 1);
             this.onRemovedEmitter.fire(id);
-            if (id === this.defaultProfileId) {
-                this.fireDefaultShellChanged();
-            }
+            this.checkDefaultProfileChanged();
         }
     }
 
@@ -138,9 +138,7 @@ export class DefaultTerminalProfileService implements TerminalProfileService {
         if (index < 0) {
             this.order.push(id);
             this.onAddedEmitter.fire(id);
-            if (id === this.defaultProfileId) {
-                this.fireDefaultShellChanged();
-            }
+            this.checkDefaultProfileChanged();
         }
     }
 
@@ -161,8 +159,18 @@ export class DefaultTerminalProfileService implements TerminalProfileService {
         this.fireDefaultShellChanged();
     }
 
+    /**
+     * Fires `onDidChangeDefaultShell` if the effective default profile changed, e.g. because the first profile was removed while no default is set.
+     */
+    protected checkDefaultProfileChanged(): void {
+        if (this.defaultProfile !== this.lastDefaultProfile) {
+            this.fireDefaultShellChanged();
+        }
+    }
+
     protected fireDefaultShellChanged(): void {
         const profile = this.defaultProfile;
+        this.lastDefaultProfile = profile;
         this.onDidChangeDefaultShellEmitter.fire(profile instanceof ShellTerminalProfile && profile.shellPath ? profile.shellPath : '');
     }
 
