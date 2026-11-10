@@ -73,7 +73,7 @@ describe('ProcessUtils (real processes)', function (): void {
     afterEach(() => {
         // Do not leak processes if a test fails.
         for (const pid of childPids.splice(0)) {
-            if (isAlive(pid)) {
+            if (Number.isInteger(pid) && isAlive(pid)) {
                 process.kill(pid, 'SIGKILL');
             }
         }
@@ -106,7 +106,8 @@ describe('ProcessUtils (real processes)', function (): void {
 
     describe('processes that ignore SIGTERM', () => {
 
-        const ignoringScript = 'process.on("SIGTERM", () => {}); console.log(process.pid); setInterval(() => {}, 1000);';
+        // `console.log` would color the PID when `FORCE_COLOR` is set, even though stdout is a pipe.
+        const ignoringScript = 'process.on("SIGTERM", () => {}); process.stdout.write(process.pid + "\\n"); setInterval(() => {}, 1000);';
 
         function createProcessUtils(): ProcessUtils {
             const container = new Container();
@@ -118,12 +119,34 @@ describe('ProcessUtils (real processes)', function (): void {
         }
 
         /**
-         * Starts a process that runs the given script, which prints the PID of a process that ignores SIGTERM once it is ready.
+         * Starts a process that runs the given script, which prints the PID of a process that ignores SIGTERM on a line
+         * once it is ready.
          */
         async function startProcess(script: string, options: cp.SpawnOptions = {}): Promise<{ pid: number, ignoringPid: number }> {
             const started = cp.spawn(process.execPath, ['-e', script], { ...options, stdio: ['ignore', 'pipe', 'ignore'] });
-            const ignoringPid = await new Promise<number>(resolve => started.stdout!.once('data', data => resolve(Number.parseInt(String(data), 10))));
-            childPids.push(started.pid!, ignoringPid);
+            childPids.push(started.pid!);
+            const ignoringPid = await new Promise<number>((resolve, reject) => {
+                let output = '';
+                const onData = (data: Buffer): void => {
+                    output += data;
+                    const newline = output.indexOf('\n');
+                    if (newline < 0) {
+                        return;
+                    }
+                    started.stdout!.off('data', onData);
+                    started.off('exit', onExit);
+                    const line = output.substring(0, newline).trim();
+                    if (/^\d+$/.test(line)) {
+                        resolve(Number.parseInt(line, 10));
+                    } else {
+                        reject(new Error(`Expected the PID of the process that ignores SIGTERM, got ${JSON.stringify(output)}`));
+                    }
+                };
+                const onExit = (): void => reject(new Error(`Exited before printing the PID of the process that ignores SIGTERM, got ${JSON.stringify(output)}`));
+                started.stdout!.on('data', onData);
+                started.once('exit', onExit);
+            });
+            childPids.push(ignoringPid);
             return { pid: started.pid!, ignoringPid };
         }
 
