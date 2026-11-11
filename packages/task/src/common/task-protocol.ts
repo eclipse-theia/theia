@@ -49,6 +49,8 @@ export interface TaskOutputPresentation {
     showReuseMessage?: boolean;
     clear?: boolean;
     close?: boolean;
+    /** Tasks with the same group share a terminal group, using split panes. */
+    group?: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [name: string]: any;
 }
@@ -93,7 +95,8 @@ export namespace TaskOutputPresentation {
                 focus: shouldSetFocusToTerminal(task),
                 showReuseMessage: shouldShowReuseMessage(task),
                 clear: shouldClearTerminalBeforeRun(task),
-                close: shouldCloseTerminalOnFinish(task)
+                close: shouldCloseTerminalOnFinish(task),
+                group: getGroup(task)
             };
         }
         return outputPresentation;
@@ -113,6 +116,10 @@ export namespace TaskOutputPresentation {
 
     export function shouldCloseTerminalOnFinish(task: TaskCustomization): boolean {
         return !!task.presentation && !!task.presentation.close;
+    }
+
+    export function getGroup(task: TaskCustomization): string | undefined {
+        return typeof task.presentation?.group === 'string' ? task.presentation.group : undefined;
     }
 
     export function shouldShowReuseMessage(task: TaskCustomization): boolean {
