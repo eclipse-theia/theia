@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as React from '@theia/core/shared/react';
-import { LabelProvider } from '@theia/core/lib/browser';
+import { codicon, LabelProvider } from '@theia/core/lib/browser';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import {
     Emitter,
@@ -47,7 +47,7 @@ import { BreakpointManager } from './breakpoint/breakpoint-manager.js';
 import { DebugConfigurationSessionOptions, InternalDebugSessionOptions } from './debug-session-options.js';
 import { DebugConfiguration, DebugConsoleMode } from '../common/debug-common.js';
 import { SourceBreakpoint } from './breakpoint/breakpoint-marker.js';
-import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { TerminalCollection, TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { DebugContribution } from './debug-contribution.js';
 import { Deferred, waitForEvent } from '@theia/core/lib/common/promise-util';
@@ -585,7 +585,7 @@ export class DebugSession implements CompositeTreeElement {
         }
 
         if (!terminal) {
-            terminal = await this.terminalServer.newTerminal({ ...options, kind: 'debug' });
+            terminal = await this.terminalServer.newTerminal({ collection: this.getTerminalCollection(), ...options, kind: 'debug' });
             await terminal.start();
             try {
                 if (terminal.commandHistoryState) {
@@ -603,6 +603,14 @@ export class DebugSession implements CompositeTreeElement {
         }
         this.terminalServer.open(terminal);
         return terminal;
+    }
+
+    /**
+     * Returns the collection of terminals that a terminal of this session is presented with.
+     * By default, all debug terminals are presented together.
+     */
+    protected getTerminalCollection(): TerminalCollection | undefined {
+        return { id: 'debug', label: nls.localizeByDefault('Debug'), iconClass: codicon('debug-alt') };
     }
 
     protected clearThreads(): void {

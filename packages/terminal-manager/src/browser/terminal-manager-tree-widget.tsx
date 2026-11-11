@@ -32,7 +32,7 @@ import {
 import { CommandRegistry, CompoundMenuNode, Emitter, MenuAction, MenuModelRegistry } from '@theia/core';
 import { TerminalManagerTreeModel } from './terminal-manager-tree-model.js';
 import {
-    ReactInteraction, TerminalManagerCommands,
+    ReactInteraction,
     TerminalManagerTreeTypes, TERMINAL_MANAGER_TREE_CONTEXT_MENU
 } from './terminal-manager-types.js';
 
@@ -238,10 +238,6 @@ export class TerminalManagerTreeWidget extends TreeWidget {
             const isVisible = this.commandRegistry.isVisible(commandId, ...args);
             if (isVisible) {
                 const command = this.commandRegistry.getCommand(commandId);
-                const isRenameCommand = commandId === TerminalManagerCommands.MANAGER_RENAME_TERMINAL.id;
-                if (isRenameCommand && this.isSpecialPageNode(node)) {
-                    return;
-                }
                 const icon = command?.iconClass ? command.iconClass : '';
                 const label = command?.label ? command.label : '';
                 inlineActionProps.push({ icon, label, commandId });
@@ -250,30 +246,11 @@ export class TerminalManagerTreeWidget extends TreeWidget {
         return inlineActionProps;
     }
 
-    protected isSpecialPageNode(node: TreeNode): boolean {
-        if (!TerminalManagerTreeTypes.isPageNode(node)) {
-            return false;
-        }
-        for (const config of this.model.getSpecialPageConfigs().values()) {
-            if (config.pageId === node.id) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     protected override renderIcon(node: TreeNode, _props: NodeProps): React.ReactNode {
         if (TerminalManagerTreeTypes.isTerminalNode(node)) {
             return <span className={`${codicon('terminal')}`} />;
         } else if (TerminalManagerTreeTypes.isPageNode(node)) {
-            let icon = 'terminal-tmux';
-            for (const config of this.model.getSpecialPageConfigs().values()) {
-                if (config.pageId === node.id) {
-                    icon = config.icon;
-                    break;
-                }
-            }
-            return <span className={`${codicon(icon)}`} />;
+            return <span className={node.iconClass ?? codicon('terminal-tmux')} />;
         } else if (TerminalManagerTreeTypes.isGroupNode(node)) {
             return <span className={`${codicon('split-horizontal')}`} />;
         }

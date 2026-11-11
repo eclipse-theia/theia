@@ -35,7 +35,7 @@ import {
 } from '@theia/core/lib/browser';
 import { Disposable, DisposableCollection, Emitter, nls, ILogger } from '@theia/core';
 import { UUID } from '@theia/core/shared/@lumino/coreutils';
-import { TerminalWidget, TerminalWidgetOptions } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { TerminalCollection, TerminalWidget, TerminalWidgetOptions } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalWidgetImpl, nextTerminalCreationToken } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
@@ -298,11 +298,23 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     /**
+     * Add a terminal to a new group: on the page of its collection if it has one,
+     * otherwise on a new page.
+     */
+    placeTerminal(terminal: TerminalWidget): void {
+        if (terminal.collection) {
+            this.addTerminalPage(terminal, TerminalManagerTreeTypes.toCollectionPageId(terminal.collection.id), terminal.collection);
+        } else {
+            this.addTerminalPage(terminal);
+        }
+    }
+
+    /**
      * Add a terminal to a page. If no `pageId` is given, a new auto-numbered
      * page is created. If a `pageId` is given, the existing page is reused
-     * or a new one is created (with special-page config applied if available).
+     * or a new one is created, labelled after `collection` if given.
      */
-    addTerminalPage(widget: Widget, pageId?: TerminalManagerTreeTypes.PageId): void {
+    addTerminalPage(widget: Widget, pageId?: TerminalManagerTreeTypes.PageId, collection?: TerminalCollection): void {
         if (widget instanceof TerminalWidgetImpl) {
             const resolvedPageId = pageId ?? this.createPagePanel().id;
             const terminalKey = TerminalManagerTreeTypes.generateTerminalKey(widget);
@@ -310,7 +322,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
             this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
             const groupPanel = this.createTerminalGroupPanel();
             groupPanel.addWidget(widget);
-            this.treeWidget.model.addTerminalPage(terminalKey, groupPanel.id, resolvedPageId, widget.title.label);
+            this.treeWidget.model.addTerminalPage(terminalKey, groupPanel.id, resolvedPageId, widget.title.label, collection);
         }
     }
 
