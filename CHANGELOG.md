@@ -4,6 +4,14 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.78.0 - tbd
+
+<a name="breaking_changes_1.78.0">[Breaking Changes:](#breaking_changes_1.78.0)</a>
+
+- [core] moved `JSONCEditor` from `@theia/preferences` to `@theia/core/lib/common/jsonc-editor` and made it an interface and symbol, bound by the core frontend and backend modules. Extend or construct `JSONCEditorImpl` instead, and do not bind it yourself. The old import path still works but is deprecated [#18362](https://github.com/eclipse-theia/theia/pull/18362)
+- [keymaps] `@theia/keymaps` no longer depends on `@theia/preferences` [#18362](https://github.com/eclipse-theia/theia/pull/18362)
+- [preferences] `PreferenceTransaction` reads and writes the preference file through the `FileService` instead of a Monaco text model: its `reference` field and its `textModelService` and `jsoncEditor: MonacoJSONCEditor` injections were removed. `MonacoJSONCEditor` moved to `@theia/monaco/lib/browser/monaco-jsonc-editor`, and `@theia/preferences` no longer depends on `@theia/monaco` [#18362](https://github.com/eclipse-theia/theia/pull/18362)
+
 ## 1.77.0 - 11/5/2026
 
 - [all] switched runtime packages from CommonJS to ES modules [#18216](https://github.com/eclipse-theia/theia/pull/18216)
