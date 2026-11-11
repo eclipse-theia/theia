@@ -129,5 +129,45 @@ describe('proxy', () => {
             });
             expect(agent).to.be.instanceOf(ProxyAgent);
         });
+
+        it('should return undefined when the request URL matches the noProxy option', () => {
+            const agent = getProxyAgent('http://localhost:11434', {}, {
+                proxyUrl: 'http://proxy.example.com:8080',
+                noProxy: ['localhost']
+            });
+            expect(agent).to.be.undefined;
+        });
+
+        it('should return a dispatcher when the request URL does not match the noProxy option', () => {
+            const agent = getProxyAgent('https://example.com', {}, {
+                proxyUrl: 'http://proxy.example.com:8080',
+                noProxy: ['localhost']
+            });
+            expect(agent).to.not.be.undefined;
+        });
+
+        it('should return undefined when the request URL matches the NO_PROXY env variable', () => {
+            const env = { HTTPS_PROXY: 'http://proxy.example.com:8080', NO_PROXY: 'localhost,.corp.internal' };
+            const agent = getProxyAgent('https://git.corp.internal', env);
+            expect(agent).to.be.undefined;
+        });
+
+        it('should combine the noProxy option with the NO_PROXY env variable', () => {
+            const env = { NO_PROXY: '.corp.internal' };
+            const options = { proxyUrl: 'http://proxy.example.com:8080', noProxy: ['localhost'] };
+            expect(getProxyAgent('http://localhost:3000', env, options)).to.be.undefined;
+            expect(getProxyAgent('https://git.corp.internal', env, options)).to.be.undefined;
+            expect(getProxyAgent('https://example.com', env, options)).to.not.be.undefined;
+        });
+
+        it('should return an Agent (not ProxyAgent) when strictSSL is false and the request URL matches noProxy', () => {
+            const agent = getProxyAgent('https://localhost', {}, {
+                proxyUrl: 'http://proxy.example.com:8080',
+                noProxy: ['localhost'],
+                strictSSL: false
+            });
+            expect(agent).to.be.instanceOf(Agent);
+            expect(agent).to.not.be.instanceOf(ProxyAgent);
+        });
     });
 });

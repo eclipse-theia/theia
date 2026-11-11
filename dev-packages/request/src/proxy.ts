@@ -16,6 +16,7 @@
 
 import * as tls from 'tls';
 import { ProxyAgent, Agent, Dispatcher } from 'undici';
+import { shouldBypassProxyForEnv } from './no-proxy';
 
 function getSystemProxyURI(requestURL: URL, env: typeof process.env): string | undefined {
     if (requestURL.protocol === 'http:') {
@@ -51,6 +52,7 @@ function getSecureContext(ca: readonly string[]): tls.SecureContext {
 export interface ProxySettings {
     proxyUrl?: string;
     strictSSL?: boolean;
+    noProxy?: string[];
     /** Sent as `Proxy-Authorization` when the proxy URL carries no credentials of its own. */
     proxyAuthorization?: string;
     /**
@@ -68,7 +70,10 @@ export function getProxyAgent(rawRequestURL: string, env: typeof process.env, op
         return undefined;
     }
 
-    const proxyURL = isLoopback(requestURL) ? undefined : options.proxyUrl || getSystemProxyURI(requestURL, env);
+    // A bypassed request is handled like a request without proxy, so that `strictSSL` still applies
+    const proxyURL = isLoopback(requestURL) || shouldBypassProxyForEnv(requestURL, env, options.noProxy)
+        ? undefined
+        : options.proxyUrl || getSystemProxyURI(requestURL, env);
     const secureContext = options.ca ? getSecureContext(options.ca) : undefined;
     const requestTls: tls.ConnectionOptions = {};
     if (secureContext) {
