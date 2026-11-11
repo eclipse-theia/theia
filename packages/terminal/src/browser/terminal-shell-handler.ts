@@ -47,8 +47,12 @@ export class TerminalShellHandler implements TerminalCreationHandler {
 
         if (typeof terminal.location === 'object') {
             if ('parentTerminal' in terminal.location) {
-                widgetOptions.ref = this.terminalService.getById(terminal.location.parentTerminal);
-                widgetOptions.mode = 'split-right';
+                const parentTerminal = this.terminalService.getById(terminal.location.parentTerminal);
+                // The location is kept for the lifetime of the terminal, so the parent may have been closed or moved since.
+                if (parentTerminal?.isAttached && this.shell.getAreaFor(parentTerminal) === widgetOptions.area) {
+                    widgetOptions.ref = parentTerminal;
+                    widgetOptions.mode = 'split-right';
+                }
             } else if ('viewColumn' in terminal.location) {
                 preserveFocus = terminal.location.preserveFocus ?? false;
                 switch (terminal.location.viewColumn) {
