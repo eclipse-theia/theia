@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { WidgetOpenerOptions } from '@theia/core/lib/browser';
-import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { codicon, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import { TerminalCollection, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { PanelKind, TaskConfiguration, TaskWatcher, TaskExitedEvent, TaskServer, TaskOutputPresentation, TaskInfo } from '../common/index.js';
@@ -126,8 +126,20 @@ export class TaskTerminalWidgetManager {
         });
     }
 
-    async newTaskTerminal(factoryOptions: TerminalWidgetFactoryOptions): Promise<TerminalWidget> {
-        return this.terminalService.newTerminal({ ...factoryOptions, kind: 'task' });
+    async newTaskTerminal(factoryOptions: TerminalWidgetFactoryOptions, taskConfig?: TaskConfiguration): Promise<TerminalWidget> {
+        return this.terminalService.newTerminal({
+            collection: this.getTerminalCollection(taskConfig),
+            ...factoryOptions,
+            kind: 'task'
+        });
+    }
+
+    /**
+     * Returns the collection of terminals that a terminal for the given task is presented with.
+     * By default, all task terminals are presented together.
+     */
+    protected getTerminalCollection(_taskConfig?: TaskConfiguration): TerminalCollection | undefined {
+        return { id: 'tasks', label: nls.localizeByDefault('Tasks'), iconClass: codicon('tasklist') };
     }
 
     async open(factoryOptions: TerminalWidgetFactoryOptions, openerOptions: TaskTerminalWidgetOpenerOptions): Promise<TerminalWidget> {
@@ -198,7 +210,7 @@ export class TaskTerminalWidgetManager {
         const lastCwd = taskConfig?.options?.cwd ? new URI(taskConfig.options.cwd) : new URI();
 
         if (!reusableTerminalWidget) {
-            const widget = await this.newTaskTerminal(factoryOptions);
+            const widget = await this.newTaskTerminal(factoryOptions, taskConfig);
             widget.lastCwd = lastCwd;
             return { isNew: true, widget };
         }

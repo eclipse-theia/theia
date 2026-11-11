@@ -17,7 +17,8 @@
 import { injectable, postConstruct } from '@theia/core/shared/inversify';
 import { TreeModelImpl, CompositeTreeNode, SelectableTreeNode, DepthFirstTreeIterator, TreeNode } from '@theia/core/lib/browser';
 import { Emitter, nls } from '@theia/core';
-import { TerminalManagerTreeTypes, SpecialPageConfig } from './terminal-manager-types.js';
+import { TerminalCollection } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { TerminalManagerTreeTypes } from './terminal-manager-types.js';
 
 @injectable()
 export class TerminalManagerTreeModel extends TreeModelImpl {
@@ -58,8 +59,6 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
     }>();
     readonly onDidDeleteTerminalFromGroup = this.onDidDeleteTerminalFromGroupEmitter.event;
 
-    protected readonly specialPageConfigs = new Map<string, SpecialPageConfig>();
-
     @postConstruct()
     protected override init(): void {
         super.init();
@@ -70,37 +69,20 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
             }
         }));
         this.root = { id: 'root', parent: undefined, children: [], visible: false } as CompositeTreeNode;
-        this.configureSpecialPages();
     }
 
     /**
-     * Register the default special pages. Subclasses can override this to
-     * add, remove, or replace entries before the model is used.
+     * Add a terminal in a new group to the given page, creating the page if it doesn't exist.
+     * If a `collection` is given, a newly created page takes its label and icon.
      */
-    protected configureSpecialPages(): void {
-        this.registerSpecialPage('task', { pageId: 'page-tasks' as TerminalManagerTreeTypes.PageId, label: nls.localizeByDefault('Tasks'), icon: 'tasklist' });
-        this.registerSpecialPage('debug', { pageId: 'page-debug' as TerminalManagerTreeTypes.PageId, label: nls.localizeByDefault('Debug'), icon: 'debug-alt' });
-    }
-
-    registerSpecialPage(kind: string, config: SpecialPageConfig): void {
-        this.specialPageConfigs.set(kind, config);
-    }
-
-    getSpecialPageConfig(kind: string): SpecialPageConfig | undefined {
-        return this.specialPageConfigs.get(kind);
-    }
-
-    getSpecialPageConfigs(): ReadonlyMap<string, SpecialPageConfig> {
-        return this.specialPageConfigs;
-    }
-
     addTerminalPage(
         terminalKey: TerminalManagerTreeTypes.TerminalKey,
         groupId: TerminalManagerTreeTypes.GroupId,
         pageId: TerminalManagerTreeTypes.PageId,
         label?: string,
+        collection?: TerminalCollection,
     ): void {
-        const { page: pageNode, isNewlyCreated } = this.getOrCreatePage(pageId);
+        const { page: pageNode, isNewlyCreated } = this.getOrCreatePage(pageId, collection);
         const groupNode = this.createGroupNode(groupId, pageId);
         const terminalNode = this.createTerminalNode(terminalKey, groupId, label);
         if (this.root && CompositeTreeNode.is(this.root)) {
@@ -377,37 +359,40 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
     }
 
     /**
-     * Get or create a page by ID. If a special page config exists for this ID,
-     * its label is used; otherwise an auto-numbered label is generated.
+     * Get or create a page by ID. If a `collection` is given, a new page is
+     * labelled after it; otherwise an auto-numbered label is generated.
      *
      * An existing page is only reused if it is currently attached to the root
      * of the tree. A page that has been detached (e.g., because its last
      * terminal was removed) is treated as missing and recreated.
      */
-    protected getOrCreatePage(pageId: TerminalManagerTreeTypes.PageId): { page: TerminalManagerTreeTypes.PageNode, isNewlyCreated: boolean } {
+    protected getOrCreatePage(
+        pageId: TerminalManagerTreeTypes.PageId,
+        collection?: TerminalCollection,
+    ): { page: TerminalManagerTreeTypes.PageNode, isNewlyCreated: boolean } {
         const existing = this.getNode(pageId);
         if (TerminalManagerTreeTypes.isPageNode(existing) && existing.parent === this.root) {
             return { page: existing, isNewlyCreated: false };
         }
-        // Check if this is a special page with a configured label
-        const specialConfig = [...this.specialPageConfigs.values()].find(c => c.pageId === pageId);
-        const pageNode = specialConfig
-            ? this.createSpecialPageNode(pageId, specialConfig.label)
+        const pageNode = collection
+            ? this.createCollectionPageNode(pageId, collection)
             : this.createPageNode(pageId);
         return { page: pageNode, isNewlyCreated: true };
     }
 
-    protected createSpecialPageNode(pageId: TerminalManagerTreeTypes.PageId, label: string): TerminalManagerTreeTypes.PageNode {
+    protected createCollectionPageNode(pageId: TerminalManagerTreeTypes.PageId, collection: TerminalCollection): TerminalManagerTreeTypes.PageNode {
         return {
             id: pageId,
-            label,
+            label: collection.label,
             parent: undefined,
             selected: false,
             children: [],
             page: true,
             isEditing: false,
             expanded: true,
+            // Collection pages are excluded from the page numbering.
             counter: 0,
+            iconClass: collection.iconClass,
         };
     }
 

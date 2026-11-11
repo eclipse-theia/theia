@@ -32,8 +32,8 @@ import { TerminalManagerTreeTypes } from './terminal-manager-types.js';
  * the manager at the point of placement, rather than being intercepted
  * after the fact via `onDidCreateTerminal` events.
  *
- * Task and debug terminals are routed to dedicated pages in the tree;
- * regular user terminals get their own numbered pages.
+ * Terminals that belong to a collection are placed on its page;
+ * other terminals get their own numbered pages.
  */
 @injectable()
 export class TerminalManagerCreationHandler implements TerminalCreationHandler {
@@ -71,8 +71,7 @@ export class TerminalManagerCreationHandler implements TerminalCreationHandler {
             if (splitGroupId) {
                 resolvedWidget.addWidgetToTerminalGroup(terminal, splitGroupId);
             } else {
-                const specialConfig = resolvedWidget.treeWidget.model.getSpecialPageConfig(terminal.kind);
-                resolvedWidget.addTerminalPage(terminal, specialConfig?.pageId);
+                resolvedWidget.placeTerminal(terminal);
             }
             await this.terminalManagerViewContribution.openView({ reveal: true });
         }
