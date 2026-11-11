@@ -26,7 +26,7 @@ import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/c
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { TextEditorDocument } from '@theia/editor/lib/browser/editor';
 import { TextEditorDocumentService } from '@theia/editor/lib/browser/text-editor-document-service';
-import { JSONCEditor } from '../common/jsonc-editor.js';
+import { JSONCEditor } from '@theia/core/lib/common/jsonc-editor';
 
 @injectable()
 /**
