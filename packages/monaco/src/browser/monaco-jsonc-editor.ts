@@ -36,7 +36,10 @@ export class MonacoJSONCEditor {
 
     getEditOperations(model: MonacoEditorModel, path: jsoncparser.JSONPath, value: unknown): monaco.editor.IIdentifiedSingleEditOperation[] {
         const textModel = model.textEditorModel;
-        return this.jsoncEditor.getEditOperations(model.getText(), path, value as JSONValue).map(edit => {
+        // The model's options already account for the detected indentation and the language-specific preferences.
+        const { insertSpaces, tabSize } = textModel.getOptions();
+        const formattingOptions = { insertSpaces, tabSize, eol: textModel.getEOL() };
+        return this.jsoncEditor.getEditOperations(model.getText(), path, value as JSONValue, formattingOptions).map(edit => {
             const start = textModel.getPositionAt(edit.offset);
             const end = textModel.getPositionAt(edit.offset + edit.length);
             return {
