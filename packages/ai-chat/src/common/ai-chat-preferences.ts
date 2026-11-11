@@ -26,6 +26,7 @@ export const WELCOME_SCREEN_SESSIONS_PREF = 'ai-features.chat.welcomeScreenSessi
 
 export const TOOL_LOOP_GUARD_ENABLED_PREF = 'ai-features.chat.toolLoopGuard.enabled';
 export const TOOL_LOOP_GUARD_REFRESH_THRESHOLD_PREF = 'ai-features.chat.toolLoopGuard.refreshThreshold';
+export const TOOL_LOOP_GUARD_PROMPT_THRESHOLD_PREF = 'ai-features.chat.toolLoopGuard.promptThreshold';
 export const TOOL_LOOP_GUARD_FAIL_THRESHOLD_PREF = 'ai-features.chat.toolLoopGuard.failThreshold';
 
 export type SessionStorageScope = 'workspace' | 'global';
@@ -96,8 +97,8 @@ export const aiChatPreferences: PreferenceSchema = {
             type: 'boolean',
             description: nls.localize('theia/ai/chat/toolLoopGuard/enabled/description',
                 'Detect when a chat agent repeatedly calls the same tool with the same arguments and gets the same error. ' +
-                'When enabled, Theia first forces a refresh of the tracked file state to break the loop, and fails the request ' +
-                'if the identical error still persists afterwards.'),
+                'When enabled, Theia first forces a refresh of the tracked file state to break the loop, then asks you whether ' +
+                'to continue, and finally fails the request if the identical error still persists.'),
             default: true,
             title: AI_CORE_PREFERENCES_TITLE,
         },
@@ -108,6 +109,17 @@ export const aiChatPreferences: PreferenceSchema = {
                 'state to break the loop. Only applies when the tool-call loop guard is enabled.'),
             default: 3,
             minimum: 1,
+            title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [TOOL_LOOP_GUARD_PROMPT_THRESHOLD_PREF]: {
+            type: 'number',
+            description: nls.localize('theia/ai/chat/toolLoopGuard/promptThreshold/description',
+                'Number of consecutive identical tool-call errors after which Theia asks you whether the agent should keep ' +
+                'retrying. You can choose to continue or stop, and remember that decision for the rest of the session or ' +
+                'permanently. Set to 0 to never prompt. Must be greater than the refresh threshold and less than the fail ' +
+                'threshold. Only applies when the tool-call loop guard is enabled.'),
+            default: 4,
+            minimum: 0,
             title: AI_CORE_PREFERENCES_TITLE,
         },
         [TOOL_LOOP_GUARD_FAIL_THRESHOLD_PREF]: {

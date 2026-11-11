@@ -14,21 +14,34 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ToolInvocationContext, ToolRequest } from '@theia/ai-core';
+import { ToolInvocationContext, ToolRequest, ToolCallResult, formatToolCallContentForModel } from '@theia/ai-core';
 import { ILogger, URI } from '@theia/core';
 import { PreferenceService } from '@theia/core/lib/common';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { ChatToolRequestService, normalizeToolArgs, ToolLoopGuardConfig } from '../common/chat-tool-request-service.js';
+import {
+    ChatToolRequestService,
+    LoopContinueDecision,
+    normalizeToolArgs,
+    ToolLoopGuardConfig
+} from '../common/chat-tool-request-service.js';
 import { raceConfirmationWithTimeout } from '../common/chat-tool-confirmation-timeout.js';
-import { MutableChatRequestModel, ToolCallChatResponseContent } from '../common/chat-model.js';
+import { MutableChatRequestModel, ToolCallChatResponseContent, ToolCallChatResponseContentImpl } from '../common/chat-model.js';
 import { ToolConfirmationMode, ChatToolPreferences, TOOL_CONFIRMATION_TIMEOUT_PREFERENCE } from '../common/chat-tool-preferences.js';
 import {
     TOOL_LOOP_GUARD_ENABLED_PREF,
     TOOL_LOOP_GUARD_REFRESH_THRESHOLD_PREF,
+    TOOL_LOOP_GUARD_PROMPT_THRESHOLD_PREF,
     TOOL_LOOP_GUARD_FAIL_THRESHOLD_PREF
 } from '../common/ai-chat-preferences.js';
 import { ToolConfirmationManager } from './chat-tool-preference-bindings.js';
+
+/**
+ * Synthetic tool id the loop-guard "continue?" prompt reuses to remember the user's decision through
+ * the existing {@link ToolConfirmationManager} machinery: ALWAYS_ALLOW means "keep going", DISABLED means
+ * "stop". It is not a real tool, so it never appears in the tool registry or the tools configuration view.
+ */
+export const LOOP_GUARD_CONTINUE_TOOL_ID = '__loopGuardContinue__';
 
 /**
  * Frontend-specific implementation of ChatToolRequestService that handles tool confirmation
@@ -70,7 +83,80 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
         const refreshThreshold = Math.max(1, this.preferenceService.get<number>(TOOL_LOOP_GUARD_REFRESH_THRESHOLD_PREF, 3));
         // Keep the fail threshold strictly above the refresh threshold, so a refresh always gets a chance to break the loop.
         const failThreshold = Math.max(refreshThreshold + 1, this.preferenceService.get<number>(TOOL_LOOP_GUARD_FAIL_THRESHOLD_PREF, 5));
-        return { enabled, refreshThreshold, failThreshold };
+        // A prompt threshold of 0 disables the prompt. Otherwise keep it strictly between the refresh and fail
+        // thresholds, so the refresh always runs first and the user is asked before the request is failed.
+        const rawPromptThreshold = this.preferenceService.get<number>(TOOL_LOOP_GUARD_PROMPT_THRESHOLD_PREF, 4);
+        const promptThreshold = rawPromptThreshold <= 0
+            ? 0
+            : Math.min(failThreshold - 1, Math.max(refreshThreshold + 1, rawPromptThreshold));
+        return { enabled, refreshThreshold, promptThreshold, failThreshold };
+    }
+
+    /**
+     * Asks the user, through the chat UI, whether the agent should keep retrying a looping tool call. The
+     * prompt reuses the existing tool-confirmation UI (Allow = continue, Deny = stop) and its
+     * remember-my-decision scopes: choosing "this session" or "always" stores the answer against the synthetic
+     * {@link LOOP_GUARD_CONTINUE_TOOL_ID} via the {@link ToolConfirmationManager}, so the user is not asked
+     * again for the rest of the session (or ever, if persisted). A plain choice applies only to this prompt.
+     *
+     * If the user has already remembered a decision, it is honored without showing the prompt again. If the
+     * confirmation times out, the loop is stopped (the safe default, so an unattended session does not keep
+     * burning cycles on a loop it cannot break).
+     */
+    protected override async promptContinueOnLoop(
+        request: MutableChatRequestModel,
+        toolRequest: ToolRequest,
+        count: number,
+        result: ToolCallResult
+    ): Promise<LoopContinueDecision> {
+        const chatId = request.session.rootSessionId ?? request.session.id;
+
+        // Honor a previously remembered decision (session override or persisted) without asking again.
+        const remembered = this.confirmationManager.getConfirmationMode(LOOP_GUARD_CONTINUE_TOOL_ID, chatId);
+        if (remembered === ToolConfirmationMode.ALWAYS_ALLOW) {
+            return 'continue';
+        }
+        if (remembered === ToolConfirmationMode.DISABLED) {
+            return 'stop';
+        }
+
+        const toolName = toolRequest.name ?? toolRequest.id;
+        const promptContent = new ToolCallChatResponseContentImpl(
+            `loop-guard-continue-${request.id}-${count}`,
+            LOOP_GUARD_CONTINUE_TOOL_ID,
+            JSON.stringify({
+                tool: toolName,
+                repeatedErrors: count,
+                lastError: formatToolCallContentForModel(result)
+            }),
+            false
+        );
+
+        request.response.response.addContent(promptContent);
+
+        const sessionTimeout = request.session.settings?.commonSettings?.confirmationTimeout;
+        const timeoutSeconds = sessionTimeout !== undefined && sessionTimeout > 0
+            ? sessionTimeout
+            : this.preferences[TOOL_CONFIRMATION_TIMEOUT_PREFERENCE];
+        promptContent.confirmationTimeout = timeoutSeconds;
+        promptContent.requestUserConfirmation();
+        request.response.fireInteractionNeeded(promptContent);
+        request.response.waitForInput();
+
+        let confirmed: boolean;
+        try {
+            // confirm() (Allow) => continue; deny() (Deny) or timeout => stop.
+            confirmed = await raceConfirmationWithTimeout(promptContent, timeoutSeconds);
+        } finally {
+            request.response.stopWaitingForInput();
+        }
+
+        // Mark the prompt finished so the UI stops showing it as pending.
+        if (!promptContent.finished) {
+            promptContent.complete({ content: [{ type: 'text', text: confirmed ? 'continue' : 'stop' }] });
+        }
+
+        return confirmed ? 'continue' : 'stop';
     }
 
     protected override toChatToolRequest(toolRequest: ToolRequest, request: MutableChatRequestModel): ToolRequest {

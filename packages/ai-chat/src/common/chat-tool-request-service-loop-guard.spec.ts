@@ -18,7 +18,7 @@ import { ToolCallResult, ToolRequest, createToolCallError, isToolCallContent, is
 import { URI } from '@theia/core';
 import { expect } from 'chai';
 import { FileReadTracker } from './file-read-tracker.js';
-import { ChatToolRequestService, ToolLoopGuardConfig } from './chat-tool-request-service.js';
+import { ChatToolRequestService, LoopContinueDecision, ToolLoopGuardConfig } from './chat-tool-request-service.js';
 import { MutableChatRequestModel } from './chat-model.js';
 
 const SESSION = 'session-1';
@@ -38,7 +38,11 @@ class FakeFileReadTracker implements FileReadTracker {
 
 /** Exposes the guard and lets a test drive the config and the tracker without a DI container. */
 class TestChatToolRequestService extends ChatToolRequestService {
-    config: ToolLoopGuardConfig = { enabled: true, refreshThreshold: 3, failThreshold: 5 };
+    config: ToolLoopGuardConfig = { enabled: true, refreshThreshold: 3, promptThreshold: 0, failThreshold: 5 };
+    /** Decisions to return from the prompt, consumed in order; defaults to 'continue' when exhausted. */
+    promptDecisions: LoopContinueDecision[] = [];
+    /** How many times the user was prompted, and with what count. */
+    readonly promptCalls: { count: number }[] = [];
     constructor(tracker?: FileReadTracker) {
         super();
         // The field is injected in production; set it directly here.
@@ -46,6 +50,14 @@ class TestChatToolRequestService extends ChatToolRequestService {
     }
     protected override getLoopGuardConfig(): ToolLoopGuardConfig {
         return this.config;
+    }
+    protected override async promptContinueOnLoop(
+        _request: MutableChatRequestModel,
+        _toolRequest: ToolRequest,
+        count: number
+    ): Promise<LoopContinueDecision> {
+        this.promptCalls.push({ count });
+        return this.promptDecisions.shift() ?? 'continue';
     }
     run(toolRequest: ToolRequest, args: string, chatRequest: MutableChatRequestModel, result: () => Promise<ToolCallResult>): Promise<ToolCallResult> {
         return this.invokeWithLoopGuard(toolRequest, args, chatRequest, result);
@@ -77,7 +89,7 @@ describe('ChatToolRequestService loop guard', () => {
 
     it('passes through when the guard is disabled', async () => {
         const service = new TestChatToolRequestService();
-        service.config = { enabled: false, refreshThreshold: 3, failThreshold: 5 };
+        service.config = { enabled: false, refreshThreshold: 3, promptThreshold: 0, failThreshold: 5 };
         const error = () => Promise.resolve('{"error":"stale"}' as ToolCallResult);
         for (let i = 0; i < 10; i++) {
             const result = await service.run(tool, ARGS, request(), error);
@@ -121,7 +133,7 @@ describe('ChatToolRequestService loop guard', () => {
         const tracker = new FakeFileReadTracker();
         const service = new TestChatToolRequestService(tracker);
         // Regression for a refreshThreshold of 1 being skipped by the first-occurrence early return.
-        service.config = { enabled: true, refreshThreshold: 1, failThreshold: 2 };
+        service.config = { enabled: true, refreshThreshold: 1, promptThreshold: 0, failThreshold: 2 };
         const error = () => Promise.resolve('{"error":"stale"}' as ToolCallResult);
 
         const first = await service.run(tool, ARGS, request(), error); // 1 -> refresh immediately
@@ -197,5 +209,76 @@ describe('ChatToolRequestService loop guard', () => {
             last = await service.run(tool, ARGS, request(), error);
         }
         expect(loopDetectedText(last!)).to.contain('only a hint to stop');
+    });
+
+    describe('continue prompt', () => {
+
+        it('asks the user to continue at the prompt threshold', async () => {
+            const service = new TestChatToolRequestService(new FakeFileReadTracker());
+            service.config = { enabled: true, refreshThreshold: 2, promptThreshold: 3, failThreshold: 5 };
+            const error = () => Promise.resolve('{"error":"stale"}' as ToolCallResult);
+
+            await service.run(tool, ARGS, request(), error); // 1
+            await service.run(tool, ARGS, request(), error); // 2 -> refresh
+            expect(service.promptCalls).to.have.lengthOf(0);
+            await service.run(tool, ARGS, request(), error); // 3 -> prompt
+
+            expect(service.promptCalls).to.deep.equal([{ count: 3 }]);
+        });
+
+        it('stops the loop with a terminal error when the user chooses to stop', async () => {
+            const service = new TestChatToolRequestService(new FakeFileReadTracker());
+            service.config = { enabled: true, refreshThreshold: 2, promptThreshold: 3, failThreshold: 5 };
+            service.promptDecisions = ['stop'];
+            const error = () => Promise.resolve('{"error":"stale"}' as ToolCallResult);
+
+            await service.run(tool, ARGS, request(), error); // 1
+            await service.run(tool, ARGS, request(), error); // 2 -> refresh
+            const stopResult = await service.run(tool, ARGS, request(), error); // 3 -> prompt -> stop
+
+            const text = loopDetectedText(stopResult);
+            expect(text).to.be.a('string');
+            expect(text).to.contain('Stopped at your request');
+        });
+
+        it('lets the agent keep going when the user chooses to continue', async () => {
+            const service = new TestChatToolRequestService(new FakeFileReadTracker());
+            service.config = { enabled: true, refreshThreshold: 2, promptThreshold: 3, failThreshold: 5 };
+            service.promptDecisions = ['continue'];
+            const error = () => Promise.resolve('{"error":"stale"}' as ToolCallResult);
+
+            await service.run(tool, ARGS, request(), error); // 1
+            await service.run(tool, ARGS, request(), error); // 2 -> refresh
+            const continueResult = await service.run(tool, ARGS, request(), error); // 3 -> prompt -> continue
+
+            // Continuing surfaces the original error unchanged, not a loop-detected terminal error.
+            expect(loopDetectedText(continueResult)).to.be.undefined;
+            expect(continueResult).to.equal('{"error":"stale"}');
+        });
+
+        it('asks only once per run of identical errors', async () => {
+            const service = new TestChatToolRequestService(new FakeFileReadTracker());
+            service.config = { enabled: true, refreshThreshold: 2, promptThreshold: 3, failThreshold: 10 };
+            service.promptDecisions = ['continue'];
+            const error = () => Promise.resolve('{"error":"stale"}' as ToolCallResult);
+
+            for (let i = 0; i < 6; i++) {
+                await service.run(tool, ARGS, request(), error);
+            }
+
+            expect(service.promptCalls).to.have.lengthOf(1);
+        });
+
+        it('never prompts when the prompt threshold is 0', async () => {
+            const service = new TestChatToolRequestService(new FakeFileReadTracker());
+            service.config = { enabled: true, refreshThreshold: 2, promptThreshold: 0, failThreshold: 5 };
+            const error = () => Promise.resolve('{"error":"stale"}' as ToolCallResult);
+
+            for (let i = 0; i < 4; i++) {
+                await service.run(tool, ARGS, request(), error);
+            }
+
+            expect(service.promptCalls).to.have.lengthOf(0);
+        });
     });
 });

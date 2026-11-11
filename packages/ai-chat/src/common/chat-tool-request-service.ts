@@ -85,6 +85,12 @@ export interface ToolLoopGuardConfig {
     readonly enabled: boolean;
     /** Consecutive identical errors after which a {@link FileReadTracker} refresh is forced. */
     readonly refreshThreshold: number;
+    /**
+     * Consecutive identical errors after which the user is asked whether to keep retrying.
+     * `0` disables the prompt. When enabled it must be greater than {@link refreshThreshold} and
+     * less than {@link failThreshold}.
+     */
+    readonly promptThreshold: number;
     /** Consecutive identical errors after which the request is failed. Must exceed {@link refreshThreshold}. */
     readonly failThreshold: number;
 }
@@ -92,8 +98,30 @@ export interface ToolLoopGuardConfig {
 export const DEFAULT_TOOL_LOOP_GUARD_CONFIG: ToolLoopGuardConfig = {
     enabled: true,
     refreshThreshold: 3,
+    promptThreshold: 4,
     failThreshold: 5
 };
+
+/**
+ * A user's decision when asked whether the agent should keep retrying a looping tool call.
+ * - `continue`: let the agent try again.
+ * - `stop`: abort the loop now with a terminal error.
+ */
+export type LoopContinueDecision = 'continue' | 'stop';
+
+/**
+ * How long a {@link LoopContinueDecision} should be remembered, so the user is not asked again.
+ * - `once`: applies only to this prompt.
+ * - `session`: remembered for the rest of the current chat session.
+ * - `forever`: remembered across sessions (persisted).
+ */
+export type LoopDecisionScope = 'once' | 'session' | 'forever';
+
+/** A {@link LoopContinueDecision} together with how long the user asked us to remember it. */
+export interface RememberedLoopDecision {
+    readonly decision: LoopContinueDecision;
+    readonly scope: LoopDecisionScope;
+}
 
 /** Tracks the most recent tool-call outcome per session so consecutive identical failures can be counted. */
 interface LoopGuardState {
@@ -103,6 +131,8 @@ interface LoopGuardState {
     count: number;
     /** Whether a refresh has already been forced for the current run of identical errors. */
     refreshed: boolean;
+    /** Whether the user has already been prompted to continue for the current run of identical errors. */
+    prompted: boolean;
 }
 
 /**
@@ -210,6 +240,9 @@ export class ChatToolRequestService {
      *   session's) files are still stale, and the agent is told to actually re-read them. The tracked state is
      *   deliberately left protected (not silently re-snapshotted), so a stubborn agent that ignores the advice
      *   cannot overwrite the user's edits with a repeated stale write; a genuine re-read is what clears it.
+     * - at the prompt threshold, the user is asked whether the agent should keep retrying (see
+     *   {@link promptContinueOnLoop}). If the user stops the loop, a terminal error is returned; the decision
+     *   can be remembered for the session or permanently so the user is not asked again.
      * - at the fail threshold, a terminal `tool-loop-detected` error is returned. This is only a hint for the
      *   language model's tool loop to stop re-prompting; nothing is broken or cancelled programmatically, so a
      *   provider that chooses to keep going still can.
@@ -240,7 +273,7 @@ export class ChatToolRequestService {
         if (!state || state.signature !== signature) {
             // First time we see this exact failure: start counting at 1 but still evaluate the thresholds below,
             // so a refreshThreshold of 1 triggers immediately instead of being skipped by an early return.
-            this.loopGuardStates.set(sessionKey, { signature, count: 1, refreshed: false });
+            this.loopGuardStates.set(sessionKey, { signature, count: 1, refreshed: false, prompted: false });
         } else {
             state.count++;
         }
@@ -275,7 +308,43 @@ export class ChatToolRequestService {
             );
         }
 
+        if (config.promptThreshold > 0 && current.count >= config.promptThreshold && !current.prompted) {
+            // Only ask once per run of identical errors; the agent gets one more chance either way.
+            current.prompted = true;
+            const decision = await this.promptContinueOnLoop(request, toolRequest, current.count, result);
+            if (decision === 'stop') {
+                this.loopGuardStates.delete(sessionKey);
+                return createToolCallError(
+                    `Stopped at your request. Tool '${toolRequest.name ?? toolRequest.id}' returned the same error ${current.count} times in a ` +
+                    'row and you chose to stop retrying it. Do not call this tool again with these arguments; reconsider the approach or ask ' +
+                    `the user how to proceed. Last error was: ${formatToolCallContentForModel(result)}`,
+                    'tool-loop-detected'
+                );
+            }
+            // The user chose to continue: surface the original error unchanged and let the agent try again.
+            return result;
+        }
+
         return result;
+    }
+
+    /**
+     * Asks the user whether the agent should keep retrying a looping tool call. The common service has no
+     * access to a UI, so it defaults to `continue`; the frontend service overrides this to show a
+     * "it looks like you're repeating, continue?" confirmation with a remember-my-decision option.
+     *
+     * @param request the chat request the looping tool call belongs to
+     * @param toolRequest the tool being repeatedly called
+     * @param count how many times the identical error has now occurred in a row
+     * @param result the repeated error result
+     */
+    protected async promptContinueOnLoop(
+        _request: MutableChatRequestModel,
+        _toolRequest: ToolRequest,
+        _count: number,
+        _result: ToolCallResult
+    ): Promise<LoopContinueDecision> {
+        return 'continue';
     }
 
     /**
