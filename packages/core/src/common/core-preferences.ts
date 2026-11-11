@@ -204,6 +204,13 @@ export const corePreferenceSchema: PreferenceSchema = {
             default: [],
             scope: PreferenceScope.User
         },
+        'http.fetchAdditionalSupport': {
+            type: 'boolean',
+            default: true,
+            markdownDescription: nls.localize('theia/core/http/fetchAdditionalSupport',
+                'Controls whether `fetch` in extensions uses the proxy support (`#http.proxySupport#`) and the system certificates (`#http.systemCertificates#`).'),
+            scope: PreferenceScope.User
+        },
         'http.systemCertificates': {
             type: 'boolean',
             default: true,
