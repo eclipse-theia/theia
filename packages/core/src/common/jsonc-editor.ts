@@ -26,13 +26,15 @@ export const JSONCEditor = Symbol('JSONCEditor');
  */
 export interface JSONCEditor {
     /**
+     * @param formattingOptions the options to use instead of the ones detected from the content or configured in the preferences.
      * @returns the content with the value at the path set, or removed if the value is `undefined`.
      */
-    setValue(content: string, path: jsoncparser.JSONPath, value: JSONValue): string;
+    setValue(content: string, path: jsoncparser.JSONPath, value: JSONValue, formattingOptions?: Partial<jsoncparser.FormattingOptions>): string;
     /**
+     * @param formattingOptions the options to use instead of the ones detected from the content or configured in the preferences.
      * @returns the edits that set the value at the path, or remove it if the value is `undefined`.
      */
-    getEditOperations(content: string, path: jsoncparser.JSONPath, value: JSONValue): jsoncparser.Edit[];
+    getEditOperations(content: string, path: jsoncparser.JSONPath, value: JSONValue, formattingOptions?: Partial<jsoncparser.FormattingOptions>): jsoncparser.Edit[];
     /**
      * @returns the line ending used by the content, so that the edits do not mix line endings.
      * For content with a single line, the line ending configured by `files.eol`, or that of the backend's operating system.
@@ -45,12 +47,12 @@ export class JSONCEditorImpl implements JSONCEditor {
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
-    setValue(content: string, path: jsoncparser.JSONPath, value: JSONValue): string {
-        const edits = this.getEditOperations(content, path, value);
+    setValue(content: string, path: jsoncparser.JSONPath, value: JSONValue, formattingOptions?: Partial<jsoncparser.FormattingOptions>): string {
+        const edits = this.getEditOperations(content, path, value, formattingOptions);
         return jsoncparser.applyEdits(content, edits);
     }
 
-    getEditOperations(content: string, path: jsoncparser.JSONPath, value: JSONValue): jsoncparser.Edit[] {
+    getEditOperations(content: string, path: jsoncparser.JSONPath, value: JSONValue, formattingOptions?: Partial<jsoncparser.FormattingOptions>): jsoncparser.Edit[] {
         // Everything is already undefined - no need for changes.
         if (!content.trim() && value === undefined) {
             return [];
@@ -66,7 +68,8 @@ export class JSONCEditorImpl implements JSONCEditor {
         const jsonCOptions = {
             formattingOptions: {
                 ...this.getIndentation(content),
-                eol: this.getEOL(content)
+                eol: this.getEOL(content),
+                ...formattingOptions
             }
         };
         return jsoncparser.modify(content, path, value, jsonCOptions);
@@ -77,11 +80,10 @@ export class JSONCEditorImpl implements JSONCEditor {
      * otherwise the indentation configured in the preferences.
      */
     protected getIndentation(content: string): { insertSpaces: boolean, tabSize: number } {
-        const tabSize = this.preferenceService.get('editor.tabSize', { fallback: 4, override: 'json' });
-        const insertSpaces = this.preferenceService.get('editor.insertSpaces', { fallback: true, override: 'json' });
-        if (this.preferenceService.get('editor.detectIndentation', { fallback: true, override: 'json' })) {
-            // The first indented property is a property of the top-level object, so its indentation is one level.
-            const indentation = /^([ \t]+)"/m.exec(content)?.[1];
+        const tabSize = this.preferenceService.get('editor.tabSize', { fallback: 4, override: 'jsonc' });
+        const insertSpaces = this.preferenceService.get('editor.insertSpaces', { fallback: true, override: 'jsonc' });
+        if (this.preferenceService.get('editor.detectIndentation', { fallback: true, override: 'jsonc' })) {
+            const indentation = this.detectIndentation(content);
             if (indentation?.startsWith('\t')) {
                 return { insertSpaces: false, tabSize };
             } else if (indentation) {
@@ -91,12 +93,28 @@ export class JSONCEditorImpl implements JSONCEditor {
         return { insertSpaces, tabSize };
     }
 
+    /**
+     * @returns the whitespace before the first property or element of the root, which is one level of indentation,
+     * or `undefined` if it does not start its own line.
+     */
+    protected detectIndentation(content: string): string | undefined {
+        const child = jsoncparser.parseTree(content)?.children?.[0];
+        if (child) {
+            const lineStart = content.lastIndexOf('\n', child.offset) + 1;
+            const indentation = content.substring(lineStart, child.offset);
+            if (/^[ \t]+$/.test(indentation)) {
+                return indentation;
+            }
+        }
+        return undefined;
+    }
+
     getEOL(content = ''): string {
         const lineBreak = /\r?\n/.exec(content)?.[0];
         if (lineBreak) {
             return lineBreak;
         }
-        const eol = this.preferenceService.get('files.eol', { override: 'json' });
+        const eol = this.preferenceService.get('files.eol', { override: 'jsonc' });
         if (eol && typeof eol === 'string' && eol !== 'auto') {
             return eol;
         }

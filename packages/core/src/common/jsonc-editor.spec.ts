@@ -49,6 +49,17 @@ describe('JSONCEditor', () => {
         expect(editor.setValue(content, ['editor.tabSize'], 2)).to.equal('{\n\t"editor.fontSize": 20,\n\t"editor.tabSize": 2\n}');
     });
 
+    it('keeps the indentation of content with an array at the root', () => {
+        const content = '[\n    {\n        "key": "a"\n    }\n]';
+        expect(editor.setValue(content, [], [{ key: 'a' }, { key: 'b' }]))
+            .to.equal('[\n    {\n        "key": "a"\n    },\n    {\n        "key": "b"\n    }\n]');
+    });
+
+    it('uses the given formatting options instead of the detected ones', () => {
+        const content = '{\n\t"editor.fontSize": 20\n}';
+        expect(editor.setValue(content, ['editor.tabSize'], 2, { insertSpaces: true, tabSize: 2 })).to.contain('\n  "editor.tabSize": 2');
+    });
+
     it('uses the configured indentation if the content is not indented', () => {
         preferences['editor.tabSize'] = 2;
         expect(editor.setValue('{}', ['editor.tabSize'], 2)).to.equal(`{${OS.backend.EOL}  "editor.tabSize": 2${OS.backend.EOL}}`);
