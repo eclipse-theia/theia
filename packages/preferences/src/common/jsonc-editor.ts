@@ -17,7 +17,7 @@
 import * as jsoncparser from 'jsonc-parser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
-import { isWindows, PreferenceService } from '@theia/core';
+import { OS, PreferenceService } from '@theia/core';
 
 @injectable()
 export class JSONCEditor {
@@ -31,7 +31,7 @@ export class JSONCEditor {
 
     protected getEditOperations(content: string, path: jsoncparser.JSONPath, value: JSONValue): jsoncparser.Edit[] {
         // Everything is already undefined - no need for changes.
-        if (!content && value === undefined) {
+        if (!content.trim() && value === undefined) {
             return [];
         }
         // Delete the entire document.
@@ -42,24 +42,49 @@ export class JSONCEditor {
                 content: ''
             }];
         }
-        const tabSize = this.preferenceService.get('editor.tabSize', { fallback: 4, override: 'json' });
-        const insertSpaces = this.preferenceService.get('editor.insertSpaces', { fallback: true, override: 'json' });
-
+        const { insertSpaces, tabSize } = this.getIndentation(content);
         const jsonCOptions = {
             formattingOptions: {
                 insertSpaces,
                 tabSize,
-                eol: this.getEOL()
+                eol: this.getEOL(content)
             }
         };
         return jsoncparser.modify(content, path, value, jsonCOptions);
     }
 
-    getEOL(): string {
+    /**
+     * @returns the indentation of the content if `editor.detectIndentation` is enabled and the content is indented,
+     * otherwise the indentation configured in the preferences.
+     */
+    protected getIndentation(content: string): { insertSpaces: boolean, tabSize: number } {
+        const tabSize = this.preferenceService.get('editor.tabSize', { fallback: 4, override: 'json' });
+        const insertSpaces = this.preferenceService.get('editor.insertSpaces', { fallback: true, override: 'json' });
+        if (this.preferenceService.get('editor.detectIndentation', { fallback: true, override: 'json' })) {
+            // The first indented property is a property of the top-level object, so its indentation is one level.
+            const indentation = /^([ \t]+)"/m.exec(content)?.[1];
+            if (indentation?.startsWith('\t')) {
+                return { insertSpaces: false, tabSize };
+            } else if (indentation) {
+                return { insertSpaces: true, tabSize: indentation.length };
+            }
+        }
+        return { insertSpaces, tabSize };
+    }
+
+    /**
+     * @returns the line ending used by the content, so that the edits do not mix line endings.
+     * For content with a single line, the line ending configured by `files.eol`, or that of the backend's operating system.
+     */
+    getEOL(content = ''): string {
+        const lineBreak = /\r?\n/.exec(content)?.[0];
+        if (lineBreak) {
+            return lineBreak;
+        }
         const eol = this.preferenceService.get('files.eol', { override: 'json' });
         if (eol && typeof eol === 'string' && eol !== 'auto') {
             return eol;
         }
-        return isWindows ? '\r\n' : '\n';
+        return OS.backend.EOL;
     }
 }

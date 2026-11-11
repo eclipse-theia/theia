@@ -43,8 +43,12 @@ class MockFileService {
     readonly writes: WriteCall[] = [];
     /** Simulates another writer: replaces the content on disk and fails the next write with `FILE_MODIFIED_SINCE`. */
     externalContent: string | undefined;
+    /** Simulates a file that is modified by someone else on every write. */
+    alwaysModified = false;
+    onRead: (() => void) | undefined;
 
     async read(): Promise<{ value: string, encoding: string, etag: string, mtime: number }> {
+        this.onRead?.();
         if (this.content === undefined) {
             throw new FileOperationError('not found', FileOperationResult.FILE_NOT_FOUND);
         }
@@ -52,24 +56,45 @@ class MockFileService {
     }
 
     async write(_uri: URI, value: string, options: WriteCall['options']): Promise<object> {
+        this.simulateExternalChange();
+        this.writes.push({ value, options });
+        this.content = value;
+        return {};
+    }
+
+    async create(_uri: URI, value: string, options: { overwrite?: boolean }): Promise<object> {
+        this.simulateExternalChange();
+        if (this.content !== undefined && !options.overwrite) {
+            throw new FileOperationError('exists', FileOperationResult.FILE_MODIFIED_SINCE);
+        }
+        this.writes.push({ value, options: {} });
+        this.content = value;
+        return {};
+    }
+
+    protected simulateExternalChange(): void {
+        if (this.alwaysModified) {
+            throw new FileOperationError('modified', FileOperationResult.FILE_MODIFIED_SINCE);
+        }
         if (this.externalContent !== undefined) {
             this.content = this.externalContent;
             this.etag = 'etag-external';
             this.externalContent = undefined;
             throw new FileOperationError('modified', FileOperationResult.FILE_MODIFIED_SINCE);
         }
-        this.writes.push({ value, options });
-        this.content = value;
-        return {};
     }
 }
 
 class MockDocument {
     saved = false;
+    /** Simulates a save that fails without an error, as a save of a file that was changed on disk does. */
+    saveFails = false;
     constructor(public dirty: boolean) { }
     async save(): Promise<void> {
-        this.dirty = false;
-        this.saved = true;
+        if (!this.saveFails) {
+            this.dirty = false;
+            this.saved = true;
+        }
     }
 }
 
@@ -77,6 +102,7 @@ describe('PreferenceTransaction', () => {
     let fileService: MockFileService;
     let document: MockDocument | undefined;
     let messageAnswer: string | undefined;
+    let errors: string[];
     let container: Container;
     let createTransaction: () => PreferenceTransaction;
 
@@ -84,6 +110,7 @@ describe('PreferenceTransaction', () => {
         fileService = new MockFileService();
         document = undefined;
         messageAnswer = undefined;
+        errors = [];
         container = new Container();
         container.bind(ILogger).to(MockLogger).inSingletonScope();
         container.bind(FileService).toConstantValue(fileService as unknown as FileService);
@@ -91,7 +118,12 @@ describe('PreferenceTransaction', () => {
             get: (_name: string, options?: { fallback?: unknown }) => options?.fallback
         } as unknown as PreferenceService);
         container.bind(JSONCEditor).toSelf().inSingletonScope();
-        container.bind(MessageService).toConstantValue({ error: async () => messageAnswer } as unknown as MessageService);
+        container.bind(MessageService).toConstantValue({
+            error: async (message: string) => {
+                errors.push(message);
+                return messageAnswer;
+            }
+        } as unknown as MessageService);
         container.bind(EditorManager).toConstantValue({
             get all(): object[] {
                 return document ? [{ editor: { uri: configUri, document } }] : [];
@@ -123,6 +155,24 @@ describe('PreferenceTransaction', () => {
 
         expect(result).to.be.true;
         expect(JSON.parse(fileService.content!)).to.deep.equal({ 'editor.fontSize': 20 });
+    });
+
+    it('does not overwrite the file if someone else created it in the meantime', async () => {
+        fileService.content = undefined;
+        fileService.externalContent = '{ "editor.wordWrap": "on" }';
+        const result = await createTransaction().enqueueAction('editor.fontSize', ['editor.fontSize'], 20);
+
+        expect(result).to.be.true;
+        expect(JSON.parse(fileService.content!)).to.deep.equal({ 'editor.wordWrap': 'on', 'editor.fontSize': 20 });
+    });
+
+    it('notifies the user if the file keeps being modified by someone else', async () => {
+        fileService.alwaysModified = true;
+        const result = await createTransaction().enqueueAction('editor.fontSize', ['editor.fontSize'], 20);
+
+        expect(result).to.be.false;
+        expect(fileService.writes).to.be.empty;
+        expect(errors).to.deep.equal(['Failed to write the settings to settings.json.']);
     });
 
     it('does not write if the edits do not change the file', async () => {
@@ -184,5 +234,51 @@ describe('PreferenceTransaction', () => {
         expect(result).to.be.true;
         expect(backgroundDocument.saved).to.be.true;
         expect(fileService.writes).to.have.length(1);
+    });
+
+    it('does not write if saving the editor with unsaved changes fails', async () => {
+        document = new MockDocument(true);
+        document.saveFails = true;
+        messageAnswer = 'Save and Retry';
+        const transaction = createTransaction();
+        const action = transaction.enqueueAction('editor.fontSize', ['editor.fontSize'], 20);
+
+        const error = await action.then(() => undefined, e => e);
+        expect(error).to.be.instanceOf(CancellationError);
+        expect(await transaction.result).to.be.false;
+        expect(fileService.writes).to.be.empty;
+        expect(errors).to.include('Could not save settings.json.');
+    });
+
+    it('checks for unsaved changes made while the transaction is running before writing', async () => {
+        const editedDocument = new MockDocument(false);
+        document = editedDocument;
+        fileService.onRead = () => {
+            editedDocument.dirty = true;
+            fileService.onRead = undefined;
+        };
+        editedDocument.save = async () => {
+            editedDocument.dirty = false;
+            editedDocument.saved = true;
+            fileService.content = '{ "editor.wordWrap": "on" }';
+        };
+        messageAnswer = 'Save and Retry';
+        const result = await createTransaction().enqueueAction('editor.fontSize', ['editor.fontSize'], 20);
+
+        expect(result).to.be.true;
+        expect(editedDocument.saved).to.be.true;
+        expect(JSON.parse(fileService.content!)).to.deep.equal({ 'editor.wordWrap': 'on', 'editor.fontSize': 20 });
+    });
+
+    it('does not write if unsaved changes made while the transaction is running are not saved', async () => {
+        const editedDocument = new MockDocument(false);
+        document = editedDocument;
+        fileService.onRead = () => {
+            editedDocument.dirty = true;
+        };
+        const result = await createTransaction().enqueueAction('editor.fontSize', ['editor.fontSize'], 20);
+
+        expect(result).to.be.false;
+        expect(fileService.writes).to.be.empty;
     });
 });
