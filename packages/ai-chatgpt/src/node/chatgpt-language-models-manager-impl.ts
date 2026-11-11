@@ -15,11 +15,12 @@
 // *****************************************************************************
 
 import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
+import { getProxyUrl } from '@theia/ai-core/lib/node';
 import { ILogger, nls } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-model-utils';
 import { getOpenAiModelDefaults } from '@theia/ai-openai/lib/node/openai-model-defaults';
-import { ChatGptAuthenticationMode, ChatGptLanguageModelsManager, ChatGptModelDescription } from '../common/index.js';
+import { CHATGPT_RESPONSES_BASE_URL, ChatGptAuthenticationMode, ChatGptLanguageModelsManager, ChatGptModelDescription } from '../common/index.js';
 import { ChatGptBackendAuthService } from './chatgpt-auth-service.js';
 import { ChatGptModel } from './chatgpt-language-model.js';
 import { ChatGptModelCatalog } from './chatgpt-model-catalog.js';
@@ -50,9 +51,11 @@ export class ChatGptLanguageModelsManagerImpl implements ChatGptLanguageModelsMa
     protected readonly logger: ILogger;
 
     protected proxyUrl: string | undefined;
+    protected noProxy: string[] | undefined;
 
-    setProxyUrl(proxyUrl: string | undefined): void {
+    setProxyUrl(proxyUrl: string | undefined, noProxy?: string[]): void {
         this.proxyUrl = proxyUrl || undefined;
+        this.noProxy = noProxy;
     }
 
     setAuthenticationMode(mode: ChatGptAuthenticationMode): Promise<void> {
@@ -65,7 +68,7 @@ export class ChatGptLanguageModelsManagerImpl implements ChatGptLanguageModelsMa
 
     async createOrUpdateLanguageModels(...modelDescriptions: ChatGptModelDescription[]): Promise<void> {
         const status = await this.calculateStatus();
-        const proxy = this.proxyUrl;
+        const proxy = getProxyUrl(CHATGPT_RESPONSES_BASE_URL, this.proxyUrl, this.noProxy);
         for (const description of modelDescriptions) {
             // The ChatGPT plan serves OpenAI models, so their published capabilities apply.
             const defaults = getOpenAiModelDefaults(description.model);

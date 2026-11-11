@@ -26,6 +26,7 @@ export class HuggingFaceLanguageModelsManagerImpl implements HuggingFaceLanguage
 
     protected _apiKey: string | undefined;
     protected _proxyUrl: string | undefined;
+    protected _noProxy: string[] | undefined;
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
@@ -47,7 +48,7 @@ export class HuggingFaceLanguageModelsManagerImpl implements HuggingFaceLanguage
             const apiKeyProvider = () => this.apiKey;
             const status = this.calculateStatus(this.apiKey);
 
-            const proxyUrl = getProxyUrl('https://api-inference.huggingface.co', this._proxyUrl);
+            const proxyUrl = getProxyUrl('https://api-inference.huggingface.co', this._proxyUrl, this._noProxy);
 
             if (model) {
                 if (!(model instanceof HuggingFaceModel)) {
@@ -83,11 +84,12 @@ export class HuggingFaceLanguageModelsManagerImpl implements HuggingFaceLanguage
         this._apiKey = apiKey || undefined;
     }
 
-    setProxyUrl(proxyUrl: string | undefined): void {
+    setProxyUrl(proxyUrl: string | undefined, noProxy?: string[]): void {
         if (proxyUrl) {
             this._proxyUrl = proxyUrl;
         } else {
             this._proxyUrl = undefined;
         }
+        this._noProxy = noProxy;
     }
 }

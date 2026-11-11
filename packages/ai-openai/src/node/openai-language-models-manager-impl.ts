@@ -62,6 +62,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
     protected _allowEnvironmentApiKey = false;
     protected _apiVersion: string | undefined;
     protected _proxyUrl: string | undefined;
+    protected _noProxy: string[] | undefined;
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
@@ -88,7 +89,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
         if (!apiKey) {
             return { models: [], fromCache: false };
         }
-        const proxyUrl = getProxyUrl('https://api.openai.com', this._proxyUrl);
+        const proxyUrl = getProxyUrl('https://api.openai.com', this._proxyUrl, this._noProxy);
         return this.discoveryFetcher.fetch({
             snapshotFile: OPENAI_SNAPSHOT_FILE,
             providerLabel: 'OpenAI',
@@ -181,7 +182,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                 }
                 return undefined;
             };
-            const proxyUrl = getProxyUrl(modelDescription.url ?? 'https://api.openai.com', this._proxyUrl);
+            const proxyUrl = getProxyUrl(modelDescription.url ?? 'https://api.openai.com', this._proxyUrl, this._noProxy);
 
             const status = this.calculateStatus(modelDescription, apiKeyProvider());
             const metadata = this.resolveMetadata(modelDescription);
@@ -291,11 +292,12 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
         }
     }
 
-    setProxyUrl(proxyUrl: string | undefined): void {
+    setProxyUrl(proxyUrl: string | undefined, noProxy?: string[]): void {
         if (proxyUrl) {
             this._proxyUrl = proxyUrl;
         } else {
             this._proxyUrl = undefined;
         }
+        this._noProxy = noProxy;
     }
 }
