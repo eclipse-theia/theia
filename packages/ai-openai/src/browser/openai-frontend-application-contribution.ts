@@ -71,7 +71,10 @@ export class OpenAiFrontendApplicationContribution extends DiscoveringProviderCo
 
     protected override initializeProvider(): void {
         this.manager.setApiKey(this.preferenceService.get<string>(API_KEY_PREF, undefined));
-        this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
+        this.manager.setProxyUrl(
+            this.preferenceService.get<string>('http.proxy', undefined),
+            this.preferenceService.get<string[]>('http.noProxy', undefined)
+        );
 
         const customModels = this.preferenceService.get<Partial<OpenAiModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
         this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
@@ -96,8 +99,11 @@ export class OpenAiFrontendApplicationContribution extends DiscoveringProviderCo
             event.preferenceName === SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF ||
             event.preferenceName === PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD) {
             this.updateDiscoveredModels();
-        } else if (event.preferenceName === 'http.proxy') {
-            this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
+        } else if (event.preferenceName === 'http.proxy' || event.preferenceName === 'http.noProxy') {
+            this.manager.setProxyUrl(
+                this.preferenceService.get<string>('http.proxy', undefined),
+                this.preferenceService.get<string[]>('http.noProxy', undefined)
+            );
             // A model keeps the proxy it was registered with, so the custom endpoints have to be
             // re-registered as well: discovery only covers the models it registers itself.
             this.updateCustomModels();

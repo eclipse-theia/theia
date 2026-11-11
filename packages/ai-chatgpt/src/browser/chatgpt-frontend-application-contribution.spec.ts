@@ -39,11 +39,13 @@ class FakeManager implements ChatGptLanguageModelsManager {
     readonly created: ChatGptModelDescription[][] = [];
     readonly removed: string[][] = [];
     proxyUrl: string | undefined;
+    noProxy: string[] | undefined;
     available: string[] = [];
     availableCalls = 0;
 
-    setProxyUrl(proxyUrl: string | undefined): void {
+    setProxyUrl(proxyUrl: string | undefined, noProxy?: string[]): void {
         this.proxyUrl = proxyUrl;
+        this.noProxy = noProxy;
     }
     async getAvailableModels(): Promise<string[]> {
         this.availableCalls++;
@@ -455,6 +457,20 @@ describe('ChatGptFrontendApplicationContribution', () => {
         await flush();
 
         expect(manager.proxyUrl).to.equal('http://other.example.com:3128');
+        expect(registeredIds(manager.created[1])).to.deep.equal(['chatgpt/gpt-5.5']);
+    });
+
+    it('forwards the proxy bypass list and re-registers the models when it changes', async () => {
+        preferences.values.set(MODELS_PREF, ['gpt-5.5']);
+        preferences.values.set('http.noProxy', ['localhost']);
+        await start();
+
+        expect(manager.noProxy).to.deep.equal(['localhost']);
+
+        preferences.set('http.noProxy', ['localhost', '.corp.internal']);
+        await flush();
+
+        expect(manager.noProxy).to.deep.equal(['localhost', '.corp.internal']);
         expect(registeredIds(manager.created[1])).to.deep.equal(['chatgpt/gpt-5.5']);
     });
 });
