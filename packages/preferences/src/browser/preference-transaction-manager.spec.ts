@@ -25,7 +25,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { TextEditorDocumentService } from '@theia/editor/lib/browser/text-editor-document-service';
-import { JSONCEditor } from '@theia/core/lib/common/jsonc-editor';
+import { JSONCEditor, JSONCEditorImpl } from '@theia/core/lib/common/jsonc-editor';
 import { PreferenceTransaction, PreferenceTransactionFactory, preferenceTransactionFactoryCreator } from './preference-transaction-manager.js';
 
 disableJSDOM();
@@ -117,7 +117,7 @@ describe('PreferenceTransaction', () => {
         container.bind(PreferenceService).toConstantValue({
             get: (_name: string, options?: { fallback?: unknown }) => options?.fallback
         } as unknown as PreferenceService);
-        container.bind(JSONCEditor).toSelf().inSingletonScope();
+        container.bind(JSONCEditor).to(JSONCEditorImpl).inSingletonScope();
         container.bind(MessageService).toConstantValue({
             error: async (message: string) => {
                 errors.push(message);

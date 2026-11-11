@@ -32,14 +32,11 @@ const preferencesConnectionModule = ConnectionContainerModule.create(({ bind, bi
     bindBackendService(CliPreferencesPath, CliPreferences);
 });
 
-export default new ContainerModule((bind, unbind, isBound) => {
+export default new ContainerModule(bind => {
     bind(PreferenceCliContribution).toSelf().inSingletonScope();
     bind(CliPreferences).toService(PreferenceCliContribution);
     bind(CliContribution).toService(PreferenceCliContribution);
     bind(RemoteCliContribution).toService(PreferenceCliContribution);
-    if (!isBound(JSONCEditor)) {
-        bind(JSONCEditor).toSelf().inSingletonScope();
-    }
 
     bind(PreferenceStorageFactory).toFactory(({ container }) => (uri: URI, scope: PreferenceScope) => new BackendPreferenceStorage(
         container.get(DiskFileSystemProvider),

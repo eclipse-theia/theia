@@ -25,7 +25,6 @@ import { PreferencesContribution } from './preferences-contribution.js';
 import { PreferenceScopeCommandManager } from './util/preference-scope-command-manager.js';
 import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
 import { PreferencesJsonSchemaContribution } from './preferences-json-schema-contribution.js';
-import { JSONCEditor } from '@theia/core/lib/common/jsonc-editor';
 import { PreferenceTransaction, PreferenceTransactionFactory, preferenceTransactionFactoryCreator } from './preference-transaction-manager.js';
 import { PreferenceOpenHandler } from './preference-open-handler.js';
 import { CliPreferences, CliPreferencesPath } from '../common/cli-preferences.js';
@@ -41,7 +40,7 @@ import { FrontendPreferenceStorage } from './frontend-preference-storage.js';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { PreferenceScope, URI } from '@theia/core';
 
-export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind, isBound?: interfaces.IsBound): void {
+export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind): void {
     bindPreferenceProviders(bind, unbind);
     bindPreferencesWidgets(bind);
 
@@ -59,10 +58,6 @@ export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind
     bind(PreferencesJsonSchemaContribution).toSelf().inSingletonScope();
     bind(JsonSchemaContribution).toService(PreferencesJsonSchemaContribution);
 
-    // Also bound by `@theia/monaco`.
-    if (!isBound?.(JSONCEditor)) {
-        bind(JSONCEditor).toSelf().inSingletonScope();
-    }
     bind(PreferenceTransaction).toSelf();
     bind(PreferenceTransactionFactory).toFactory(preferenceTransactionFactoryCreator);
     bind(PreferenceStorageFactory).toFactory(({ container }) => (uri: URI, scope: PreferenceScope) => new FrontendPreferenceStorage(
@@ -84,5 +79,5 @@ export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind
 }
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
-    bindPreferences(bind, unbind, isBound);
+    bindPreferences(bind, unbind);
 });

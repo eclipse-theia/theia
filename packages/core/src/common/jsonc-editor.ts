@@ -20,25 +20,36 @@ import { JSONValue } from '@lumino/coreutils';
 import { OS } from './os.js';
 import { PreferenceService } from './preferences/preference-service.js';
 
+export const JSONCEditor = Symbol('JSONCEditor');
 /**
  * Edits the content of JSON with comments, keeping its indentation and line endings.
- *
- * Not bound in the core modules, so that applications that do not edit JSONC do not bundle it.
- * Bind it with `if (!isBound(JSONCEditor)) { bind(JSONCEditor).toSelf().inSingletonScope(); }`.
  */
-@injectable()
-export class JSONCEditor {
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
-
-    setValue(model: string, path: jsoncparser.JSONPath, value: JSONValue): string {
-        const edits = this.getEditOperations(model, path, value);
-        return jsoncparser.applyEdits(model, edits);
-    }
-
+export interface JSONCEditor {
+    /**
+     * @returns the content with the value at the path set, or removed if the value is `undefined`.
+     */
+    setValue(content: string, path: jsoncparser.JSONPath, value: JSONValue): string;
     /**
      * @returns the edits that set the value at the path, or remove it if the value is `undefined`.
      */
+    getEditOperations(content: string, path: jsoncparser.JSONPath, value: JSONValue): jsoncparser.Edit[];
+    /**
+     * @returns the line ending used by the content, so that the edits do not mix line endings.
+     * For content with a single line, the line ending configured by `files.eol`, or that of the backend's operating system.
+     */
+    getEOL(content?: string): string;
+}
+
+@injectable()
+export class JSONCEditorImpl implements JSONCEditor {
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
+    setValue(content: string, path: jsoncparser.JSONPath, value: JSONValue): string {
+        const edits = this.getEditOperations(content, path, value);
+        return jsoncparser.applyEdits(content, edits);
+    }
+
     getEditOperations(content: string, path: jsoncparser.JSONPath, value: JSONValue): jsoncparser.Edit[] {
         // Everything is already undefined - no need for changes.
         if (!content.trim() && value === undefined) {
@@ -52,11 +63,9 @@ export class JSONCEditor {
                 content: ''
             }];
         }
-        const { insertSpaces, tabSize } = this.getIndentation(content);
         const jsonCOptions = {
             formattingOptions: {
-                insertSpaces,
-                tabSize,
+                ...this.getIndentation(content),
                 eol: this.getEOL(content)
             }
         };
@@ -82,10 +91,6 @@ export class JSONCEditor {
         return { insertSpaces, tabSize };
     }
 
-    /**
-     * @returns the line ending used by the content, so that the edits do not mix line endings.
-     * For content with a single line, the line ending configured by `files.eol`, or that of the backend's operating system.
-     */
     getEOL(content = ''): string {
         const lineBreak = /\r?\n/.exec(content)?.[0];
         if (lineBreak) {

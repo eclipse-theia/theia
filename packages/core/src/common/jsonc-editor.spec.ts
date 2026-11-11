@@ -19,7 +19,7 @@ import { Container } from 'inversify';
 import { JSONValue } from '@lumino/coreutils';
 import { OS } from './os.js';
 import { PreferenceService } from './preferences/preference-service.js';
-import { JSONCEditor } from './jsonc-editor.js';
+import { JSONCEditor, JSONCEditorImpl } from './jsonc-editor.js';
 
 describe('JSONCEditor', () => {
     let preferences: Record<string, unknown>;
@@ -31,7 +31,7 @@ describe('JSONCEditor', () => {
         container.bind(PreferenceService).toConstantValue({
             get: (name: string, options?: { fallback?: unknown }) => name in preferences ? preferences[name] : options?.fallback
         } as unknown as PreferenceService);
-        container.bind(JSONCEditor).toSelf();
+        container.bind(JSONCEditor).to(JSONCEditorImpl);
         editor = container.get(JSONCEditor);
     });
 
