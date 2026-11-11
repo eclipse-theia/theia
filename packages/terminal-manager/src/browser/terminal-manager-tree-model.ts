@@ -392,7 +392,7 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
             expanded: true,
             // Collection pages are excluded from the page numbering.
             counter: 0,
-            iconClass: collection.iconClass,
+            icon: collection.iconClass,
         };
     }
 

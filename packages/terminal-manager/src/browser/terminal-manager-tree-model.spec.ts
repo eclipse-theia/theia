@@ -192,7 +192,7 @@ describe('TerminalManagerTreeModel', () => {
             expect(TerminalManagerTreeTypes.isPageNode(page)).to.be.true;
             if (TerminalManagerTreeTypes.isPageNode(page)) {
                 expect(page.label).to.equal(tasksCollection.label);
-                expect(page.iconClass).to.equal(tasksCollection.iconClass);
+                expect(page.icon).to.equal(tasksCollection.iconClass);
                 expect(page.counter).to.equal(0);
             }
         });

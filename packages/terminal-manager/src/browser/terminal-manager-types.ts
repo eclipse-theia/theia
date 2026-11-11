@@ -159,7 +159,7 @@ export namespace TerminalManagerTreeTypes {
         label: string;
         id: PageId;
         counter: number;
-        iconClass?: string;
+        icon?: string;
     }
 
     export type TerminalManagerTreeNode = PageNode | TerminalNode | TerminalGroupNode;
