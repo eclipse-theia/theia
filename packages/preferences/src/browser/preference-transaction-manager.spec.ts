@@ -34,7 +34,7 @@ const configUri = new URI('file:///home/user/.theia/settings.json');
 
 interface WriteCall {
     value: string;
-    options: { encoding?: string, etag?: string, mtime?: number };
+    options: { encoding?: string, etag?: string, mtime?: number, overwrite?: boolean, fromUserGesture?: boolean };
 }
 
 class MockFileService {
@@ -43,8 +43,8 @@ class MockFileService {
     readonly writes: WriteCall[] = [];
     /** Simulates another writer: replaces the content on disk and fails the next write with `FILE_MODIFIED_SINCE`. */
     externalContent: string | undefined;
-    /** Simulates a file that is modified by someone else on every write. */
-    alwaysModified = false;
+    /** Simulates someone else modifying the file on this many of the next writes. */
+    concurrentModifications = 0;
     onRead: (() => void) | undefined;
 
     async read(): Promise<{ value: string, encoding: string, etag: string, mtime: number }> {
@@ -62,18 +62,19 @@ class MockFileService {
         return {};
     }
 
-    async create(_uri: URI, value: string, options: { overwrite?: boolean }): Promise<object> {
+    async create(_uri: URI, value: string, options: WriteCall['options']): Promise<object> {
         this.simulateExternalChange();
         if (this.content !== undefined && !options.overwrite) {
             throw new FileOperationError('exists', FileOperationResult.FILE_MODIFIED_SINCE);
         }
-        this.writes.push({ value, options: {} });
+        this.writes.push({ value, options });
         this.content = value;
         return {};
     }
 
     protected simulateExternalChange(): void {
-        if (this.alwaysModified) {
+        if (this.concurrentModifications > 0) {
+            this.concurrentModifications--;
             throw new FileOperationError('modified', FileOperationResult.FILE_MODIFIED_SINCE);
         }
         if (this.externalContent !== undefined) {
@@ -155,6 +156,7 @@ describe('PreferenceTransaction', () => {
 
         expect(result).to.be.true;
         expect(JSON.parse(fileService.content!)).to.deep.equal({ 'editor.fontSize': 20 });
+        expect(fileService.writes[0].options).to.deep.equal({ overwrite: false, fromUserGesture: false });
     });
 
     it('does not overwrite the file if someone else created it in the meantime', async () => {
@@ -167,7 +169,7 @@ describe('PreferenceTransaction', () => {
     });
 
     it('notifies the user if the file keeps being modified by someone else', async () => {
-        fileService.alwaysModified = true;
+        fileService.concurrentModifications = Infinity;
         const result = await createTransaction().enqueueAction('editor.fontSize', ['editor.fontSize'], 20);
 
         expect(result).to.be.false;
@@ -268,6 +270,22 @@ describe('PreferenceTransaction', () => {
         expect(result).to.be.true;
         expect(editedDocument.saved).to.be.true;
         expect(JSON.parse(fileService.content!)).to.deep.equal({ 'editor.wordWrap': 'on', 'editor.fontSize': 20 });
+    });
+
+    it('does not count saving unsaved changes as an attempt to write', async () => {
+        const editedDocument = new MockDocument(false);
+        document = editedDocument;
+        fileService.onRead = () => {
+            editedDocument.dirty = true;
+            fileService.onRead = undefined;
+        };
+        fileService.concurrentModifications = 2;
+        messageAnswer = 'Save and Retry';
+        const result = await createTransaction().enqueueAction('editor.fontSize', ['editor.fontSize'], 20);
+
+        expect(result).to.be.true;
+        expect(errors).not.to.include('Failed to write the settings to settings.json.');
+        expect(JSON.parse(fileService.content!)).to.deep.equal({ 'editor.fontSize': 20 });
     });
 
     it('does not write if unsaved changes made while the transaction is running are not saved', async () => {

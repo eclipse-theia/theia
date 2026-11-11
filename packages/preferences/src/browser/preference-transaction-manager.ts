@@ -181,7 +181,7 @@ export type PreferenceTransactionPreludeProvider = () => Promise<unknown>;
 
 interface PreferenceEdit {
     path: string[];
-    value: unknown;
+    value: JSONValue;
 }
 
 interface PreferenceFileState {
@@ -197,7 +197,7 @@ interface PreferenceFileState {
 }
 
 @injectable()
-export class PreferenceTransaction extends Transaction<[string, string[], unknown], boolean, boolean> {
+export class PreferenceTransaction extends Transaction<[string, string[], JSONValue], boolean, boolean> {
     /**
      * How often the edits are reapplied when the file is modified by someone else while the transaction is running.
      */
@@ -288,10 +288,10 @@ export class PreferenceTransaction extends Transaction<[string, string[], unknow
         }
     }
 
-    protected async act(key: string, path: string[], value: unknown): Promise<boolean> {
+    protected async act(key: string, path: string[], value: JSONValue): Promise<boolean> {
         try {
             if (this.file) {
-                this.file.current = this.jsoncEditor.setValue(this.file.current, path, value as JSONValue);
+                this.file.current = this.jsoncEditor.setValue(this.file.current, path, value);
                 this.edits.push({ path, value });
                 return this.result;
             }
@@ -309,7 +309,7 @@ export class PreferenceTransaction extends Transaction<[string, string[], unknow
      */
     protected applyEdits(content: string): string {
         for (const edit of this.edits) {
-            content = this.jsoncEditor.setValue(content, edit.path, edit.value as JSONValue);
+            content = this.jsoncEditor.setValue(content, edit.path, edit.value);
         }
         return content;
     }
@@ -333,7 +333,8 @@ export class PreferenceTransaction extends Transaction<[string, string[], unknow
      * @returns whether the edits were written, `false` if the user did not save unsaved changes to the file.
      */
     protected async writeFile(file: PreferenceFileState): Promise<boolean> {
-        for (let attempt = 1; ; attempt++) {
+        // Only retries after concurrent modifications count as attempts, not saving unsaved changes.
+        for (let attempt = 1; ;) {
             if (file.current === file.original) {
                 return true;
             }
@@ -352,12 +353,13 @@ export class PreferenceTransaction extends Transaction<[string, string[], unknow
                     await this.fileService.write(uri, file.current, { encoding, etag, mtime });
                 } else {
                     // Fails with `FILE_MODIFIED_SINCE` if someone else created the file in the meantime.
-                    await this.fileService.create(uri, file.current, { overwrite: false });
+                    await this.fileService.create(uri, file.current, { overwrite: false, fromUserGesture: false });
                 }
                 return true;
             } catch (e) {
                 if (attempt < PreferenceTransaction.MAX_WRITE_ATTEMPTS && e instanceof FileOperationError
                     && e.fileOperationResult === FileOperationResult.FILE_MODIFIED_SINCE) {
+                    attempt++;
                     file = await this.readFile();
                 } else {
                     throw e;
