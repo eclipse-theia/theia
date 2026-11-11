@@ -21,7 +21,7 @@ import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import debounce from '@theia/core/shared/lodash.debounce';
-import { JSONCEditor } from '../common/jsonc-editor.js';
+import { JSONCEditor } from '@theia/core/lib/common/jsonc-editor';
 import { DiskFileSystemProvider } from '@theia/filesystem/lib/node/disk-file-system-provider';
 import { UTF8 } from '@theia/core/lib/common/encodings';
 

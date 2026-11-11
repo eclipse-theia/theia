@@ -15,9 +15,10 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { Container } from '@theia/core/shared/inversify';
-import { OS, PreferenceService } from '@theia/core';
-import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
+import { Container } from 'inversify';
+import { JSONValue } from '@lumino/coreutils';
+import { OS } from './os.js';
+import { PreferenceService } from './preferences/preference-service.js';
 import { JSONCEditor } from './jsonc-editor.js';
 
 describe('JSONCEditor', () => {

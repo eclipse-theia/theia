@@ -25,7 +25,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { TextEditorDocumentService } from '@theia/editor/lib/browser/text-editor-document-service';
-import { JSONCEditor } from '../common/jsonc-editor.js';
+import { JSONCEditor } from '@theia/core/lib/common/jsonc-editor';
 import { PreferenceTransaction, PreferenceTransactionFactory, preferenceTransactionFactoryCreator } from './preference-transaction-manager.js';
 
 disableJSDOM();
