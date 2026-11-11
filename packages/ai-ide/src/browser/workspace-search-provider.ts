@@ -133,8 +133,8 @@ export class WorkspaceSearchProvider implements ToolProvider {
             });
 
             const maxResults = this.preferenceService.get<number>(SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF, 30);
-            // Count the matches up to the limit of the Search view, or up to our maximum if it is higher, to tell how many there are.
-            const maxCountedResults = Math.max(maxResults, 2000);
+            // Count the matches up to ten times our maximum, to tell slightly more matches from many more.
+            const maxCountedResults = maxResults * 10;
             const options: SearchInWorkspaceOptions = {
                 useRegExp: args.useRegExp,
                 matchCase: false,
@@ -199,16 +199,14 @@ export class WorkspaceSearchProvider implements ToolProvider {
                     });
             });
 
-            let searchTimedOut = false;
-            const timeoutPromise = new Promise<SearchInWorkspaceResult[]>(resolve => {
+            const timeoutPromise = new Promise<SearchInWorkspaceResult[]>((_, reject) => {
                 setTimeout(() => {
                     if (!searchCompleted) {
                         if (expectedSearchId !== undefined) {
                             this.searchService.cancel(expectedSearchId);
                         }
                         searchCompleted = true;
-                        searchTimedOut = true;
-                        resolve(results);
+                        reject(new Error('Search timed out after 30 seconds'));
                     }
                 }, 30000);
             });
@@ -218,10 +216,6 @@ export class WorkspaceSearchProvider implements ToolProvider {
             let numberOfMatchesInFinalResults = 0;
             for (const result of finalResults) {
                 numberOfMatchesInFinalResults += result.matches.length;
-            }
-            // Counting the matches can take a long time, so a timed out search returns the matches found so far if they exceed our maximum.
-            if (searchTimedOut && numberOfMatchesInFinalResults <= maxResults) {
-                return JSON.stringify({ error: 'Search timed out after 30 seconds' });
             }
             if (numberOfMatchesInFinalResults > maxResults) {
                 // Only return the first matches up to our maximum.
@@ -237,9 +231,7 @@ export class WorkspaceSearchProvider implements ToolProvider {
                         remainingMatches -= matches.length;
                     }
                 }
-                const foundMatches = searchTimedOut ? 'at least ' + numberOfMatchesInFinalResults
-                    : numberOfMatchesInFinalResults > maxCountedResults ? 'more than ' + maxCountedResults
-                        : String(numberOfMatchesInFinalResults);
+                const foundMatches = numberOfMatchesInFinalResults > maxCountedResults ? 'more than ' + maxCountedResults : String(numberOfMatchesInFinalResults);
                 return JSON.stringify({
                     info: 'Search limit exceeded: Found ' + foundMatches + ' results, showing the first ' + maxResults + '. ' +
                         'Please refine your search with more specific terms or use file extension filters. ' +

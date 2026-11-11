@@ -201,9 +201,9 @@ describe('Workspace Search Provider Cancellation Tests', () => {
         expect(capturedOptions?.include).to.deep.equal(['**/*.ts', '**/*.js']);
     });
 
-    /** Rebinds the search service to report one file per entry of `matchesPerFile` with that many matches, and to complete the search only if `completes` is set. */
-    function bindSearchResults(matchesPerFile: number[], completes: boolean): { options?: SearchInWorkspaceOptions, cancelledId?: number } {
-        const search: { options?: SearchInWorkspaceOptions, cancelledId?: number } = {};
+    /** Rebinds the search service to report one file per entry of `matchesPerFile` with that many matches. */
+    function bindSearchResults(matchesPerFile: number[]): { options?: SearchInWorkspaceOptions } {
+        const search: { options?: SearchInWorkspaceOptions } = {};
         container.rebind(SearchInWorkspaceService).toConstantValue({
             searchWithCallback: async (
                 query: string,
@@ -217,61 +217,38 @@ describe('Workspace Search Provider Cancellation Tests', () => {
                     fileUri: `file:///workspace/file${index}.ts`,
                     matches: Array.from({ length: count }, (_, line) => ({ line: line + 1, character: 1, length: 4, lineText: 'test' }))
                 }));
-                if (completes) {
-                    callbacks.onDone(1);
-                }
+                callbacks.onDone(1);
                 return 1;
             },
-            cancel: (searchId: number) => {
-                search.cancelledId = searchId;
-            }
+            cancel: () => { }
         } as unknown as SearchInWorkspaceService);
         return search;
     }
 
     it('should report the number of matches and return only the first matches when the limit is exceeded', async () => {
         // ripgrep can report a file without matches, e.g. for `$` on a last line without a line break, which must not be returned
-        const search = bindSearchResults([20, 0, 20], true);
+        const search = bindSearchResults([20, 0, 20]);
 
         const searchProvider = container.get(WorkspaceSearchProvider);
         const handler = searchProvider.getTool().handler;
         const result = await handler(JSON.stringify({ query: 'test', useRegExp: false }), mockCtx);
 
         const jsonResponse = JSON.parse(result as string);
-        expect(search.options?.maxResults).to.equal(2001);
+        expect(search.options?.maxResults).to.equal(301);
         expect(jsonResponse.info).to.contain('Found 40 results, showing the first 30.');
         expect(jsonResponse.incompleteResults.map((file: { matches: unknown[] }) => file.matches.length)).to.deep.equal([20, 10]);
     });
 
-    it('should report more than 2000 matches when the search stops at its bound', async () => {
-        bindSearchResults([1000, 1000, 1], true);
+    it('should report more than ten times the limit when the search stops at its bound', async () => {
+        bindSearchResults([200, 101]);
 
         const searchProvider = container.get(WorkspaceSearchProvider);
         const handler = searchProvider.getTool().handler;
         const result = await handler(JSON.stringify({ query: 'test', useRegExp: false }), mockCtx);
 
         const jsonResponse = JSON.parse(result as string);
-        expect(jsonResponse.info).to.contain('Found more than 2000 results, showing the first 30.');
+        expect(jsonResponse.info).to.contain('Found more than 300 results, showing the first 30.');
         expect(jsonResponse.incompleteResults.map((file: { matches: unknown[] }) => file.matches.length)).to.deep.equal([30]);
-    });
-
-    it('should return the matches found so far when the search times out after exceeding the limit', async () => {
-        const search = bindSearchResults([20, 20], false);
-
-        const searchProvider = container.get(WorkspaceSearchProvider);
-        const handler = searchProvider.getTool().handler;
-
-        const clock = sinon.useFakeTimers();
-        try {
-            const resultPromise = handler(JSON.stringify({ query: 'test', useRegExp: false }), mockCtx);
-            await clock.tickAsync(30000);
-            const jsonResponse = JSON.parse(await resultPromise as string);
-            expect(jsonResponse.info).to.contain('Found at least 40 results, showing the first 30.');
-            expect(jsonResponse.incompleteResults.map((file: { matches: unknown[] }) => file.matches.length)).to.deep.equal([20, 10]);
-            expect(search.cancelledId).to.equal(1);
-        } finally {
-            clock.restore();
-        }
     });
 
 });
