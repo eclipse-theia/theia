@@ -15,6 +15,6 @@
 // *****************************************************************************
 
 /**
- * @deprecated since 1.78.0. Import `JSONCEditor` from `@theia/core/lib/common/jsonc-editor` instead.
+ * @deprecated since 1.78.0. Import `JSONCEditor` and `JSONCEditorImpl` from `@theia/core/lib/common/jsonc-editor` instead.
  */
-export { JSONCEditor } from '@theia/core/lib/common/jsonc-editor';
+export { JSONCEditor, JSONCEditorImpl } from '@theia/core/lib/common/jsonc-editor';

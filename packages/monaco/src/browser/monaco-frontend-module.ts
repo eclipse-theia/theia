@@ -32,7 +32,6 @@ import { MonacoKeybindingContribution } from './monaco-keybinding.js';
 import { MonacoLanguages } from './monaco-languages.js';
 import { MonacoWorkspace } from './monaco-workspace.js';
 import { MonacoJSONCEditor } from './monaco-jsonc-editor.js';
-import { JSONCEditor } from '@theia/core/lib/common/jsonc-editor';
 import { ActiveMonacoEditorContribution, MonacoEditorService, MonacoEditorServiceFactory, VSCodeContextKeyService, VSCodeThemeService } from './monaco-editor-service.js';
 import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService.js';
 import { MonacoTextModelService, MonacoEditorModelFactory, MonacoEditorModelFilter } from './monaco-text-model-service.js';
@@ -117,10 +116,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     }
 
     bind(MonacoWorkspace).toSelf().inSingletonScope();
-    // Also bound by `@theia/preferences`.
-    if (!isBound(JSONCEditor)) {
-        bind(JSONCEditor).toSelf().inSingletonScope();
-    }
     bind(MonacoJSONCEditor).toSelf().inSingletonScope();
     bind(MonacoWorkspaceContextService).toSelf().inSingletonScope();
 
