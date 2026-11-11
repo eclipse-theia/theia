@@ -188,7 +188,7 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
             '### User Question',
             request.text
         ].join('\n');
-        const session = this.chatService.createSession(ChatAgentLocation.Panel);
+        const session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true });
         this.chatService.sendRequest(session.id, { ...request, text });
     }
 
