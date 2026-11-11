@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { codicon, WidgetOpenerOptions } from '@theia/core/lib/browser';
-import { TerminalCollection, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { TerminalCollection, TerminalSplitLocation, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { PanelKind, TaskConfiguration, TaskWatcher, TaskExitedEvent, TaskServer, TaskOutputPresentation, TaskInfo } from '../common/index.js';
@@ -130,6 +130,7 @@ export class TaskTerminalWidgetManager {
         return this.terminalService.newTerminal({
             collection: this.getTerminalCollection(taskConfig),
             ...factoryOptions,
+            location: this.getTerminalGroupLocation(taskConfig) ?? factoryOptions.location,
             kind: 'task'
         });
     }
@@ -140,6 +141,22 @@ export class TaskTerminalWidgetManager {
      */
     protected getTerminalCollection(_taskConfig?: TaskConfiguration): TerminalCollection | undefined {
         return { id: 'tasks', label: nls.localizeByDefault('Tasks'), iconClass: codicon('tasklist') };
+    }
+
+    /**
+     * Returns a location next to a terminal of another task in the same `presentation.group`, if there is one.
+     */
+    protected getTerminalGroupLocation(taskConfig?: TaskConfiguration): TerminalSplitLocation | undefined {
+        const group = taskConfig && TaskOutputPresentation.getGroup(taskConfig);
+        if (group === undefined) {
+            return undefined;
+        }
+        const groupTerminal = this.getTaskTerminalWidgets().find(widget => !widget.isDisposed && this.getTerminalGroup(widget) === group);
+        return groupTerminal && { parentTerminal: groupTerminal.id };
+    }
+
+    protected getTerminalGroup(widget: TaskTerminalWidget): string | undefined {
+        return widget.taskConfig && TaskOutputPresentation.getGroup(widget.taskConfig);
     }
 
     async open(factoryOptions: TerminalWidgetFactoryOptions, openerOptions: TaskTerminalWidgetOpenerOptions): Promise<TerminalWidget> {
@@ -192,10 +209,11 @@ export class TaskTerminalWidgetManager {
             }
         } else if (TaskTerminalWidgetOpenerOptions.isSharedTerminal(openerOptions)) {
             const availableWidgets: TerminalWidget[] = [];
+            const group = taskConfig && TaskOutputPresentation.getGroup(taskConfig);
             for (const widget of this.getTaskTerminalWidgets()) {
                 // to run a task whose `taskPresentation === 'shared'`, the terminal to be used must be
-                // 1) not dedicated, and 2) idle
-                if (!widget.dedicated && !widget.busy) {
+                // 1) not dedicated, 2) idle, and 3) used by a task of the same `presentation.group`
+                if (!widget.dedicated && !widget.busy && this.getTerminalGroup(widget) === group) {
                     availableWidgets.push(widget);
                 }
             }
