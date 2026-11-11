@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LabelProvider, QuickInputService, QuickPickItem, QuickPickSeparator } from '@theia/core/lib/browser';
+import { codiconArray, LabelProvider, QuickInputService, QuickPickItem, QuickPickSeparator } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
@@ -32,6 +32,13 @@ export const WorkspaceRecommendationsService = Symbol('WorkspaceRecommendationsS
 export interface WorkspaceRecommendationsService {
     /** Whether recommendations can be edited, i.e. whether a folder or workspace is opened. */
     canModifyRecommendations(): boolean;
+    /**
+     * Returns the lower-cased ids of the extensions recommended by the application defaults and the workspace,
+     * without the ones that are listed as unwanted.
+     */
+    getRecommendedExtensionIds(): string[];
+    /** Returns the recommendations of each workspace folder and, if the workspace is saved, of the workspace file. */
+    getWorkspaceRecommendations(): WorkspaceTargetRecommendations[];
     /** Whether the extension is recommended by any workspace folder or by the workspace file. */
     isWorkspaceRecommended(extensionId: string): boolean;
     /** Adds the extension to the recommendations and removes it from the unwanted recommendations. */
@@ -45,6 +52,11 @@ export interface WorkspaceRecommendationsTarget {
     scope: PreferenceScope.Folder | PreferenceScope.Workspace;
     /** The root URI of the workspace folder, for the `Folder` scope. */
     folderUri?: URI;
+}
+
+/** The recommendations configured in a {@link WorkspaceRecommendationsTarget}. */
+export interface WorkspaceTargetRecommendations extends Required<RecommendedExtensions> {
+    target: WorkspaceRecommendationsTarget;
 }
 
 interface WorkspaceRecommendationsTargetPick extends QuickPickItem {
@@ -68,6 +80,20 @@ export class WorkspaceRecommendationsServiceImpl implements WorkspaceRecommendat
 
     canModifyRecommendations(): boolean {
         return this.workspaceService.opened;
+    }
+
+    getRecommendedExtensionIds(): string[] {
+        const recommended = new Set<string>();
+        const unwanted = new Set<string>();
+        for (const { recommendations, unwantedRecommendations } of [this.getDefaultRecommendations(), ...this.getWorkspaceRecommendations()]) {
+            recommendations.forEach(id => recommended.add(id.toLowerCase()));
+            unwantedRecommendations.forEach(id => unwanted.add(id.toLowerCase()));
+        }
+        return Array.from(recommended).filter(id => !unwanted.has(id));
+    }
+
+    getWorkspaceRecommendations(): WorkspaceTargetRecommendations[] {
+        return this.getTargets().map(target => ({ target, ...this.getRecommendations(target) }));
     }
 
     isWorkspaceRecommended(extensionId: string): boolean {
@@ -112,9 +138,17 @@ export class WorkspaceRecommendationsServiceImpl implements WorkspaceRecommendat
         return targets;
     }
 
+    /** Returns the application-default recommendations. */
+    protected getDefaultRecommendations(): Required<RecommendedExtensions> {
+        return this.toRecommendations(this.preferenceService.inspect<Required<RecommendedExtensions>>('extensions')?.defaultValue);
+    }
+
     protected getRecommendations(target: WorkspaceRecommendationsTarget): Required<RecommendedExtensions> {
         const inspection = this.preferenceService.inspect<Required<RecommendedExtensions>>('extensions', target.folderUri?.toString());
-        const value = target.scope === PreferenceScope.Folder ? inspection?.workspaceFolderValue : inspection?.workspaceValue;
+        return this.toRecommendations(target.scope === PreferenceScope.Folder ? inspection?.workspaceFolderValue : inspection?.workspaceValue);
+    }
+
+    protected toRecommendations(value: RecommendedExtensions | undefined): Required<RecommendedExtensions> {
         return {
             recommendations: value?.recommendations ?? [],
             unwantedRecommendations: value?.unwantedRecommendations ?? []
@@ -133,7 +167,12 @@ export class WorkspaceRecommendationsServiceImpl implements WorkspaceRecommendat
         const picks: Array<WorkspaceRecommendationsTargetPick | QuickPickSeparator> = [];
         for (const target of targets) {
             if (target.folderUri) {
-                picks.push({ label: this.labelProvider.getName(target.folderUri), description: nls.localizeByDefault('Workspace Folder'), target });
+                picks.push({
+                    label: this.labelProvider.getName(target.folderUri),
+                    description: nls.localizeByDefault('Workspace Folder'),
+                    iconClasses: codiconArray('root-folder'),
+                    target
+                });
             } else {
                 picks.push({ type: 'separator' }, { label: nls.localizeByDefault('Workspace'), target });
             }

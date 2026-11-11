@@ -81,6 +81,41 @@ function createService(setup: TestSetup): { service: WorkspaceRecommendationsSer
 
 describe('WorkspaceRecommendationsService', () => {
 
+    describe('getWorkspaceRecommendations', () => {
+
+        it('returns the recommendations of each folder and of the saved workspace file', () => {
+            const { service } = createService({
+                folders: [FOLDER_A, FOLDER_B],
+                saved: true,
+                folderValues: { [FOLDER_A.toString()]: { recommendations: ['publisher.a'] } },
+                workspaceValue: { unwantedRecommendations: ['publisher.unwanted'] },
+                defaultValue: { recommendations: ['publisher.default'] }
+            });
+            expect(service.getWorkspaceRecommendations()).to.deep.equal([
+                { target: { scope: PreferenceScope.Folder, folderUri: FOLDER_A }, recommendations: ['publisher.a'], unwantedRecommendations: [] },
+                { target: { scope: PreferenceScope.Folder, folderUri: FOLDER_B }, recommendations: [], unwantedRecommendations: [] },
+                { target: { scope: PreferenceScope.Workspace }, recommendations: [], unwantedRecommendations: ['publisher.unwanted'] }
+            ]);
+        });
+    });
+
+    describe('getRecommendedExtensionIds', () => {
+
+        it('merges the default and workspace recommendations case-insensitively and drops the unwanted ones', () => {
+            const { service } = createService({
+                folders: [FOLDER_A, FOLDER_B],
+                saved: true,
+                defaultValue: { recommendations: ['Publisher.Default', 'publisher.dropped'] },
+                folderValues: {
+                    [FOLDER_A.toString()]: { recommendations: ['publisher.a', 'publisher.default'] },
+                    [FOLDER_B.toString()]: { unwantedRecommendations: ['Publisher.Dropped'] }
+                },
+                workspaceValue: { recommendations: ['publisher.workspace'] }
+            });
+            expect(service.getRecommendedExtensionIds()).to.deep.equal(['publisher.default', 'publisher.a', 'publisher.workspace']);
+        });
+    });
+
     describe('isWorkspaceRecommended', () => {
 
         it('finds a folder recommendation case-insensitively', () => {
@@ -90,37 +125,16 @@ describe('WorkspaceRecommendationsService', () => {
             });
             expect(service.isWorkspaceRecommended('publisher.extension')).to.equal(true);
         });
-
-        it('finds a recommendation in a saved workspace file', () => {
-            const { service } = createService({
-                folders: [FOLDER_A, FOLDER_B],
-                saved: true,
-                workspaceValue: { recommendations: ['publisher.extension'] }
-            });
-            expect(service.isWorkspaceRecommended('publisher.extension')).to.equal(true);
-        });
-
-        it('ignores recommendations that are only application defaults', () => {
-            const { service } = createService({
-                folders: [FOLDER_A],
-                defaultValue: { recommendations: ['publisher.extension'] }
-            });
-            expect(service.isWorkspaceRecommended('publisher.extension')).to.equal(false);
-        });
-
-        it('returns false if no workspace is opened', () => {
-            const { service } = createService({ folders: [] });
-            expect(service.canModifyRecommendations()).to.equal(false);
-            expect(service.isWorkspaceRecommended('publisher.extension')).to.equal(false);
-        });
     });
 
     describe('addRecommendation', () => {
 
-        it('appends the lower-cased id in a single-folder workspace without asking', async () => {
+        it('appends the lower-cased id and removes it from the unwanted recommendations in a single-folder workspace without asking', async () => {
             const { service, setCalls, pickCount } = createService({
                 folders: [FOLDER_A],
-                folderValues: { [FOLDER_A.toString()]: { recommendations: ['other.extension'] } }
+                folderValues: {
+                    [FOLDER_A.toString()]: { recommendations: ['other.extension'], unwantedRecommendations: ['Publisher.Extension', 'other.extension'] }
+                }
             });
             await service.addRecommendation('Publisher.Extension');
             expect(pickCount()).to.equal(0);
@@ -129,19 +143,12 @@ describe('WorkspaceRecommendationsService', () => {
                 value: ['other.extension', 'publisher.extension'],
                 scope: PreferenceScope.Folder,
                 resourceUri: FOLDER_A.toString()
+            }, {
+                preferenceName: 'extensions.unwantedRecommendations',
+                value: ['other.extension'],
+                scope: PreferenceScope.Folder,
+                resourceUri: FOLDER_A.toString()
             }]);
-        });
-
-        it('removes the id from the unwanted recommendations', async () => {
-            const { service, setCalls } = createService({
-                folders: [FOLDER_A],
-                folderValues: { [FOLDER_A.toString()]: { unwantedRecommendations: ['Publisher.Extension', 'other.extension'] } }
-            });
-            await service.addRecommendation('publisher.extension');
-            expect(setCalls.map(call => [call.preferenceName, call.value])).to.deep.equal([
-                ['extensions.recommendations', ['publisher.extension']],
-                ['extensions.unwantedRecommendations', ['other.extension']]
-            ]);
         });
 
         it('does not add a duplicate', async () => {
@@ -167,43 +174,43 @@ describe('WorkspaceRecommendationsService', () => {
             ]);
         });
 
-        it('writes nothing if the quick pick is cancelled', async () => {
-            const { service, setCalls } = createService({
-                folders: [FOLDER_A, FOLDER_B],
-                saved: true,
-                pickedIndices: undefined
+        it('does not write anything if the quick pick is cancelled', async () => {
+            const { service, setCalls, pickCount } = createService({
+                folders: [FOLDER_A, FOLDER_B]
             });
             await service.addRecommendation('publisher.extension');
+            expect(pickCount()).to.equal(1);
             expect(setCalls).to.deep.equal([]);
         });
     });
 
     describe('removeRecommendation', () => {
 
-        it('removes the id case-insensitively', async () => {
-            const { service, setCalls } = createService({
-                folders: [FOLDER_A],
-                folderValues: { [FOLDER_A.toString()]: { recommendations: ['Publisher.Extension', 'other.extension'] } }
-            });
-            await service.removeRecommendation('publisher.extension');
-            expect(setCalls).to.deep.equal([{
-                preferenceName: 'extensions.recommendations',
-                value: ['other.extension'],
-                scope: PreferenceScope.Folder,
-                resourceUri: FOLDER_A.toString()
-            }]);
-        });
-
-        it('only offers the targets that recommend the extension', async () => {
+        it('removes the id case-insensitively from the only target that recommends it without asking', async () => {
             const { service, setCalls, pickCount } = createService({
                 folders: [FOLDER_A, FOLDER_B],
                 saved: true,
-                folderValues: { [FOLDER_B.toString()]: { recommendations: ['publisher.extension'] } }
+                folderValues: { [FOLDER_B.toString()]: { recommendations: ['Publisher.Extension', 'other.extension'] } }
             });
             await service.removeRecommendation('publisher.extension');
             expect(pickCount()).to.equal(0);
             expect(setCalls.map(call => [call.scope, call.resourceUri, call.value])).to.deep.equal([
-                [PreferenceScope.Folder, FOLDER_B.toString(), []]
+                [PreferenceScope.Folder, FOLDER_B.toString(), ['other.extension']]
+            ]);
+        });
+
+        it('offers only the recommending targets and removes the id from the picked ones', async () => {
+            const { service, setCalls, pickCount } = createService({
+                folders: [FOLDER_A, FOLDER_B],
+                saved: true,
+                folderValues: { [FOLDER_A.toString()]: { recommendations: ['publisher.extension'] } },
+                workspaceValue: { recommendations: ['publisher.extension'] },
+                pickedIndices: [1]
+            });
+            await service.removeRecommendation('publisher.extension');
+            expect(pickCount()).to.equal(1);
+            expect(setCalls.map(call => [call.scope, call.resourceUri, call.value])).to.deep.equal([
+                [PreferenceScope.Workspace, undefined, []]
             ]);
         });
     });

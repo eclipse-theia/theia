@@ -45,7 +45,7 @@ export namespace VSXExtensionsContextMenu {
     export const ENABLE = [...EXTENSIONS_CONTEXT_MENU, '2_enable'];
     export const COPY = [...EXTENSIONS_CONTEXT_MENU, '3_copy'];
     export const CONTRIBUTION = [...EXTENSIONS_CONTEXT_MENU, '4_contribution'];
-    export const RECOMMENDATIONS = [...EXTENSIONS_CONTEXT_MENU, '4_recommendations'];
+    export const RECOMMENDATIONS = [...EXTENSIONS_CONTEXT_MENU, '5_recommendations'];
 }
 
 @injectable()
