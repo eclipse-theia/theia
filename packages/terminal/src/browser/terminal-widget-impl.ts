@@ -830,7 +830,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
      * If id is provided attach to the terminal for this id.
      */
     async start(id?: number): Promise<number> {
-        this._terminalId = typeof id !== 'number' ? await this.createTerminal() : await this.attachTerminal(id);
+        try {
+            this._terminalId = typeof id !== 'number' ? await this.createTerminal() : await this.attachTerminal(id);
+        } catch (error) {
+            this.onDidOpenFailureEmitter.fire(undefined);
+            throw error;
+        }
         this.resizeTerminalProcess();
         this.connectTerminalProcess();
         if (IBaseTerminalServer.validateId(this.terminalId)) {
