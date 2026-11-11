@@ -83,6 +83,9 @@ export class TaskTerminalWidgetManager {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
+    /** Serializes choosing or creating the terminal for a task, so that concurrently started tasks see each other's terminals. */
+    protected terminalSelection: Promise<unknown> = Promise.resolve();
+
     @postConstruct()
     protected init(): void {
         this.taskWatcher.onTaskExit((event: TaskExitedEvent) => {
@@ -167,7 +170,9 @@ export class TaskTerminalWidgetManager {
             throw new Error('"taskConfig" must be included as part of the "option.taskInfo" if "isDedicated" is true');
         }
 
-        const { isNew, widget } = await this.getWidgetToRunTask(factoryOptions, openerOptions);
+        const selection = this.terminalSelection.then(() => this.getWidgetToRunTask(factoryOptions, openerOptions));
+        this.terminalSelection = selection.catch(() => undefined);
+        const { isNew, widget } = await selection;
         if (isNew) {
             widget.resetTerminal();
         } else {
@@ -230,10 +235,24 @@ export class TaskTerminalWidgetManager {
         if (!reusableTerminalWidget) {
             const widget = await this.newTaskTerminal(factoryOptions, taskConfig);
             widget.lastCwd = lastCwd;
+            this.claimTerminal(widget, taskConfig);
             return { isNew: true, widget };
         }
         reusableTerminalWidget.lastCwd = lastCwd;
+        this.claimTerminal(reusableTerminalWidget, taskConfig);
         return { isNew: false, widget: reusableTerminalWidget };
+    }
+
+    /**
+     * Marks the terminal as running the given task right away, rather than once the task's process is attached,
+     * so that tasks started concurrently neither reuse it nor miss it as a member of their `presentation.group`.
+     */
+    protected claimTerminal(widget: TerminalWidget, taskConfig: TaskConfiguration | undefined): void {
+        if (taskConfig && TaskTerminalWidget.is(widget)) {
+            widget.taskConfig = taskConfig;
+            widget.dedicated = taskConfig.presentation?.panel === PanelKind.Dedicated;
+            widget.busy = true;
+        }
     }
 
     protected getTaskTerminalWidgets(): TaskTerminalWidget[] {

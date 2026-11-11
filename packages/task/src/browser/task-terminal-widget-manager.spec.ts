@@ -55,6 +55,9 @@ class FakeTerminalService {
         this.created.push(options);
         const widget = createTerminal(`created-${this.created.length}`);
         widget.options = options;
+        // Creating a terminal widget takes a while, during which other tasks may start.
+        await new Promise(resolve => setTimeout(resolve));
+        this.all.push(widget);
         return widget as unknown as TerminalWidget;
     }
 
@@ -212,6 +215,33 @@ describe('TaskTerminalWidgetManager', () => {
             await open(task('build', { group: 'build' }));
 
             expect(terminalService.created[0].location).to.deep.equal({ parentTerminal: busy.id });
+        });
+
+        it('does not reuse the same idle terminal for tasks started concurrently', async () => {
+            const idle = addTerminal({ taskConfig: task('test') });
+
+            const widgets = await Promise.all([open(task('build')), open(task('lint'))]);
+
+            expect(widgets).to.include(idle);
+            expect(widgets[0]).to.not.equal(widgets[1]);
+            expect(terminalService.created).to.have.lengthOf(1);
+        });
+
+        it('splits a terminal next to the terminal of a task in the same group started concurrently', async () => {
+            const [first] = await Promise.all([open(task('build', { group: 'build' })), open(task('test', { group: 'build' }))]);
+
+            expect(terminalService.created).to.have.lengthOf(2);
+            expect(terminalService.created[1].location).to.deep.equal({ parentTerminal: first.id });
+        });
+
+        it('marks a new terminal as running the task before the task is attached', async () => {
+            const config = task('build', { panel: PanelKind.Dedicated, group: 'build' });
+
+            const widget = await open(config) as unknown as FakeTaskTerminal;
+
+            expect(widget.taskConfig).to.equal(config);
+            expect(widget.dedicated).to.be.true;
+            expect(widget.busy).to.be.true;
         });
 
         it('does not reuse a dedicated terminal', async () => {
