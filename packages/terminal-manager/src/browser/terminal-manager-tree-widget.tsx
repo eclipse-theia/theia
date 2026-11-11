@@ -250,7 +250,7 @@ export class TerminalManagerTreeWidget extends TreeWidget {
         if (TerminalManagerTreeTypes.isTerminalNode(node)) {
             return <span className={`${codicon('terminal')}`} />;
         } else if (TerminalManagerTreeTypes.isPageNode(node)) {
-            return <span className={node.iconClass ?? codicon('terminal-tmux')} />;
+            return <span className={node.icon ?? codicon('terminal-tmux')} />;
         } else if (TerminalManagerTreeTypes.isGroupNode(node)) {
             return <span className={`${codicon('split-horizontal')}`} />;
         }

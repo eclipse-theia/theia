@@ -302,10 +302,27 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
      * otherwise on a new page.
      */
     placeTerminal(terminal: TerminalWidget): void {
-        if (terminal.collection) {
-            this.addTerminalPage(terminal, TerminalManagerTreeTypes.toCollectionPageId(terminal.collection.id), terminal.collection);
+        const collection = this.getTerminalCollection(terminal);
+        if (collection) {
+            this.addTerminalPage(terminal, TerminalManagerTreeTypes.toCollectionPageId(collection.id), collection);
         } else {
             this.addTerminalPage(terminal);
+        }
+    }
+
+    protected getTerminalCollection(terminal: TerminalWidget): TerminalCollection | undefined {
+        return terminal.collection ?? this.getLegacyTerminalCollection(terminal.kind);
+    }
+
+    /**
+     * Returns the collection that terminals of the given kind were placed in before terminals declared their collection.
+     * Only needed for terminals and pages restored from layouts stored before then, which lack a collection and an icon, respectively.
+     */
+    protected getLegacyTerminalCollection(kind: string): TerminalCollection | undefined {
+        switch (kind) {
+            case 'task': return { id: 'tasks', label: nls.localizeByDefault('Tasks'), iconClass: codicon('tasklist') };
+            case 'debug': return { id: 'debug', label: nls.localizeByDefault('Debug'), iconClass: codicon('debug-alt') };
+            default: return undefined;
         }
     }
 
@@ -693,6 +710,10 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
                         this.addTerminalReference(widget, widgetId);
                         this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
                         groupPanel.addWidget(widget);
+                        const collection = this.getTerminalCollection(widget);
+                        if (!pageNode.icon && collection && TerminalManagerTreeTypes.toCollectionPageId(collection.id) === pageId) {
+                            pageNode.icon = collection.iconClass;
+                        }
                     }
                 }
                 const { widgetRelativeHeights } = groupLayout;
