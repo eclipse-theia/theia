@@ -74,6 +74,7 @@ For initial testing, it's easier to point dependencies to your local VSCode.
    (contributed by `examples/api-samples/src/browser/monaco-editor-preferences/monaco-editor-preference-extractor.ts`). Fix the generated
    `packages/editor/src/common/editor-generated-preference-schema.ts` as necessary, and add or remove validations from the `MonacoFrontendApplicationContribution` as appropriate.
    The command writes the file in its final format and filters out options that Theia does not support (see `removeUnsupportedOptions`). Only the interface entries typed as `Help` or `HelpBadDefaultValue` need to be fixed by hand, usually by taking the type from the previous version of the file.
+   The `editor preference schema` tests of `@theia/monaco` (`monaco-editor-preference-schema.spec.ts`) fail as long as the schema does not match the options of Monaco, and list the differences.
 6. Look for comments that indicate forced types or other code smells that would prevent a build error from being thrown where it should be thrown and check that the assertion still applies.
 
 > If you add these, mark them with @monaco-uplift - that'll make them easier to find in the future. Better: if you can remove them, do! Typically, the cause is mixing imports from
