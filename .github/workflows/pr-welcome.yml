@@ -19,11 +19,11 @@
 #
 # The workflow never checks out PR code, so the privileged events are safe.
 # The status and workflow_run events update the basic checks once the ECA
-# check or the CI/CD workflow finished, only on PRs that got the welcome
-# comment. The job condition skips events that cannot change anything, i.e.
-# PRs from branches of this repository, later events on PRs of authors who
-# are not first-time contributors and pending ECA checks.
-name: Welcome Pull Request
+# check or a workflow that runs on PRs finished, only on PRs that got the
+# welcome comment. The job condition skips events that cannot change
+# anything, i.e. PRs from branches of this repository, later events on PRs of
+# authors who are not first-time contributors and pending ECA checks.
+name: PR Welcome and Basic Checks
 
 on:
   pull_request_target:
@@ -31,10 +31,18 @@ on:
     types: [opened, reopened, edited, synchronize, ready_for_review]
   status:
   workflow_run:
-    workflows: [CI/CD]
+    # All workflows with a pull_request trigger, so that the last finished one updates the checks
+    workflows:
+      - 3PP License Check
+      - Check New Theia Package
+      - CI/CD
+      - Copilot SDK Mirror Check
+      - Playwright Tests
+      - Production Build Smoke Test
     types: [completed]
 
 permissions:
+  actions: read
   checks: read
   pull-requests: write
   statuses: read
@@ -98,7 +106,7 @@ jobs:
                 '',
                 'Thanks for your pull request! This is how we review it:',
                 '',
-                '1. A committer takes care of the PR as PR steward and checks the approach.',
+                '1. A committer (the PR steward) checks whether the approach fits.',
                 '2. If the approach fits, the steward may request an AI review. Fix or answer each finding. '
                   + 'You cannot request a new AI review yourself, so comment on the PR when you are done and the steward requests the next round. '
                   + 'The AI review approves once each finding is fixed or answered. This approval does not count for merging.',
@@ -114,19 +122,23 @@ jobs:
               const sections = new Map();
               let current;
               for (const line of text.split(/\r?\n/)) {
-                // Only headings on the level of the template start a section, so sub-headings count as content
-                const heading = /^####\s+(.+?)\s*:?\s*$/.exec(line);
+                // Only headings on the level of the template start a section, so sub-headings count as content.
+                // The name is trimmed without a regular expression, which could backtrack on long whitespace.
+                const heading = /^####\s(.*)/.exec(line);
                 if (heading) {
-                  current = heading[1].toLowerCase();
+                  const name = heading[1].trim();
+                  current = (name.endsWith(':') ? name.slice(0, -1).trimEnd() : name).toLowerCase();
                   sections.set(current, '');
                 } else if (current) {
                   sections.set(current, sections.get(current) + line.trim());
                 }
               }
-              const missing = ['What it does', 'How to test']
-                .filter(name => !sections.get(name.toLowerCase()))
+              // Sections that may stay empty only need their heading
+              const mayBeEmpty = ['Follow-ups', 'Breaking changes', 'Attribution'];
+              const missing = ['What it does', 'How to test', ...mayBeEmpty]
+                .filter(name => mayBeEmpty.includes(name) ? !sections.has(name.toLowerCase()) : !sections.get(name.toLowerCase()))
                 .map(name => `\`${name}\``);
-              if (!/^\s*[-*]\s+\[[xX]\]\s+As an author/m.test(text)) {
+              if (!/^[ \t]*[-*][ \t]+\[[xX]\][ \t]+As an author/m.test(text)) {
                 missing.push('the author checkbox of `Review checklist`');
               }
               return missing;
@@ -138,9 +150,17 @@ jobs:
               const eca = status.statuses.find(s => s.context === 'eclipsefdn/eca');
               if (eca && ['failure', 'error'].includes(eca.state)) {
                 const details = eca.target_url ? `, see the [ECA check](${eca.target_url})` : '';
-                failures.push(`Sign the [Eclipse Contributor Agreement](https://www.eclipse.org/legal/ECA.php) with the email address of your commits${details}`);
+                failures.push([
+                  `Sign the [Eclipse Contributor Agreement (ECA)](https://github.com/${owner}/${repo}/blob/master/CONTRIBUTING.md#eclipse-contributor-agreement)${details}:`,
+                  '  1. Create an [Eclipse Foundation account](https://accounts.eclipse.org/user/register) if you do not have one',
+                  '  2. [Sign the ECA](https://accounts.eclipse.org/user/eca)',
+                  '  3. Use the email address of your Eclipse Foundation account for your commits',
+                ].join('\n'));
               }
-              const runs = await github.paginate(github.rest.checks.listForRef, { owner, repo, ref: pr.head.sha, filter: 'latest', per_page: 100 });
+              // The run of this job is a check run on the head commit as well and never completed here
+              const ownRun = `/actions/runs/${context.runId}/`;
+              const runs = (await github.paginate(github.rest.checks.listForRef, { owner, repo, ref: pr.head.sha, filter: 'latest', per_page: 100 }))
+                .filter(run => !run.details_url?.includes(ownRun));
               const failed = runs.filter(run => ['failure', 'timed_out'].includes(run.conclusion));
               // A single failed test job is often flaky or unrelated to the PR, a failed lint is not
               if (failed.length > 1 || failed.some(run => run.name === 'Lint')) {
@@ -152,7 +172,9 @@ jobs:
                   failures.push(`Fill in the [PR template](${rules}#pr-template): ${missing.join(', ')}`);
                 }
               }
-              const pending = !eca || eca.state === 'pending' || runs.some(run => run.status !== 'completed');
+              // Runs of first-time contributors wait for the approval of a committer and have no check runs until then
+              const { data: awaitingApproval } = await github.rest.actions.listWorkflowRunsForRepo({ owner, repo, head_sha: pr.head.sha, status: 'action_required', per_page: 1 });
+              const pending = !eca || eca.state === 'pending' || awaitingApproval.total_count > 0 || runs.some(run => run.status !== 'completed');
               return { failures, pending };
             }
 

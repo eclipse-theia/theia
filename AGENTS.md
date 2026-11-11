@@ -152,5 +152,5 @@ When implementing browser-side services that need to read files from user-config
 Reviews of pull requests follow [the pull request rules](doc/pull-requests.md):
 
 - Check the PR against the [review checklist](doc/pull-requests.md#review-checklist)
-- Do not report personal preferences or style questions, see [here](doc/pull-requests.md#changes-no-nit)
+- Do not report personal preferences or style questions, see [no nitpicking](doc/pull-requests.md#changes-no-nit)
 - Report issues outside the scope of the PR as follow-ups. They need no fix in the PR and do not block the [AI approval](doc/pull-requests.md#ai-review-approval).

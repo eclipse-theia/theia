@@ -27,7 +27,7 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 
 - [3.](#design-review) A PR can be opened early for the design review before going into the detailed implementation.
   - A request on the design review should be an explicit comment.
-  - Such PR should be marked as a draft or with the WIP prefix.
+  - Such PR should be marked as a draft.
   - Drafts get no automatic [AI review](#review-flow).
 
 <a name="fixups"></a>
@@ -53,7 +53,7 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 
 ## Review Flow
 
-AI powered tools may support the review. They run automatically on PRs of committers who opted in, and maintainers can request them on demand for PRs of external contributors. Without an AI review, the PR continues with the review of a maintainer.
+AI-powered tools may support the review. They run automatically on PRs of committers who opted in, and the PR steward can request them for PRs of external contributors. Without an AI review, the PR goes directly to a reviewer.
 
 The flow depends on the author. External contributors are authors without write access to the repository.
 
@@ -61,17 +61,17 @@ The flow depends on the author. External contributors are authors without write 
 
 - [1.](#flow-roles) The flow has these roles:
   - Author: Opens the PR and addresses findings and requested changes
-  - PR steward: Takes care of the PR and moves it through the flow. The role is not well defined yet. At the moment, committers take it on voluntarily.
+  - PR steward: A committer who moves the PR through the flow
   - AI review: An AI agent that reviews the PR, e.g. [EclipseSourceAI](https://github.com/EclipseSourceAI)
-  - Maintainer: Reviews and approves the PR
+  - Maintainer (Human reviewer): A committer who reviews and approves the PR
 <a name="ai-review-findings"></a>
-- [2.](#ai-review-findings) The author fixes or answers each AI finding. Answered findings do not block the AI approval. Maintainers settle them during their review.
+- [2.](#ai-review-findings) The author fixes or answers each AI finding. The AI review approves once all findings are fixed or answered, and reviewers settle answered findings in their review. The AI approval does not count for merging.
 <a name="ai-review-rounds"></a>
 - [3.](#ai-review-rounds) Without an AI approval after multiple rounds, the PR steward decides how to continue.
 <a name="ai-review-approval"></a>
-- [4.](#ai-review-approval) The AI review approves once each finding is fixed or answered. The approval ends the AI review and does not count for merging. The PR steward then requests a review from a maintainer. On committer PRs, the author may do that too.
+- [4.](#ai-review-approval) After the AI approval, the PR steward requests a human review. On committer PRs, the author may do that too.
 <a name="ai-review-secondary"></a>
-- [5.](#ai-review-secondary) After fixes for requested changes, a maintainer may request a secondary AI review before the next human review. On committer PRs, the author may request it too.
+- [5.](#ai-review-secondary) After fixes for requested changes, the reviewer or the PR steward may request a secondary AI review before the next human review. On committer PRs, the author may request it too.
 <a name="follow-up-issues"></a>
 - [6.](#follow-up-issues) After the merge, the PR steward creates issues for the `Follow-ups` of the PR description and for [out of scope changes](#changes-no-out-of-scope) that have no issue yet.
 
@@ -81,7 +81,7 @@ In the diagrams below, purple marks AI steps and green marks human steps.
 
 <a name="flow-committer"></a>
 
-- [1.](#flow-committer) Committers opt in to the AI review. It then starts automatically when they open a non-draft PR. To skip it, they open a draft PR.
+- [1.](#flow-committer) Committers opt in to the AI review. It then starts automatically when they open a non-draft PR or mark a draft PR as ready for review. To skip it, they open a draft PR.
 <a name="flow-committer-rereview"></a>
 - [2.](#flow-committer-rereview) The author re-requests the AI review after fixing or answering the findings.
 <a name="flow-committer-review-request"></a>
@@ -152,7 +152,7 @@ sequenceDiagram
 
 <a name="flow-external-welcome"></a>
 
-- [1.](#flow-external-welcome) A GitHub Action welcomes the author with a summary of this flow. For first-time contributors, a second comment lists failed basic checks, i.e. a missing [ECA](https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#eclipse-contributor-agreement), lint errors, several CI failures or an incomplete [PR template](#pr-template), until they pass.
+- [1.](#flow-external-welcome) A GitHub Action welcomes the author with a summary of this flow. For first-time contributors, a second comment lists failed basic checks: a missing [ECA](https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#eclipse-contributor-agreement), lint errors, more than one failed CI job or an incomplete [PR template](#pr-template). The comment is removed once they pass.
 <a name="flow-external-classification"></a>
 - [2.](#flow-external-classification) The PR steward approves pending CI runs before or with the high level classification. The classification is one comment on the approach, no line comments:
   - Go: The steward requests the AI review or, if it is skipped, a review from a maintainer
@@ -174,8 +174,14 @@ sequenceDiagram
         C->>S: Open PR
     end
     GH->>C: Welcome comment explaining the flow
-    opt First-time contributor with failed basic checks
-        GH->>C: What to fix, e.g. sign the ECA, fix CI failures, fill in the PR template
+    opt First-time contributor
+        opt ECA or PR template incomplete
+            GH->>C: Guidance on the first steps, e.g. signing the ECA and filling in the PR template
+        end
+        Note over S: Approve CI runs
+        opt CI failures
+            GH->>C: Update the guidance with pointers to the CI failures
+        end
     end
     rect rgba(16, 185, 129, 0.18)
         S->>S: High level classification

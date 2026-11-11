@@ -45,7 +45,7 @@ happy to guide you and give feedback.
 We follow the contributing and reviewing pull request guidelines described
 [here](https://github.com/eclipse-theia/theia/blob/master/doc/pull-requests.md).
 
-AI powered tools may support the review of pull requests. See the
+AI-powered tools may support the review of pull requests. See the
 [review flow](doc/pull-requests.md#review-flow) for details.
 
 ## Coding Guidelines
@@ -60,8 +60,10 @@ electronically sign the Eclipse Contributor Agreement (ECA).
 
 * <https://www.eclipse.org/legal/ECA.php>
 
-Non-committers must have an Eclipse Foundation account and a signed ECA on
-file.
+Use the email address of your Eclipse Foundation account as the author email
+of your commits, otherwise the ECA check fails. The ECA also covers the
+Developer Certificate of Origin (DCO), so your commits do not need a
+`Signed-off-by` line.
 
 For more information, please see the Eclipse Committer Handbook:
 <https://www.eclipse.org/projects/handbook/#resources-commit>
