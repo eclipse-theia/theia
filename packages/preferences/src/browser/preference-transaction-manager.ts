@@ -192,6 +192,8 @@ interface PreferenceFileState {
     readonly encoding?: string;
     readonly etag?: string;
     readonly mtime?: number;
+    /** Whether the file existed when it was read. */
+    readonly exists: boolean;
 }
 
 @injectable()
@@ -262,7 +264,13 @@ export class PreferenceTransaction extends Transaction<[string, string[], unknow
         if (msg === open) {
             this.editorManager.open(this.context.getConfigUri());
         } else if (msg === saveAndRetry) {
-            await this.findDirtyDocument()?.save();
+            const document = this.findDirtyDocument();
+            await document?.save();
+            if (document?.dirty) {
+                // Saving can fail without an error, e.g. if the file was changed on disk in the meantime.
+                this.messageService.error(nls.localize('theia/preferences/saveFailed', 'Could not save {0}.', this.context.getConfigUri().path.base));
+                return false;
+            }
             return true;
         }
         return false;
@@ -271,10 +279,10 @@ export class PreferenceTransaction extends Transaction<[string, string[], unknow
     protected async readFile(): Promise<PreferenceFileState> {
         try {
             const { value, encoding, etag, mtime } = await this.fileService.read(this.context.getConfigUri());
-            return { original: value, current: value, encoding, etag, mtime };
+            return { original: value, current: this.applyEdits(value), encoding, etag, mtime, exists: true };
         } catch (e) {
             if (e instanceof FileOperationError && e.fileOperationResult === FileOperationResult.FILE_NOT_FOUND) {
-                return { original: '', current: '' };
+                return { original: '', current: this.applyEdits(''), exists: false };
             }
             throw e;
         }
@@ -296,28 +304,63 @@ export class PreferenceTransaction extends Transaction<[string, string[], unknow
         }
     }
 
+    /**
+     * @returns the content with the edits of the transaction applied.
+     */
+    protected applyEdits(content: string): string {
+        for (const edit of this.edits) {
+            content = this.jsoncEditor.setValue(content, edit.path, edit.value as JSONValue);
+        }
+        return content;
+    }
+
     protected async tearDown(): Promise<boolean> {
         if (!this.file || this.status.state !== 'resolved' || !await this.status.promise) {
             return false;
         }
+        try {
+            return await this.writeFile(this.file);
+        } catch (e) {
+            const message = `Failed to write preferences to '${this.context.getConfigUri()}'.`;
+            this.messageService.error(nls.localize('theia/preferences/writeFailed', 'Failed to write the settings to {0}.', this.context.getConfigUri().path.base));
+            this.logger.error(message, e);
+            return false;
+        }
+    }
+
+    /**
+     * Writes the edits of the transaction, reapplying them if the file was modified by someone else in the meantime.
+     * @returns whether the edits were written, `false` if the user did not save unsaved changes to the file.
+     */
+    protected async writeFile(file: PreferenceFileState): Promise<boolean> {
         for (let attempt = 1; ; attempt++) {
-            if (this.file.current === this.file.original) {
+            if (file.current === file.original) {
                 return true;
             }
+            // The user may have edited the file since the transaction was set up.
+            if (this.findDirtyDocument()) {
+                if (!await this.handleDirtyEditor()) {
+                    return false;
+                }
+                file = await this.readFile();
+                continue;
+            }
             try {
-                const { encoding, etag, mtime } = this.file;
-                await this.fileService.write(this.context.getConfigUri(), this.file.current, { encoding, etag, mtime });
+                const uri = this.context.getConfigUri();
+                const { encoding, etag, mtime } = file;
+                if (file.exists) {
+                    await this.fileService.write(uri, file.current, { encoding, etag, mtime });
+                } else {
+                    // Fails with `FILE_MODIFIED_SINCE` if someone else created the file in the meantime.
+                    await this.fileService.create(uri, file.current, { overwrite: false });
+                }
                 return true;
             } catch (e) {
                 if (attempt < PreferenceTransaction.MAX_WRITE_ATTEMPTS && e instanceof FileOperationError
                     && e.fileOperationResult === FileOperationResult.FILE_MODIFIED_SINCE) {
-                    this.file = await this.readFile();
-                    for (const edit of this.edits) {
-                        this.file.current = this.jsoncEditor.setValue(this.file.current, edit.path, edit.value as JSONValue);
-                    }
+                    file = await this.readFile();
                 } else {
-                    this.logger.error(`Failed to write preferences to '${this.context.getConfigUri()}'.`, e);
-                    return false;
+                    throw e;
                 }
             }
         }
