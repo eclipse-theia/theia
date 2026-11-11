@@ -15,6 +15,8 @@
  ********************************************************************************/
 
 import { expect } from 'chai';
+import * as tls from 'tls';
+import { Agent, ProxyAgent } from 'undici';
 import { getProxyAgent } from './proxy';
 
 describe('proxy', () => {
@@ -89,6 +91,43 @@ describe('proxy', () => {
                 proxyUrl: 'http://option-proxy.example.com:9090'
             });
             expect(agent).to.not.be.undefined;
+        });
+
+        for (const url of ['http://localhost:3000', 'https://LOCALHOST', 'http://app.localhost:8080', 'http://127.0.0.1:3000', 'http://127.1.2.3', 'http://[::1]:3000']) {
+            it(`should not use a proxy for the loopback URL ${url}`, () => {
+                const env = { HTTP_PROXY: 'http://env-proxy.example.com:8080', HTTPS_PROXY: 'http://env-proxy.example.com:8080' };
+                expect(getProxyAgent(url, env, { proxyUrl: 'http://option-proxy.example.com:9090' })).to.be.undefined;
+            });
+        }
+
+        it('should use a proxy for hosts that only look like loopback hosts', () => {
+            const proxyUrl = 'http://proxy.example.com:8080';
+            expect(getProxyAgent('http://localhost.example.com', {}, { proxyUrl })).to.be.instanceOf(ProxyAgent);
+            expect(getProxyAgent('http://127.0.0.1.example.com', {}, { proxyUrl })).to.be.instanceOf(ProxyAgent);
+        });
+
+        it('should share one Agent per CA list when no proxy is used', () => {
+            const ca = tls.getCACertificates('default');
+            const agent = getProxyAgent('https://example.com', {}, { ca });
+            expect(agent).to.be.instanceOf(Agent);
+            expect(getProxyAgent('https://other.example.com', {}, { ca })).to.equal(agent);
+            expect(getProxyAgent('https://example.com', {}, { ca: [...ca] })).to.not.equal(agent);
+        });
+
+        it('should not share the Agent that skips certificate verification', () => {
+            const ca = tls.getCACertificates('default');
+            const shared = getProxyAgent('https://example.com', {}, { ca });
+            const insecure = getProxyAgent('https://example.com', {}, { ca, strictSSL: false });
+            expect(insecure).to.be.instanceOf(Agent);
+            expect(insecure).to.not.equal(shared);
+        });
+
+        it('should return a ProxyAgent when a CA list and a proxy are given', () => {
+            const agent = getProxyAgent('https://example.com', {}, {
+                proxyUrl: 'https://proxy.example.com:8443',
+                ca: tls.getCACertificates('default')
+            });
+            expect(agent).to.be.instanceOf(ProxyAgent);
         });
     });
 });

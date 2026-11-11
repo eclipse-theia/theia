@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as tls from 'tls';
 import type { Dispatcher } from 'undici';
 import { getProxyAgent } from './proxy';
 import { Headers, RequestConfiguration, RequestContext, RequestOptions, RequestService, CancellationToken } from './common-request-service';
@@ -27,6 +28,8 @@ export class NodeRequestService implements RequestService {
     protected proxyUrl?: string;
     protected strictSSL?: boolean;
     protected authorization?: string;
+    protected systemCertificates?: boolean;
+    protected caCertificates?: readonly string[];
 
     protected async getProxyUrl(url: string): Promise<string | undefined> {
         return this.proxyUrl;
@@ -42,6 +45,24 @@ export class NodeRequestService implements RequestService {
         if (config.proxyAuthorization !== undefined) {
             this.authorization = config.proxyAuthorization;
         }
+        if (config.systemCertificates !== undefined) {
+            this.systemCertificates = config.systemCertificates;
+        }
+    }
+
+    /**
+     * Returns Node's default CA certificates together with the CA certificates of the operating system.
+     * They are read on first use and cached.
+     */
+    protected getCACertificates(): readonly string[] {
+        if (!this.caCertificates) {
+            this.caCertificates = [...new Set([...tls.getCACertificates('default'), ...this.getSystemCertificates()])];
+        }
+        return this.caCertificates;
+    }
+
+    protected getSystemCertificates(): string[] {
+        return tls.getCACertificates('system');
     }
 
     protected async processOptions(options: NodeRequestOptions): Promise<NodeRequestOptions> {
@@ -53,6 +74,7 @@ export class NodeRequestService implements RequestService {
             options.dispatcher = getProxyAgent(options.url || '', process.env, {
                 proxyUrl: await this.getProxyUrl(options.url),
                 strictSSL: options.strictSSL,
+                ca: this.systemCertificates ? this.getCACertificates() : undefined,
                 proxyAuthorization: options.proxyAuthorization || headerAuthorization || this.authorization
             });
         }
