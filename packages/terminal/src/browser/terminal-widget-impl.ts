@@ -431,6 +431,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this.options.collection;
     }
 
+    override get attributes(): { readonly [key: string]: string | null } | undefined {
+        return this.options.attributes;
+    }
+
     updateConfig(): void {
         this.setCursorBlink(this.preferences.get('terminal.integrated.cursorBlinking'));
         this.setCursorStyle(this.preferences.get('terminal.integrated.cursorStyle'));

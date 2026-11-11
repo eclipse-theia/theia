@@ -31,7 +31,7 @@ import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-servi
 import { TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { PanelKind, TaskConfiguration, TaskOutputPresentation, TaskScope } from '../common/index.js';
 import { TaskDefinitionRegistry } from './task-definition-registry.js';
-import { TaskTerminalWidgetManager } from './task-terminal-widget-manager.js';
+import { TaskTerminalWidget, TaskTerminalWidgetManager } from './task-terminal-widget-manager.js';
 
 canvasContext.restore();
 disableJSDOM();
@@ -39,7 +39,7 @@ disableJSDOM();
 interface FakeTaskTerminal {
     id: string;
     kind: 'task';
-    isDisposed: boolean;
+    attributes?: TerminalWidgetOptions['attributes'];
     dedicated?: boolean;
     busy?: boolean;
     taskConfig?: TaskConfiguration;
@@ -55,13 +55,20 @@ class FakeTerminalService {
         this.created.push(options);
         const widget = createTerminal(`created-${this.created.length}`);
         widget.options = options;
+        widget.attributes = options.attributes;
         // Creating a terminal widget takes a while, during which other tasks may start.
         await new Promise(resolve => setTimeout(resolve));
         this.all.push(widget);
         return widget as unknown as TerminalWidget;
     }
 
-    async open(): Promise<void> { }
+    async open(): Promise<void> {
+        if (this.openFailure) {
+            throw this.openFailure;
+        }
+    }
+
+    openFailure: Error | undefined;
 }
 
 let terminalCounter = 0;
@@ -69,7 +76,6 @@ function createTerminal(id = `terminal-${++terminalCounter}`, props: Partial<Fak
     return {
         id,
         kind: 'task',
-        isDisposed: false,
         options: {},
         resetTerminal: () => { },
         setTitle: () => { },
@@ -165,12 +171,20 @@ describe('TaskTerminalWidgetManager', () => {
             expect(terminalService.created[0].location).to.be.undefined;
         });
 
-        it('ignores disposed terminals of the same group', async () => {
-            addTerminal({ taskConfig: task('test', { group: 'build' }), isDisposed: true });
+        it('keeps the group of the task with the terminal', async () => {
+            await manager.newTaskTerminal(factoryOptions, task('build', { group: 'build' }));
+            await manager.newTaskTerminal(factoryOptions, task('lint'));
+
+            expect(terminalService.created[0].attributes).to.deep.equal({ [TaskTerminalWidget.GROUP_ATTRIBUTE]: 'build' });
+            expect(terminalService.created[1].attributes).to.be.undefined;
+        });
+
+        it('splits next to a restored terminal of the same group', async () => {
+            const groupTerminal = addTerminal({ attributes: { [TaskTerminalWidget.GROUP_ATTRIBUTE]: 'build' }, busy: true });
 
             await manager.newTaskTerminal(factoryOptions, task('build', { group: 'build' }));
 
-            expect(terminalService.created[0].location).to.be.undefined;
+            expect(terminalService.created[0].location).to.deep.equal({ parentTerminal: groupTerminal.id });
         });
     });
 
@@ -191,6 +205,24 @@ describe('TaskTerminalWidgetManager', () => {
             const widget = await open(task('build', { group: 'build' }));
 
             expect(widget).to.equal(idle);
+        });
+
+        it('reuses an idle restored terminal of the same group', async () => {
+            addTerminal({ busy: false });
+            const idle = addTerminal({ attributes: { [TaskTerminalWidget.GROUP_ATTRIBUTE]: 'build' }, busy: false });
+
+            const widget = await open(task('build', { group: 'build' }));
+
+            expect(widget).to.equal(idle);
+        });
+
+        it('does not reuse an idle restored terminal of a group for a task without a group', async () => {
+            const grouped = addTerminal({ attributes: { [TaskTerminalWidget.GROUP_ATTRIBUTE]: 'build' }, busy: false });
+
+            const widget = await open(task('lint'));
+
+            expect(widget).to.not.equal(grouped);
+            expect(terminalService.created).to.have.lengthOf(1);
         });
 
         it('does not reuse an idle terminal of a task in another group', async () => {
@@ -242,6 +274,15 @@ describe('TaskTerminalWidgetManager', () => {
             expect(widget.taskConfig).to.equal(config);
             expect(widget.dedicated).to.be.true;
             expect(widget.busy).to.be.true;
+        });
+
+        it('releases the terminal if it cannot be opened', async () => {
+            const idle = addTerminal({ taskConfig: task('test') });
+            terminalService.openFailure = new Error('open failed');
+
+            await open(task('build')).then(() => expect.fail('open should fail'), () => undefined);
+
+            expect(idle.busy).to.be.false;
         });
 
         it('does not reuse a dedicated terminal', async () => {

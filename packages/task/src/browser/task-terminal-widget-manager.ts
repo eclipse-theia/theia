@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { codicon, WidgetOpenerOptions } from '@theia/core/lib/browser';
-import { TerminalCollection, TerminalSplitLocation, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { TerminalCollection, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { PanelKind, TaskConfiguration, TaskWatcher, TaskExitedEvent, TaskServer, TaskOutputPresentation, TaskInfo } from '../common/index.js';
@@ -34,6 +34,8 @@ export interface TaskTerminalWidget extends TerminalWidget {
     busy?: boolean;
 }
 export namespace TaskTerminalWidget {
+    /** The attribute of a task terminal that holds the `presentation.group` of the tasks it runs. */
+    export const GROUP_ATTRIBUTE = 'theia.task.group';
     export function is(widget: TerminalWidget): widget is TaskTerminalWidget {
         return widget.kind === 'task';
     }
@@ -83,8 +85,8 @@ export class TaskTerminalWidgetManager {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    /** Serializes choosing or creating the terminal for a task, so that concurrently started tasks see each other's terminals. */
-    protected terminalSelection: Promise<unknown> = Promise.resolve();
+    /** The terminals being created for `presentation.group`s without a terminal yet, so that tasks of the group started meanwhile join them. */
+    protected readonly pendingGroupTerminals = new Map<string, Promise<TerminalWidget>>();
 
     @postConstruct()
     protected init(): void {
@@ -104,16 +106,15 @@ export class TaskTerminalWidgetManager {
         this.terminalService.onDidCreateTerminal(async (widget: TerminalWidget) => {
             const terminal = TaskTerminalWidget.is(widget) && widget;
             if (terminal) {
+                // Until its process is attached, a task terminal is either about to run a task or may still be running one.
+                terminal.busy = true;
                 const didConnectListener = terminal.onDidOpen(async () => {
                     const context = this.workspaceService?.workspace?.resource.toString();
                     const tasksInfo = await this.taskServer.getTasks(context);
                     const taskInfo = tasksInfo.find(info => info.terminalId === widget.terminalId);
                     if (taskInfo) {
-                        const taskConfig = taskInfo.config;
-                        terminal.dedicated = !!taskConfig.presentation && !!taskConfig.presentation.panel && taskConfig.presentation.panel === PanelKind.Dedicated;
+                        this.claimTerminal(terminal, taskInfo.config);
                         terminal.taskId = taskInfo.taskId;
-                        terminal.taskConfig = taskConfig;
-                        terminal.busy = true;
                     } else {
                         this.updateTerminalOnTaskExit(terminal, true, false);
                     }
@@ -129,11 +130,37 @@ export class TaskTerminalWidgetManager {
         });
     }
 
+    /**
+     * Creates a terminal for the given task. A terminal for a task in a `presentation.group` is split next to a terminal of the group, if there is one.
+     */
     async newTaskTerminal(factoryOptions: TerminalWidgetFactoryOptions, taskConfig?: TaskConfiguration): Promise<TerminalWidget> {
+        const group = taskConfig && TaskOutputPresentation.getGroup(taskConfig);
+        if (group === undefined) {
+            return this.createTaskTerminal(factoryOptions, taskConfig);
+        }
+        const groupTerminal = this.getTaskTerminalWidgets().find(widget => this.getTerminalGroup(widget) === group) ?? this.pendingGroupTerminals.get(group);
+        if (groupTerminal) {
+            const parentTerminal = await Promise.resolve(groupTerminal).catch(() => undefined);
+            return this.createTaskTerminal(factoryOptions, taskConfig, group, parentTerminal);
+        }
+        const terminal = this.createTaskTerminal(factoryOptions, taskConfig, group);
+        this.pendingGroupTerminals.set(group, terminal);
+        const forget = (): void => {
+            this.pendingGroupTerminals.delete(group);
+        };
+        terminal.then(forget, forget);
+        return terminal;
+    }
+
+    protected createTaskTerminal(
+        factoryOptions: TerminalWidgetFactoryOptions, taskConfig?: TaskConfiguration, group?: string, parentTerminal?: TerminalWidget
+    ): Promise<TerminalWidget> {
         return this.terminalService.newTerminal({
             collection: this.getTerminalCollection(taskConfig),
             ...factoryOptions,
-            location: this.getTerminalGroupLocation(taskConfig) ?? factoryOptions.location,
+            location: parentTerminal ? { parentTerminal: parentTerminal.id } : factoryOptions.location,
+            // A terminal only runs tasks of the group it is created for, so the group is kept with the terminal across reloads.
+            attributes: group === undefined ? factoryOptions.attributes : { ...factoryOptions.attributes, [TaskTerminalWidget.GROUP_ATTRIBUTE]: group },
             kind: 'task'
         });
     }
@@ -141,25 +168,16 @@ export class TaskTerminalWidgetManager {
     /**
      * Returns the collection of terminals that a terminal for the given task is presented with.
      * By default, all task terminals are presented together.
+     *
+     * Terminals are split and reused by `presentation.group` regardless of their collection,
+     * so tasks of the same group should be given the same collection.
      */
     protected getTerminalCollection(_taskConfig?: TaskConfiguration): TerminalCollection | undefined {
         return { id: 'tasks', label: nls.localizeByDefault('Tasks'), iconClass: codicon('tasklist') };
     }
 
-    /**
-     * Returns a location next to a terminal of another task in the same `presentation.group`, if there is one.
-     */
-    protected getTerminalGroupLocation(taskConfig?: TaskConfiguration): TerminalSplitLocation | undefined {
-        const group = taskConfig && TaskOutputPresentation.getGroup(taskConfig);
-        if (group === undefined) {
-            return undefined;
-        }
-        const groupTerminal = this.getTaskTerminalWidgets().find(widget => !widget.isDisposed && this.getTerminalGroup(widget) === group);
-        return groupTerminal && { parentTerminal: groupTerminal.id };
-    }
-
     protected getTerminalGroup(widget: TaskTerminalWidget): string | undefined {
-        return widget.taskConfig && TaskOutputPresentation.getGroup(widget.taskConfig);
+        return widget.attributes?.[TaskTerminalWidget.GROUP_ATTRIBUTE] ?? (widget.taskConfig && TaskOutputPresentation.getGroup(widget.taskConfig));
     }
 
     async open(factoryOptions: TerminalWidgetFactoryOptions, openerOptions: TaskTerminalWidgetOpenerOptions): Promise<TerminalWidget> {
@@ -170,20 +188,25 @@ export class TaskTerminalWidgetManager {
             throw new Error('"taskConfig" must be included as part of the "option.taskInfo" if "isDedicated" is true');
         }
 
-        const selection = this.terminalSelection.then(() => this.getWidgetToRunTask(factoryOptions, openerOptions));
-        this.terminalSelection = selection.catch(() => undefined);
-        const { isNew, widget } = await selection;
-        if (isNew) {
-            widget.resetTerminal();
-        } else {
-            if (factoryOptions.title) {
-                widget.setTitle(factoryOptions.title);
+        const { isNew, widget } = await this.getWidgetToRunTask(factoryOptions, openerOptions);
+        try {
+            if (isNew) {
+                widget.resetTerminal();
+            } else {
+                if (factoryOptions.title) {
+                    widget.setTitle(factoryOptions.title);
+                }
+                if (taskConfig && TaskOutputPresentation.shouldClearTerminalBeforeRun(taskConfig)) {
+                    widget.clearOutput();
+                }
             }
-            if (taskConfig && TaskOutputPresentation.shouldClearTerminalBeforeRun(taskConfig)) {
-                widget.clearOutput();
+            await this.terminalService.open(widget, openerOptions);
+        } catch (error) {
+            if (TaskTerminalWidget.is(widget)) {
+                widget.busy = false;
             }
+            throw error;
         }
-        await this.terminalService.open(widget, openerOptions);
         const command = taskInfo && ProcessTaskInfo.is(taskInfo) ? taskInfo.command : undefined;
         if (TaskTerminalWidgetOpenerOptions.echoExecutedCommand(openerOptions) && command && command.length > 0) {
             if (widget.commandHistoryState) {
@@ -244,8 +267,8 @@ export class TaskTerminalWidgetManager {
     }
 
     /**
-     * Marks the terminal as running the given task right away, rather than once the task's process is attached,
-     * so that tasks started concurrently neither reuse it nor miss it as a member of their `presentation.group`.
+     * Marks the terminal as running the given task. A terminal is claimed when it is chosen for a task, rather than
+     * once the task's process is attached, so that tasks started concurrently don't reuse it.
      */
     protected claimTerminal(widget: TerminalWidget, taskConfig: TaskConfiguration | undefined): void {
         if (taskConfig && TaskTerminalWidget.is(widget)) {

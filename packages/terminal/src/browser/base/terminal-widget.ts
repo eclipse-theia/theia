@@ -110,6 +110,11 @@ export abstract class TerminalWidget extends BaseWidget {
         return undefined;
     }
 
+    /** The implementation specific attributes the terminal was created with, if any. */
+    get attributes(): { readonly [key: string]: string | null } | undefined {
+        return undefined;
+    }
+
     /** The last CWD assigned to the terminal, useful when attempting getCwdURI on a task terminal fails */
     lastCwd: URI;
 
