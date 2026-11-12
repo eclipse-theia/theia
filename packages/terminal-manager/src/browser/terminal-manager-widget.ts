@@ -300,9 +300,11 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     /**
      * Add a terminal to a new group: on the page of its collection if it has one,
      * otherwise on a new page.
+     * @param inferCollection whether a terminal without a collection is placed by its kind. Pass it for terminals
+     * that may have been restored from a layout stored before terminals declared their collection.
      */
-    placeTerminal(terminal: TerminalWidget): void {
-        const collection = this.getTerminalCollection(terminal);
+    placeTerminal(terminal: TerminalWidget, inferCollection = false): void {
+        const collection = inferCollection ? this.getTerminalCollection(terminal) : terminal.collection;
         if (collection) {
             this.addTerminalPage(terminal, TerminalManagerTreeTypes.toCollectionPageId(collection.id), collection);
         } else {
