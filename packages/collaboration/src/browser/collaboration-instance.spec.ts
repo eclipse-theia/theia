@@ -23,10 +23,12 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import * as Y from 'yjs';
 import * as awarenessProtocol from 'y-protocols/awareness';
-import { Emitter, URI } from '@theia/core';
+import * as types from 'open-collaboration-protocol';
+import { Emitter, MessageService, URI } from '@theia/core';
 import { EditorWidget, Range } from '@theia/editor/lib/browser';
 import { CollaborationInstance, CollaborationInstanceOptions } from './collaboration-instance.js';
 import { CollaborationUtils } from './collaboration-utils.js';
+import { CollaborationWorkspaceService } from './collaboration-workspace-service.js';
 
 disableJSDOM();
 
@@ -47,9 +49,25 @@ class FakeEditorWidget {
     }
 }
 
+type JoinRequestHandler = (origin: string, user: types.User) => Promise<types.JoinResponse | undefined>;
+type JoinHandler = (origin: string, peer: types.Peer) => Promise<void>;
+
 class TestCollaborationInstance extends CollaborationInstance {
     protected override readonly options = { role: 'host' } as CollaborationInstanceOptions;
     protected override readonly utils = { getProtocolPath: (uri?: URI) => uri?.path.base } as CollaborationUtils;
+    protected override readonly workspaceService = {
+        roots: Promise.resolve([{ name: 'project' }]),
+        workspace: undefined
+    } as unknown as CollaborationWorkspaceService;
+    protected override readonly messageService = {
+        info: async (message: string) => {
+            this.prompts.push(message);
+            return this.answer;
+        }
+    } as unknown as MessageService;
+
+    readonly prompts: string[] = [];
+    answer: string | undefined;
 
     protected override getOpenEditors(): EditorWidget[] {
         return [];
@@ -81,6 +99,41 @@ class TestCollaborationInstance extends CollaborationInstance {
         sync([this.yjs.clientID]);
         this.yjsAwareness.on('update', ({ added, updated, removed }: Record<string, number[]>) => sync([...added, ...updated, ...removed]));
         return () => peer.getStates().get(this.yjs.clientID)?.selection?.path;
+    }
+
+    protected override addPeer(peer: types.Peer): void {
+        this.peers.set(peer.id, { peer, dispose: () => { } });
+    }
+
+    resolveIdentity(peer: types.Peer): void {
+        this.identity.resolve(peer);
+    }
+
+    /** Registers the protocol events on a connection that records the join handlers and the data sent to joining guests. */
+    registerJoinHandlers(): { joinRequest: JoinRequestHandler, join: JoinHandler, initData: types.InitData[] } {
+        const handlers: { joinRequest?: JoinRequestHandler, join?: JoinHandler } = {};
+        const initData: types.InitData[] = [];
+        const ignore = () => { };
+        const connection = {
+            peer: {
+                onJoinRequest: (handler: JoinRequestHandler) => handlers.joinRequest = handler,
+                onInfo: ignore,
+                onInit: ignore,
+                init: async (_target: string, data: types.InitData) => { initData.push(data); }
+            },
+            room: { onJoin: (handler: JoinHandler) => handlers.join = handler, onLeave: ignore, onClose: ignore, onPermissions: ignore }
+        } as unknown as types.ProtocolBroadcastConnection;
+        this.registerProtocolEvents(connection);
+        if (!handlers.joinRequest || !handlers.join) {
+            throw new Error('the join handlers were not registered');
+        }
+        return { joinRequest: handlers.joinRequest, join: handlers.join, initData };
+    }
+}
+
+class AutoAcceptingCollaborationInstance extends TestCollaborationInstance {
+    protected override async handleJoinRequest(user: types.User): Promise<types.JoinResponse | undefined> {
+        return user.name === 'Alice' ? { workspace: await this.getSharedWorkspace() } : undefined;
     }
 }
 
@@ -154,5 +207,49 @@ describe('CollaborationInstance', () => {
         widget.onDidDisposeEmitter.fire();
 
         expect(sharedPath()).to.equal('b.txt');
+    });
+
+    describe('join requests', () => {
+
+        const HOST = { id: 'host', name: 'Host', host: true } as types.Peer;
+        const GUEST = { id: 'guest', name: 'Bob', host: false } as types.Peer;
+        const ALICE: types.User = { name: 'Alice' };
+        const BOB: types.User = { name: 'Bob', email: 'bob@example.com' };
+        const WORKSPACE = { name: 'Collaboration', folders: ['project'] };
+
+        it('should share the workspace when the host allows the user to join', async () => {
+            instance.answer = 'Allow';
+
+            const response = await instance.registerJoinHandlers().joinRequest('peer', BOB);
+
+            expect(response).to.deep.equal({ workspace: WORKSPACE });
+            expect(instance.prompts).to.deep.equal(["User 'Bob (bob@example.com)' wants to join the collaboration room"]);
+        });
+
+        it('should turn the user away when the host denies the request', async () => {
+            instance.answer = 'Deny';
+
+            expect(await instance.registerJoinHandlers().joinRequest('peer', ALICE)).to.be.undefined;
+        });
+
+        it('should let a subclass decide join requests without asking the host', async () => {
+            instance['yjsAwareness'].destroy();
+            instance = new AutoAcceptingCollaborationInstance();
+            const { joinRequest } = instance.registerJoinHandlers();
+
+            expect(await joinRequest('peer', ALICE)).to.deep.equal({ workspace: WORKSPACE });
+            expect(await joinRequest('peer', BOB)).to.be.undefined;
+            expect(instance.prompts).to.be.empty;
+        });
+
+        it('should send the shared workspace to a guest that joins', async () => {
+            instance.resolveIdentity(HOST);
+            const { join, initData } = instance.registerJoinHandlers();
+
+            await join('peer', GUEST);
+
+            expect(initData.map(data => data.workspace)).to.deep.equal([WORKSPACE]);
+            expect(initData.map(data => data.guests.map(guest => guest.id))).to.deep.equal([['guest']]);
+        });
     });
 });
