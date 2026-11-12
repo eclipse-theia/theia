@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.78.0 - tbd
+
+<a name="breaking_changes_1.78.0">[Breaking Changes:](#breaking_changes_1.78.0)</a>
+
+- [core] `SocketWriteBuffer` keeps the messages written while disconnected in a list and sends them one by one on reconnect. Its protected `disconnectedBuffer` and `bufferWritePosition` fields are replaced by `bufferedMessages` and `bufferedBytes` [#18339](https://github.com/eclipse-theia/theia/pull/18339) - Contributed on behalf of CodeSignal
+
 ## 1.77.0 - 11/5/2026
 
 - [all] switched runtime packages from CommonJS to ES modules [#18216](https://github.com/eclipse-theia/theia/pull/18216)
