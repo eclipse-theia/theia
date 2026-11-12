@@ -16,11 +16,11 @@
 
 import { expect } from 'chai';
 import { Container } from 'inversify';
-import { EncodingRegistry } from './encoding-registry';
-import { CorePreferences } from '../common/core-preferences';
-import { EncodingService } from '../common/encoding-service';
-import { UTF8 } from '../common/encodings';
-import URI from '../common/uri';
+import { EncodingRegistry } from './encoding-registry.js';
+import { CorePreferences } from '../common/core-preferences.js';
+import { EncodingService } from '../common/encoding-service.js';
+import { UTF8 } from '../common/encodings.js';
+import URI from '../common/uri.js';
 
 describe('EncodingRegistry', () => {
 
