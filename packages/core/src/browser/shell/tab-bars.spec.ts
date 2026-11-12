@@ -24,7 +24,7 @@ import { TabBar, Title, Widget } from '@lumino/widgets';
 import { BreadcrumbsRenderer } from '../breadcrumbs/breadcrumbs-renderer.js';
 import { NativeTabDragService } from './native-tab-drag-service.js';
 import { TabBarToolbar, TabBarToolbarRegistry } from './tab-bar-toolbar/index.js';
-import { SideTabBar, TabBarRenderer, ToolbarAwareTabBar } from './tab-bars.js';
+import { ScrollableTabBar, SideTabBar, TabBarRenderer, ToolbarAwareTabBar } from './tab-bars.js';
 import { pin } from '../widgets/widget.js';
 
 disableJSDOM();
@@ -189,6 +189,68 @@ describe('tab bar', () => {
             bar.setOverflowData();
 
             expect(bar.firstOverflowingIndex()).to.equal(-1);
+        });
+    });
+
+    describe('scrollable tab bar', () => {
+
+        class TestScrollableTabBar extends ScrollableTabBar {
+            get scrollContainer(): HTMLElement {
+                return this.contentContainer;
+            }
+        }
+
+        function createTabBar(orientation: TabBar.Orientation, scrollLeft: number): TestScrollableTabBar {
+            const tabBar = new TestScrollableTabBar({ orientation });
+            Object.defineProperty(tabBar.contentNode, 'scrollWidth', { value: 1000 });
+            Object.defineProperty(tabBar.scrollContainer, 'clientWidth', { value: 300 });
+            Object.defineProperty(tabBar.scrollContainer, 'scrollWidth', { value: 1001 });
+            tabBar.scrollContainer.getBoundingClientRect = () => new DOMRect(0, 0, 300, 30);
+            Object.defineProperty(tabBar.scrollContainer, 'scrollLeft', { value: scrollLeft, writable: true });
+            Widget.attach(tabBar, document.body);
+            return tabBar;
+        }
+
+        function scroll(tabBar: TestScrollableTabBar): number {
+            tabBar.scrollContainer.dispatchEvent(new window.Event('scroll'));
+            return tabBar.scrollContainer.scrollLeft;
+        }
+
+        it('should not scroll past the last tab', () => {
+            const tabBar = createTabBar('horizontal', 701);
+            try {
+                expect(scroll(tabBar)).to.equal(700);
+            } finally {
+                tabBar.dispose();
+            }
+        });
+
+        it('should keep a scroll position within the tabs', () => {
+            const tabBar = createTabBar('horizontal', 700);
+            try {
+                expect(scroll(tabBar)).to.equal(700);
+            } finally {
+                tabBar.dispose();
+            }
+        });
+
+        it('should stop clamping once detached', () => {
+            const tabBar = createTabBar('horizontal', 701);
+            try {
+                Widget.detach(tabBar);
+                expect(scroll(tabBar)).to.equal(701);
+            } finally {
+                tabBar.dispose();
+            }
+        });
+
+        it('should leave vertical tab bars alone', () => {
+            const tabBar = createTabBar('vertical', 701);
+            try {
+                expect(scroll(tabBar)).to.equal(701);
+            } finally {
+                tabBar.dispose();
+            }
         });
     });
 
