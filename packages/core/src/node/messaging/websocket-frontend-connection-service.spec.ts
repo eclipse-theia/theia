@@ -25,6 +25,7 @@ import { Channel } from '../../common/message-rpc/channel.js';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer.js';
 import { ConnectionManagementMessages } from '../../common/messaging/connection-management.js';
 import { SocketWriteBuffer } from '../../common/messaging/socket-write-buffer.js';
+import { timeout } from '../../common/promise-util.js';
 import { MockLogger } from '../../common/test/mock-logger.js';
 import { MessagingContainer } from './default-messaging-service.js';
 import { WebsocketEndpoint } from './websocket-endpoint.js';
@@ -40,8 +41,6 @@ class TestConnectionService extends WebsocketFrontendConnectionService {
         this.handleConnection(socket, channel => this.channels.push(channel));
     }
 }
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 function encode(text: string): Uint8Array {
     const buffer = new Uint8ArrayWriteBuffer();
@@ -84,7 +83,7 @@ describe('WebsocketFrontendConnectionService', () => {
 
     afterEach(async () => {
         clients.forEach(client => client.disconnect());
-        await delay(CLOSE_TIMEOUT_MS * 2);
+        await timeout(CLOSE_TIMEOUT_MS * 2);
         await new Promise<void>(resolve => ioServer.close(() => resolve()));
         if (savedTimeout === undefined) {
             delete process.env.FRONTEND_CONNECTION_TIMEOUT;
@@ -124,7 +123,7 @@ describe('WebsocketFrontendConnectionService', () => {
         await closeServerSide(0);
         channel.getWriteBuffer().writeString('to frontend').commit();
         fresh.client.send(encode('to backend'));
-        await delay(CLOSE_TIMEOUT_MS * 2);
+        await timeout(CLOSE_TIMEOUT_MS * 2);
 
         expect(fresh.received).to.deep.equal(['to frontend']);
         expect(backendReceived).to.deep.equal(['to backend']);
@@ -140,7 +139,7 @@ describe('WebsocketFrontendConnectionService', () => {
 
         await closeServerSide(0);
         channel.getWriteBuffer().writeString('to frontend').commit();
-        await delay(CLOSE_TIMEOUT_MS * 2);
+        await timeout(CLOSE_TIMEOUT_MS * 2);
 
         expect(again.received).to.deep.equal(['to frontend']);
         expect(closed).to.be.false;
