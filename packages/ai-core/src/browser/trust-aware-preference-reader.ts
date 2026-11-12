@@ -18,13 +18,21 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import { Emitter, Event } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { PreferenceInspection, PreferenceScope, PreferenceService } from '@theia/core/lib/common/preferences';
+import { PreferenceInspection, PreferenceInspectionScope, PreferenceScope, PreferenceService } from '@theia/core/lib/common/preferences';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 
 /**
  * The scopes an untrusted workspace controls.
  */
 const UNTRUSTED_SCOPES: readonly PreferenceScope[] = [PreferenceScope.Workspace, PreferenceScope.Folder];
+
+const INSPECTION_VALUES: Record<PreferenceScope, Exclude<PreferenceInspectionScope, 'value'>> = {
+    [PreferenceScope.Default]: 'defaultValue',
+    [PreferenceScope.User]: 'globalValue',
+    [PreferenceScope.Workspace]: 'workspaceValue',
+    [PreferenceScope.Folder]: 'workspaceFolderValue',
+    [PreferenceScope.Session]: 'sessionValue'
+};
 
 /**
  * Helper for reading AI preferences that must ignore workspace/folder scopes
@@ -114,13 +122,17 @@ export class TrustAwarePreferenceReader {
 
     /**
      * Narrows a raw {@link PreferenceInspection} according to workspace trust: when the workspace is
-     * untrusted the folder and workspace scope values are dropped, the same scopes {@link get} leaves out
-     * (failing closed until the trust state resolves). A trusted inspection is returned unchanged.
+     * untrusted the values of the scopes {@link get} leaves out are dropped (failing closed until the
+     * trust state resolves). A trusted inspection is returned unchanged.
      */
     suppressUntrusted<T extends JSONValue>(inspection: PreferenceInspection<T>): PreferenceInspection<T> {
         if (this.trusted) {
             return inspection;
         }
-        return { ...inspection, workspaceValue: undefined, workspaceFolderValue: undefined };
+        const suppressed = { ...inspection };
+        for (const scope of UNTRUSTED_SCOPES) {
+            suppressed[INSPECTION_VALUES[scope]] = undefined;
+        }
+        return suppressed;
     }
 }

@@ -96,10 +96,10 @@ export class AiConfigurationServiceImpl implements AiConfigurationService {
 
     /**
      * Derives the trust-aware {@link AiConfigurationInspection.sourceScope} and effective `value`
-     * from a raw {@link PreferenceInspection}. The workspace-trust rule is applied once, via
-     * {@link TrustAwarePreferenceReader.suppressUntrusted} (the single owner of that rule): when
-     * untrusted, folder and workspace scope values are cleared, so the scope walk below naturally
-     * resolves to the session, user or default scope and the whole inspection stays consistent with {@link get}.
+     * from a raw {@link PreferenceInspection}. {@link TrustAwarePreferenceReader.suppressUntrusted} applies
+     * the workspace-trust rule: when untrusted, it clears the values of the scopes that
+     * {@link TrustAwarePreferenceReader.get} leaves out, so the scope walk below naturally resolves to the
+     * session, user or default scope and the whole inspection stays consistent with {@link get}.
      *
      * Note: `value` reflects the highest-precedence defined scope, matching `PreferenceService.inspect`. For
      * object-valued preferences this can differ from {@link get}, which deep-merges across scopes.
