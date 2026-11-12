@@ -572,7 +572,8 @@ export class DebugSession implements CompositeTreeElement {
         const terminal = await this.doCreateTerminal({ title, cwd, env, useServerTitle: false });
         const { processId } = terminal;
         await terminal.executeCommand({ cwd, args, env });
-        return { processId: await processId };
+        // This is the PID of the shell, not of the debuggee: report it as such so that the adapter does not kill the shell when the session ends.
+        return { shellProcessId: await processId };
     }
 
     protected async doCreateTerminal(options: TerminalWidgetOptions): Promise<TerminalWidget> {
