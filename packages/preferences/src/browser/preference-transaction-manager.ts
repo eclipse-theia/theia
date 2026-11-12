@@ -179,12 +179,14 @@ export const PreferenceContext = Symbol('PreferenceContext');
 export const PreferenceTransactionPreludeProvider = Symbol('PreferenceTransactionPreludeProvider');
 export type PreferenceTransactionPreludeProvider = () => Promise<unknown>;
 
-interface PreferenceEdit {
+/** An edit of a {@link PreferenceTransaction}: the value to set at the path of a preference. */
+export interface PreferenceEdit {
     path: string[];
     value: JSONValue;
 }
 
-interface PreferenceFileState {
+/** The state of the preference file that a {@link PreferenceTransaction} edits. */
+export interface PreferenceFileState {
     /** The content as read from the file. */
     readonly original: string;
     /** The content with the edits of the transaction applied. */
