@@ -34,6 +34,10 @@ describe('TerminalManagerTreeTypes', () => {
             expect(TerminalManagerTreeTypes.isPageId('page-123')).to.be.true;
         });
 
+        it('toCollectionPageId should produce a page ID', () => {
+            expect(TerminalManagerTreeTypes.isPageId(TerminalManagerTreeTypes.toCollectionPageId('tasks'))).to.be.true;
+        });
+
         it('isPageId should reject non-page strings', () => {
             expect(TerminalManagerTreeTypes.isPageId('terminal-123')).to.be.false;
             expect(TerminalManagerTreeTypes.isPageId('group-1')).to.be.false;

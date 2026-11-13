@@ -604,6 +604,10 @@ const presentation: IJSONSchema = {
             type: 'boolean',
             default: false,
             description: nls.localizeByDefault('Controls whether the terminal is cleared before executing the task.')
+        },
+        group: {
+            type: 'string',
+            description: nls.localizeByDefault('Controls whether the task is executed in a specific terminal group using split panes.')
         }
     }
 };

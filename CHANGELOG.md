@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.78.0 - tbd
+
+<a name="breaking_changes_1.78.0">[Breaking Changes:](#breaking_changes_1.78.0)</a>
+
+- [terminal-manager] removed `registerSpecialPage`, `getSpecialPageConfig`, `getSpecialPageConfigs`, `configureSpecialPages` and `createSpecialPageNode` from `TerminalManagerTreeModel`, as well as `SpecialPageConfig`. The terminal manager no longer maps terminal kinds to pages; give terminals a `collection` in their `TerminalWidgetOptions` instead [#18364](https://github.com/eclipse-theia/theia/pull/18364)
+
 ## 1.77.0 - 11/5/2026
 
 - [all] switched runtime packages from CommonJS to ES modules [#18216](https://github.com/eclipse-theia/theia/pull/18216)

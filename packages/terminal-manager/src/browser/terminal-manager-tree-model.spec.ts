@@ -32,10 +32,13 @@ import { FuzzySearch } from '@theia/core/lib/browser/tree/fuzzy-search';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { ILogger, bindContributionProvider } from '@theia/core/lib/common';
 import { LabelProvider, LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
+import { TerminalCollection } from '@theia/terminal/lib/browser/base/terminal-widget';
 
 describe('TerminalManagerTreeModel', () => {
     let container: Container;
     let model: TerminalManagerTreeModel;
+    const tasksCollection: TerminalCollection = { id: 'tasks', label: 'Tasks', iconClass: 'codicon codicon-tasklist' };
+    const tasksPageId = TerminalManagerTreeTypes.toCollectionPageId(tasksCollection.id);
 
     beforeEach(() => {
         container = new Container({ defaultScope: 'Singleton' });
@@ -82,13 +85,12 @@ describe('TerminalManagerTreeModel', () => {
             model.deleteTerminalPage(pageId);
         });
 
-        it('should allow deleting the tasks page when it has children', done => {
+        it('should allow deleting a collection page when it has children', done => {
             // Add a terminal to the tasks page
             const groupId = 'group-tasks-1' as TerminalManagerTreeTypes.GroupId;
             const terminalKey = 'terminal-task-1' as TerminalManagerTreeTypes.TerminalKey;
 
-            const tasksPageId = model.getSpecialPageConfig('task')!.pageId;
-            model.addTerminalPage(terminalKey, groupId, tasksPageId, 'Task Terminal');
+            model.addTerminalPage(terminalKey, groupId, tasksPageId, 'Task Terminal', tasksCollection);
 
             // Verify tasks page exists before deletion
             const tasksPageBefore = model.getNode(tasksPageId);
@@ -179,28 +181,38 @@ describe('TerminalManagerTreeModel', () => {
         });
     });
 
-    describe('addTerminalPage with special page', () => {
-        it('should create special page on first use', () => {
-            const tasksPageId = model.getSpecialPageConfig('task')!.pageId;
+    describe('addTerminalPage with collection', () => {
+        it('should create collection page with the collection label and icon on first use', () => {
             const groupId = 'group-1' as TerminalManagerTreeTypes.GroupId;
             const terminalKey = 'terminal-1' as TerminalManagerTreeTypes.TerminalKey;
 
-            model.addTerminalPage(terminalKey, groupId, tasksPageId, 'Task Terminal');
+            model.addTerminalPage(terminalKey, groupId, tasksPageId, 'Task Terminal', tasksCollection);
 
             const page = model.getNode(tasksPageId);
-            expect(page).to.not.be.undefined;
             expect(TerminalManagerTreeTypes.isPageNode(page)).to.be.true;
+            if (TerminalManagerTreeTypes.isPageNode(page)) {
+                expect(page.label).to.equal(tasksCollection.label);
+                expect(page.icon).to.equal(tasksCollection.iconClass);
+                expect(page.counter).to.equal(0);
+            }
         });
 
-        it('should reuse existing special page', () => {
-            const tasksPageId = model.getSpecialPageConfig('task')!.pageId;
+        it('should exclude collection pages from page numbering', () => {
+            model.addTerminalPage('terminal-1', 'group-1', tasksPageId, 'Task Terminal', tasksCollection);
+            model.addTerminalPage('terminal-2', 'group-2', 'page-2', 'Terminal');
+
+            const page = model.getNode('page-2');
+            expect(TerminalManagerTreeTypes.isPageNode(page) && page.counter).to.equal(1);
+        });
+
+        it('should reuse existing collection page', () => {
             const groupId1 = 'group-1' as TerminalManagerTreeTypes.GroupId;
             const groupId2 = 'group-2' as TerminalManagerTreeTypes.GroupId;
             const key1 = 'terminal-1' as TerminalManagerTreeTypes.TerminalKey;
             const key2 = 'terminal-2' as TerminalManagerTreeTypes.TerminalKey;
 
-            model.addTerminalPage(key1, groupId1, tasksPageId, 'Task 1');
-            model.addTerminalPage(key2, groupId2, tasksPageId, 'Task 2');
+            model.addTerminalPage(key1, groupId1, tasksPageId, 'Task 1', tasksCollection);
+            model.addTerminalPage(key2, groupId2, tasksPageId, 'Task 2', tasksCollection);
 
             const page = model.getNode(tasksPageId);
             expect(TerminalManagerTreeTypes.isPageNode(page)).to.be.true;
@@ -209,15 +221,14 @@ describe('TerminalManagerTreeModel', () => {
             }
         });
 
-        it('should recreate a special page after its last terminal is removed', () => {
-            const tasksPageId = model.getSpecialPageConfig('task')!.pageId;
+        it('should recreate a collection page after its last terminal is removed', () => {
             const firstGroup = 'group-tasks-a' as TerminalManagerTreeTypes.GroupId;
             const firstTerminal = 'terminal-task-a' as TerminalManagerTreeTypes.TerminalKey;
             const secondGroup = 'group-tasks-b' as TerminalManagerTreeTypes.GroupId;
             const secondTerminal = 'terminal-task-b' as TerminalManagerTreeTypes.TerminalKey;
 
             // Run a task -> Tasks page, group, and terminal appear.
-            model.addTerminalPage(firstTerminal, firstGroup, tasksPageId, 'Task A');
+            model.addTerminalPage(firstTerminal, firstGroup, tasksPageId, 'Task A', tasksCollection);
             expect(model.getNode(tasksPageId)).to.not.be.undefined;
 
             // Remove the terminal -> cascades up and detaches the Tasks page.
@@ -232,7 +243,7 @@ describe('TerminalManagerTreeModel', () => {
 
             // Run another task -> Tasks page should be re-created and re-attached,
             // emitting onDidAddPage so the widget can rebuild the page panel.
-            model.addTerminalPage(secondTerminal, secondGroup, tasksPageId, 'Task B');
+            model.addTerminalPage(secondTerminal, secondGroup, tasksPageId, 'Task B', tasksCollection);
 
             expect(addPageEvents).to.deep.equal([tasksPageId]);
             const reattached = model.getNode(tasksPageId);

@@ -101,8 +101,7 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
 
         // Before terminal manager attachment to precede creation of default widget.
         for (const terminal of bottomTerminals) {
-            const specialConfig = managerWidget.treeWidget.model.getSpecialPageConfig(terminal.kind);
-            managerWidget.addTerminalPage(terminal, specialConfig?.pageId);
+            managerWidget.placeTerminal(terminal, true);
             terminal.show(); // Clear hidden flag that may have been set by dock panel on removal.
         }
 

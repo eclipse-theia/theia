@@ -35,7 +35,7 @@ import {
 } from '@theia/core/lib/browser';
 import { Disposable, DisposableCollection, Emitter, nls, ILogger } from '@theia/core';
 import { UUID } from '@theia/core/shared/@lumino/coreutils';
-import { TerminalWidget, TerminalWidgetOptions } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { TerminalCollection, TerminalWidget, TerminalWidgetOptions } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalWidgetImpl, nextTerminalCreationToken } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
@@ -298,11 +298,42 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     /**
+     * Add a terminal to a new group: on the page of its collection if it has one,
+     * otherwise on a new page.
+     * @param inferCollection whether a terminal without a collection is placed by its kind. Pass it for terminals
+     * that may have been restored from a layout stored before terminals declared their collection.
+     */
+    placeTerminal(terminal: TerminalWidget, inferCollection = false): void {
+        const collection = inferCollection ? this.getTerminalCollection(terminal) : terminal.collection;
+        if (collection) {
+            this.addTerminalPage(terminal, TerminalManagerTreeTypes.toCollectionPageId(collection.id), collection);
+        } else {
+            this.addTerminalPage(terminal);
+        }
+    }
+
+    protected getTerminalCollection(terminal: TerminalWidget): TerminalCollection | undefined {
+        return terminal.collection ?? this.getLegacyTerminalCollection(terminal.kind);
+    }
+
+    /**
+     * Returns the collection that terminals of the given kind were placed in before terminals declared their collection.
+     * Only needed for terminals and pages restored from layouts stored before then, which lack a collection and an icon, respectively.
+     */
+    protected getLegacyTerminalCollection(kind: string): TerminalCollection | undefined {
+        switch (kind) {
+            case 'task': return { id: 'tasks', label: nls.localizeByDefault('Tasks'), iconClass: codicon('tasklist') };
+            case 'debug': return { id: 'debug', label: nls.localizeByDefault('Debug'), iconClass: codicon('debug-alt') };
+            default: return undefined;
+        }
+    }
+
+    /**
      * Add a terminal to a page. If no `pageId` is given, a new auto-numbered
      * page is created. If a `pageId` is given, the existing page is reused
-     * or a new one is created (with special-page config applied if available).
+     * or a new one is created, labelled after `collection` if given.
      */
-    addTerminalPage(widget: Widget, pageId?: TerminalManagerTreeTypes.PageId): void {
+    addTerminalPage(widget: Widget, pageId?: TerminalManagerTreeTypes.PageId, collection?: TerminalCollection): void {
         if (widget instanceof TerminalWidgetImpl) {
             const resolvedPageId = pageId ?? this.createPagePanel().id;
             const terminalKey = TerminalManagerTreeTypes.generateTerminalKey(widget);
@@ -310,7 +341,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
             this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
             const groupPanel = this.createTerminalGroupPanel();
             groupPanel.addWidget(widget);
-            this.treeWidget.model.addTerminalPage(terminalKey, groupPanel.id, resolvedPageId, widget.title.label);
+            this.treeWidget.model.addTerminalPage(terminalKey, groupPanel.id, resolvedPageId, widget.title.label, collection);
         }
     }
 
@@ -681,6 +712,10 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
                         this.addTerminalReference(widget, widgetId);
                         this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
                         groupPanel.addWidget(widget);
+                        const collection = this.getTerminalCollection(widget);
+                        if (!pageNode.icon && collection && TerminalManagerTreeTypes.toCollectionPageId(collection.id) === pageId) {
+                            pageNode.icon = collection.iconClass;
+                        }
                     }
                 }
                 const { widgetRelativeHeights } = groupLayout;
