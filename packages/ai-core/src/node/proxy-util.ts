@@ -18,19 +18,33 @@ import * as undici from 'undici';
 import { shouldBypassProxy } from '../common/proxy-util.js';
 
 /**
- * Creates a custom fetch function that routes requests through the given HTTP proxy.
- * Returns `undefined` if no proxy URL is provided.
+ * Creates a custom fetch function that routes requests through the given HTTP proxy and/or applies
+ * a configurable undici request timeout. Returns `undefined` if neither a proxy nor a timeout is
+ * configured (in which case the global `fetch` with its defaults should be used).
+ *
+ * By default undici aborts a request if no response headers arrive within 300s (`headersTimeout`)
+ * or if the gap between body chunks exceeds 300s (`bodyTimeout`), surfacing an opaque
+ * `TypeError: fetch failed`. Local model servers (e.g. Ollama) can legitimately take longer than
+ * that to cold-load a large model before emitting the first byte, so callers can raise or disable
+ * the timeout via `requestTimeout`.
  *
  * @param proxyUrl - The proxy URL to use, or `undefined` for no proxy.
- * @returns A custom fetch function using the proxy, or `undefined`.
+ * @param requestTimeout - The undici `headersTimeout`/`bodyTimeout` in milliseconds. `0` disables
+ * the timeout entirely. When `undefined`, undici's defaults apply.
+ * @returns A custom fetch function, or `undefined` when neither a proxy nor a timeout is configured.
  */
-export function createProxyFetch(proxyUrl: string | undefined): typeof fetch | undefined {
-    if (!proxyUrl) {
+export function createProxyFetch(proxyUrl: string | undefined, requestTimeout?: number): typeof fetch | undefined {
+    if (!proxyUrl && requestTimeout === undefined) {
         return undefined;
     }
-    const proxyAgent = new undici.ProxyAgent(proxyUrl);
+    const timeoutOptions = requestTimeout === undefined
+        ? {}
+        : { headersTimeout: requestTimeout, bodyTimeout: requestTimeout };
+    const dispatcher = proxyUrl
+        ? new undici.ProxyAgent({ uri: proxyUrl, ...timeoutOptions })
+        : new undici.Agent(timeoutOptions);
     return ((input: string | URL | Request, init?: RequestInit) =>
-        fetch(input, { ...init, dispatcher: proxyAgent } as RequestInit)
+        fetch(input, { ...init, dispatcher } as RequestInit)
     ) as typeof fetch;
 }
 
