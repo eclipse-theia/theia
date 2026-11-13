@@ -81,7 +81,7 @@ In the diagrams below, purple marks AI steps and green marks human steps.
 
 <a name="flow-committer"></a>
 
-- [1.](#flow-committer) Committers opt in to the AI review. It then starts automatically when they open a non-draft PR or mark a draft PR as ready for review. To skip it, they open a draft PR.
+- [1.](#flow-committer) Committers opt in to the AI review. It then starts automatically when they open a non-draft PR or mark a draft PR as ready for review. To postpone it, they open a draft PR.
 <a name="flow-committer-rereview"></a>
 - [2.](#flow-committer-rereview) The author re-requests the AI review after fixing or answering the findings.
 <a name="flow-committer-review-request"></a>
