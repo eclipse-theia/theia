@@ -94,9 +94,10 @@ export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
 
     getDeployedPluginsById(pluginId: string): DeployedPlugin[] {
         const matches: DeployedPlugin[] = [];
+        const id = pluginId.toLowerCase();
         const handle = (plugins: Iterable<DeployedPlugin>): void => {
             for (const plugin of plugins) {
-                if (PluginIdentifiers.componentsToVersionWithId(plugin.metadata.model).id === pluginId) {
+                if (PluginIdentifiers.componentsToUnversionedId(plugin.metadata.model).toLowerCase() === id) {
                     matches.push(plugin);
                 }
             }
