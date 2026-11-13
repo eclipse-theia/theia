@@ -204,6 +204,10 @@ ${Array.from(frontendModules.values(), jsModulePath => `\
         flex: 0 0 auto;
     }
 
+    #theia-top-panel:empty {
+        display: none;
+    }
+
     #widget-host {
         width: 100% !important;
         flex: 1 1 auto;
