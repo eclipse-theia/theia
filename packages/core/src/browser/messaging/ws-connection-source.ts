@@ -48,6 +48,8 @@ export class WebSocketConnectionSource implements ConnectionSource {
     }
 
     protected currentChannel: AbstractChannel;
+    /** Whether the socket has connected at least once since it was opened. */
+    protected everConnected = false;
 
     protected readonly onConnectionDidOpenEmitter: Emitter<Channel> = new Emitter();
     get onConnectionDidOpen(): Event<Channel> {
@@ -78,9 +80,12 @@ export class WebSocketConnectionSource implements ConnectionSource {
         this._socket = this.createWebSocket(url);
 
         this._socket.on('connect', () => {
+            this.everConnected = true;
             this.onSocketDidOpenEmitter.fire();
             this.handleSocketConnected();
         });
+        this._socket.on('connect_error', () => this.handleConnectFailure());
+        this._socket.io.on('reconnect_attempt', () => this.handleConnectFailure());
 
         this._socket.on('disconnect', () => {
             this.onSocketDidCloseEmitter.fire();
@@ -92,6 +97,19 @@ export class WebSocketConnectionSource implements ConnectionSource {
             };
         });
         this._socket.connect();
+    }
+
+    /**
+     * `tryAllTransports` makes the client fall back to long-polling only when the WebSocket transport reports an
+     * error. A WebSocket that a proxy accepts and then drops, or that hangs until the connection times out, does
+     * not report one, and every reconnection would start over with the WebSocket. So once connecting has failed
+     * before it ever succeeded, drop the preference for the WebSocket and let the client use its default order,
+     * long-polling first with an upgrade to the WebSocket, from the next attempt on.
+     */
+    protected handleConnectFailure(): void {
+        if (!this.everConnected) {
+            this._socket.io.opts.transports = undefined;
+        }
     }
 
     protected negogiateReconnect(): void {
@@ -209,6 +227,11 @@ export class WebSocketConnectionSource implements ConnectionSource {
     protected createWebSocket(url: string): Socket {
         return io(url, {
             path: this.createSocketIoPath(url),
+            // Try the WebSocket first instead of socket.io's default of HTTP long-polling followed by an
+            // upgrade, which costs several round trips before the first message can be sent. Fall back to
+            // long-polling if the WebSocket cannot be established, e.g. because a proxy blocks it.
+            transports: ['websocket', 'polling'],
+            tryAllTransports: true,
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 10000,
