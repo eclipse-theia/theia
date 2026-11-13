@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { ProxyAgent, Agent, Dispatcher } from 'undici';
+import { shouldBypassProxyForEnv } from './no-proxy';
 
 function getSystemProxyURI(requestURL: URL, env: typeof process.env): string | undefined {
     if (requestURL.protocol === 'http:') {
@@ -29,6 +30,7 @@ function getSystemProxyURI(requestURL: URL, env: typeof process.env): string | u
 export interface ProxySettings {
     proxyUrl?: string;
     strictSSL?: boolean;
+    noProxy?: string[];
     /** Sent as `Proxy-Authorization` when the proxy URL carries no credentials of its own. */
     proxyAuthorization?: string;
 }
@@ -41,7 +43,10 @@ export function getProxyAgent(rawRequestURL: string, env: typeof process.env, op
         return undefined;
     }
 
-    const proxyURL = options.proxyUrl || getSystemProxyURI(requestURL, env);
+    // A bypassed request is handled like a request without proxy, so that `strictSSL` still applies
+    const proxyURL = shouldBypassProxyForEnv(requestURL, env, options.noProxy)
+        ? undefined
+        : options.proxyUrl || getSystemProxyURI(requestURL, env);
 
     if (!proxyURL) {
         if (options.strictSSL === false) {

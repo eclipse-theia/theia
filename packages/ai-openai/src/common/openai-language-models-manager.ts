@@ -69,7 +69,7 @@ export interface OpenAiLanguageModelsManager {
      */
     setAllowEnvironmentApiKey(allowed: boolean): void;
     setApiVersion(version: string | undefined): void;
-    setProxyUrl(proxyUrl: string | undefined): void;
+    setProxyUrl(proxyUrl: string | undefined, noProxy?: string[]): void;
     createOrUpdateLanguageModels(...models: OpenAiModelDescription[]): Promise<void>;
     removeLanguageModels(...modelIds: string[]): void;
     /**

@@ -197,6 +197,20 @@ export const corePreferenceSchema: PreferenceSchema = {
             description: nls.localize('theia/core/http/proxySupport', 'Use the proxy support for extensions.'),
             scope: PreferenceScope.User
         },
+        'http.noProxy': {
+            type: 'array',
+            items: { type: 'string' },
+            description: nls.localize('theia/core/http/noProxy', 'Specifies domain names for which proxy settings should be ignored for HTTP/HTTPS requests.'),
+            default: [],
+            scope: PreferenceScope.User
+        },
+        'http.fetchAdditionalSupport': {
+            type: 'boolean',
+            default: true,
+            markdownDescription: nls.localize('theia/core/http/fetchAdditionalSupport',
+                'Controls whether `fetch` in extensions uses the proxy support (`#http.proxySupport#`) and the system certificates (`#http.systemCertificates#`).'),
+            scope: PreferenceScope.User
+        },
         'http.systemCertificates': {
             type: 'boolean',
             default: true,

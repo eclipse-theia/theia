@@ -52,7 +52,7 @@ export interface AnthropicLanguageModelsManager {
      * stops it being used immediately, wherever it would have been used.
      */
     setAllowEnvironmentApiKey(allowed: boolean): void;
-    setProxyUrl(proxyUrl: string | undefined): void;
+    setProxyUrl(proxyUrl: string | undefined, noProxy?: string[]): void;
     createOrUpdateLanguageModels(...models: AnthropicModelDescription[]): Promise<void>;
     removeLanguageModels(...modelIds: string[]): void;
     /**

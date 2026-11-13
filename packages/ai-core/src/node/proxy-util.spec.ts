@@ -140,4 +140,17 @@ describe('getProxyUrl', () => {
         process.env.NO_PROXY = 'example.com';
         expect(getProxyUrl('http://example.com', 'http://settings-proxy:8080')).to.be.undefined;
     });
+
+    it('should bypass proxy when the noProxy setting matches', () => {
+        expect(getProxyUrl('http://localhost:11434', 'http://settings-proxy:8080', ['localhost'])).to.be.undefined;
+        expect(getProxyUrl('http://example.com', 'http://settings-proxy:8080', ['localhost'])).to.equal('http://settings-proxy:8080');
+    });
+
+    it('should combine the noProxy setting with no_proxy', () => {
+        process.env.http_proxy = 'http://proxy:3128';
+        process.env.no_proxy = '.corp.internal';
+        expect(getProxyUrl('http://localhost', undefined, ['localhost'])).to.be.undefined;
+        expect(getProxyUrl('http://git.corp.internal', undefined, ['localhost'])).to.be.undefined;
+        expect(getProxyUrl('http://example.com', undefined, ['localhost'])).to.equal('http://proxy:3128');
+    });
 });
