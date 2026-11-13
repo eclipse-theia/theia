@@ -207,6 +207,44 @@ describe('navigator-filter workspace paths', () => {
     });
 });
 
+describe('navigator-filter sibling clauses', () => {
+    const siblings = ['foo.ts', 'foo.js', 'bar.js'];
+    const hasSibling = (name: string) => siblings.includes(name);
+    const predicate = new FileNavigatorFilterPredicate({ '**/*.js': { when: '$(basename).ts' } });
+
+    it('should exclude a file when the sibling exists', () => {
+        expect(predicate.filter({ id: 'src/foo.js' }, hasSibling)).to.be.false;
+    });
+
+    it('should include a file when the sibling is missing', () => {
+        expect(predicate.filter({ id: 'src/bar.js' }, hasSibling)).to.be.true;
+    });
+
+    it('should include a file when no sibling information is available', () => {
+        expect(predicate.filter({ id: 'src/foo.js' })).to.be.true;
+    });
+
+    it('should include a file that does not match the pattern', () => {
+        expect(predicate.filter({ id: 'src/foo.ts' }, hasSibling)).to.be.true;
+    });
+
+    it('should not fail when passed directly to Array.filter', () => {
+        const items = [{ id: 'src/foo.js' }, { id: 'src/bar.js' }];
+        expect(() => items.filter(predicate.filter.bind(predicate))).to.not.throw();
+    });
+
+    it('should resolve the siblings from the filtered items', async () => {
+        const workspaceService = sinon.createStubInstance(WorkspaceService);
+        workspaceService.getWorkspaceRootUri.returns(new URI('file:///workspace'));
+        const filter = new TestFileNavigatorFilter(workspaceService, predicate);
+        const items = ['foo.ts', 'foo.js', 'bar.js'].map(name => toFileStatNode(new URI(`file:///workspace/src/${name}`)));
+
+        const result = await filter.filter(items);
+
+        expect(result.map(item => item.fileStat.name)).to.deep.equal(['foo.ts', 'bar.js']);
+    });
+});
+
 function includes<T>(array: T[], item: T, message: string = `Expected ${JSON.stringify(array)} to include ${JSON.stringify(item)}.`): void {
     expect(array).to.deep.include(item, message);
 }

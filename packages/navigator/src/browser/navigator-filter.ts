@@ -14,8 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PreferenceChangeEvent } from '@theia/core';
+import { Path, PreferenceChangeEvent } from '@theia/core';
 import { Event, Emitter } from '@theia/core/lib/common/event';
+import { SiblingClause } from '@theia/core/lib/common/glob';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { FileStatNode } from '@theia/filesystem/lib/browser';
@@ -57,20 +58,28 @@ export class FileNavigatorFilter {
     }
 
     async filter<T extends { id: string }>(items: MaybePromise<T[]>): Promise<T[]> {
-        return (await items).filter(item => this.filterItem(item));
+        const resolvedItems = await items;
+        const siblingNames = new Set<string>();
+        for (const item of resolvedItems) {
+            if (FileStatNode.is(item)) {
+                siblingNames.add(item.fileStat.name);
+            }
+        }
+        const hasSibling = (name: string) => siblingNames.has(name);
+        return resolvedItems.filter(item => this.filterItem(item, hasSibling));
     }
 
     get onFilterChanged(): Event<void> {
         return this.emitter.event;
     }
 
-    protected filterItem(item: { id: string }): boolean {
+    protected filterItem(item: { id: string }, hasSibling?: (name: string) => boolean): boolean {
         let relativePath: string | undefined;
         if (FileStatNode.is(item)) {
             const workspaceRoot = this.workspaceService.getWorkspaceRootUri(item.uri);
             relativePath = workspaceRoot?.relative(item.uri)?.toString();
         }
-        return this.filterPredicate.filter({ id: relativePath ?? item.id });
+        return this.filterPredicate.filter({ id: relativePath ?? item.id }, hasSibling);
     }
 
     protected fireFilterChanged(): void {
@@ -121,8 +130,9 @@ export namespace FileNavigatorFilter {
          * Returns `true` if the item should filtered our from the navigator. Otherwise, `true`.
          *
          * @param item the identifier of a tree node.
+         * @param hasSibling checks whether a file with the given name exists next to the item. Required to evaluate sibling clauses.
          */
-        filter(item: { id: string }): boolean;
+        filter(item: { id: string }, hasSibling?: (name: string) => boolean): boolean;
 
     }
 
@@ -134,17 +144,18 @@ export namespace FileNavigatorFilter {
          */
         export function and(...predicates: Predicate[]): Predicate {
             return {
-                filter: id => predicates.every(predicate => predicate.filter(id))
+                filter: (id, hasSibling) => predicates.every(predicate => predicate.filter(id, hasSibling))
             };
         }
 
     }
 
     /**
-     * Type for the exclusion patterns. The property keys are the patterns, values are whether the exclusion is enabled or not.
+     * Type for the exclusion patterns. The property keys are the patterns, values are whether the exclusion is enabled or not,
+     * or a sibling clause that enables the exclusion only if a matching sibling exists (e.g. `{ "when": "$(basename).ts" }`).
      */
     export interface Exclusions {
-        [key: string]: boolean;
+        [key: string]: boolean | SiblingClause;
     }
 
 }
@@ -157,18 +168,33 @@ export class FileNavigatorFilterPredicate implements FileNavigatorFilter.Predica
     private readonly delegate: FileNavigatorFilter.Predicate;
 
     constructor(exclusions: FileNavigatorFilter.Exclusions) {
-        const patterns = Object.keys(exclusions).map(pattern => ({ pattern, enabled: exclusions[pattern] })).filter(object => object.enabled).map(object => object.pattern);
-        this.delegate = FileNavigatorFilter.Predicate.and(...patterns.map(pattern => this.createDelegate(pattern)));
+        const delegates = Object.keys(exclusions)
+            .filter(pattern => !!exclusions[pattern])
+            .map(pattern => this.createDelegate(pattern, exclusions[pattern]));
+        this.delegate = FileNavigatorFilter.Predicate.and(...delegates);
     }
 
-    filter(item: { id: string }): boolean {
-        return this.delegate.filter(item);
+    filter(item: { id: string }, hasSibling?: (name: string) => boolean): boolean {
+        return this.delegate.filter(item, hasSibling);
     }
 
-    protected createDelegate(pattern: string): FileNavigatorFilter.Predicate {
+    protected createDelegate(pattern: string, value: boolean | SiblingClause = true): FileNavigatorFilter.Predicate {
         const delegate = new Minimatch(pattern);
+        const when = typeof value === 'object' && typeof value.when === 'string' ? value.when : undefined;
         return {
-            filter: item => !delegate.match(item.id)
+            filter: (item, hasSibling) => {
+                if (!delegate.match(item.id)) {
+                    return true;
+                }
+                if (when === undefined) {
+                    return false;
+                }
+                if (typeof hasSibling !== 'function') {
+                    return true;
+                }
+                const name = new Path(item.id).name;
+                return !hasSibling(when.replace('$(basename)', name));
+            }
         };
     }
 
