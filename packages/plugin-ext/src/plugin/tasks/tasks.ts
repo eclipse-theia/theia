@@ -40,9 +40,11 @@ export class TasksExtImpl implements TasksExt {
     private adaptersMap = new Map<number, TaskProviderAdapter>();
     private executions = new Map<number, theia.TaskExecution>();
     protected callbackIdBase: string = UUID.uuid4();
-    protected callbackId: number;
+    protected callbackId = 0;
     protected customExecutionIds: Map<ExecutionCallback, string> = new Map();
     protected customExecutionFunctions: Map<string, ExecutionCallback> = new Map();
+    protected customExecutionTasks: Map<string, theia.Task> = new Map();
+    protected providedCustomExecutions: Map<string, theia.CustomExecution> = new Map();
     protected lastStartedTask: number | undefined;
     protected executeRequestId = 0;
     /** The tasks passed to `executeTask`, by request id, until the request completes. */
@@ -156,21 +158,28 @@ export class TasksExtImpl implements TasksExt {
     async executeTask(task: theia.Task): Promise<theia.TaskExecution> {
         const taskDto = converter.fromTask(task);
         if (taskDto) {
-            // If this task is a custom execution, then we need to save it away
-            // in the provided custom execution map that is cleaned up after the
-            // task is executed.
-            if (CustomExecution.is(task.execution!)) {
-                taskDto.executionId = this.addCustomExecution(task.execution!.callback);
+            // Each run of a custom execution gets its own id, so runs that share an execution keep their own
+            // task. It stays registered after the run ends, because Rerun Last Task starts it again with that id.
+            const customExecution = task.execution && CustomExecution.is(task.execution) ? task.execution : undefined;
+            const runId = customExecution ? this.nextCallbackId() : undefined;
+            if (customExecution && runId) {
+                taskDto.executionId = runId;
+                this.customExecutionFunctions.set(runId, customExecution.callback);
+                this.customExecutionTasks.set(runId, task);
             }
             const executeRequestId = this.executeRequestId++;
             this.pendingExecuteRequests.set(executeRequestId, task);
+            let executionDto: TaskExecutionDto | undefined;
             try {
-                const executionDto = await this.proxy.$executeTask(taskDto, executeRequestId);
+                executionDto = await this.proxy.$executeTask(taskDto, executeRequestId);
                 if (executionDto) {
                     return this.getTaskExecution(executionDto, task)!;
                 }
             } finally {
                 this.pendingExecuteRequests.delete(executeRequestId);
+                if (runId && !executionDto) {
+                    this.forgetRun(runId);
+                }
             }
             throw new Error('Run task config does not return after being started');
         }
@@ -183,7 +192,7 @@ export class TasksExtImpl implements TasksExt {
             return adapter.provideTasks(CancellationToken.None).then(tasks => {
                 for (const task of tasks) {
                     if (task.executionType === 'customExecution') {
-                        this.applyCustomExecution(task);
+                        this.applyCustomExecution(task, adapter);
                     }
                 }
                 return tasks;
@@ -200,7 +209,7 @@ export class TasksExtImpl implements TasksExt {
                 // ensure we do not lose task type and execution id during resolution as we need it for custom execution
                 resolvedTask.executionType = resolvedTask.executionType ?? task.executionType;
                 if (resolvedTask.executionType === 'customExecution') {
-                    this.applyCustomExecution(resolvedTask);
+                    this.applyCustomExecution(resolvedTask, adapter);
                 }
                 return resolvedTask;
             });
@@ -209,9 +218,13 @@ export class TasksExtImpl implements TasksExt {
         }
     }
 
-    private applyCustomExecution(task: TaskDto): void {
+    private applyCustomExecution(task: TaskDto, adapter: TaskProviderAdapter): void {
         if (task.callback) {
             task.executionId = this.addCustomExecution(task.callback);
+            const execution = adapter.takeCustomExecution(task.callback);
+            if (execution) {
+                this.providedCustomExecutions.set(task.executionId, execution);
+            }
             task.callback = undefined;
         }
     }
@@ -251,7 +264,17 @@ export class TasksExtImpl implements TasksExt {
             return result;
         }
 
-        task = task ?? converter.toTask(execution.task, this.getWorkspaceFolder);
+        // Hand plugins back their own task, or for a provided task their own execution, as VS Code does,
+        // so subclasses of CustomExecution keep their members.
+        const customExecutionId = execution.task.executionId;
+        task = task ?? (customExecutionId ? this.customExecutionTasks.get(customExecutionId) : undefined);
+        if (!task) {
+            task = converter.toTask(execution.task, this.getWorkspaceFolder);
+            const provided = customExecutionId ? this.providedCustomExecutions.get(customExecutionId) : undefined;
+            if (task && provided) {
+                task.execution = provided;
+            }
+        }
         if (!task) {
             return undefined;
         }
@@ -263,6 +286,11 @@ export class TasksExtImpl implements TasksExt {
         };
         this.executions.set(executionId, result);
         return result;
+    }
+
+    private forgetRun(runId: string): void {
+        this.customExecutionFunctions.delete(runId);
+        this.customExecutionTasks.delete(runId);
     }
 
     private addCustomExecution(callback: ExecutionCallback): string {
