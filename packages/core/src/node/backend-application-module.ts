@@ -62,6 +62,7 @@ import { BackendRemoteService } from './remote/backend-remote-service.js';
 import { RemoteCliContribution } from './remote/remote-cli-contribution.js';
 import { SettingService, SettingServiceImpl } from './setting-service.js';
 import { bindCorePreferences } from '../common/core-preferences.js';
+import { JSONCEditor, JSONCEditorImpl } from '../common/jsonc-editor.js';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -182,5 +183,7 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bind(PreferenceServiceImpl).toSelf().inSingletonScope();
     bind(PreferenceService).toService(PreferenceServiceImpl);
     bindCorePreferences(bind);
+    bind(JSONCEditorImpl).toSelf().inSingletonScope();
+    bind(JSONCEditor).toService(JSONCEditorImpl);
     bindTreePreferences(bind);
 });

@@ -26,3 +26,4 @@ export * from './editor-linenumber-contribution.js';
 export * from './split-editor-contribution.js';
 export * from './text-editor-split-contribution.js';
 export * from './editor-formatter-service.js';
+export * from './text-editor-document-service.js';
