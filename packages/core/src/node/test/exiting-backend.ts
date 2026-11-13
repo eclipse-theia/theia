@@ -20,6 +20,7 @@
  * The `exit` handler of the `BackendApplication` then terminates the process tree.
  * Set {@link EXITING_BACKEND_NO_POWERSHELL} to make the listing of the children of the process fail.
  * Set {@link EXITING_BACKEND_GRACEFUL} to shut down as on `SIGTERM` instead, which exits with code 1.
+ * Set {@link EXITING_BACKEND_CHILD_IGNORES_SIGTERM} to make the child ignore `SIGTERM`.
  */
 
 import 'reflect-metadata';
@@ -46,6 +47,11 @@ export const EXITING_BACKEND_NO_POWERSHELL = 'THEIA_TEST_EXITING_BACKEND_NO_POWE
  */
 export const EXITING_BACKEND_GRACEFUL = 'THEIA_TEST_EXITING_BACKEND_GRACEFUL';
 
+/**
+ * Environment variable that makes the child of the script ignore `SIGTERM`.
+ */
+export const EXITING_BACKEND_CHILD_IGNORES_SIGTERM = 'THEIA_TEST_EXITING_BACKEND_CHILD_IGNORES_SIGTERM';
+
 class NoPowerShellProcessUtils extends ProcessUtils {
     protected override winGetPowerShellPath(): string {
         return 'C:\\does-not-exist\\powershell.exe';
@@ -65,13 +71,21 @@ if (process.argv[1] && path.resolve(process.argv[1]) === import.meta.filename) {
     container.bind(BackendApplication).toSelf().inSingletonScope();
     container.get(BackendApplication);
 
-    const child = cp.spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' });
-    child.on('spawn', () => process.stdout.write(`${child.pid}\n`, () => {
+    const exit = (): void => {
         if (process.env[EXITING_BACKEND_GRACEFUL]) {
             // Signals cannot be sent to a process on Windows, so invoke the handler of the `BackendApplication` directly.
             process.emit('SIGTERM', 'SIGTERM');
         } else {
             process.exit(EXITING_BACKEND_EXIT_CODE);
         }
-    }));
+    };
+    if (process.env[EXITING_BACKEND_CHILD_IGNORES_SIGTERM]) {
+        // The child reports when it ignores `SIGTERM`.
+        const child = cp.spawn(process.execPath, ['-e', 'process.on("SIGTERM", () => {}); console.log(); setInterval(() => {}, 1000)'],
+            { stdio: ['ignore', 'pipe', 'ignore'] });
+        child.stdout.once('data', () => process.stdout.write(`${child.pid}\n`, exit));
+    } else {
+        const child = cp.spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' });
+        child.on('spawn', () => process.stdout.write(`${child.pid}\n`, exit));
+    }
 }

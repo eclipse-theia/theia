@@ -64,7 +64,7 @@ export class WorkspaceFilePreferenceProvider extends AbstractResourcePreferenceP
         return {};
     }
 
-    protected override getPath(preferenceName: string): string[] {
+    protected override getPath(preferenceName: string, overrideIdentifier?: string): string[] {
         const firstSegment = preferenceName.split('.', 1)[0];
         const remainder = preferenceName.slice(firstSegment.length + 1);
         if (this.belongsInSection(firstSegment, remainder)) {
@@ -79,7 +79,7 @@ export class WorkspaceFilePreferenceProvider extends AbstractResourcePreferenceP
             }
             return path;
         }
-        return ['settings'].concat(super.getPath(preferenceName) ?? []);
+        return ['settings'].concat(super.getPath(preferenceName, overrideIdentifier) ?? []);
     }
 
     /**

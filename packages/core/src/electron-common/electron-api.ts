@@ -103,12 +103,13 @@ export interface TheiaCoreAPI {
     setTitleBarStyle(style: string): void;
     setBackgroundColor(backgroundColor: string): void;
     setTheme(theme: ThemeMode): void;
-    minimize(): void;
-    isMaximized(): boolean; // TODO: this should really be async, since it blocks the renderer process
-    maximize(): void;
-    unMaximize(): void;
-    close(): void;
+    minimize(windowName?: string): void;
+    isMaximized(windowName?: string): boolean; // TODO: this should really be async, since it blocks the renderer process
+    maximize(windowName?: string): void;
+    unMaximize(windowName?: string): void;
+    close(windowName?: string): void;
     onWindowEvent(event: WindowEvent, handler: () => void): Disposable;
+    onSecondaryWindowEvent(windowName: string, event: WindowEvent, handler: () => void): Disposable;
     onAboutToClose(handler: () => void): Disposable;
     setCloseRequestHandler(handler: (reason: StopReason) => Promise<boolean>): void;
 
@@ -187,6 +188,8 @@ export const CHANNEL_IS_FULL_SCREEN = 'IsFullScreen';
 export const CHANNEL_TOGGLE_FULL_SCREEN = 'ToggleFullScreen';
 
 export const CHANNEL_REQUEST_SECONDARY_CLOSE = 'RequestSecondaryClose';
+export const CHANNEL_ON_SECONDARY_WINDOW_EVENT = 'OnSecondaryWindowEvent';
+export const CHANNEL_SUBSCRIBE_SECONDARY_WINDOW_EVENT = 'SubscribeSecondaryWindowEvent';
 
 export const CHANNEL_REQUEST_CLOSE = 'RequestClose';
 export const CHANNEL_REQUEST_RELOAD = 'RequestReload';

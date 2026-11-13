@@ -17,7 +17,7 @@
 import { inject, injectable, named } from 'inversify';
 import {
     screen, app, BrowserWindow, WebContents, Event as ElectronEvent, BrowserWindowConstructorOptions, nativeImage,
-    nativeTheme, shell, dialog
+    nativeTheme, shell, dialog, session
 } from '../../electron-shared/electron/index.cjs';
 import * as path from 'path';
 import { Argv } from '../../shared/yargs/index.cjs';
@@ -849,9 +849,20 @@ export class ElectronMainApplication {
                 await this.getForkOptions(),
             );
             return new Promise((resolve, reject) => {
-                // The backend server main file is also supposed to send the resolved http(s) server port via IPC.
-                backendProcess.on('message', (address: AddressInfo) => {
-                    resolve(address.port);
+                backendProcess.on('message', (msg: AddressInfo | { type: string, id: string, url: string }) => {
+                    // The backend server main file is supposed to send the resolved proxy via IPC.
+                    if (msg && typeof msg === 'object' && 'type' in msg && msg.type === 'resolve-proxy') {
+                        session.defaultSession.resolveProxy(msg.url).then(
+                            result => backendProcess.send({ type: 'resolve-proxy-response', id: msg.id, result }),
+                            error => {
+                                console.warn(`Proxy resolution failed for ${msg.url}:`, error);
+                                backendProcess.send({ type: 'resolve-proxy-response', id: msg.id, result: undefined });
+                            }
+                        );
+                        return;
+                    }
+                    // The backend server main file is also supposed to send the resolved http(s) server port via IPC.
+                    resolve((msg as AddressInfo).port);
                 });
                 backendProcess.on('error', error => {
                     reject(error);
@@ -960,10 +971,7 @@ export class ElectronMainApplication {
                 const defaultOptions = this.getDefaultOptions();
                 const options: BrowserWindowConstructorOptions = {
                     ...this.getDefaultTheiaSecondaryWindowBounds(),
-                    // We always need the native window frame for now because the secondary window does not have Theia's title bar by default.
-                    // In 'custom' title bar mode this would leave the window without any window controls (close, min, max)
-                    // TODO set to this.useNativeWindowFrame when secondary windows support a custom title bar.
-                    frame: true,
+                    frame: this.didUseNativeWindowFrameOnStart.get(webContents.id) ?? this.useNativeWindowFrame,
                     minWidth: defaultOptions.minWidth,
                     minHeight: defaultOptions.minHeight,
                     webPreferences: {
@@ -971,12 +979,12 @@ export class ElectronMainApplication {
                     }
                 };
 
-                if (!this.useNativeWindowFrame) {
-                    // If the main window does not have a native window frame, do not show  an icon in the secondary window's native title bar.
-                    // The data url is a 1x1 transparent png
-                    options.icon = nativeImage.createFromDataURL(
-                        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12P4DwQACfsD/WMmxY8AAAAASUVORK5CYII=');
+                const appIcon = this.config.electron?.windowOptions?.icon;
+                if (appIcon) {
+                    const iconPath = path.resolve(this.globals.THEIA_APP_PROJECT_PATH, appIcon as string);
+                    options.icon = nativeImage.createFromPath(iconPath);
                 }
+
                 return {
                     action: 'allow',
                     overrideBrowserWindowOptions: options,

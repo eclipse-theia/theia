@@ -37,7 +37,7 @@ import {
     SessionStorageScope
 } from '../common/ai-chat-preferences.js';
 import { ChatAgentLocation } from '../common/chat-agents.js';
-import { FileStat } from '@theia/filesystem/lib/common/files';
+import { FileOperationError, FileOperationResult, FileStat } from '@theia/filesystem/lib/common/files';
 
 disableJSDOM();
 
@@ -46,13 +46,23 @@ describe('ChatSessionStoreImpl', () => {
     let container: Container;
     let chatSessionStore: ChatSessionStoreImpl;
     let mockFileService: sinon.SinonStubbedInstance<FileService>;
-    let mockPreferenceService: sinon.SinonStubbedInstance<PreferenceService>;
+    let mockPreferenceService: {
+        ready: Promise<void>;
+        get: sinon.SinonStub;
+        onPreferenceChanged: sinon.SinonStub;
+    };
     let mockEnvServer: sinon.SinonStubbedInstance<EnvVariablesServer>;
     let mockWorkspaceService: {
         tryGetRoots: () => FileStat[];
     };
     let deletedFiles: string[];
     let preferenceChangeCallback: ((event: { preferenceName: string }) => void) | undefined;
+    let mockLogger: {
+        debug: sinon.SinonStub;
+        info: sinon.SinonStub;
+        warn: sinon.SinonStub;
+        error: sinon.SinonStub;
+    };
 
     // Use obviously fake paths that will not exist on real systems to prevent any accidental
     // interaction with actual user data if mocking were to misconfigured
@@ -96,7 +106,7 @@ describe('ChatSessionStoreImpl', () => {
         container = new Container();
 
         mockFileService = {
-            readFile: sandbox.stub(),
+            readFile: sandbox.stub().rejects(new FileOperationError('File not found', FileOperationResult.FILE_NOT_FOUND)),
             writeFile: sandbox.stub().resolves(),
             delete: sandbox.stub().callsFake(async (uri: URI) => {
                 deletedFiles.push(uri.toString());
@@ -114,7 +124,7 @@ describe('ChatSessionStoreImpl', () => {
                 preferenceChangeCallback = callback;
                 return { dispose: () => { preferenceChangeCallback = undefined; } };
             })
-        } as unknown as sinon.SinonStubbedInstance<PreferenceService>;
+        };
 
         mockEnvServer = {
             getConfigDirUri: sandbox.stub().resolves(GLOBAL_CONFIG_DIR)
@@ -124,12 +134,12 @@ describe('ChatSessionStoreImpl', () => {
             tryGetRoots: () => []
         };
         const mockStorageService = {} as StorageService;
-        const mockLogger = {
+        mockLogger = {
             debug: sandbox.stub(),
             info: sandbox.stub(),
             warn: sandbox.stub(),
             error: sandbox.stub()
-        } as unknown as ILogger;
+        };
 
         // Create a mock WorkspaceMetadataStore
         const locationChangeEmitter = new Emitter<URI>();
@@ -154,7 +164,7 @@ describe('ChatSessionStoreImpl', () => {
         container.bind(WorkspaceMetadataStorageService).toConstantValue(mockMetadataStorageService as unknown as WorkspaceMetadataStorageService);
         container.bind(StorageService).toConstantValue(mockStorageService);
         container.bind('ChatSessionStore').toConstantValue(mockLogger);
-        container.bind(ILogger).toConstantValue(mockLogger);
+        container.bind(ILogger).toConstantValue(mockLogger as unknown as ILogger);
 
         container.bind(ChatSessionStoreImpl).toSelf().inSingletonScope();
 
@@ -702,19 +712,19 @@ describe('ChatSessionStoreImpl', () => {
         });
     });
 
-    describe('rootSessionId persistence', () => {
-        const mockModel = (id: string) => ({
-            id,
-            isEmpty: () => false,
+    const mockModel = (id: string) => ({
+        id,
+        isEmpty: () => false,
+        location: ChatAgentLocation.Panel,
+        toSerializable: () => ({
             location: ChatAgentLocation.Panel,
-            toSerializable: () => ({
-                location: ChatAgentLocation.Panel,
-                requests: [],
-                responses: [],
-                hierarchy: { rootBranchId: '', branches: {} }
-            })
-        });
+            requests: [],
+            responses: [],
+            hierarchy: { rootBranchId: '', branches: {} }
+        })
+    });
 
+    describe('rootSessionId persistence', () => {
         it('should include rootSessionId in the session index when updating', async () => {
             mockPreferenceService.get.withArgs(PERSISTED_SESSION_LIMIT_PREF, 25).returns(25);
 
@@ -758,6 +768,152 @@ describe('ChatSessionStoreImpl', () => {
             const savedIndexCall = mockFileService.writeFile.lastCall;
             const savedIndex = JSON.parse(savedIndexCall.args[1].toString());
             expect(savedIndex['standalone-session'].rootSessionId).to.be.undefined;
+        });
+    });
+
+    describe('recovery from a failed write', () => {
+        const connectionClosed = new Error('Connection closed');
+
+        async function failFirstStore(): Promise<void> {
+            mockFileService.writeFile.onFirstCall().rejects(connectionClosed);
+            const error = await chatSessionStore.storeSessions({ model: mockModel('session-1') as never, title: 'Session 1' })
+                .then(() => undefined, (reason: unknown) => reason);
+            expect(error).to.equal(connectionClosed);
+        }
+
+        function mockIndexFile(index: ChatSessionIndex): void {
+            mockFileService.readFile.resolves({
+                value: BinaryBuffer.fromString(JSON.stringify(index))
+            } as never);
+        }
+
+        beforeEach(() => {
+            mockPreferenceService.get.withArgs(PERSISTED_SESSION_LIMIT_PREF, 25).returns(25);
+        });
+
+        it('should reject the operation whose write failed', async () => {
+            await failFirstStore();
+        });
+
+        it('should store sessions after a previous store failed', async () => {
+            await failFirstStore();
+
+            await chatSessionStore.storeSessions({ model: mockModel('session-2') as never, title: 'Session 2' });
+
+            const writtenFiles = mockFileService.writeFile.getCalls().map(call => call.args[0].toString());
+            expect(writtenFiles).to.include(`${STORAGE_ROOT}/session-2.json`);
+            expect(writtenFiles).to.include(`${STORAGE_ROOT}/index.json`);
+        });
+
+        it('should delete a session after a previous store failed', async () => {
+            await failFirstStore();
+
+            await chatSessionStore.deleteSession('session-0');
+
+            expect(deletedFiles).to.include(`${STORAGE_ROOT}/session-0.json`);
+        });
+
+        it('should set a session title after a previous store failed', async () => {
+            mockIndexFile(createMockIndex([createMockSessionMetadata('session-0', 1000)]));
+            await failFirstStore();
+
+            await chatSessionStore.setSessionTitle('session-0', 'Renamed');
+
+            const savedIndex = JSON.parse(mockFileService.writeFile.lastCall.args[1].toString());
+            expect(savedIndex['session-0'].title).to.equal('Renamed');
+        });
+
+        it('should clear all sessions after a previous store failed', async () => {
+            mockIndexFile(createMockIndex([createMockSessionMetadata('session-0', 1000)]));
+            await failFirstStore();
+
+            await chatSessionStore.clearAllSessions();
+
+            expect(deletedFiles).to.include(STORAGE_ROOT);
+            const savedIndex = JSON.parse(mockFileService.writeFile.lastCall.args[1].toString());
+            expect(savedIndex).to.deep.equal({});
+        });
+
+        it('should not overwrite the index after a failed index read', async () => {
+            mockIndexFile(createMockIndex([createMockSessionMetadata('session-0', 1000)]));
+            mockFileService.readFile.onFirstCall().rejects(connectionClosed);
+
+            const error = await chatSessionStore.storeSessions({ model: mockModel('session-1') as never, title: 'Session 1' })
+                .then(() => undefined, (reason: unknown) => reason);
+            expect(error).to.equal(connectionClosed);
+
+            await chatSessionStore.storeSessions({ model: mockModel('session-2') as never, title: 'Session 2' });
+
+            const indexWrites = mockFileService.writeFile.getCalls().filter(call => call.args[0].toString() === `${STORAGE_ROOT}/index.json`);
+            expect(indexWrites).to.have.lengthOf(1);
+            const savedIndex = JSON.parse(indexWrites[0].args[1].toString());
+            expect(Object.keys(savedIndex)).to.have.members(['session-0', 'session-2']);
+        });
+    });
+
+    describe('loading the index', () => {
+        beforeEach(() => {
+            mockPreferenceService.get.withArgs(PERSISTED_SESSION_LIMIT_PREF, 25).returns(25);
+        });
+
+        it('should start a new index when the index file does not exist', async () => {
+            await chatSessionStore.storeSessions({ model: mockModel('session-1') as never, title: 'Session 1' });
+
+            const savedIndex = JSON.parse(mockFileService.writeFile.lastCall.args[1].toString());
+            expect(Object.keys(savedIndex)).to.have.members(['session-1']);
+            expect(mockLogger.warn.called).to.be.false;
+        });
+
+        it('should start a new index with a warning when the index file is not valid JSON', async () => {
+            mockFileService.readFile.resolves({ value: BinaryBuffer.fromString('{ not json') } as never);
+
+            await chatSessionStore.storeSessions({ model: mockModel('session-1') as never, title: 'Session 1' });
+
+            const savedIndex = JSON.parse(mockFileService.writeFile.lastCall.args[1].toString());
+            expect(Object.keys(savedIndex)).to.have.members(['session-1']);
+            expect(mockLogger.warn.calledOnce).to.be.true;
+        });
+
+        describe('with invalid entries', () => {
+            beforeEach(() => {
+                const index = {
+                    ...createMockIndex([createMockSessionMetadata('session-0', 1000)]),
+                    'session-bad': { sessionId: 'session-bad', saveDate: 2000, location: ChatAgentLocation.Panel }
+                };
+                mockFileService.readFile.resolves({
+                    value: BinaryBuffer.fromString(JSON.stringify(index))
+                } as never);
+            });
+
+            it('should remove the invalid entries and write the cleaned index', async () => {
+                const index = await chatSessionStore.getSessionIndex();
+
+                expect(Object.keys(index)).to.have.members(['session-0']);
+                expect(mockFileService.writeFile.calledOnce).to.be.true;
+                expect(mockFileService.writeFile.lastCall.args[0].toString()).to.equal(`${STORAGE_ROOT}/index.json`);
+                const savedIndex = JSON.parse(mockFileService.writeFile.lastCall.args[1].toString());
+                expect(Object.keys(savedIndex)).to.have.members(['session-0']);
+            });
+
+            it('should keep the cleaned index when writing it fails', async () => {
+                mockFileService.writeFile.rejects(new Error('Connection closed'));
+
+                const index = await chatSessionStore.getSessionIndex();
+                const indexAgain = await chatSessionStore.getSessionIndex();
+
+                expect(Object.keys(index)).to.have.members(['session-0']);
+                expect(indexAgain).to.equal(index);
+                expect(mockFileService.readFile.calledOnce).to.be.true;
+            });
+        });
+
+        it('should reject when the index file cannot be read', async () => {
+            const connectionClosed = new Error('Connection closed');
+            mockFileService.readFile.rejects(connectionClosed);
+
+            const error = await chatSessionStore.getSessionIndex().then(() => undefined, (reason: unknown) => reason);
+
+            expect(error).to.equal(connectionClosed);
         });
     });
 

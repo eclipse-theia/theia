@@ -29,6 +29,8 @@ function getSystemProxyURI(requestURL: URL, env: typeof process.env): string | u
 export interface ProxySettings {
     proxyUrl?: string;
     strictSSL?: boolean;
+    /** Sent as `Proxy-Authorization` when the proxy URL carries no credentials of its own. */
+    proxyAuthorization?: string;
 }
 
 export function getProxyAgent(rawRequestURL: string, env: typeof process.env, options: ProxySettings = {}): Dispatcher | undefined {
@@ -65,7 +67,7 @@ export function getProxyAgent(rawRequestURL: string, env: typeof process.env, op
         uri: proxyURL,
         token: proxyEndpoint.username
             ? `Basic ${Buffer.from(`${decodeURIComponent(proxyEndpoint.username)}:${decodeURIComponent(proxyEndpoint.password)}`).toString('base64')}`
-            : undefined,
+            : options.proxyAuthorization,
     };
 
     if (options.strictSSL === false) {

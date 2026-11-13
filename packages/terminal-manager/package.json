@@ -1,6 +1,6 @@
 {
   "name": "@theia/terminal-manager",
-  "version": "1.76.0",
+  "version": "1.77.0",
   "description": "Theia - Terminal Manager Extension",
   "type": "module",
   "keywords": [
@@ -25,9 +25,9 @@
     "watch": "theiaext watch"
   },
   "dependencies": {
-    "@theia/core": "1.76.0",
-    "@theia/preferences": "1.76.0",
-    "@theia/terminal": "1.76.0",
+    "@theia/core": "1.77.0",
+    "@theia/preferences": "1.77.0",
+    "@theia/terminal": "1.77.0",
     "tslib": "^2.8.1"
   },
   "theiaExtensions": [

@@ -18,8 +18,8 @@ const puppeteer = require('puppeteer');
 const fsx = require('fs-extra');
 const { resolve } = require('path');
 const {
-    analyzeTrace, ContributionCollector, delay, frontendSettled, githubReporting,
-    isLCP, lcp, measureMulti, parseStopwatchLog
+    analyzeTrace, MeasurementCollector, delay, frontendReady, frontendSettled, githubReporting,
+    isLCP, isUserTimingMark, lcp, measureMulti, parseMilestoneLog, parseStopwatchLog, workbenchVisible
 } = require('./common-performance');
 
 const workspacePath = resolve('./workspace');
@@ -113,7 +113,10 @@ async function measurePerformance(name, url, folder, headless, runs) {
     // Collects per-contribution timings from Stopwatch log lines observed in the browser console
     // across all runs, so that consumers like extension-impact.js can break down startup cost
     // by contribution.
-    const contributions = new ContributionCollector();
+    const contributions = new MeasurementCollector();
+    // Collects the start-up milestones logged by the generated frontend entry point, as seconds since page start,
+    // named as in the Electron report.
+    const milestones = new MeasurementCollector('Milestone');
 
     const testScenario = async (runNr) => {
         const browser = await puppeteer.launch({ headless: headless });
@@ -131,6 +134,10 @@ async function measurePerformance(name, url, folder, headless, runs) {
         page.on('console', msg => {
             const parsed = parseStopwatchLog(msg.text());
             if (!parsed) {
+                const milestone = parseMilestoneLog(msg.text());
+                if (milestone && milestone.component === 'Frontend') {
+                    milestones.record(`${milestone.component}: ${milestone.milestone}`, milestone.secondsSinceStart);
+                }
                 return;
             }
             if (parsed.activity === frontendSettled) {
@@ -143,7 +150,10 @@ async function measurePerformance(name, url, folder, headless, runs) {
 
         await page.tracing.start({ path: file, screenshots: true });
         await page.goto(url);
-        // This selector is for the theia application, which is exposed when the loading indicator vanishes
+        // This selector is for the theia application, which is exposed when the loading indicator vanishes.
+        // Note that Puppeteer considers the shell visible as soon as it is attached, even while the opaque
+        // loading indicator still covers it; the "workbench visible" metric below uses the user-timing
+        // mark of the moment the indicator starts to fade instead.
         await page.waitForSelector('.theia-ApplicationShell', { visible: true });
         // Give Chrome a chance to emit a final LCP candidate, then wait for the
         // frontend-settled console log (up to SETTLED_TIMEOUT_MS total). If settled already
@@ -160,6 +170,18 @@ async function measurePerformance(name, url, folder, headless, runs) {
 
     await measureMulti(name, runs, testScenario, [
         {
+            // The loading indicator starts to fade: the workbench becomes visible to the user.
+            scenario: workbenchVisible,
+            analyze: ctx => analyzeTrace(ctx.traceFile, isStart, isUserTimingMark('revealShell-start'))
+        },
+        {
+            // The loading indicator is gone and the application state is about to become 'ready'.
+            scenario: frontendReady,
+            analyze: ctx => analyzeTrace(ctx.traceFile, isStart, isUserTimingMark('revealShell-end'))
+        },
+        {
+            // Chromium records LCP candidates for elements painted underneath the opaque loading
+            // indicator, so this is not a measure of when the workbench became visible.
             scenario: lcp,
             analyze: ctx => analyzeTrace(ctx.traceFile, isStart, isLCP)
         },
@@ -168,6 +190,7 @@ async function measurePerformance(name, url, folder, headless, runs) {
             analyze: ctx => ctx.settledSeconds
         }
     ]);
+    milestones.logSummary(name);
     contributions.logSummary(name);
 }
 

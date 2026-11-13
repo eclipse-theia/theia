@@ -85,7 +85,7 @@ export class TaskConfigurationManager {
     protected init(): void {
         this.createModels();
         this.preferenceProviderProvider(PreferenceScope.Folder)?.onDidPreferencesChanged(e => {
-            if (e['tasks']) {
+            if (e.some(change => change.preferenceName === 'tasks')) {
                 this.updateModels();
             }
         });
