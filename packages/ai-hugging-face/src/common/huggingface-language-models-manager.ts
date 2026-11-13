@@ -31,7 +31,7 @@ export interface HuggingFaceModelDescription {
 export interface HuggingFaceLanguageModelsManager {
     apiKey: string | undefined;
     setApiKey(key: string | undefined): void;
-    setProxyUrl(proxyUrl: string | undefined): void;
+    setProxyUrl(proxyUrl: string | undefined, noProxy?: string[]): void;
     createOrUpdateLanguageModels(...models: HuggingFaceModelDescription[]): Promise<void>;
     removeLanguageModels(...modelIds: string[]): void;
 }

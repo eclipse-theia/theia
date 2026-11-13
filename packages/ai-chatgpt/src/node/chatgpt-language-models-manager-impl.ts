@@ -48,9 +48,11 @@ export class ChatGptLanguageModelsManagerImpl implements ChatGptLanguageModelsMa
     protected readonly logger: ILogger;
 
     protected proxyUrl: string | undefined;
+    protected noProxy: string[] | undefined;
 
-    setProxyUrl(proxyUrl: string | undefined): void {
+    setProxyUrl(proxyUrl: string | undefined, noProxy?: string[]): void {
         this.proxyUrl = proxyUrl || undefined;
+        this.noProxy = noProxy;
     }
 
     getAvailableModels(): Promise<string[]> {
@@ -59,7 +61,7 @@ export class ChatGptLanguageModelsManagerImpl implements ChatGptLanguageModelsMa
 
     async createOrUpdateLanguageModels(...modelDescriptions: ChatGptModelDescription[]): Promise<void> {
         const status = await this.calculateStatus();
-        const proxy = getProxyUrl(CHATGPT_RESPONSES_BASE_URL, this.proxyUrl);
+        const proxy = getProxyUrl(CHATGPT_RESPONSES_BASE_URL, this.proxyUrl, this.noProxy);
         for (const description of modelDescriptions) {
             // The ChatGPT plan serves OpenAI models, so their published capabilities apply.
             const defaults = getOpenAiModelDefaults(description.model);

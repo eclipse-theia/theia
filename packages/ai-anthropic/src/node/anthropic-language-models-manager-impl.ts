@@ -53,6 +53,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
      */
     protected _allowEnvironmentApiKey = false;
     protected _proxyUrl: string | undefined;
+    protected _noProxy: string[] | undefined;
     // Cached `/v1/models` lookups keyed by `${baseURL}::${model}::${headers}`, so a header change re-fetches through the
     // new headers. Successful lookups are kept for the process lifetime; failed lookups are evicted so the next call retries.
     protected readonly modelInfoCache = new Map<string, Promise<ModelInfo>>();
@@ -92,7 +93,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
         if (!apiKey) {
             return { models: [], fromCache: false };
         }
-        const proxyUrl = getProxyUrl(ANTHROPIC_DEFAULT_BASE_URL, this._proxyUrl);
+        const proxyUrl = getProxyUrl(ANTHROPIC_DEFAULT_BASE_URL, this._proxyUrl, this._noProxy);
         return this.discoveryFetcher.fetch({
             snapshotFile: ANTHROPIC_SNAPSHOT_FILE,
             providerLabel: 'Anthropic',
@@ -142,7 +143,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
             }
             return undefined;
         };
-        const proxyUrl = getProxyUrl(modelDescription.url ?? 'https://api.anthropic.com', this._proxyUrl);
+        const proxyUrl = getProxyUrl(modelDescription.url ?? 'https://api.anthropic.com', this._proxyUrl, this._noProxy);
 
         const apiKey = apiKeyProvider();
         const status = this.calculateStatus(modelDescription, apiKey);
@@ -307,12 +308,13 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
         }
     }
 
-    setProxyUrl(proxyUrl: string | undefined): void {
+    setProxyUrl(proxyUrl: string | undefined, noProxy?: string[]): void {
         if (proxyUrl) {
             this._proxyUrl = proxyUrl;
         } else {
             this._proxyUrl = undefined;
         }
+        this._noProxy = noProxy;
     }
 
     protected calculateStatus(modelDescription: AnthropicModelDescription, effectiveApiKey: string | undefined): LanguageModelStatus {
