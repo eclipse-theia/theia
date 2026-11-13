@@ -17,11 +17,12 @@
 import { interfaces } from 'inversify';
 import { environment } from '@theia/application-package/lib/environment';
 import { SUPPORTED_ENCODINGS } from './supported-encodings.js';
-import { isOSX } from '../common/os.js';
+import { isOSX, isWindows } from '../common/os.js';
 import { nls } from '../common/nls.js';
 import { PreferenceContribution, PreferenceSchema } from '../common/preferences/preference-schema.js';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService } from '../common/preferences/index.js';
 import { PreferenceScope } from '../common/preferences/preference-scope.js';
+import { ShellEnvironmentResolutionTimeout } from './shell-environment.js';
 
 /* eslint-disable max-len */
 const windowTitleDescription = [
@@ -53,6 +54,15 @@ export const corePreferenceSchema: PreferenceSchema = {
             ],
             default: 'ifRequired',
             description: nls.localizeByDefault('Controls whether to show a confirmation dialog before closing the browser tab or window. Note that even if enabled, browsers may still decide to close a tab or window without confirmation and that this setting is only a hint that may not work in all cases.'),
+        },
+        'application.shellEnvironmentResolutionTimeout': {
+            type: 'number',
+            default: ShellEnvironmentResolutionTimeout.DEFAULT,
+            minimum: ShellEnvironmentResolutionTimeout.MIN,
+            maximum: ShellEnvironmentResolutionTimeout.MAX,
+            included: environment.electron.is() && !isWindows,
+            scope: PreferenceScope.User,
+            description: nls.localize('theia/core/shellEnvironmentResolutionTimeout', 'Controls the timeout in seconds before giving up resolving the environment of your login shell when the application starts. Its `PATH` lets terminals, tasks, debug adapters, and extensions find the tools that your shell configuration provides. Takes effect at the next start of the application.'),
         },
         'breadcrumbs.enabled': {
             'type': 'boolean',
@@ -328,6 +338,7 @@ export const corePreferenceSchema: PreferenceSchema = {
 
 export interface CoreConfiguration {
     'application.confirmExit': 'never' | 'ifRequired' | 'always';
+    'application.shellEnvironmentResolutionTimeout': number;
     'breadcrumbs.enabled': boolean;
     'files.encoding': string;
     'keyboard.dispatch': 'code' | 'keyCode';

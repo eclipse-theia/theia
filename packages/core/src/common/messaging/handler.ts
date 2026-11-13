@@ -22,5 +22,16 @@ export const ConnectionHandler = Symbol('ConnectionHandler');
 
 export interface ConnectionHandler {
     readonly path: string;
+    /**
+     * Whether the frontend may use the service before the process environment of the backend is complete.
+     *
+     * In an Electron application, the backend resolves the environment of the user's login shell after it has started
+     * (see `ShellEnvironmentServer`). Until that is done, `process.env` lacks the `PATH` of the user's shell
+     * configuration, so the processes that a service starts would not find the user's tools.
+     * The backend therefore holds the opening of every service channel until the environment is known.
+     * A service that starts no processes and that the frontend needs in order to start up declares its independence,
+     * so that the workbench does not wait for the shell. The default is `false`.
+     */
+    readonly independentOfShellEnvironment?: boolean;
     onConnection(connection: Channel): void;
 }

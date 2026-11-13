@@ -44,6 +44,8 @@ import { ApplicationServerImpl } from './application-server.js';
 import { ApplicationServer, applicationPath } from '../common/application-protocol.js';
 import { EnvVariablesServer, envVariablesPath } from './../common/env-variables/index.js';
 import { EnvVariablesServerImpl } from './env-variables/index.js';
+import { ShellEnvironmentServer, shellEnvironmentPath } from '../common/shell-environment.js';
+import { ShellEnvironmentServerImpl } from './shell-environment.js';
 import { ConnectionContainerModule } from './messaging/connection-container-module.js';
 import { QuickInputService, quickInputServicePath, QuickPickService, quickPickServicePath } from '../common/quick-pick-service.js';
 import { WsRequestValidator, WsRequestValidatorContribution } from './ws-request-validators.js';
@@ -115,9 +117,12 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bind(ApplicationServerImpl).toSelf().inSingletonScope();
     bind(ApplicationServer).toService(ApplicationServerImpl);
+    // The services of this module start no processes and the frontend needs them to start up,
+    // so they are not held until the login shell environment is known (see ConnectionHandler.independentOfShellEnvironment).
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler(applicationPath, () =>
-            ctx.container.get(ApplicationServer)
+            ctx.container.get(ApplicationServer),
+            { independentOfShellEnvironment: true }
         )
     ).inSingletonScope();
 
@@ -126,7 +131,15 @@ export const backendApplicationModule = new ContainerModule(bind => {
         new RpcConnectionHandler(envVariablesPath, () => {
             const envVariablesServer = ctx.container.get<EnvVariablesServer>(EnvVariablesServer);
             return envVariablesServer;
-        })
+        }, { independentOfShellEnvironment: true })
+    ).inSingletonScope();
+
+    bind(ShellEnvironmentServerImpl).toSelf().inSingletonScope();
+    bind(ShellEnvironmentServer).toService(ShellEnvironmentServerImpl);
+    bind(BackendApplicationContribution).toService(ShellEnvironmentServerImpl);
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new RpcConnectionHandler(shellEnvironmentPath, () => ctx.container.get<ShellEnvironmentServer>(ShellEnvironmentServer),
+            { independentOfShellEnvironment: true })
     ).inSingletonScope();
 
     bind(ApplicationPackage).toConstantValue(new ApplicationPackage({ projectPath: BackendApplicationPath }));
@@ -135,7 +148,8 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bindRootContributionProvider(bind, WsRequestValidatorContribution);
     bind(KeyStoreService).to(KeyStoreServiceImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new RpcConnectionHandler(keyStoreServicePath, () => ctx.container.get<KeyStoreService>(KeyStoreService))
+        new RpcConnectionHandler(keyStoreServicePath, () => ctx.container.get<KeyStoreService>(KeyStoreService),
+            { independentOfShellEnvironment: true })
     ).inSingletonScope();
 
     bind(ContributionFilterRegistry).to(ContributionFilterRegistryImpl).inSingletonScope();
@@ -146,7 +160,7 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bind(OSBackendProviderImpl).toSelf().inSingletonScope();
     bind(OSBackendProvider).toService(OSBackendProviderImpl);
     bind(ConnectionHandler).toDynamicValue(
-        ctx => new RpcConnectionHandler(OSBackendProviderPath, () => ctx.container.get(OSBackendProvider))
+        ctx => new RpcConnectionHandler(OSBackendProviderPath, () => ctx.container.get(OSBackendProvider), { independentOfShellEnvironment: true })
     ).inSingletonScope();
 
     bind(ProxyCliContribution).toSelf().inSingletonScope();
@@ -157,7 +171,7 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bindRootContributionProvider(bind, BackendRequestAllowedContribution);
     bind(BackendRequestFacade).toSelf().inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(
-        ctx => new RpcConnectionHandler(REQUEST_SERVICE_PATH, () => ctx.container.get(BackendRequestFacade))
+        ctx => new RpcConnectionHandler(REQUEST_SERVICE_PATH, () => ctx.container.get(BackendRequestFacade), { independentOfShellEnvironment: true })
     ).inSingletonScope();
 
     bindNodeStopwatch(bind);

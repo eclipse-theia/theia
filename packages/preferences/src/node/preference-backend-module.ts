@@ -29,7 +29,7 @@ import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { DiskFileSystemProvider } from '@theia/filesystem/lib/node/disk-file-system-provider';
 
 const preferencesConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
-    bindBackendService(CliPreferencesPath, CliPreferences);
+    bindBackendService(CliPreferencesPath, CliPreferences, undefined, { independentOfShellEnvironment: true });
 });
 
 export default new ContainerModule(bind => {

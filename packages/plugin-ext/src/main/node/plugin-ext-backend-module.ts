@@ -80,13 +80,15 @@ export function bindMainBackend(bind: interfaces.Bind, unbind: interfaces.Unbind
     bind(PluginPathsService).to(PluginPathsServiceImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler(pluginPathsServicePath, () =>
-            ctx.container.get(PluginPathsService)
+            ctx.container.get(PluginPathsService),
+            { independentOfShellEnvironment: true }
         )
     ).inSingletonScope();
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler(pluginServerJsonRpcPath, () =>
-            ctx.container.get(PluginServer)
+            ctx.container.get(PluginServer),
+            { independentOfShellEnvironment: true }
         )
     ).inSingletonScope();
 

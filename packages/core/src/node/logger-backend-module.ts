@@ -82,6 +82,6 @@ export const loggerBackendModule = new ContainerModule(bind => {
             dispatching.clients.add(client);
             client.onDidCloseConnection(() => dispatching.clients.delete(client));
             return container.get<ILoggerServer>(ILoggerServer);
-        })
+        }, { independentOfShellEnvironment: true })
     ).inSingletonScope();
 });

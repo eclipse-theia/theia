@@ -124,12 +124,19 @@ export class ServiceConnectionProvider {
      * Install a connection handler for the given path.
      */
     listen(path: string, handler: ServiceConnectionProvider.ConnectionHandler, reconnect: boolean): void {
-        this.openChannel(path, handler).then(() => {
+        const remember = (): void => {
             if (reconnect) {
                 this.channelHandlers.set(path, handler);
             }
+        };
+        // The handler is recorded once the channel is open, as the first connection opens it on its own.
+        // If the connection drops while the backend still holds the channel, the next connection opens it.
+        this.openChannel(path, handler).then(remember, error => {
+            // The frontend logger's RPC rides on this provider, so an ILogger cannot be injected here.
+            // eslint-disable-next-line @theia/named-logger-check
+            console.debug(`Could not open the channel '${path}'${reconnect ? ', opening it on the next connection' : ''}:`, error);
+            remember();
         });
-
     }
 
     private async openChannel(path: string, handler: ServiceConnectionProvider.ConnectionHandler): Promise<void> {

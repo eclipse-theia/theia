@@ -21,6 +21,7 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { CommandService } from '@theia/core/lib/common/command';
 import { OS } from '@theia/core/lib/common/os';
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
+import { ShellEnvironmentServer } from '@theia/core/lib/common/shell-environment';
 import { ResourceContextKey } from '@theia/core/lib/browser/resource-context-key';
 import { VariableInput } from './variable-input.js';
 import { QuickInputService, QuickPickValue } from '@theia/core/lib/browser';
@@ -33,6 +34,10 @@ export class CommonVariableContribution implements VariableContribution {
 
     @inject(EnvVariablesServer)
     protected readonly env: EnvVariablesServer;
+
+    /** Bound in Electron frontends only, where the backend takes the `PATH` of the user's login shell after it started. */
+    @inject(ShellEnvironmentServer) @optional()
+    protected readonly shellEnvironment: ShellEnvironmentServer | undefined;
 
     @inject(CommandService)
     protected readonly commands: CommandService;
@@ -62,9 +67,14 @@ export class CommonVariableContribution implements VariableContribution {
         variables.registerVariable({
             name: 'env',
             resolve: async (_, envVariableName) => {
-                const envVariable = envVariableName && await this.env.getValue(envVariableName);
-                const envValue = envVariable && envVariable.value;
-                return envValue || '';
+                if (!envVariableName) {
+                    return '';
+                }
+                // The backend reports the environment of the GUI application until the login shell has answered,
+                // and a process started with that `PATH` would not find the user's tools.
+                await this.shellEnvironment?.whenResolved();
+                const envVariable = await this.env.getValue(envVariableName);
+                return envVariable?.value || '';
             }
         });
         variables.registerVariable({

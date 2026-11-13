@@ -18,3 +18,4 @@ export * from './messaging-service.js';
 export * from './ipc-connection-provider.js';
 export * from './ipc-channel.js';
 export * from './websocket-frontend-connection-service.js';
+export * from './gated-channel-multiplexer.js';
