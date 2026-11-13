@@ -77,6 +77,10 @@ done for a final validation. There are usually pre-defined tasks for all these o
 **Important:** Building a package only compiles TypeScript. Before any UI testing, you must also rebuild the browser example application (`examples/browser`),
 which bundles the frontend. Bundling runs via `theia build`, which uses esbuild and the generated `esbuild.mjs` config of the application. Without this step, the running browser app will not include the latest code changes.
 
+## Updating Dependencies
+
+To update a frequently updated dependency (Electron, Monaco, VS Code API version, TypeScript, Node.js, React, AI SDKs, the NPM upgrade after a release), follow the skill in `.agents/skills/update-dependency/SKILL.md`.
+
 ## Start Theia
 
 To start Theia as a browser app to show something to the user or for UI testing use the launch config "Start Theia Default (Browser backend, no debug)"
