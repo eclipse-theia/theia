@@ -29,11 +29,11 @@ import {
     LocalizationExt
 } from '../../common/plugin-api-rpc.js';
 import { PluginMetadata, PluginModel, PluginPackage } from '../../common/plugin-protocol.js';
-import { createAPIFactory } from '../../plugin/plugin-context.js';
 import { EnvExtImpl } from '../../plugin/env.js';
 import { TelemetryExtImpl } from '../../plugin/telemetry-ext.js';
 import { PreferenceRegistryExtImpl } from '../../plugin/preference-registry.js';
 import { ExtPluginApi, ExtPluginApiBackendInitializationFn } from '../../common/plugin-ext-api-contribution.js';
+import { ExtPluginApiAssembler } from '../../plugin/ext-plugin-api-assembler.js';
 import { DebugExtImpl } from '../../plugin/debug/debug-ext.js';
 import { EditorsAndDocumentsExtImpl } from '../../plugin/editors-and-documents.js';
 import { WorkspaceExtImpl } from '../../plugin/workspace.js';
@@ -357,6 +357,9 @@ export class PluginHostRPC extends AbstractPluginHostRPC<PluginManagerExtImpl, P
     @inject(TelemetryExtImpl)
     protected readonly telemetryExt: TelemetryExtImpl;
 
+    @inject(ExtPluginApiAssembler)
+    protected readonly pluginApiAssembler: ExtPluginApiAssembler;
+
     constructor() {
         super('PLUGIN_HOST', '/scanners/backend-init-theia.js',
             {
@@ -390,14 +393,8 @@ export class PluginHostRPC extends AbstractPluginHostRPC<PluginManagerExtImpl, P
         };
     }
 
-    protected createAPIFactory(extInterfaces: ExtInterfaces): PluginAPIFactory {
-        const {
-            envExt, debugExt, preferenceRegistryExt, editorsAndDocumentsExt, workspaceExt,
-            messageRegistryExt, clipboardExt, webviewExt, localizationExt, telemetryExt
-        } = extInterfaces;
-        return createAPIFactory(this.rpc, this.pluginManager, envExt, debugExt, preferenceRegistryExt,
-            editorsAndDocumentsExt, workspaceExt, messageRegistryExt, clipboardExt, webviewExt,
-            localizationExt, telemetryExt);
+    protected createAPIFactory(_extInterfaces: ExtInterfaces): PluginAPIFactory {
+        return this.pluginApiAssembler.createApiFactory(this.rpc);
     }
 
     protected initExtApi(extApi: ExtPluginApi): void {

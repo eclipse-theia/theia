@@ -42,6 +42,8 @@ import { PluginContributionHandler } from './plugin-contribution-handler.js';
 import { PluginViewRegistry, PLUGIN_VIEW_CONTAINER_FACTORY_ID, PLUGIN_VIEW_FACTORY_ID, PLUGIN_VIEW_DATA_FACTORY_ID } from './view/plugin-view-registry.js';
 import { TextContentResourceResolver } from './workspace-main.js';
 import { MainPluginApiProvider } from '../../common/plugin-ext-api-contribution.js';
+import { LegacyMainPluginApiContribution } from './legacy-plugin-api-contribution.js';
+import { MainPluginApiAssembler } from './main-plugin-api-assembler.js';
 import { PluginPathsService, pluginPathsServicePath } from '../common/plugin-paths-protocol.js';
 import { KeybindingsContributionPointHandler } from './keybindings/keybindings-contribution-handler.js';
 import { DebugSessionContributionRegistry } from '@theia/debug/lib/browser/debug-session-contribution';
@@ -267,6 +269,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(TextContentResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(TextContentResourceResolver);
     bindRootContributionProvider(bind, MainPluginApiProvider);
+    bind(LegacyMainPluginApiContribution).toSelf().inSingletonScope();
+    bind(MainPluginApiAssembler).toSelf().inSingletonScope();
 
     bind(PluginDebugService).toSelf().inSingletonScope();
     rebind(DebugService).toService(PluginDebugService);

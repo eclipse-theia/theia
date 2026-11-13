@@ -27,7 +27,6 @@ import { PluginWorker } from './plugin-worker.js';
 import { getPluginId, DeployedPlugin, HostedPluginServer, PLUGIN_HOST_FRONTEND } from '../../common/plugin-protocol.js';
 import { HostedPluginWatcher } from './hosted-plugin-watcher.js';
 import { ExtensionKind, MAIN_RPC_CONTEXT, PluginManagerExt, UIKind } from '../../common/plugin-api-rpc.js';
-import { setUpPluginApi } from '../../main/browser/main-context.js';
 import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol.js';
 import {
     Disposable, DisposableCollection, isCancelled,
@@ -74,6 +73,7 @@ import {
 import { isRemote } from '@theia/core/lib/browser/browser';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { TelemetryConsentProvider } from '@theia/telemetry/lib/common/telemetry-consent-provider';
+import { MainPluginApiAssembler } from '../../main/browser/main-plugin-api-assembler.js';
 
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker' | 'onDebugDynamicConfigurations';
 
@@ -189,6 +189,9 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
 
     @inject(ILogger) @named('plugin-ext:HostedPluginSupport')
     protected override readonly logger: ILogger;
+
+    @inject(MainPluginApiAssembler)
+    protected readonly pluginApiAssembler: MainPluginApiAssembler;
 
     constructor() {
         super(generateUuid());
@@ -383,7 +386,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
 
     protected initRpc(host: PluginHost, pluginId: string): RPCProtocol {
         const rpc = host === PLUGIN_HOST_FRONTEND ? new PluginWorker().rpc : this.createServerRpc(host);
-        setUpPluginApi(rpc, this.container);
+        this.pluginApiAssembler.registerMainImplementations(rpc, this.container);
         this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, this.container));
         return rpc;
     }

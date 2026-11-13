@@ -113,3 +113,66 @@ export const MainPluginApiProvider = Symbol('mainPluginApi');
 export interface MainPluginApiProvider {
     initialize(rpc: RPCProtocol, container: interfaces.Container): void;
 }
+
+/**
+ * Main-side half of a slice of the built-in plugin API (`theia.*` / `vscode.*` namespace).
+ *
+ * Unlike {@link MainPluginApiProvider} (which backs a *separate* API namespace importable by
+ * plugins), implementations of this interface back part of the core `theia.*` API object that
+ * every plugin receives. Its ext-side counterpart is {@link InternalExtPluginApiContribution};
+ * the two run in different processes and DI containers.
+ *
+ * Implementations are injected directly by the main-side assembler, which is the single
+ * composition point for the main side.
+ */
+export interface InternalMainPluginApiContribution {
+    /**
+     * Instantiate `*MainImpl` classes and register them on the RPC protocol.
+     * Called once per plugin runtime connection.
+     *
+     * Implementations should call `rpc.set(PLUGIN_RPC_CONTEXT.FOO_MAIN, new FooMainImpl(...))` for
+     * each main-side implementation they own.
+     */
+    registerMainImplementations(rpc: RPCProtocol, container: interfaces.Container): void;
+}
+
+/**
+ * Ext-side (plugin host) half of a slice of the built-in plugin API (`theia.*` / `vscode.*` namespace).
+ *
+ * Unlike {@link ExtPluginApiProvider} (which creates a *separate* API namespace importable by
+ * plugins), implementations of this interface contribute to the core `theia.*` API object that
+ * every plugin receives. Each implementation is responsible for a slice of the API, for example
+ * terminal, debug or SCM: it registers its `*ExtImpl` classes on the RPC protocol and provides the
+ * namespace properties and type exports that are merged into the API object.
+ *
+ * Implementations are injected directly by the ext-side assembler. Because each injected field
+ * keeps its concrete `T`, the assembler can check at compile time that the merged result of all
+ * contributions satisfies `typeof theia`.
+ *
+ * @typeParam T the shape this contribution adds to the API object, e.g. `TerminalPluginApiNamespace`
+ */
+export interface InternalExtPluginApiContribution<T> {
+    /**
+     * Instantiate `*ExtImpl` classes and register them on the RPC protocol.
+     * Called once when the plugin host initializes.
+     *
+     * Implementations should call `rpc.set(MAIN_RPC_CONTEXT.FOO_EXT, fooExtImpl)` for
+     * each ext-side implementation they own. Dependencies on other ext-side implementations
+     * (e.g., `CommandRegistryImpl`, `EditorsAndDocumentsExtImpl`) should be `@inject`ed
+     * from the DI container.
+     */
+    registerExtImplementations(rpc: RPCProtocol): void;
+
+    /**
+     * Return the API namespace properties and type exports that will be
+     * merged into the `typeof theia` object given to each plugin.
+     *
+     * Called once per plugin. The returned object's properties are deep-merged into the
+     * final API object, so contributions can provide both namespace objects
+     * (e.g., `{ window: { createTerminal: ... } }`) and type constructors
+     * (e.g., `{ TerminalLocation }`).
+     *
+     * @param plugin - the plugin for which the API is being created
+     */
+    createApiNamespace(plugin: Plugin): T;
+}
