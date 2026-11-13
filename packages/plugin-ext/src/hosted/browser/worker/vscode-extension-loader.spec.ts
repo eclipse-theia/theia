@@ -93,6 +93,20 @@ describe('VsCodeExtensionLoader', () => {
         expect(() => extension.activate()).to.throw("Cannot load module 'fs'");
     });
 
+    it('appends .js to an entry point without a file extension', async () => {
+        scripts.set('dist/web/extension.js', 'exports.activate = () => "activated";');
+        const extension: any = await loader.load('dist/web/extension', {});
+
+        expect(extension.activate()).to.equal('activated');
+    });
+
+    it('keeps the file extension of an entry point', async () => {
+        scripts.set('dist/extension.cjs', 'exports.activate = () => "activated";');
+        const extension: any = await loader.load('dist/extension.cjs', {});
+
+        expect(extension.activate()).to.equal('activated');
+    });
+
     it('rejects when the script cannot be fetched', async () => {
         let error: Error | undefined;
         try {

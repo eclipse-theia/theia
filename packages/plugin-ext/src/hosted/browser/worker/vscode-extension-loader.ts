@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { Path } from '@theia/core/lib/common/path';
 import { injectable } from '@theia/core/shared/inversify';
 
 /**
@@ -29,13 +30,14 @@ export class VsCodeExtensionLoader {
      * @returns the `module.exports` of the extension.
      */
     async load(url: string, api: unknown): Promise<unknown> {
-        const response = await fetch(url);
+        const scriptUrl = this.ensureFileExtension(url);
+        const response = await fetch(scriptUrl);
         if (!response.ok) {
-            throw new Error(`Failed to fetch '${url}': ${response.status} ${response.statusText}`);
+            throw new Error(`Failed to fetch '${scriptUrl}': ${response.status} ${response.statusText}`);
         }
         const source = await response.text();
         // Like VS Code, wrap the source in a function that receives the CommonJS globals.
-        const initFn = new Function('module', 'exports', 'require', `${source}\n//# sourceURL=${response.url || url}`);
+        const initFn = new Function('module', 'exports', 'require', `${source}\n//# sourceURL=${response.url || scriptUrl}`);
         const exports = {};
         const module = { exports };
         const require = (request: string): unknown => {
@@ -46,6 +48,14 @@ export class VsCodeExtensionLoader {
         };
         initFn(module, exports, require);
         return module.exports;
+    }
+
+    /**
+     * Like VS Code, appends `.js` to an entry point without a file extension, e.g. `"browser": "./dist/web/extension"`.
+     * Without it, such an entry point cannot be found where plugin files are served as static files, as in browser-only applications.
+     */
+    protected ensureFileExtension(url: string): string {
+        return new Path(url).ext ? url : `${url}.js`;
     }
 
 }
