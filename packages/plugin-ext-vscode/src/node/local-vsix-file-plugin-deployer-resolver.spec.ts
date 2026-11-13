@@ -76,7 +76,8 @@ describe('LocalVSIXFilePluginDeployerResolver', () => {
 
     beforeEach(async () => {
         tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'vsix-resolver-'));
-        deploymentDir = path.join(tmpDir, 'deployed');
+        // The resolver reads this directory back through a URI, which lowercases a Windows drive letter.
+        deploymentDir = FileUri.fsPath(FileUri.create(path.join(tmpDir, 'deployed')));
         await fs.ensureDir(deploymentDir);
         vsix = path.join(tmpDir, 'renamed.vsix');
         plugins = [];

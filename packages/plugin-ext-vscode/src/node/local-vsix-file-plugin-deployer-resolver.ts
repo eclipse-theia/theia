@@ -91,7 +91,8 @@ export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerReso
         // Other versions need no removal here: the handler uninstalls them when it deploys this one.
         let extensionDeploymentDir: string;
         if (existsOnDisk) {
-            extensionDeploymentDir = await replaceInDeploymentDir(this.environment, localPath, versionedId, () => this.pluginDeployerHandler.undeployPlugin(versionedId), this.archiveExtractor);
+            const undeployOld = () => this.pluginDeployerHandler.undeployPlugin(versionedId);
+            extensionDeploymentDir = await replaceInDeploymentDir(this.environment, localPath, versionedId, undeployOld, this.archiveExtractor);
         } else {
             await this.pluginDeployerHandler.undeployPlugin(versionedId);
             extensionDeploymentDir = await unpackToDeploymentDir(this.environment, localPath, versionedId, this.archiveExtractor);
