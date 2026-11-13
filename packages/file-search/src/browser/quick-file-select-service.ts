@@ -207,16 +207,18 @@ export class QuickFileSelectService {
         const queryJoin = querySplit.join('');
 
         const compareByLabelScore = (l: FileQuickPickItem, r: FileQuickPickItem) => score(r.label) - score(l.label);
+        const compareByPathScore = (l: FileQuickPickItem, r: FileQuickPickItem) => score(r.uri.path.toString()) - score(l.uri.path.toString());
         const compareByLabelIndex = (l: FileQuickPickItem, r: FileQuickPickItem) =>
             r.label.toLowerCase().indexOf(query) - l.label.toLowerCase().indexOf(query);
-        const compareByLabel = (l: FileQuickPickItem, r: FileQuickPickItem) => l.label.localeCompare(r.label);
-
-        const compareByPathScore = (l: FileQuickPickItem, r: FileQuickPickItem) => score(r.uri.path.toString()) - score(l.uri.path.toString());
         const compareByPathIndex = (l: FileQuickPickItem, r: FileQuickPickItem) =>
             r.uri.path.toString().toLowerCase().indexOf(query) - l.uri.path.toString().toLowerCase().indexOf(query);
+        const compareByLabel = (l: FileQuickPickItem, r: FileQuickPickItem) => l.label.localeCompare(r.label);
         const compareByPathLabel = (l: FileQuickPickItem, r: FileQuickPickItem) => l.uri.path.toString().localeCompare(r.uri.path.toString());
 
-        return compareWithDiscriminators(left, right, compareByLabelScore, compareByLabelIndex, compareByLabel, compareByPathScore, compareByPathIndex, compareByPathLabel);
+        // compareByPathScore runs right after compareByLabelScore (before any alphabetical
+        // fallback) so a query that only matches the full/relative path isn't buried behind
+        // files that tie-break earlier alphabetically. See #17921.
+        return compareWithDiscriminators(left, right, compareByLabelScore, compareByPathScore, compareByLabelIndex, compareByPathIndex, compareByLabel, compareByPathLabel);
     }
 
     private toItem(lookFor: string, uriOrString: URI | string, onSelect?: ((item: FileQuickPickItem) => void) | undefined): FileQuickPickItem {
