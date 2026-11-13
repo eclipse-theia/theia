@@ -157,7 +157,7 @@ export interface EditorMouseEvent {
     readonly target: MouseTarget;
 }
 
-export const enum EncodingMode {
+export enum EncodingMode {
 
     /**
      * Instructs the encoding support to encode the current input with the provided encoding

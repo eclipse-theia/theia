@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // based on https://github.com/microsoft/vscode/blob/04c36be045a94fee58e5f8992d3e3fd980294a84/src/vs/base/common/uint.ts
 
-export const enum Constants {
+export enum Constants {
     /**
      * Max unsigned integer that fits on 8 bits.
      */
