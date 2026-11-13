@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import { ChildProcess } from 'child_process';
 import { Container } from 'inversify';
 import { ILogger } from '../common/logger.js';
 import { Stopwatch } from '../common/performance/index.js';
@@ -69,6 +70,21 @@ class TestShellEnvironment extends ShellEnvironmentServerImpl {
     protected override apply(env: NodeJS.ProcessEnv): void {
         this.applied = env;
         super.apply(env);
+    }
+
+    /** How often the login shell was killed. */
+    kills = 0;
+
+    protected override kill(child: ChildProcess): void {
+        this.kills++;
+        super.kill(child);
+    }
+
+    /** Settles once the login shell is running. */
+    async whenShellStarted(): Promise<void> {
+        while (!this.shell) {
+            await new Promise(resolve => setTimeout(resolve, 10));
+        }
     }
 }
 
@@ -214,6 +230,29 @@ describe('ShellEnvironmentServerImpl', () => {
         const { environment } = setup(printing("{ PATH: '/hanging/shell' }") + '; setInterval(() => { }, 1000)', '1');
         expect(await environment.whenResolved()).to.deep.equal({ status: 'applied' });
         expect(process.env.PATH).to.equal('/hanging/shell');
+    });
+
+    it('kills a login shell that is still running when the backend stops', async function (): Promise<void> {
+        this.timeout(10_000);
+        const { environment } = setup('setInterval(() => { }, 1000)', '8');
+        const start = Date.now();
+        const resolved = environment.whenResolved();
+        await environment.whenShellStarted();
+        environment.onStop();
+        const resolution = await resolved;
+        expect(resolution.status).to.equal('failed');
+        // SIGKILL for its process group, or SIGTERM on Windows, where there is none and any signal ends the process
+        expect(resolution.reason).to.contain('exited with signal');
+        expect(Date.now() - start).to.be.at.most(5000);
+    });
+
+    it('kills nothing when the backend stops after the login shell has exited', async function (): Promise<void> {
+        this.timeout(10_000);
+        // the program that the shell configuration started is still running
+        const { environment } = setup(backgroundJob + printing("{ PATH: '/exited' }"), '3');
+        expect(await environment.whenResolved()).to.deep.equal({ status: 'applied' });
+        environment.onStop();
+        expect(environment.kills).to.equal(0);
     });
 
     it('settles with the default timeout when the stored timeout cannot be read', async () => {

@@ -43,7 +43,7 @@ export class ShellEnvironmentTimeoutError extends Error {
  * its environment as JSON by running this very executable as Node between two random markers, which keeps
  * whatever the dotfiles print apart from the environment. This is how VS Code resolves the shell environment.
  * The shell that hangs, for example on a prompt in the dotfiles, is killed with its process group when the
- * timeout expires.
+ * timeout expires, or when the backend stops before that.
  */
 @injectable()
 export class ShellEnvironmentServerImpl implements ShellEnvironmentServer, BackendApplicationContribution {
@@ -65,9 +65,23 @@ export class ShellEnvironmentServerImpl implements ShellEnvironmentServer, Backe
 
     protected resolution: Promise<ShellEnvironmentResolution> | undefined;
 
+    /**
+     * The login shell while it is running.
+     */
+    protected shell: ChildProcess | undefined;
+
     initialize(): void {
         // Start the login shell as early as possible, so that it runs while the rest of the start-up proceeds.
         this.whenResolved();
+    }
+
+    onStop(): void {
+        // The timer that kills a hanging shell goes with the backend, and the shell would outlive it: a backend that
+        // exits abruptly only sends `SIGTERM` to its child processes, which an interactive shell ignores.
+        if (this.shell) {
+            this.logger.debug('Killing the login shell, which is still running while the backend stops.');
+            this.kill(this.shell);
+        }
     }
 
     whenResolved(): Promise<ShellEnvironmentResolution> {
@@ -160,6 +174,7 @@ export class ShellEnvironmentServerImpl implements ShellEnvironmentServer, Backe
                 env: this.getShellEnvironment(),
                 windowsHide: true
             });
+            this.shell = child;
             const stdout: Buffer[] = [];
             const stderr: Buffer[] = [];
             const output = (): string => Buffer.concat(stdout).toString('utf8');
@@ -223,6 +238,8 @@ export class ShellEnvironmentServerImpl implements ShellEnvironmentServer, Backe
             });
             child.on('error', error => settle(() => reject(error)));
             child.on('exit', (code, signal) => {
+                // What the shell configuration started in the background is left running, and the PID may be reused.
+                this.shell = undefined;
                 exit = { code, signal };
                 if (code || signal) {
                     complete();
@@ -367,8 +384,9 @@ export class ShellEnvironmentServerImpl implements ShellEnvironmentServer, Backe
     }
 
     /**
-     * Kills the login shell that has not answered in time. An interactive shell ignores `SIGTERM`, and the dotfiles may have
-     * started processes of their own, so the whole process group is killed where there is one.
+     * Kills the login shell that has not answered in time, or that is still running when the backend stops. An interactive
+     * shell ignores `SIGTERM`, and the dotfiles may have started processes of their own, so the whole process group is killed
+     * where there is one.
      */
     protected kill(child: ChildProcess): void {
         if (child.pid === undefined) {
