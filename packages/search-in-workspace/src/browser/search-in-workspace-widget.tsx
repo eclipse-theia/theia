@@ -20,6 +20,7 @@ import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-
 import { SearchInWorkspaceOptions } from '../common/search-in-workspace-interface.js';
 import * as React from '@theia/core/shared/react';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
+import { flushSync } from '@theia/core/shared/react-dom';
 import { Event, Emitter, Disposable } from '@theia/core/lib/common';
 import { WorkspaceSearchFilterService, WorkspaceService } from '@theia/workspace/lib/browser';
 import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service.js';
@@ -269,6 +270,10 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             this.showReplaceField = true;
         }
         this.refresh();
+        // Like VS Code, only jump to the replace field if the search term is already given.
+        if (showReplaceField && term !== '') {
+            this.focusReplaceField();
+        }
     }
 
     hasResultList(): boolean {
@@ -375,6 +380,15 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             this.searchRef.current.textarea.current.focus();
             this.searchRef.current.textarea.current.select();
         }
+    }
+
+    protected focusReplaceField(): void {
+        // The replace field stays hidden (`display: none`) until React commits the new state,
+        // so render synchronously instead of waiting for the next animation frame.
+        flushSync(() => MessageLoop.sendMessage(this, Widget.Msg.UpdateRequest));
+        const textarea = this.replaceRef.current?.textarea.current;
+        textarea?.focus();
+        textarea?.select();
     }
 
     protected renderSearchHeader(): React.ReactNode {
