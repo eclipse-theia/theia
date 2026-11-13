@@ -65,7 +65,7 @@ import { NotebookKernelsMainImpl } from './notebooks/notebook-kernels-main.js';
 import { NotebooksAndEditorsMain } from './notebooks/notebook-documents-and-editors-main.js';
 import { TestingMainImpl } from './test-main.js';
 import { UriMainImpl } from './uri-main.js';
-import { LoggerMainImpl } from './logger-main.js';
+import { LoggerMainImpl } from '../common/logger-main.js';
 import { McpServerDefinitionRegistryMainImpl } from './lm-main.js';
 import { LanguageModelToolsMainImpl } from './lm-tool-main.js';
 import { TelemetryMainImpl } from './telemetry-main.js';
