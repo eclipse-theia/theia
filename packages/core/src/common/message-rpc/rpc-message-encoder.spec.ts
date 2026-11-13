@@ -15,13 +15,55 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import { MsgPackExtensionManager } from './msg-pack-extension-manager.js';
 import {
-    EncodingError, MsgPackMessageDecoder, MsgPackMessageEncoder
+    EncodingError, MsgPackMessageDecoder, MsgPackMessageEncoder, ResponseError, registerMsgPackExtensions
 } from './rpc-message-encoder.js';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from './uint8-array-message-buffer.js';
 
 describe('PPC Message Encoder & Decoder', () => {
     describe('MsgPack  Encoder & Decoder', () => {
+        before(() => {
+            // The extensions are registered globally once per process, e.g. by importing `message-rpc/index`
+            if (!MsgPackExtensionManager.getInstance().getExtension(1)) {
+                registerMsgPackExtensions();
+            }
+        });
+
+        function roundTrip<T>(value: T): T {
+            const writer = new Uint8ArrayWriteBuffer();
+            new MsgPackMessageEncoder().encode(writer, value);
+            return new MsgPackMessageDecoder().decode(new Uint8ArrayReadBuffer(writer.getCurrentContents()));
+        }
+
+        it('should keep the name, message and code of an error', () => {
+            const error = Object.assign(new Error('boom'), { code: 'EACCES' });
+            error.name = 'SystemError';
+
+            const decoded = roundTrip(error);
+
+            expect(decoded).to.be.instanceOf(Error);
+            expect(decoded.name).to.equal('SystemError');
+            expect(decoded.message).to.equal('boom');
+            expect(decoded.code).to.equal('EACCES');
+        });
+
+        it('should decode an error without a code as before', () => {
+            const decoded = roundTrip(new Error('plain'));
+
+            expect(decoded).to.be.instanceOf(Error);
+            expect('code' in decoded).to.be.false;
+        });
+
+        it('should keep a response error with its code and data', () => {
+            const decoded = roundTrip(new ResponseError(42, 'response', { detail: true }));
+
+            expect(decoded).to.be.instanceOf(ResponseError);
+            expect(decoded.code).to.equal(42);
+            expect(decoded.message).to.equal('response');
+            expect(decoded.data).to.deep.equal({ detail: true });
+        });
+
         it('should encode object into binary message and decode the message back into the original object', () => {
             const buffer = new Uint8Array(1024);
             const writer = new Uint8ArrayWriteBuffer(buffer);
