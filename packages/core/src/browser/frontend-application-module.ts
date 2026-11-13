@@ -154,6 +154,7 @@ import { SymbolIconColorContribution } from './symbol-icon-color-contribution.js
 import { CorePreferences, bindCorePreferences } from '../common/core-preferences.js';
 import { bindBadgeDecoration } from './badges/index.js';
 import { PerspectiveContribution, PerspectiveService, PerspectiveServiceImpl, PerspectiveServiceInternal, WidgetAreaResolverImpl } from './perspective-service.js';
+import { SecondaryWindowStyleMirror } from './secondary-window-style-mirror.js';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -493,6 +494,9 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(SaveableSecondaryWindowCloseContribution).toSelf().inSingletonScope();
     bind(SecondaryWindowCloseContribution).toService(SaveableSecondaryWindowCloseContribution);
     bind(ViewColumnService).toSelf().inSingletonScope();
+
+    bind(SecondaryWindowStyleMirror).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(SecondaryWindowStyleMirror);
 
     bind(UndoRedoHandlerService).toSelf().inSingletonScope();
     bindRootContributionProvider(bind, UndoRedoHandler);

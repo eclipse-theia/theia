@@ -349,6 +349,21 @@ describe('Tool Confirmation Timeout', () => {
         return new ToolCallChatResponseContentImpl(id, name, '{}');
     }
 
+    it('should expose a stable deadline while waiting without a mounted UI', async () => {
+        const content = createToolCallContent();
+        const resultPromise = raceConfirmationWithTimeout(content, 30);
+        expect(content.confirmationDeadline).to.equal(Date.now() + 30_000);
+        const deadline = content.confirmationDeadline;
+
+        await clock.tickAsync(10_000);
+        expect(content.confirmationDeadline).to.equal(deadline);
+        expect(content.confirmationDeadline! - Date.now()).to.equal(20_000);
+
+        content.confirm();
+        await resultPromise;
+        expect(content.confirmationDeadline).to.be.undefined;
+    });
+
     it('should auto-deny when timeout expires', async () => {
         const content = createToolCallContent();
         const resultPromise = raceConfirmationWithTimeout(content, 30);
@@ -359,6 +374,7 @@ describe('Tool Confirmation Timeout', () => {
         expect(result).to.be.false;
         expect(content.finished).to.be.true;
         expect(content.result).to.deep.equal({ denied: true, reason: 'Confirmation timed out after 30 seconds' });
+        expect(content.confirmationDeadline).to.be.undefined;
     });
 
     it('should return true when user confirms before timeout', async () => {
@@ -442,6 +458,7 @@ describe('Tool Confirmation Timeout', () => {
     it('should await confirmed directly when timeout is 0', async () => {
         const content = createToolCallContent();
         const resultPromise = raceConfirmationWithTimeout(content, 0);
+        expect(content.confirmationDeadline).to.be.undefined;
 
         content.confirm();
         await clock.tickAsync(0);

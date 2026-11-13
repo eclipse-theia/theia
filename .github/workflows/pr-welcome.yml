@@ -1,0 +1,231 @@
+#
+# Copyright (C) 2026 EclipseSource GmbH and others.
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License v. 2.0 which is available at
+# http://www.eclipse.org/legal/epl-2.0.
+#
+# This Source Code may also be made available under the following Secondary
+# Licenses when the conditions for such availability set forth in the Eclipse
+# Public License v. 2.0 are satisfied: GNU General Public License, version 2
+# with the GNU Classpath Exception which is available at
+# https://www.gnu.org/software/classpath/license.html.
+#
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+
+# Welcomes external contributors with the review flow. For first-time
+# contributors, a second comment lists failed basic checks (ECA, lint errors,
+# several CI failures, PR template) and is removed once they pass. Authors with write
+# access and bots are skipped. See doc/pull-requests.md#review-flow.
+#
+# The workflow never checks out PR code, so the privileged events are safe.
+# The status and workflow_run events update the basic checks once the ECA
+# check or a workflow that runs on PRs finished, only on PRs that got the
+# welcome comment. The job condition skips events that cannot change
+# anything, i.e. PRs from branches of this repository, later events on PRs of
+# authors who are not first-time contributors and pending ECA checks.
+name: PR Welcome and Basic Checks
+
+on:
+  pull_request_target:
+    branches: [master]
+    types: [opened, reopened, edited, synchronize, ready_for_review]
+  status:
+  workflow_run:
+    # All workflows with a pull_request trigger, so that the last finished one updates the checks
+    workflows:
+      - 3PP License Check
+      - Check New Theia Package
+      - CI/CD
+      - Copilot SDK Mirror Check
+      - Playwright Tests
+      - Production Build Smoke Test
+    types: [completed]
+
+permissions:
+  actions: read
+  checks: read
+  pull-requests: write
+  statuses: read
+
+jobs:
+  welcome:
+    if: >-
+      (github.event_name == 'pull_request_target'
+        && github.event.pull_request.head.repo.full_name != github.repository
+        && (github.event.action == 'opened'
+          || contains(fromJSON('["FIRST_TIME_CONTRIBUTOR", "FIRST_TIMER"]'), github.event.pull_request.author_association))) ||
+      (github.event_name == 'status' && github.event.context == 'eclipsefdn/eca' && github.event.state != 'pending') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.event == 'pull_request'
+        && github.event.workflow_run.head_repository.full_name != github.repository)
+    # On the job, so that skipped events do not queue up and cancel the opened event
+    concurrency:
+      group: pr-welcome-${{ github.event.pull_request.head.sha || github.event.workflow_run.head_sha || github.event.sha }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Welcome and report basic checks
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const rules = `https://github.com/${owner}/${repo}/blob/master/doc/pull-requests.md`;
+            const bot = 'github-actions[bot]';
+            const welcomeMarker = '<!-- pr-welcome -->';
+            const checksMarker = '<!-- pr-basic-checks -->';
+
+            async function pullRequestOfEvent() {
+              if (context.eventName === 'pull_request_target') {
+                return context.payload.pull_request;
+              }
+              // workflow_run and status payloads carry no PR for fork branches, so find it by its head commit
+              const sha = context.eventName === 'workflow_run' ? context.payload.workflow_run.head_sha : context.payload.sha;
+              const open = await github.paginate(github.rest.pulls.list, { owner, repo, state: 'open', base: 'master', per_page: 100 });
+              return open.find(pr => pr.head.sha === sha);
+            }
+
+            async function isExternal(pr) {
+              if (pr.user.type === 'Bot') {
+                return false;
+              }
+              try {
+                const { data } = await github.rest.repos.getCollaboratorPermissionLevel({ owner, repo, username: pr.user.login });
+                // The permission maps the maintain role and custom roles to their base role
+                return !['admin', 'write'].includes(data.permission);
+              } catch (error) {
+                if (error.status === 404) {
+                  return true;
+                }
+                throw error;
+              }
+            }
+
+            function welcomeMessage(pr) {
+              return [
+                welcomeMarker,
+                `Hi @${pr.user.login},`,
+                '',
+                'Thanks for your pull request! This is how we review it:',
+                '',
+                '1. A committer (the PR steward) checks whether the approach fits.',
+                '2. If the approach fits, the steward may request an AI review. Fix or answer each finding. '
+                  + 'You cannot request a new AI review yourself, so comment on the PR when you are done and the steward requests the next round. '
+                  + 'The AI review approves once each finding is fixed or answered. This approval does not count for merging.',
+                '3. The steward requests a review from a maintainer. Address the requested changes and re-request the review. '
+                  + 'The PR is merged after the approval of a maintainer.',
+                '',
+                `See the [review flow](${rules}#external-contributor-flow) for details.`,
+              ].join('\n');
+            }
+
+            function missingTemplateParts(body) {
+              const text = (body ?? '').replace(/<!--[\s\S]*?-->/g, '');
+              const sections = new Map();
+              let current;
+              for (const line of text.split(/\r?\n/)) {
+                // Only headings on the level of the template start a section, so sub-headings count as content.
+                // The name is trimmed without a regular expression, which could backtrack on long whitespace.
+                const heading = /^####\s(.*)/.exec(line);
+                if (heading) {
+                  const name = heading[1].trim();
+                  current = (name.endsWith(':') ? name.slice(0, -1).trimEnd() : name).toLowerCase();
+                  sections.set(current, '');
+                } else if (current) {
+                  sections.set(current, sections.get(current) + line.trim());
+                }
+              }
+              // Sections that may stay empty only need their heading
+              const mayBeEmpty = ['Follow-ups', 'Breaking changes', 'Attribution'];
+              const missing = ['What it does', 'How to test', ...mayBeEmpty]
+                .filter(name => mayBeEmpty.includes(name) ? !sections.has(name.toLowerCase()) : !sections.get(name.toLowerCase()))
+                .map(name => `\`${name}\``);
+              if (!/^[ \t]*[-*][ \t]+\[[xX]\][ \t]+As an author/m.test(text)) {
+                missing.push('the author checkbox of `Review checklist`');
+              }
+              return missing;
+            }
+
+            async function basicChecks(pr) {
+              const failures = [];
+              const { data: status } = await github.rest.repos.getCombinedStatusForRef({ owner, repo, ref: pr.head.sha });
+              const eca = status.statuses.find(s => s.context === 'eclipsefdn/eca');
+              if (eca && ['failure', 'error'].includes(eca.state)) {
+                const details = eca.target_url ? `, see the [ECA check](${eca.target_url})` : '';
+                failures.push([
+                  `Sign the [Eclipse Contributor Agreement (ECA)](https://github.com/${owner}/${repo}/blob/master/CONTRIBUTING.md#eclipse-contributor-agreement)${details}:`,
+                  '  1. Create an [Eclipse Foundation account](https://accounts.eclipse.org/user/register) if you do not have one',
+                  '  2. [Sign the ECA](https://accounts.eclipse.org/user/eca)',
+                  '  3. Use the email address of your Eclipse Foundation account for your commits',
+                ].join('\n'));
+              }
+              // The run of this job is a check run on the head commit as well and never completed here
+              const ownRun = `/actions/runs/${context.runId}/`;
+              const runs = (await github.paginate(github.rest.checks.listForRef, { owner, repo, ref: pr.head.sha, filter: 'latest', per_page: 100 }))
+                .filter(run => !run.details_url?.includes(ownRun));
+              const failed = runs.filter(run => ['failure', 'timed_out'].includes(run.conclusion));
+              // A single failed test job is often flaky or unrelated to the PR, a failed lint is not
+              if (failed.length > 1 || failed.some(run => run.name === 'Lint')) {
+                failures.push('Check the CI failures: ' + failed.map(run => `[${run.name}](${run.html_url})`).join(', '));
+              }
+              if (!pr.draft) {
+                const missing = missingTemplateParts(pr.body);
+                if (missing.length) {
+                  failures.push(`Fill in the [PR template](${rules}#pr-template): ${missing.join(', ')}`);
+                }
+              }
+              // Runs of first-time contributors wait for the approval of a committer and have no check runs until then
+              const { data: awaitingApproval } = await github.rest.actions.listWorkflowRunsForRepo({ owner, repo, head_sha: pr.head.sha, status: 'action_required', per_page: 1 });
+              const pending = !eca || eca.state === 'pending' || awaitingApproval.total_count > 0 || runs.some(run => run.status !== 'completed');
+              return { failures, pending };
+            }
+
+            // One comment per PR, edited in place and removed once all checks passed
+            async function updateChecksComment(pr, comments) {
+              const { failures, pending } = await basicChecks(pr);
+              const previous = comments.find(c => c.user?.login === bot && c.body?.startsWith(checksMarker));
+              if (!failures.length) {
+                // While checks still run, e.g. after a push, keep the comment so that it is not removed and posted again
+                if (previous && !pending) {
+                  await github.rest.issues.deleteComment({ owner, repo, comment_id: previous.id });
+                }
+                return;
+              }
+              const body = [
+                checksMarker,
+                'The basic checks found these problems:',
+                '',
+                ...failures.map(failure => `- ${failure}`),
+                '',
+                'This comment is updated when the checks change and removed once they pass.',
+              ].join('\n');
+              if (previous?.body === body) {
+                return;
+              }
+              if (previous) {
+                await github.rest.issues.updateComment({ owner, repo, comment_id: previous.id, body });
+              } else {
+                await github.rest.issues.createComment({ owner, repo, issue_number: pr.number, body });
+              }
+            }
+
+            const pr = await pullRequestOfEvent();
+            if (!pr) {
+              core.info('No open PR for this event');
+              return;
+            }
+            if (!await isExternal(pr)) {
+              core.info(`Skipping #${pr.number} of ${pr.user.login}`);
+              return;
+            }
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: pr.number, per_page: 100 });
+            if (!comments.some(c => c.user?.login === bot && c.body?.startsWith(welcomeMarker))) {
+              // PRs opened before this workflow existed get no comments
+              if (context.eventName !== 'pull_request_target' || context.payload.action !== 'opened') {
+                return;
+              }
+              await github.rest.issues.createComment({ owner, repo, issue_number: pr.number, body: welcomeMessage(pr) });
+            }
+            // The basic checks are meant for newcomers. An existing checks comment is kept up to date.
+            const firstTime = ['FIRST_TIME_CONTRIBUTOR', 'FIRST_TIMER'].includes(pr.author_association);
+            if (firstTime || comments.some(c => c.user?.login === bot && c.body?.startsWith(checksMarker))) {
+              await updateChecksComment(pr, comments);
+            }

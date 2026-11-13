@@ -347,7 +347,7 @@ export function createAPIFactory(
     const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
     const outputChannelRegistryExt = rpc.set(MAIN_RPC_CONTEXT.OUTPUT_CHANNEL_REGISTRY_EXT, new OutputChannelRegistryExtImpl(rpc));
     const treeViewsExt = rpc.set(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT, new TreeViewsExtImpl(rpc, commandRegistry));
-    const tasksExt = rpc.set(MAIN_RPC_CONTEXT.TASKS_EXT, new TasksExtImpl(rpc, terminalExt));
+    const tasksExt = rpc.set(MAIN_RPC_CONTEXT.TASKS_EXT, new TasksExtImpl(rpc, terminalExt, workspaceExt));
     const connectionExt = rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, new ConnectionImpl(rpc.getProxy(PLUGIN_RPC_CONTEXT.CONNECTION_MAIN)));
     const fileSystemExt = rpc.set(MAIN_RPC_CONTEXT.FILE_SYSTEM_EXT, new FileSystemExtImpl(rpc));
     const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents, commandRegistry, fileSystemExt));
@@ -1687,8 +1687,9 @@ export class Plugin<T> implements theia.Plugin<T> {
         this.pluginType = plugin.model.entryPoint.frontend ? 'frontend' : 'backend';
 
         if (this.pluginType === 'frontend') {
-            const { origin } = new Endpoint();
-            this.pluginUri = URI.parse(origin + '/' + PluginPackage.toPluginUrl(plugin.model, ''));
+            // Resolve against the location of the plugin worker, so that the URI keeps the path the application is served under.
+            const pluginUrl = new Endpoint().getRestUrl().parent.resolve(PluginPackage.toPluginUrl(plugin.model, ''));
+            this.pluginUri = URI.parse(pluginUrl.toString());
         } else {
             this.pluginUri = URI.parse(plugin.pluginUri);
         }

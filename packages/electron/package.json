@@ -1,6 +1,6 @@
 {
   "name": "@theia/electron",
-  "version": "1.76.0",
+  "version": "1.77.0",
   "description": "Theia - Electron utility package",
   "type": "module",
   "dependencies": {
@@ -10,8 +10,8 @@
     "tslib": "^2.8.1"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.76.0",
-    "@theia/re-exports": "1.76.0"
+    "@theia/ext-scripts": "1.77.0",
+    "@theia/re-exports": "1.77.0"
   },
   "peerDependencies": {
     "electron": "44.9.1"

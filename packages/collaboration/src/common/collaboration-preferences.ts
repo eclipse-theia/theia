@@ -21,7 +21,7 @@ export const collaborationPreferencesSchema: PreferenceSchema = {
         'collaboration.serverUrl': {
             type: 'string',
             default: 'https://api.open-collab.tools/',
-            title: nls.localize('theia/collaboration/serverUrl', 'Server URL'),
+            title: nls.localizeByDefault('Server URL'),
             description: nls.localize('theia/collaboration/serverUrlDescription', 'URL of the Open Collaboration Tools Server instance for live collaboration sessions'),
         },
     },

@@ -9,6 +9,14 @@ Please see the latest version (`master`) for the most up-to-date information. Pl
 
 ### General
 
+_Loading indicator no longer delays the `ready` state_:
+
+`FrontendApplication.start()` no longer waits for the loading indicator (the `.theia-preload` element) to fade out and be removed before the application state becomes `ready`.
+`revealShell()` now resolves as soon as the fade-out starts; the indicator is removed from the DOM in the background once its CSS `transition-duration` has elapsed, through the new `removeStartupIndicator()` method.
+The default fade-out was shortened from 0.8 s to 0.15 s.
+Everything that waits for `ready` (plugin views, the getting-started editor, the Electron splash screen) now runs while the indicator is still fading out.
+Code that assumed that the `.theia-preload` element is gone when `ready` is reached should wait for its removal instead, e.g. with a `MutationObserver`, or override `revealShell()` to restore the previous behavior.
+
 _AI Configuration View_:
 
 The AI Configuration view (`@theia/ai-ide`) has been reworked from a tabbed dock panel into a master–detail tree driven by a new public contribution point, `AiConfigurationCategory`.
