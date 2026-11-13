@@ -1182,6 +1182,7 @@ export class AIChatInputWidget extends ReactWidget {
             }
         }));
         this.toDispose.push(this.favoriteModels.onDidChange(() => this.update()));
+        this.toDispose.push(this.labelProvider.onDidChange(() => this.update()));
         // An agent's default is usually an alias, so editing which model the alias points at changes what
         // "Default" resolves to and with it the model-dependent state. The registry's own change event
         // does not cover this: the models it holds are the same ones, only the alias moved.
@@ -2276,6 +2277,14 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         });
         return () => disposable.dispose();
     });
+
+    const [, forceUpdate] = React.useReducer(x => x + 1, 0);
+    React.useEffect(() => {
+        const disposable = props.labelProvider.onDidChange(() => {
+            forceUpdate();
+        });
+        return () => disposable.dispose();
+    }, [props.labelProvider]);
 
     const setValue = React.useCallback((value: string) => {
         if (editorRef.current && !editorRef.current.document.isDisposed()) {
