@@ -47,6 +47,7 @@ import { ContributionProvider } from '@theia/core/lib/common/contribution-provid
 import { ExtensionsSourceContribution } from './extensions-source-contribution.js';
 import debounce from '@theia/core/shared/lodash.debounce';
 import { ILogger } from '@theia/core';
+import { WorkspaceRecommendationsService } from './recommended-extensions/workspace-recommendations-service.js';
 
 export namespace VSXCommands {
     export const TOGGLE_EXTENSIONS: Command = {
@@ -68,6 +69,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
     @inject(ApplicationServer) protected applicationServer: ApplicationServer;
     @inject(QuickInputService) protected quickInput: QuickInputService;
     @inject(SelectionService) protected readonly selectionService: SelectionService;
+    @inject(WorkspaceRecommendationsService) protected readonly workspaceRecommendationsService: WorkspaceRecommendationsService;
     @inject(ContributionProvider) @named(ExtensionsSourceContribution)
     protected readonly extensionsContributions: ContributionProvider<ExtensionsSourceContribution>;
 
@@ -161,6 +163,22 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         commands.registerCommand(VSXExtensionsCommands.REFRESH, {
             execute: () => this.refresh()
         });
+
+        commands.registerCommand(VSXExtensionsCommands.ADD_TO_WORKSPACE_RECOMMENDATIONS, {
+            isVisible: (extension: VSXExtension) => this.canChangeWorkspaceRecommendation(extension)
+                && !this.workspaceRecommendationsService.isWorkspaceRecommended(extension.id),
+            execute: (extension: VSXExtension) => this.workspaceRecommendationsService.addRecommendation(extension.id)
+        });
+
+        commands.registerCommand(VSXExtensionsCommands.REMOVE_FROM_WORKSPACE_RECOMMENDATIONS, {
+            isVisible: (extension: VSXExtension) => this.canChangeWorkspaceRecommendation(extension)
+                && this.workspaceRecommendationsService.isWorkspaceRecommended(extension.id),
+            execute: (extension: VSXExtension) => this.workspaceRecommendationsService.removeRecommendation(extension.id)
+        });
+    }
+
+    protected canChangeWorkspaceRecommendation(extension: VSXExtension): boolean {
+        return !extension.builtin && this.workspaceRecommendationsService.canModifyRecommendations();
     }
 
     /** Refreshes every contribution that opts in - e.g. MCP re-fetches its registry JSON. */
@@ -211,6 +229,16 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
             commandId: VSXExtensionsCommands.INSTALL_VSIX_FILE.id,
             label: VSXExtensionsCommands.INSTALL_VSIX_FILE.label,
             when: 'resourceScheme == file && resourceExtname == .vsix'
+        });
+        menus.registerMenuAction(VSXExtensionsContextMenu.RECOMMENDATIONS, {
+            commandId: VSXExtensionsCommands.ADD_TO_WORKSPACE_RECOMMENDATIONS.id,
+            label: nls.localizeByDefault('Add to Workspace Recommendations'),
+            order: '0',
+        });
+        menus.registerMenuAction(VSXExtensionsContextMenu.RECOMMENDATIONS, {
+            commandId: VSXExtensionsCommands.REMOVE_FROM_WORKSPACE_RECOMMENDATIONS.id,
+            label: nls.localizeByDefault('Remove from Workspace Recommendations'),
+            order: '1',
         });
     }
 
