@@ -25,13 +25,22 @@ import { LegacyMainPluginApiContribution } from './legacy-plugin-api-contributio
  * `*MainImpl` classes on the RPC protocol. This assembler is the single composition
  * point: call sites inject only the assembler, not individual providers.
  *
- * Currently there is only the legacy monolithic provider. As features are extracted
- * into their own packages (e.g. `plugin-ext-terminal`), each will export a main-side
- * provider, and this assembler will gain an `@inject` for it. TypeScript ensures that
- * any provider added here is actually available in the DI container.
+ * Currently there is only the legacy monolithic provider. As features are extracted,
+ * each will export a main-side provider, and this assembler will gain an `@inject` for it:
  *
- * Downstream applications that want a different API surface can subclass or replace
- * this assembler, injecting only the providers they need.
+ * ```ts
+ * @inject(TerminalMainPluginApiContribution)
+ * protected readonly terminal: TerminalMainPluginApiContribution;
+ *
+ * registerMainImplementations(rpc: RPCProtocol, container: interfaces.Container): void {
+ *     this.legacy.registerMainImplementations(rpc, container);
+ *     this.terminal.registerMainImplementations(rpc, container);
+ * }
+ * ```
+ *
+ * The intent is that downstream applications wanting a different API surface replace
+ * this assembler, injecting only the providers they need. That becomes practical once the
+ * legacy provider has been broken up and the slices live in their own packages.
  */
 @injectable()
 export class MainPluginApiAssembler {
@@ -39,15 +48,11 @@ export class MainPluginApiAssembler {
     @inject(LegacyMainPluginApiContribution)
     protected readonly legacy: LegacyMainPluginApiContribution;
 
-    // Future providers will be added here as explicit @inject fields, e.g.:
-    // @inject(TerminalMainPluginApiProvider) protected readonly terminal: TerminalMainPluginApiProvider;
-
     /**
      * Register all main-side RPC implementations from all providers.
      * Called once per plugin runtime connection.
      */
     registerMainImplementations(rpc: RPCProtocol, container: interfaces.Container): void {
         this.legacy.registerMainImplementations(rpc, container);
-        // Future: this.terminal.registerMainImplementations(rpc, container);
     }
 }

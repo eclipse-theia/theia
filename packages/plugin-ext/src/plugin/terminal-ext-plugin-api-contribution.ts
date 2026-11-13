@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import type * as theia from '@theia/plugin';
-import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { Event } from '@theia/core/lib/common/event';
 import { RPCProtocol } from '../common/rpc-protocol.js';
-import { InternalPluginApiContribution } from '../common/plugin-ext-api-contribution.js';
+import { InternalExtPluginApiContribution } from '../common/plugin-ext-api-contribution.js';
 import { MAIN_RPC_CONTEXT, Plugin } from '../common/plugin-api-rpc.js';
 import { TerminalServiceExtImpl } from './terminal-ext.js';
 import { createAPIObject } from './plugin-context.js';
@@ -87,14 +87,10 @@ export interface TerminalPluginApiNamespace {
  * - Providing terminal-related type exports for the `typeof theia` namespace
  */
 @injectable()
-export class TerminalExtPluginApiContribution implements InternalPluginApiContribution {
+export class TerminalExtPluginApiContribution implements InternalExtPluginApiContribution<TerminalPluginApiNamespace> {
 
     @inject(TerminalServiceExtImpl)
     protected readonly terminalExt: TerminalServiceExtImpl;
-
-    registerMainImplementations(_rpc: RPCProtocol, _container: interfaces.Container): void {
-        // Main-side terminal registration is handled separately by LegacyMainPluginApiContribution.
-    }
 
     registerExtImplementations(rpc: RPCProtocol): void {
         rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, this.terminalExt);

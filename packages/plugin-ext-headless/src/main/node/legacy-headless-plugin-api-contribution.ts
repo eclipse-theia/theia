@@ -16,15 +16,18 @@
 
 import { injectable, interfaces } from '@theia/core/shared/inversify';
 import { RPCProtocol } from '@theia/plugin-ext/lib/common/rpc-protocol';
-import { InternalPluginApiContribution } from '@theia/plugin-ext/lib/common/plugin-ext-api-contribution';
-import { Plugin } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
+import { InternalMainPluginApiContribution } from '@theia/plugin-ext/lib/common/plugin-ext-api-contribution';
 import { EnvMainImpl } from '@theia/plugin-ext/lib/main/common/env-main';
 import { BasicMessageRegistryMainImpl } from '@theia/plugin-ext/lib/main/common/basic-message-registry-main';
 import { BasicNotificationMainImpl } from '@theia/plugin-ext/lib/main/common/basic-notification-main';
 import { HEADLESSMAIN_RPC_CONTEXT, HEADLESSPLUGIN_RPC_CONTEXT } from '../../common/headless-plugin-rpc.js';
 
+/**
+ * Sets up only the minimal plugin API required by the plugin manager to report
+ * messages and notifications to the main side and to initialize plugins.
+ */
 @injectable()
-export class LegacyHeadlessPluginApiContribution implements InternalPluginApiContribution {
+export class LegacyHeadlessPluginApiContribution implements InternalMainPluginApiContribution {
 
     registerMainImplementations(rpc: RPCProtocol, container: interfaces.Container): void {
         const envMain = new EnvMainImpl(rpc, container);
@@ -35,13 +38,5 @@ export class LegacyHeadlessPluginApiContribution implements InternalPluginApiCon
 
         const notificationMain = new BasicNotificationMainImpl(rpc, container, HEADLESSMAIN_RPC_CONTEXT.NOTIFICATION_EXT);
         rpc.set(HEADLESSPLUGIN_RPC_CONTEXT.NOTIFICATION_MAIN, notificationMain);
-    }
-
-    registerExtImplementations(_rpc: RPCProtocol): void {
-        // No-op: headless plugins do not have ext-side API contributions
-    }
-
-    createApiNamespace(_plugin: Plugin): Record<string, unknown> {
-        return {};
     }
 }

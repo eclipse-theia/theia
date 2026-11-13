@@ -16,11 +16,11 @@
 
 import { injectable, interfaces } from '@theia/core/shared/inversify';
 import { RPCProtocol } from '../../common/rpc-protocol.js';
-import { InternalPluginApiContribution } from '../../common/plugin-ext-api-contribution.js';
+import { InternalMainPluginApiContribution } from '../../common/plugin-ext-api-contribution.js';
 import { CommandRegistryMainImpl } from './command-registry-main.js';
 import { PreferenceRegistryMainImpl } from './preference-registry-main.js';
 import { QuickOpenMainImpl } from './quick-open-main.js';
-import { PLUGIN_RPC_CONTEXT, LanguagesMainFactory, OutputChannelRegistryFactory, MAIN_RPC_CONTEXT, Plugin } from '../../common/plugin-api-rpc.js';
+import { PLUGIN_RPC_CONTEXT, LanguagesMainFactory, OutputChannelRegistryFactory, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc.js';
 import { MessageRegistryMainImpl } from './message-registry-main.js';
 import { WindowStateMain } from './window-state-main.js';
 import { WorkspaceMainImpl } from './workspace-main.js';
@@ -73,7 +73,7 @@ import { LanguageModelToolsMainImpl } from './lm-tool-main.js';
 import { TelemetryMainImpl } from './telemetry-main.js';
 
 @injectable()
-export class LegacyMainPluginApiContribution implements InternalPluginApiContribution {
+export class LegacyMainPluginApiContribution implements InternalMainPluginApiContribution {
 
     registerMainImplementations(rpc: RPCProtocol, container: interfaces.Container): void {
         const loggerMain = new LoggerMainImpl(container);
@@ -224,14 +224,5 @@ export class LegacyMainPluginApiContribution implements InternalPluginApiContrib
 
         const telemetryMain = new TelemetryMainImpl(rpc, container);
         rpc.set(PLUGIN_RPC_CONTEXT.TELEMETRY_MAIN, telemetryMain);
-    }
-
-    registerExtImplementations(_rpc: RPCProtocol): void {
-        // No-op on the main side — ext-side registration is handled separately
-    }
-
-    createApiNamespace(_plugin: Plugin): Record<string, unknown> {
-        // No-op on the main side — API namespace creation is handled separately
-        return {};
     }
 }

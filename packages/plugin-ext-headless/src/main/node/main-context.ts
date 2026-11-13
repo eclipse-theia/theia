@@ -15,21 +15,11 @@
 // *****************************************************************************
 import { interfaces } from '@theia/core/shared/inversify';
 import { RPCProtocol } from '@theia/plugin-ext/lib/common/rpc-protocol';
-import { EnvMainImpl } from '@theia/plugin-ext/lib/main/common/env-main';
-import { BasicMessageRegistryMainImpl } from '@theia/plugin-ext/lib/main/common/basic-message-registry-main';
-import { BasicNotificationMainImpl } from '@theia/plugin-ext/lib/main/common/basic-notification-main';
+import { LegacyHeadlessPluginApiContribution } from './legacy-headless-plugin-api-contribution.js';
 
-import { HEADLESSMAIN_RPC_CONTEXT, HEADLESSPLUGIN_RPC_CONTEXT } from '../../common/headless-plugin-rpc.js';
-
-// This sets up only the minimal plugin API required by the plugin manager to report
-// messages and notifications to the main side and to initialize plugins.
+/**
+ * @deprecated Rebind or replace `LegacyHeadlessPluginApiContribution` instead.
+ */
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
-    const envMain = new EnvMainImpl(rpc, container);
-    rpc.set(HEADLESSPLUGIN_RPC_CONTEXT.ENV_MAIN, envMain);
-
-    const messageRegistryMain = new BasicMessageRegistryMainImpl(container);
-    rpc.set(HEADLESSPLUGIN_RPC_CONTEXT.MESSAGE_REGISTRY_MAIN, messageRegistryMain);
-
-    const notificationMain = new BasicNotificationMainImpl(rpc, container, HEADLESSMAIN_RPC_CONTEXT.NOTIFICATION_EXT);
-    rpc.set(HEADLESSPLUGIN_RPC_CONTEXT.NOTIFICATION_MAIN, notificationMain);
+    container.get(LegacyHeadlessPluginApiContribution).registerMainImplementations(rpc, container);
 }

@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import type * as theia from '@theia/plugin';
-import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { RPCProtocol } from '../common/rpc-protocol.js';
-import { InternalPluginApiContribution } from '../common/plugin-ext-api-contribution.js';
+import { InternalExtPluginApiContribution } from '../common/plugin-ext-api-contribution.js';
 import { Plugin, PluginManager, LocalizationExt } from '../common/plugin-api-rpc.js';
 import { createAPIFactory } from './plugin-context.js';
 import type { TerminalPluginApiNamespace } from './terminal-ext-plugin-api-contribution.js';
@@ -34,7 +34,6 @@ import type { LocalizationExtImpl } from './localization-ext.js';
 import { TelemetryExtImpl } from './telemetry-ext.js';
 import { TerminalServiceExtImpl } from './terminal-ext.js';
 import { CommandRegistryImpl } from './command-registry.js';
-import { ScmExtImpl } from './scm.js';
 import { AbstractPluginManagerExtImpl } from './plugin-manager.js';
 
 /**
@@ -67,7 +66,7 @@ export type LegacyPluginApiNamespace =
 
 /**
  * Legacy contribution that wraps the monolithic `createAPIFactory()` function from
- * `plugin-context.ts` as an `InternalPluginApiContribution`.
+ * `plugin-context.ts` as an `InternalExtPluginApiContribution`.
  *
  * This is a transitional adapter. The long-term goal is to split the monolithic
  * `createAPIFactory` into smaller, per-feature contributions (terminal, debug, SCM, etc.).
@@ -82,7 +81,7 @@ export type LegacyPluginApiNamespace =
  * `createApiNamespace` delegates to that captured closure.
  */
 @injectable()
-export class LegacyExtPluginApiContribution implements InternalPluginApiContribution {
+export class LegacyExtPluginApiContribution implements InternalExtPluginApiContribution<LegacyPluginApiNamespace> {
 
     @inject(RPCProtocol)
     protected readonly rpc: RPCProtocol;
@@ -126,14 +125,7 @@ export class LegacyExtPluginApiContribution implements InternalPluginApiContribu
     @inject(CommandRegistryImpl)
     protected readonly commandRegistry: CommandRegistryImpl;
 
-    @inject(ScmExtImpl)
-    protected readonly scmExt: ScmExtImpl;
-
     protected apiFactory: ((plugin: Plugin) => LegacyPluginApiNamespace) | undefined;
-
-    registerMainImplementations(_rpc: RPCProtocol, _container: interfaces.Container): void {
-        // No-op on the ext side — main-side registration is handled by LegacyMainPluginApiContribution
-    }
 
     registerExtImplementations(rpc: RPCProtocol): void {
         // createAPIFactory both registers all ext-side implementations on the RPC protocol
@@ -152,8 +144,7 @@ export class LegacyExtPluginApiContribution implements InternalPluginApiContribu
             this.localizationExt,
             this.telemetryExt,
             this.terminalExt,
-            this.commandRegistry,
-            this.scmExt
+            this.commandRegistry
         );
     }
 

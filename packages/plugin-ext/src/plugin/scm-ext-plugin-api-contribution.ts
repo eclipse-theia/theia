@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import type * as theia from '@theia/plugin';
-import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { RPCProtocol } from '../common/rpc-protocol.js';
-import { InternalPluginApiContribution } from '../common/plugin-ext-api-contribution.js';
+import { InternalExtPluginApiContribution } from '../common/plugin-ext-api-contribution.js';
 import { MAIN_RPC_CONTEXT, Plugin } from '../common/plugin-api-rpc.js';
 import { ScmExtImpl } from './scm.js';
 import { SourceControlInputBoxValidationType, URI } from './types-impl.js';
@@ -44,14 +44,10 @@ export interface ScmPluginApiNamespace {
  * - Providing `SourceControlInputBoxValidationType` type export
  */
 @injectable()
-export class ScmExtPluginApiContribution implements InternalPluginApiContribution {
+export class ScmExtPluginApiContribution implements InternalExtPluginApiContribution<ScmPluginApiNamespace> {
 
     @inject(ScmExtImpl)
     protected readonly scmExt: ScmExtImpl;
-
-    registerMainImplementations(_rpc: RPCProtocol, _container: interfaces.Container): void {
-        // Main-side SCM registration is handled by LegacyMainPluginApiContribution.
-    }
 
     registerExtImplementations(rpc: RPCProtocol): void {
         rpc.set(MAIN_RPC_CONTEXT.SCM_EXT, this.scmExt);

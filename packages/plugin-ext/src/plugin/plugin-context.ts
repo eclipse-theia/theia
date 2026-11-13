@@ -256,7 +256,6 @@ import { ConnectionImpl } from '../common/connection.js';
 import { TasksExtImpl } from './tasks/tasks.js';
 import { DebugExtImpl } from './debug/debug-ext.js';
 import { FileSystemExtImpl } from './file-system-ext-impl.js';
-import { ScmExtImpl } from './scm.js';
 import { DecorationsExtImpl } from './decorations.js';
 import { TextEditorExt } from './text-editor.js';
 import { ClipboardExt } from './clipboard-ext.js';
@@ -316,8 +315,7 @@ export function createAPIFactory(
     localizationExt: LocalizationExtImpl,
     telemetryExt: TelemetryExtImpl,
     terminalExt: TerminalServiceExtImpl,
-    commandRegistry: CommandRegistryImpl,
-    scmExt: ScmExtImpl
+    commandRegistry: CommandRegistryImpl
 ): (plugin: InternalPlugin) => LegacyPluginApiNamespace {
     // The return type is checked via a type assertion (as LegacyPluginApiNamespace)
     // on the return statement of the inner function, matching the original
@@ -345,7 +343,6 @@ export function createAPIFactory(
     const fileSystemExt = rpc.set(MAIN_RPC_CONTEXT.FILE_SYSTEM_EXT, new FileSystemExtImpl(rpc));
     const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents, commandRegistry, fileSystemExt));
     const extHostFileSystemEvent = rpc.set(MAIN_RPC_CONTEXT.ExtHostFileSystemEventService, new ExtHostFileSystemEventService(rpc, editorsAndDocumentsExt, workspaceExt));
-    rpc.set(MAIN_RPC_CONTEXT.SCM_EXT, scmExt);
     const decorationsExt = rpc.set(MAIN_RPC_CONTEXT.DECORATIONS_EXT, new DecorationsExtImpl(rpc));
     const labelServiceExt = rpc.set(MAIN_RPC_CONTEXT.LABEL_SERVICE_EXT, new LabelServiceExtImpl(rpc));
     const timelineExt = rpc.set(MAIN_RPC_CONTEXT.TIMELINE_EXT, new TimelineExtImpl(rpc, commandRegistry));
@@ -456,7 +453,7 @@ export function createAPIFactory(
         const showInformationMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Info);
         const showWarningMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Warning);
         const showErrorMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Error);
-        const window = {
+        const window: LegacyPluginApiNamespace['window'] = {
 
             get activeTextEditor(): TextEditorExt | undefined {
                 return editors.getActiveEditor();
@@ -464,25 +461,25 @@ export function createAPIFactory(
             get visibleTextEditors(): theia.TextEditor[] {
                 return editors.getVisibleTextEditors();
             },
-            onDidChangeActiveTextEditor(listener: (e: theia.TextEditor | undefined) => any, thisArg?: any, disposables?: Disposable[]) {
+            onDidChangeActiveTextEditor(listener, thisArg?, disposables?) {
                 return editors.onDidChangeActiveTextEditor(listener, thisArg, disposables);
             },
-            onDidChangeVisibleTextEditors(listener: (e: theia.TextEditor[]) => any, thisArg?: any, disposables?: Disposable[]) {
+            onDidChangeVisibleTextEditors(listener, thisArg?, disposables?) {
                 return editors.onDidChangeVisibleTextEditors(listener, thisArg, disposables);
             },
-            onDidChangeTextEditorSelection(listener: (e: theia.TextEditorSelectionChangeEvent) => any, thisArg?: any, disposables?: Disposable[]) {
+            onDidChangeTextEditorSelection(listener, thisArg?, disposables?) {
                 return editors.onDidChangeTextEditorSelection(listener, thisArg, disposables);
             },
-            onDidChangeTextEditorDiffInformation(listener: (e: theia.TextEditorDiffInformationChangeEvent) => any, thisArg?: any, disposables?: Disposable[]) {
+            onDidChangeTextEditorDiffInformation(listener, thisArg?, disposables?) {
                 return editors.onDidChangeTextEditorDiffInformation(listener, thisArg, disposables);
             },
-            onDidChangeTextEditorOptions(listener: (e: theia.TextEditorOptionsChangeEvent) => any, thisArg?: any, disposables?: Disposable[]) {
+            onDidChangeTextEditorOptions(listener, thisArg?, disposables?) {
                 return editors.onDidChangeTextEditorOptions(listener, thisArg, disposables);
             },
-            onDidChangeTextEditorViewColumn(listener: (e: theia.TextEditorViewColumnChangeEvent) => any, thisArg?: any, disposables?: Disposable[]) {
+            onDidChangeTextEditorViewColumn(listener, thisArg?, disposables?) {
                 return editors.onDidChangeTextEditorViewColumn(listener, thisArg, disposables);
             },
-            onDidChangeTextEditorVisibleRanges(listener: (e: theia.TextEditorVisibleRangesChangeEvent) => any, thisArg?: any, disposables?: Disposable[]) {
+            onDidChangeTextEditorVisibleRanges(listener, thisArg?, disposables?) {
                 return editors.onDidChangeTextEditorVisibleRanges(listener, thisArg, disposables);
             },
             async showTextDocument(documentArg: theia.TextDocument | URI,
@@ -518,18 +515,18 @@ export function createAPIFactory(
             get visibleNotebookEditors(): theia.NotebookEditor[] {
                 return notebooksExt.visibleApiNotebookEditors;
             },
-            onDidChangeVisibleNotebookEditors(listener: (e: readonly theia.NotebookEditor[]) => any, thisArg?: any, disposables?: Disposable[]) {
+            onDidChangeVisibleNotebookEditors(listener, thisArg?, disposables?) {
                 return notebooksExt.onDidChangeVisibleNotebookEditors(listener, thisArg, disposables);
             },
             get activeNotebookEditor(): theia.NotebookEditor | undefined {
                 return notebooksExt.activeApiNotebookEditor;
-            }, onDidChangeActiveNotebookEditor(listener: (e: theia.NotebookEditor | undefined) => any, thisArg?: any, disposables?: Disposable[]) {
+            }, onDidChangeActiveNotebookEditor(listener, thisArg?, disposables?) {
                 return notebooksExt.onDidChangeActiveNotebookEditor(listener, thisArg, disposables);
             },
-            onDidChangeNotebookEditorSelection(listener: (e: theia.NotebookEditorSelectionChangeEvent) => any, thisArg?: any, disposables?: Disposable[]) {
+            onDidChangeNotebookEditorSelection(listener, thisArg?, disposables?) {
                 return notebookEditors.onDidChangeNotebookEditorSelection(listener, thisArg, disposables);
             },
-            onDidChangeNotebookEditorVisibleRanges(listener: (e: theia.NotebookEditorVisibleRangesChangeEvent) => any, thisArg?: any, disposables?: Disposable[]) {
+            onDidChangeNotebookEditorVisibleRanges(listener, thisArg?, disposables?) {
                 return notebookEditors.onDidChangeNotebookEditorVisibleRanges(listener, thisArg, disposables);
             },
             showNotebookDocument(document: theia.NotebookDocument, options?: theia.NotebookDocumentShowOptions) {
@@ -616,7 +613,7 @@ export function createAPIFactory(
             get state(): theia.WindowState {
                 return windowStateExt.getWindowState();
             },
-            onDidChangeWindowState(listener: (e: theia.WindowState) => any, thisArg?: any, disposables?: Disposable[]): theia.Disposable {
+            onDidChangeWindowState(listener, thisArg?, disposables?): theia.Disposable {
                 return windowStateExt.onDidChangeWindowState(listener, thisArg, disposables);
             },
             createTextEditorDecorationType(options: theia.DecorationRenderOptions): theia.TextEditorDecorationType {
@@ -650,7 +647,7 @@ export function createAPIFactory(
             get activeColorTheme(): theia.ColorTheme {
                 return themingExt.activeColorTheme;
             },
-            onDidChangeActiveColorTheme(listener: (e: theia.ColorTheme) => any, thisArg?: any, disposables?: Disposable[]) {
+            onDidChangeActiveColorTheme(listener, thisArg?, disposables?) {
                 return themingExt.onDidChangeActiveColorTheme(listener, thisArg, disposables);
             },
             get tabGroups(): theia.TabGroups {

@@ -33,14 +33,16 @@ import { deepMergeApiNamespaces } from './merge-api-namespaces.js';
  * This assembler is the single composition point for the ext side: call sites inject
  * only the assembler, not individual providers.
  *
- * Currently there is only the legacy monolithic provider. As features are extracted
- * into their own packages (e.g. `plugin-ext-terminal`), each will export an ext-side
- * provider, and this assembler will gain an `@inject` for it. The `createApiFactory`
- * method merges all providers' namespace contributions and TypeScript ensures the
- * combined result satisfies `typeof theia`.
+ * Terminal and SCM have been extracted from the legacy monolithic provider so far. As
+ * further features are extracted, each will export an ext-side provider, and this assembler
+ * will gain an `@inject` for it. The `createApiFactory` method merges all providers'
+ * namespace contributions and TypeScript ensures the combined result satisfies `typeof theia`.
  *
- * Downstream applications that want a different API surface can subclass or replace
- * this assembler, injecting only the providers they need.
+ * The intent is that downstream applications wanting a different API surface replace
+ * this assembler, injecting only the providers they need. That becomes practical once the
+ * legacy provider has been broken up and the slices live in their own packages; until then,
+ * the legacy provider still depends on services owned by extracted slices (e.g. tasks use
+ * `TerminalServiceExtImpl`).
  */
 @injectable()
 export class ExtPluginApiAssembler {
