@@ -762,6 +762,30 @@ describe('Multi-Diff Editor — widgets', () => {
             }
         });
 
+        it('should continue file navigation from an explicitly revealed entry', () => {
+            const previous = globalThis.requestAnimationFrame;
+            globalThis.requestAnimationFrame = sinon.stub().returns(0);
+            const editor = createEditor(0);
+            const resources = ['a', 'b', 'c'].map(name => ({
+                originalUri: new URI(`file:///workspace/${name}.orig.ts`),
+                modifiedUri: new URI(`file:///workspace/${name}.ts`)
+            }));
+            const [, second, third] = resources.map(resource =>
+                editor.addDiffEntry(resource, new DiffEntryHeaderWidget(resource, mockLabelProvider)));
+            try {
+                Widget.attach(editor, document.body);
+                expect(editor.hasPreviousEntry()).to.be.false;
+                editor.revealResource(resources[1].modifiedUri);
+                expect(editor.hasPreviousEntry()).to.be.true;
+                editor.goToNextEntry();
+                expect(document.activeElement).to.equal(third.node.querySelector('.multi-diff-entry-header'));
+                expect(second.isCollapsed).to.be.false;
+            } finally {
+                editor.dispose();
+                globalThis.requestAnimationFrame = previous;
+            }
+        });
+
         it('should reveal only within the entries panel and repeat after an in-flight target loads', async () => {
             const previous = globalThis.requestAnimationFrame;
             const frames: FrameRequestCallback[] = [];
@@ -1080,6 +1104,31 @@ describe('Multi-Diff Editor — widgets', () => {
                 editor.collapseAll();
                 editor.expandAll();
                 expect(load.calledTwice).to.be.true;
+            } finally {
+                editor.dispose();
+            }
+        });
+
+        it('should treat entries without a diff as entries without changes once their load is done', async () => {
+            const editor = createEditor(0);
+            let fail: (error: Error) => void = () => { };
+            const failing = addEntry(editor, () => new Promise<EditorWidget>((_, reject) => fail = reject));
+            const plain = addEntry(editor, async () => new Widget() as EditorWidget);
+            const changed = sinon.spy();
+            editor.onDidChangeNavigationState(changed);
+            try {
+                expect(editor.hasNextChange()).to.be.true;
+                const load = failing.loadEditor();
+                changed.resetHistory();
+                fail(new Error('boom'));
+                await load;
+                expect(changed.called).to.be.true;
+                expect(failing.hasNoDiff).to.be.true;
+                expect(editor.hasNextChange()).to.be.true;
+                await plain.loadEditor();
+                expect(plain.hasNoDiff).to.be.true;
+                expect(editor.hasNextChange()).to.be.false;
+                expect(editor.hasPreviousChange()).to.be.false;
             } finally {
                 editor.dispose();
             }

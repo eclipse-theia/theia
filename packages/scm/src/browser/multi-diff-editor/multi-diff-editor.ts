@@ -173,6 +173,9 @@ export class DiffEntryWidget extends BaseWidget {
     protected readonly onDidLoadEditorEmitter = new Emitter<void>();
     readonly onDidLoadEditor: Event<void> = this.onDidLoadEditorEmitter.event;
 
+    protected readonly onDidFailToLoadEditorEmitter = new Emitter<void>();
+    readonly onDidFailToLoadEditor: Event<void> = this.onDidFailToLoadEditorEmitter.event;
+
     protected readonly onDidChangeCollapsedEmitter = new Emitter<boolean>();
     readonly onDidChangeCollapsed: Event<boolean> = this.onDidChangeCollapsedEmitter.event;
 
@@ -201,6 +204,7 @@ export class DiffEntryWidget extends BaseWidget {
         this.toDispose.pushAll([
             this.onDidChangeCollapsedEmitter,
             this.onDidLoadEditorEmitter,
+            this.onDidFailToLoadEditorEmitter,
             this.header.onDidToggleCollapse(() => this.setCollapsed(!this._isCollapsed))
         ]);
     }
@@ -226,6 +230,13 @@ export class DiffEntryWidget extends BaseWidget {
      */
     get lineChanges(): readonly monaco.editor.ILineChange[] | undefined {
         return this.getDiffEditor()?.diffEditor.getLineChanges() ?? undefined;
+    }
+
+    /**
+     * Whether the entry has finished loading without a diff: its editor failed to load, or its editor is not a diff editor.
+     */
+    get hasNoDiff(): boolean {
+        return !this.loading && this.loadAttempted && !this.getDiffEditor();
     }
 
     /**
@@ -295,6 +306,7 @@ export class DiffEntryWidget extends BaseWidget {
     }
 
     protected async doLoadEditor(createEditor: () => Promise<EditorWidget>): Promise<void> {
+        let failed = false;
         try {
             const editorWidget = await createEditor();
             if (this.isDisposed) {
@@ -307,9 +319,13 @@ export class DiffEntryWidget extends BaseWidget {
             if (!this.isDisposed) {
                 const message = error instanceof Error ? error.message : String(error);
                 this.setError(nls.localize('theia/scm/multiDiffEditor/loadFailed', 'Failed to load diff: {0}', message));
+                failed = true;
             }
         } finally {
             this.loading = false;
+        }
+        if (failed) {
+            this.onDidFailToLoadEditorEmitter.fire();
         }
     }
 
@@ -547,6 +563,7 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
                     this.scrollToEntry(entry);
                 }
             }),
+            entry.onDidFailToLoadEditor(() => this.onDidChangeNavigationStateEmitter.fire()),
             entry.onDidChangeCollapsed(() => this.onDidChangeNavigationStateEmitter.fire())
         ]);
         this.entryObserver?.observe(entry.node);
@@ -587,6 +604,8 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
         if (!entry) {
             return;
         }
+        // Change and file navigation continue from the revealed entry.
+        this.setFocusedEntry(entry, false);
         this.revealEntry(entry);
     }
 
@@ -613,7 +632,7 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
     }
 
     /**
-     * Check for a change before the cursor. Entries that are not loaded yet count as entries with changes.
+     * Check for a change before the cursor. Entries that are not loaded yet count as entries with changes, entries without a diff as entries without.
      */
     hasPreviousChange(): boolean {
         const index = this.getFocusedIndex();
@@ -627,7 +646,7 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
     }
 
     /**
-     * Check for a change after the cursor. Entries that are not loaded yet count as entries with changes.
+     * Check for a change after the cursor. Entries that are not loaded yet count as entries with changes, entries without a diff as entries without.
      */
     hasNextChange(): boolean {
         const index = this.getFocusedIndex();
@@ -741,11 +760,12 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
 
     /**
      * The first modified line of each change, as used by Monaco's diff navigation, or `undefined` while the diff is not known.
+     * An entry without a diff has no changes.
      */
     protected getKnownChangeLines(entry: DiffEntryWidget): number[] | undefined {
         const changes = entry.lineChanges;
         if (!changes) {
-            return undefined;
+            return entry.hasNoDiff ? [] : undefined;
         }
         const lineCount = entry.getDiffEditor()?.diffEditor.getModifiedEditor().getModel()?.getLineCount() ?? 1;
         // A deletion has no modified lines, so it starts at the line after the deleted range.
