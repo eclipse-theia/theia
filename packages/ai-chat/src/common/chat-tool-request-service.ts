@@ -260,7 +260,7 @@ export class ChatToolRequestService {
             return invoke();
         }
 
-        const result = await invoke();
+        const result = await this.invokeCatchingRejection(toolRequest, invoke);
         if (!this.isErrorResult(result)) {
             // A non-error outcome breaks any ongoing run of identical failures.
             this.loopGuardStates.delete(this.loopGuardSessionKey(request));
@@ -326,6 +326,48 @@ export class ChatToolRequestService {
         }
 
         return result;
+    }
+
+    /**
+     * Invokes the tool handler, converting a rejection into a {@link ToolCallResult} error instead of letting
+     * it propagate. This has two benefits: the loop guard can count a consistently-rejecting tool the same way
+     * it counts a tool that returns an error result, and the language model is handed a concrete error message
+     * even when the tool rejects with nothing useful (e.g. `throw undefined` or an `Error` with an empty
+     * message), so it has something to react to instead of an opaque failure.
+     */
+    protected async invokeCatchingRejection(toolRequest: ToolRequest, invoke: () => Promise<ToolCallResult>): Promise<ToolCallResult> {
+        try {
+            return await invoke();
+        } catch (error) {
+            const toolName = toolRequest.name ?? toolRequest.id;
+            const message = this.describeRejection(error);
+            return createToolCallError(`Tool '${toolName}' failed: ${message}`);
+        }
+    }
+
+    /**
+     * Produces a human-readable description of a tool rejection reason, falling back to a generic message when
+     * the tool rejected without one (e.g. `undefined`, an empty string, or an `Error` with an empty message),
+     * so the model always has something actionable to work with.
+     */
+    protected describeRejection(error: unknown): string {
+        if (error instanceof Error && error.message) {
+            return error.message;
+        }
+        if (typeof error === 'string' && error.length > 0) {
+            return error;
+        }
+        if (error) {
+            try {
+                const serialized = JSON.stringify(error);
+                if (serialized && serialized !== '{}' && serialized !== 'null') {
+                    return serialized;
+                }
+            } catch {
+                // fall through to the generic message
+            }
+        }
+        return 'the tool rejected without providing an error message.';
     }
 
     /**

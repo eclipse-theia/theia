@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ToolInvocationContext, ToolRequest, ToolCallResult, formatToolCallContentForModel } from '@theia/ai-core';
-import { ILogger, URI } from '@theia/core';
+import { ILogger, URI, generateUuid } from '@theia/core';
 import { PreferenceService } from '@theia/core/lib/common';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
@@ -81,14 +81,21 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
     protected override getLoopGuardConfig(_request: MutableChatRequestModel): ToolLoopGuardConfig {
         const enabled = this.preferenceService.get<boolean>(TOOL_LOOP_GUARD_ENABLED_PREF, true);
         const refreshThreshold = Math.max(1, this.preferenceService.get<number>(TOOL_LOOP_GUARD_REFRESH_THRESHOLD_PREF, 3));
-        // Keep the fail threshold strictly above the refresh threshold, so a refresh always gets a chance to break the loop.
-        const failThreshold = Math.max(refreshThreshold + 1, this.preferenceService.get<number>(TOOL_LOOP_GUARD_FAIL_THRESHOLD_PREF, 5));
-        // A prompt threshold of 0 disables the prompt. Otherwise keep it strictly between the refresh and fail
-        // thresholds, so the refresh always runs first and the user is asked before the request is failed.
         const rawPromptThreshold = this.preferenceService.get<number>(TOOL_LOOP_GUARD_PROMPT_THRESHOLD_PREF, 4);
-        const promptThreshold = rawPromptThreshold <= 0
-            ? 0
-            : Math.min(failThreshold - 1, Math.max(refreshThreshold + 1, rawPromptThreshold));
+        const rawFailThreshold = this.preferenceService.get<number>(TOOL_LOOP_GUARD_FAIL_THRESHOLD_PREF, 5);
+
+        // A prompt threshold of 0 disables the prompt. Otherwise the three stages must run on distinct attempts
+        // (refresh < prompt < fail): the refresh and fail branches both return early, so a prompt sharing an
+        // attempt with either would never be reached (e.g. refresh=4 collapsing prompt to 4 and fail to 5 leaves
+        // no attempt for the prompt). We therefore give the prompt its own attempt above the refresh and reserve
+        // a further attempt above it for the failure.
+        const promptEnabled = rawPromptThreshold > 0;
+        const promptThreshold = promptEnabled
+            ? Math.max(refreshThreshold + 1, rawPromptThreshold)
+            : 0;
+        // The fail threshold must stay above whichever earlier stage is active, so each gets its own attempt.
+        const minFailThreshold = promptEnabled ? promptThreshold + 1 : refreshThreshold + 1;
+        const failThreshold = Math.max(minFailThreshold, rawFailThreshold);
         return { enabled, refreshThreshold, promptThreshold, failThreshold };
     }
 
@@ -122,7 +129,11 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
 
         const toolName = toolRequest.name ?? toolRequest.id;
         const promptContent = new ToolCallChatResponseContentImpl(
-            `loop-guard-continue-${request.id}-${count}`,
+            // Use a fresh id per prompt: reusing `request.id`/`count` would collide when a successful call
+            // resets the counter and a later run in the same request reaches the same count again. `addContent`
+            // merges same-id content into the existing response object, so the second prompt would be awaited on
+            // a new object while the UI still references the old one, leaving it unanswerable.
+            `loop-guard-continue-${generateUuid()}`,
             LOOP_GUARD_CONTINUE_TOOL_ID,
             JSON.stringify({
                 tool: toolName,

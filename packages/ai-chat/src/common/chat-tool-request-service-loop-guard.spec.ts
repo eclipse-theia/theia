@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ToolCallResult, ToolRequest, createToolCallError, isToolCallContent, isToolLoopDetectedError } from '@theia/ai-core';
+import { ToolCallResult, ToolRequest, createToolCallError, formatToolCallContentForModel, isToolCallContent, isToolLoopDetectedError } from '@theia/ai-core';
 import { URI } from '@theia/core';
 import { expect } from 'chai';
 import { FileReadTracker } from './file-read-tracker.js';
@@ -209,6 +209,35 @@ describe('ChatToolRequestService loop guard', () => {
             last = await service.run(tool, ARGS, request(), error);
         }
         expect(loopDetectedText(last!)).to.contain('only a hint to stop');
+    });
+
+    describe('tool rejection', () => {
+
+        it('converts a rejection into a counted error result instead of throwing', async () => {
+            const tracker = new FakeFileReadTracker();
+            const service = new TestChatToolRequestService(tracker);
+            const reject = () => Promise.reject(new Error('boom'));
+
+            // A rejection must be surfaced as a tool-call error, not propagated to the caller.
+            const first = await service.run(tool, ARGS, request(), reject);
+            expect(loopDetectedText(first)).to.be.undefined;
+            expect(formatToolCallContentForModel(first)).to.contain('boom');
+
+            // Consecutive identical rejections are counted like error results and trip the refresh threshold.
+            await service.run(tool, ARGS, request(), reject); // 2
+            await service.run(tool, ARGS, request(), reject); // 3 -> refresh
+            expect(tracker.refreshCalls).to.have.lengthOf(1);
+        });
+
+        it('provides a concrete message when the tool rejects without one', async () => {
+            const service = new TestChatToolRequestService();
+            const rejectEmpty = () => Promise.reject(undefined);
+
+            const result = await service.run(tool, ARGS, request(), rejectEmpty);
+            const text = formatToolCallContentForModel(result);
+            expect(text).to.contain(tool.name!);
+            expect(text).to.contain('without providing an error message');
+        });
     });
 
     describe('continue prompt', () => {
