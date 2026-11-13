@@ -20,6 +20,8 @@ import spies from 'chai-spies';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from './uint8-array-message-buffer.js';
 import { ChannelMultiplexer, ForwardingChannel, MessageProvider } from './channel.js';
 import { RpcProtocol } from './rpc-protocol.js';
+import { CancellationToken, CancellationTokenSource } from '../cancellation.js';
+import { Deferred } from '../promise-util.js';
 
 use(spies);
 
@@ -200,6 +202,27 @@ describe('Message Channel', () => {
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             expect((protocol as any).pendingRequests.size).to.equal(0);
+        });
+    });
+
+    describe('RPC protocol cancellation', () => {
+        it('should cancel the token of a request still being handled when the channel closes', async () => {
+            const pipe = new ChannelPipe();
+            const handling = new Deferred<CancellationToken>();
+            new RpcProtocol(pipe.right, (_method, args) => {
+                const requestToken: CancellationToken = args[args.length - 1];
+                handling.resolve(requestToken);
+                return new Promise(resolve => requestToken.onCancellationRequested(resolve));
+            });
+            const client = new RpcProtocol(pipe.left, undefined, { mode: 'clientOnly' });
+
+            client.sendRequest('longRunning', [new CancellationTokenSource().token]).catch(() => { });
+            const token = await handling.promise;
+            expect(token.isCancellationRequested).to.be.false;
+
+            pipe.right.onCloseEmitter.fire({ reason: 'connection lost' });
+
+            expect(token.isCancellationRequested).to.be.true;
         });
     });
 });
