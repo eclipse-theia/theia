@@ -37,6 +37,7 @@ import { DebugExtImpl } from '../../../plugin/debug/debug-ext.js';
 import { LocalizationExtImpl } from '../../../plugin/localization-ext.js';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { TelemetryExtImpl } from '../../../plugin/telemetry-ext.js';
+import { VsCodeExtensionLoader } from './vscode-extension-loader.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ctx = self as any;
@@ -81,4 +82,5 @@ export default new ContainerModule(bind => {
     bind(TerminalServiceExtImpl).toSelf().inSingletonScope();
     bind(MinimalTerminalServiceExt).toService(TerminalServiceExtImpl);
     bind(TelemetryExtImpl).toSelf().inSingletonScope();
+    bind(VsCodeExtensionLoader).toSelf().inSingletonScope();
 });

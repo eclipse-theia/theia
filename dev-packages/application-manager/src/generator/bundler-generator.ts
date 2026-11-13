@@ -148,8 +148,6 @@ export const browserOptions = {
         'secondary-window': './src-gen/frontend/secondary-index.js',
         ${this.ifMonaco(() => "'editor.worker': '@theia/monaco-editor-core/esm/vs/editor/common/services/editorWebWorkerMain.js',")}
         ${this.ifPackage('@theia/plugin-ext', "'plugin-worker': '@theia/plugin-ext/lib/hosted/browser/worker/worker-main.js',")}
-        ${this.ifPackage('@theia/plugin-ext-vscode', `// frontend plugin host initialization, which the plugin worker loads with \`importScripts\`:
-        'context/plugin-vscode-init-fe': '@theia/plugin-ext-vscode/lib/node/context/plugin-vscode-init-fe.js',`)}
     },
     assetNames: '[name]',
     bundle: true,

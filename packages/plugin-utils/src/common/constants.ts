@@ -30,8 +30,6 @@ export const LIST_JSON = 'list.json';
 
 export const VSCODE_BUILTIN_NAME_PREFIX = '@theia/vscode-builtin-';
 
-export const VSCODE_FRONTEND_INIT = 'plugin-vscode-init-fe.js';
-
 export const THEIA_PLUGIN_START_METHOD = 'start';
 export const THEIA_PLUGIN_STOP_METHOD = 'stop';
 

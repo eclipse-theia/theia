@@ -21,8 +21,7 @@ import {
     THEIA_PLUGIN_STOP_METHOD,
     UNPUBLISHED,
     VSCODE_EXTENSION_ACTIVATE,
-    VSCODE_EXTENSION_DEACTIVATE,
-    VSCODE_FRONTEND_INIT
+    VSCODE_EXTENSION_DEACTIVATE
 } from './constants.js';
 import type {
     PluginEntryPoint,
@@ -212,7 +211,6 @@ export function buildLifecycle(manifest: PluginManifest, engineType: 'theiaPlugi
     return {
         startMethod: VSCODE_EXTENSION_ACTIVATE,
         stopMethod: VSCODE_EXTENSION_DEACTIVATE,
-        frontendModuleName,
-        frontendInitPath: VSCODE_FRONTEND_INIT
+        frontendModuleName
     };
 }

@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.78.0 - tbd
+
+<a name="breaking_changes_1.78.0">[Breaking Changes:](#breaking_changes_1.78.0)</a>
+
+- [plugin-ext, plugin-ext-headless, plugin-ext-vscode, plugin-utils] VS Code web extensions are loaded like in VS Code: the plugin web worker fetches the browser entry point and evaluates it as a CommonJS module with its own `module`, `exports` and `require`. `require('vscode')` returns the API of the extension, and requiring any other module throws `Cannot load module`. Removed the `plugin-vscode-init-fe.js` worker script, the `PluginLifecycle.frontendInitPath` property and the `VSCODE_FRONTEND_INIT` constant. A Content Security Policy that applies to the plugin worker must allow `'unsafe-eval'` [#18289](https://github.com/eclipse-theia/theia/pull/18289)
+
 ## 1.77.0 - 11/5/2026
 
 - [all] switched runtime packages from CommonJS to ES modules [#18216](https://github.com/eclipse-theia/theia/pull/18216)
