@@ -36,7 +36,7 @@ export class ShellEnvironmentTimeoutError extends Error {
 }
 
 /**
- * Resolves the environment of the user's login shell when the backend starts and applies it to `process.env`,
+ * Resolves the environment of the user's login shell when the backend starts and applies its `PATH` to `process.env`,
  * see {@link ShellEnvironmentServer}.
  *
  * The shell is run as an interactive login shell, so that it reads the same dotfiles as a terminal, and prints
@@ -46,7 +46,7 @@ export class ShellEnvironmentTimeoutError extends Error {
  * timeout expires.
  */
 @injectable()
-export class ShellEnvironmentImpl implements ShellEnvironmentServer, BackendApplicationContribution {
+export class ShellEnvironmentServerImpl implements ShellEnvironmentServer, BackendApplicationContribution {
 
     /**
      * Set in the environment of the login shell, so that dotfiles can tell the resolution from a terminal session.
@@ -54,7 +54,7 @@ export class ShellEnvironmentImpl implements ShellEnvironmentServer, BackendAppl
      */
     static readonly RESOLVING_VARIABLE = 'THEIA_RESOLVING_ENVIRONMENT';
 
-    @inject(ILogger) @named('core:ShellEnvironmentImpl')
+    @inject(ILogger) @named('core:ShellEnvironmentServerImpl')
     protected readonly logger: ILogger;
 
     @inject(SettingService)
@@ -93,7 +93,7 @@ export class ShellEnvironmentImpl implements ShellEnvironmentServer, BackendAppl
             const timeout = await this.getResolutionTimeout();
             const env = await this.stopwatch.startAsync('shell-environment', 'Resolving the login shell environment',
                 () => this.resolveLoginShellEnvironment(timeout));
-            this.apply(env);
+            this.apply(this.sanitize(env));
             return { status: 'applied' };
         } catch (error) {
             if (error instanceof ShellEnvironmentTimeoutError) {
@@ -117,7 +117,7 @@ export class ShellEnvironmentImpl implements ShellEnvironmentServer, BackendAppl
         if (!environment.electron.is()) {
             return 'the application is not an Electron application';
         }
-        if (process.env[ShellEnvironmentImpl.RESOLVING_VARIABLE]) {
+        if (process.env[ShellEnvironmentServerImpl.RESOLVING_VARIABLE]) {
             return 'the backend was started from the login shell that is being resolved';
         }
         return undefined;
@@ -144,7 +144,8 @@ export class ShellEnvironmentImpl implements ShellEnvironmentServer, BackendAppl
     /**
      * Runs the login shell and returns the environment that it prints, see {@link getShellArguments}.
      *
-     * @param timeout the time in seconds after which the shell is killed and the result is a {@link ShellEnvironmentTimeoutError}
+     * @param timeout the time in seconds after which a shell that is still running is killed. The result is then a
+     *   {@link ShellEnvironmentTimeoutError}, unless the shell has printed its environment or exited already.
      */
     protected resolveLoginShellEnvironment(timeout: number): Promise<NodeJS.ProcessEnv> {
         const shell = this.getLoginShell();
@@ -159,41 +160,80 @@ export class ShellEnvironmentImpl implements ShellEnvironmentServer, BackendAppl
                 env: this.getShellEnvironment(),
                 windowsHide: true
             });
+            const stdout: Buffer[] = [];
+            const stderr: Buffer[] = [];
+            const output = (): string => Buffer.concat(stdout).toString('utf8');
+            let exit: { code: number | null, signal: NodeJS.Signals | null } | undefined;
             let settled = false;
             const settle = (outcome: () => void): void => {
                 if (!settled) {
                     settled = true;
                     clearTimeout(timer);
+                    const errors = Buffer.concat(stderr).toString('utf8').trim();
+                    if (errors) {
+                        this.logger.debug(`The login shell printed to stderr:\n${errors}`);
+                    }
                     outcome();
                 }
             };
-            const timer = setTimeout(() => {
-                // Give up first, then kill: a program that the shell configuration started may have escaped the process
-                // group and keep the output open, in which case the shell never closes and nothing must wait for it.
-                settle(() => reject(new ShellEnvironmentTimeoutError(timeout)));
-                this.kill(child);
-            }, timeout * 1000);
-            const stdout: Buffer[] = [];
-            const stderr: Buffer[] = [];
-            child.stdout!.on('data', chunk => stdout.push(chunk));
-            child.stderr!.on('data', chunk => stderr.push(chunk));
-            child.on('error', error => settle(() => reject(error)));
-            child.on('close', (code, signal) => {
-                const errors = Buffer.concat(stderr).toString('utf8').trim();
-                if (errors) {
-                    this.logger.debug(`The login shell printed to stderr:\n${errors}`);
-                }
-                settle(() => {
-                    if (code || signal) {
-                        reject(new Error(`The login shell exited with ${signal ? `signal ${signal}` : `code ${code}`}`));
-                    } else {
-                        try {
-                            resolve(this.parseEnvironment(Buffer.concat(stdout).toString('utf8'), mark));
-                        } catch (error) {
-                            reject(error);
-                        }
+            const complete = (): void => settle(() => {
+                if (exit?.code || exit?.signal) {
+                    reject(new Error(`The login shell exited with ${exit.signal ? `signal ${exit.signal}` : `code ${exit.code}`}`));
+                } else {
+                    try {
+                        resolve(this.parseEnvironment(output(), mark));
+                    } catch (error) {
+                        reject(error);
                     }
-                });
+                }
+            });
+            // A program that the shell configuration started in the background without redirecting its output keeps the pipes
+            // open after the shell has exited, so the shell's 'close' may come much later than its 'exit', or never. The
+            // environment is taken as soon as the shell has exited and printed it, whichever comes last. After that, the output
+            // is still read but discarded, so that the program can go on writing to it.
+            const completeIfPrinted = (): void => {
+                if (exit && this.hasPrintedEnvironment(output(), mark)) {
+                    complete();
+                }
+            };
+            const timer = setTimeout(() => {
+                if (exit || this.hasPrintedEnvironment(output(), mark)) {
+                    // The shell has exited without printing its environment, or printed it but does not exit:
+                    // report the outcome rather than the timeout.
+                    complete();
+                } else {
+                    // Give up first, then kill: a program that the shell configuration started may have escaped the process
+                    // group and keep the output open, in which case the shell never closes and nothing must wait for it.
+                    settle(() => reject(new ShellEnvironmentTimeoutError(timeout)));
+                }
+                if (!exit) {
+                    this.kill(child);
+                }
+            }, timeout * 1000);
+            child.stdout!.on('data', chunk => {
+                if (!settled) {
+                    stdout.push(chunk);
+                    completeIfPrinted();
+                }
+            });
+            child.stderr!.on('data', chunk => {
+                if (!settled) {
+                    stderr.push(chunk);
+                }
+            });
+            child.on('error', error => settle(() => reject(error)));
+            child.on('exit', (code, signal) => {
+                exit = { code, signal };
+                if (code || signal) {
+                    complete();
+                } else {
+                    // Otherwise, what the shell printed last may not have been read yet: wait for it, or for 'close'.
+                    completeIfPrinted();
+                }
+            });
+            child.on('close', (code, signal) => {
+                exit ??= { code, signal };
+                complete();
             });
         });
     }
@@ -217,15 +257,26 @@ export class ShellEnvironmentImpl implements ShellEnvironmentServer, BackendAppl
      * The arguments that make the `shell` run as an interactive login shell and print its environment
      * as JSON between two occurrences of the `mark`. The environment is printed by the `executable`, this one
      * by default, running as Node, so that no shell builtin is involved and no value can be misread, however it is formatted.
+     * Xonsh, whose commands are Python, prints it with Python.
      */
     protected getShellArguments(shell: string, mark: string, executable: string = process.execPath): string[] {
         const name = basename(shell);
-        if (/^pwsh(-preview)?$/.test(name)) {
+        if (/^(pwsh|powershell)(-preview)?$/.test(name)) {
             // Older versions of PowerShell drop double quotes, so a single quote is escaped as two inside a single-quoted string.
             return ['-Login', '-Command', `& '${executable.replace(/'/g, "''")}' -p '''${mark}'' + JSON.stringify(process.env) + ''${mark}'''`];
         }
+        if (name === 'xonsh') {
+            return ['-i', '-l', '-c', `import os, json; print("${mark}", json.dumps(dict(os.environ)), "${mark}")`];
+        }
+        const script = `'"${mark}" + JSON.stringify(process.env) + "${mark}"'`;
+        if (name === 'nu') {
+            // Nushell runs a quoted path in command position only after a caret. Its single-quoted strings have no escapes,
+            // so a path that contains a single quote is put in a double-quoted string instead.
+            const quoted = executable.includes("'") ? `"${executable.replace(/[\\"]/g, '\\$&')}"` : `'${executable}'`;
+            return ['-i', '-l', '-c', `^${quoted} -p ${script}`];
+        }
         // A single quote cannot be escaped inside a single-quoted string, so the string is closed around an escaped quote.
-        const command = `'${executable.replace(/'/g, "'\\''")}' -p '"${mark}" + JSON.stringify(process.env) + "${mark}"'`;
+        const command = `'${executable.replace(/'/g, "'\\''")}' -p ${script}`;
         if (name === 'csh' || name === 'tcsh') {
             return ['-ic', command];
         }
@@ -233,21 +284,38 @@ export class ShellEnvironmentImpl implements ShellEnvironmentServer, BackendAppl
     }
 
     /**
-     * The environment to run the login shell in: the backend's own, plus the variables that make the executable
-     * run as Node and that announce the resolution to the dotfiles. {@link sanitize} removes them from the result.
+     * The environment to run the login shell in: the backend's own, plus the {@link getResolutionVariables resolution variables}.
      */
     protected getShellEnvironment(): NodeJS.ProcessEnv {
         return {
             ...process.env,
+            ...this.getResolutionVariables()
+        };
+    }
+
+    /**
+     * The variables that are set in the environment of the login shell for the resolution: those that make the executable
+     * run as Node and that announce the resolution to the dotfiles. {@link sanitize} removes them from the result.
+     */
+    protected getResolutionVariables(): NodeJS.ProcessEnv {
+        return {
             // The executable is Electron in an Electron application; this makes it run as Node.
             ELECTRON_RUN_AS_NODE: '1',
             ELECTRON_NO_ATTACH_CONSOLE: '1',
-            [ShellEnvironmentImpl.RESOLVING_VARIABLE]: '1',
+            [ShellEnvironmentServerImpl.RESOLVING_VARIABLE]: '1',
             // Keep Oh My Zsh from waiting on its update prompt and its tmux plugin from replacing the shell with tmux.
             DISABLE_AUTO_UPDATE: 'true',
             ZSH_TMUX_AUTOSTART: 'false',
             ZSH_TMUX_AUTOSTARTED: 'true'
         };
+    }
+
+    /**
+     * Whether the `output` of the shell contains the environment between two occurrences of the `mark`, see {@link getShellArguments}.
+     */
+    protected hasPrintedEnvironment(output: string, mark: string): boolean {
+        const start = output.indexOf(mark);
+        return start >= 0 && output.indexOf(mark, start + mark.length) >= 0;
     }
 
     /**
@@ -268,34 +336,34 @@ export class ShellEnvironmentImpl implements ShellEnvironmentServer, BackendAppl
     }
 
     /**
-     * Applies the `env` of the login shell to `process.env`, after {@link sanitize sanitizing} it.
-     * Variables that the login shell does not define are left as they are.
-     */
-    protected apply(env: NodeJS.ProcessEnv): void {
-        const sanitized = this.sanitize(env);
-        Object.assign(process.env, sanitized);
-        this.logger.debug(`Applied ${Object.keys(sanitized).length} variables of the login shell environment to the backend.`);
-    }
-
-    /**
-     * Removes from the `env` of the login shell the variables that {@link getShellEnvironment} added for the resolution,
-     * restoring the backend's own values, and the variables that must not be taken from a login shell.
+     * Removes from the `env` that the login shell printed the {@link getResolutionVariables resolution variables},
+     * restoring the backend's own values of them.
      */
     protected sanitize(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
         const result = { ...env };
-        const added = ['ELECTRON_RUN_AS_NODE', 'ELECTRON_NO_ATTACH_CONSOLE', ShellEnvironmentImpl.RESOLVING_VARIABLE,
-            'DISABLE_AUTO_UPDATE', 'ZSH_TMUX_AUTOSTART', 'ZSH_TMUX_AUTOSTARTED'];
-        for (const key of added) {
+        for (const key of Object.keys(this.getResolutionVariables())) {
             if (process.env[key] === undefined) {
                 delete result[key];
             } else {
                 result[key] = process.env[key];
             }
         }
-        // The runtime directory of a login session is not the one of the GUI session,
-        // see https://github.com/microsoft/vscode/issues/22593#issuecomment-336050758.
-        delete result.XDG_RUNTIME_DIR;
         return result;
+    }
+
+    /**
+     * Applies the `PATH` of the login shell to `process.env`, which is what the processes spawned by the backend need to find
+     * the user's tools. The other variables of the login shell are not applied; override this method to apply more of them.
+     *
+     * @param env the {@link sanitize sanitized} environment of the login shell. It holds whatever else the user's dotfiles
+     *   define, so an override should choose the variables to apply rather than apply them all.
+     */
+    protected apply(env: NodeJS.ProcessEnv): void {
+        if (!env.PATH) {
+            throw new Error('The environment printed by the login shell does not define PATH');
+        }
+        process.env.PATH = env.PATH;
+        this.logger.debug(`Applied the PATH of the login shell to the backend: ${env.PATH}`);
     }
 
     /**

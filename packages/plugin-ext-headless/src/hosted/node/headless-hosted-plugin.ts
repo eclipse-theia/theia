@@ -21,15 +21,15 @@
 
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { getPluginId, DeployedPlugin, HostedPluginServer, PluginDeployer } from '@theia/plugin-ext/lib/common/plugin-protocol';
+import { getPluginId, DeployedPlugin, PluginDeployer } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { setUpPluginApi } from '../../main/node/main-context.js';
 import { RPCProtocol, RPCProtocolImpl } from '@theia/plugin-ext/lib/common/rpc-protocol';
 import { ContributionProvider, Disposable, DisposableCollection, ILogger, nls } from '@theia/core';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { IPCChannel } from '@theia/core/lib/node';
 import { BackendApplicationConfigProvider } from '@theia/core/lib/node/backend-application-config-provider';
-import { ShellEnvironmentServer } from '@theia/core/lib/common/shell-environment';
 import { HostedPluginProcess } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin-process';
+import { HostedPluginServerImpl } from '@theia/plugin-ext/lib/hosted/node/plugin-service';
 import { IShellTerminalServer } from '@theia/terminal/lib/common/shell-terminal-protocol';
 import { HeadlessPluginManagerExt, HEADLESSMAIN_RPC_CONTEXT } from '../../common/headless-plugin-rpc.js';
 import { AbstractHostedPluginSupport, PluginContributions } from '@theia/plugin-ext/lib/hosted/common/hosted-plugin';
@@ -48,7 +48,7 @@ export function isHeadlessPlugin(plugin: DeployedPlugin): boolean {
 }
 
 @injectable()
-export class HeadlessHostedPluginSupport extends AbstractHostedPluginSupport<HeadlessPluginManagerExt, HostedPluginServer> {
+export class HeadlessHostedPluginSupport extends AbstractHostedPluginSupport<HeadlessPluginManagerExt, HostedPluginServerImpl> {
 
     @inject(ILogger) @named('plugin-ext-headless:HeadlessHostedPluginSupport')
     protected override logger: ILogger;
@@ -65,9 +65,6 @@ export class HeadlessHostedPluginSupport extends AbstractHostedPluginSupport<Hea
     @inject(PluginDeployer)
     protected readonly pluginDeployer: PluginDeployerImpl;
 
-    @inject(ShellEnvironmentServer)
-    protected readonly shellEnvironment: ShellEnvironmentServer;
-
     @inject(ContributionProvider)
     @named(SupportedHeadlessActivationEvents)
     protected readonly supportedActivationEventsContributions: ContributionProvider<string[]>;
@@ -81,9 +78,7 @@ export class HeadlessHostedPluginSupport extends AbstractHostedPluginSupport<Hea
     }
 
     protected createTheiaReadyPromise(): Promise<unknown> {
-        // The headless plugin host is forked when the backend starts, before any frontend connects,
-        // so it must wait for the environment of the user's login shell itself.
-        return Promise.all([this.shellEnvironment.whenResolved(), this.envServer.getVariables()]);
+        return Promise.all([this.envServer.getVariables()]);
     }
 
     // Only load headless plugins
@@ -119,6 +114,12 @@ export class HeadlessHostedPluginSupport extends AbstractHostedPluginSupport<Hea
     protected async obtainManager(host: string, hostContributions: PluginContributions[], toDisconnect: DisposableCollection): Promise<HeadlessPluginManagerExt | undefined> {
         let manager = this.managers.get(host);
         if (!manager) {
+            // The plugin host is forked once the environment of the user's login shell is known, see HostedPluginServerImpl.
+            await this.server.whenPluginServerStarted();
+            if (toDisconnect.disposed) {
+                return undefined;
+            }
+
             const pluginId = getPluginId(hostContributions[0].plugin.metadata.model);
             const rpc = this.initRpc(host, pluginId);
             toDisconnect.push(rpc);
@@ -166,7 +167,11 @@ export class HeadlessHostedPluginSupport extends AbstractHostedPluginSupport<Hea
     }
 
     protected createServerRpc(pluginHostId: string): RPCProtocol {
-        const channel = new IPCChannel(this.pluginProcess['childProcess']);
+        const childProcess = this.pluginProcess['childProcess'];
+        if (!childProcess) {
+            throw new Error(`The plugin host '${pluginHostId}' is not running.`);
+        }
+        const channel = new IPCChannel(childProcess);
 
         return new RPCProtocolImpl(channel);
     }

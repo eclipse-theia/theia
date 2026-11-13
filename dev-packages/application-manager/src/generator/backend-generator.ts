@@ -51,8 +51,8 @@ if (process.env.LC_ALL) {
 process.env.LC_NUMERIC = 'C';
 
 (async () => {
-    // A GUI app on macOS and Linux does not inherit the \`$PATH\` and the other variables defined in the user's
-    // dotfiles (.bashrc/.bash_profile/.zshrc/etc). The backend resolves them from the user's login shell once it
+    // A GUI app on macOS and Linux does not inherit the \`$PATH\` defined in the user's
+    // dotfiles (.bashrc/.bash_profile/.zshrc/etc). The backend resolves it from the user's login shell once it
     // has started, see \`ShellEnvironmentServer\` in \`@theia/core\`, so that the start-up does not wait for the shell.
     // https://github.com/electron/electron/issues/550#issuecomment-162037357
 

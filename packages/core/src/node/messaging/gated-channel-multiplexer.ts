@@ -20,8 +20,8 @@ import { Channel, ChannelMultiplexer } from '../../common/message-rpc/channel.js
  * A channel multiplexer that can defer the acknowledgement of a channel that the other side opens until a gate opens.
  * The other side sends nothing on a channel before the acknowledgement, so nothing is lost while the channel is held.
  *
- * The backend holds the service channels of a frontend until the environment of the user's login shell has been
- * applied to `process.env`, so that the services start the user's tools with the right environment,
+ * The backend holds the service channels of a frontend until the `PATH` of the user's login shell has been
+ * applied to `process.env`, so that the services find the user's tools,
  * see `ShellEnvironmentServer` and `ConnectionHandler.independentOfShellEnvironment`.
  */
 export class GatedChannelMultiplexer extends ChannelMultiplexer {

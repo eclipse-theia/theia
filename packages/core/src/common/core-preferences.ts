@@ -62,7 +62,7 @@ export const corePreferenceSchema: PreferenceSchema = {
             maximum: ShellEnvironmentResolutionTimeout.MAX,
             included: environment.electron.is() && !isWindows,
             scope: PreferenceScope.User,
-            description: nls.localize('theia/core/shellEnvironmentResolutionTimeout', 'Controls the timeout in seconds before giving up resolving the environment of your login shell when the application starts. That environment provides the `PATH` and the other variables of your shell configuration to terminals, tasks, debug adapters and extensions. Takes effect at the next start of the application.'),
+            description: nls.localize('theia/core/shellEnvironmentResolutionTimeout', 'Controls the timeout in seconds before giving up resolving the environment of your login shell when the application starts. Its `PATH` lets terminals, tasks, debug adapters, and extensions find the tools that your shell configuration provides. Takes effect at the next start of the application.'),
         },
         'breadcrumbs.enabled': {
             'type': 'boolean',

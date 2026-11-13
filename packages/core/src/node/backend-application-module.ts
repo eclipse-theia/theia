@@ -45,7 +45,7 @@ import { ApplicationServer, applicationPath } from '../common/application-protoc
 import { EnvVariablesServer, envVariablesPath } from './../common/env-variables/index.js';
 import { EnvVariablesServerImpl } from './env-variables/index.js';
 import { ShellEnvironmentServer, shellEnvironmentPath } from '../common/shell-environment.js';
-import { ShellEnvironmentImpl } from './shell-environment.js';
+import { ShellEnvironmentServerImpl } from './shell-environment.js';
 import { ConnectionContainerModule } from './messaging/connection-container-module.js';
 import { QuickInputService, quickInputServicePath, QuickPickService, quickPickServicePath } from '../common/quick-pick-service.js';
 import { WsRequestValidator, WsRequestValidatorContribution } from './ws-request-validators.js';
@@ -134,9 +134,9 @@ export const backendApplicationModule = new ContainerModule(bind => {
         }, { independentOfShellEnvironment: true })
     ).inSingletonScope();
 
-    bind(ShellEnvironmentImpl).toSelf().inSingletonScope();
-    bind(ShellEnvironmentServer).toService(ShellEnvironmentImpl);
-    bind(BackendApplicationContribution).toService(ShellEnvironmentImpl);
+    bind(ShellEnvironmentServerImpl).toSelf().inSingletonScope();
+    bind(ShellEnvironmentServer).toService(ShellEnvironmentServerImpl);
+    bind(BackendApplicationContribution).toService(ShellEnvironmentServerImpl);
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler(shellEnvironmentPath, () => ctx.container.get<ShellEnvironmentServer>(ShellEnvironmentServer),
             { independentOfShellEnvironment: true })

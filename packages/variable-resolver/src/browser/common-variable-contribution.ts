@@ -35,7 +35,7 @@ export class CommonVariableContribution implements VariableContribution {
     @inject(EnvVariablesServer)
     protected readonly env: EnvVariablesServer;
 
-    /** Bound in Electron frontends only, where the backend completes its environment with that of the user's login shell after it started. */
+    /** Bound in Electron frontends only, where the backend takes the `PATH` of the user's login shell after it started. */
     @inject(ShellEnvironmentServer) @optional()
     protected readonly shellEnvironment: ShellEnvironmentServer | undefined;
 

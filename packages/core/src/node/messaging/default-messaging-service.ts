@@ -86,10 +86,10 @@ export class DefaultMessagingService implements MessagingService, BackendApplica
     }
 
     /**
-     * Holds the opening of a service channel until the environment of the user's login shell has been applied to `process.env`,
+     * Holds the opening of a service channel until the `PATH` of the user's login shell has been applied to `process.env`,
      * unless the service is declared independent of it (see `ConnectionHandler.independentOfShellEnvironment`). Terminals, tasks,
      * debug sessions, the plugin host and whatever else runs the user's tools are requested through these channels, so by the
-     * time a request arrives, the environment is complete. In a browser deployment and on Windows, nothing is held.
+     * time a request arrives, they find those tools. In a browser deployment and on Windows, nothing is held.
      *
      * @returns the promise to wait for, or `undefined` if the channel is not to be held
      */

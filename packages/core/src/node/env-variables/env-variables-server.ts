@@ -30,7 +30,7 @@ import { ILogger } from '../../common/logger.js';
  * Serves the environment variables of the backend process.
  *
  * The variables are read from `process.env` on every request rather than captured once, because the backend
- * completes its environment with that of the user's login shell after it has started, see `ShellEnvironmentServer`.
+ * takes the `PATH` of the user's login shell after it has started, see `ShellEnvironmentServer`.
  */
 @injectable()
 export class EnvVariablesServerImpl implements EnvVariablesServer {

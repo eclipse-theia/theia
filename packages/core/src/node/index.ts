@@ -23,6 +23,6 @@ export * from './cli.js';
 export * from './setting-service.js';
 export { FileSystemLocking } from './filesystem-locking.js';
 export { BundledResourceProvider } from './bundled-resource-provider.js';
-export { ShellEnvironmentImpl, ShellEnvironmentTimeoutError } from './shell-environment.js';
+export { ShellEnvironmentServerImpl, ShellEnvironmentTimeoutError } from './shell-environment.js';
 export { BackendRequestAllowedContribution } from './request/backend-request-facade.js';
 export { HttpConnectionValidator } from './hosting/browser-connection-token.js';

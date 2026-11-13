@@ -208,7 +208,7 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     }
 
     /**
-     * Starts the plugin host once the environment of the user's login shell has been applied to `process.env`,
+     * Starts the plugin host once the `PATH` of the user's login shell has been applied to `process.env`,
      * so that the plugins and the processes they start find the user's tools. The plugin metadata does not wait for it.
      * Messages for the plugin host wait for the start, see {@link onMessage}.
      */
@@ -223,6 +223,14 @@ export class HostedPluginServerImpl implements HostedPluginServer {
             this.pluginServerStarted.catch(error => this.logger.error('Could not start the plugin host:', error));
         }
         return this.pluginServerStarted;
+    }
+
+    /**
+     * Settles once the plugin host has been started, see {@link startPluginServer}, and rejects if it could not be started.
+     * Resolves at once if the plugin host has not been started, for example because no backend plugin is deployed.
+     */
+    whenPluginServerStarted(): Promise<void> {
+        return this.pluginServerStarted ?? Promise.resolve();
     }
 
     async onMessage(pluginHostId: string, message: Uint8Array): Promise<void> {

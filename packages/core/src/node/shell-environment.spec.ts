@@ -22,7 +22,7 @@ import { ShellEnvironmentResolutionTimeout } from '../common/shell-environment.j
 import { MockLogger } from '../common/test/mock-logger.js';
 import { NodeStopwatch } from './performance/node-stopwatch.js';
 import { SettingService } from './setting-service.js';
-import { ShellEnvironmentImpl } from './shell-environment.js';
+import { ShellEnvironmentServerImpl } from './shell-environment.js';
 
 /** A setting service that keeps its values in memory and counts the writes. */
 class TestSettingService implements SettingService {
@@ -43,7 +43,7 @@ class TestSettingService implements SettingService {
  * The service with the login shell replaced by Node running a script, so that the tests run without a shell,
  * and with the resolution enabled, which it is not where the tests run.
  */
-class TestShellEnvironment extends ShellEnvironmentImpl {
+class TestShellEnvironment extends ShellEnvironmentServerImpl {
     /** The script to run in place of the login shell's command. Its first argument is the marker. */
     script = '';
 
@@ -62,23 +62,35 @@ class TestShellEnvironment extends ShellEnvironmentImpl {
     override getResolutionTimeout(): Promise<number> {
         return super.getResolutionTimeout();
     }
+
+    /** The environment that was handed over to be applied. */
+    applied: NodeJS.ProcessEnv | undefined;
+
+    protected override apply(env: NodeJS.ProcessEnv): void {
+        this.applied = env;
+        super.apply(env);
+    }
 }
 
 /** The service with the shell arguments exposed. */
-class ExposedShellEnvironment extends ShellEnvironmentImpl {
+class ExposedShellEnvironment extends ShellEnvironmentServerImpl {
     override getShellArguments(shell: string, mark: string, executable?: string): string[] {
         return super.getShellArguments(shell, mark, executable);
     }
 }
 
-describe('ShellEnvironmentImpl', () => {
+describe('ShellEnvironmentServerImpl', () => {
 
     const prefix = 'THEIA_SHELL_ENVIRONMENT_SPEC_';
-    const restored = ['ELECTRON_RUN_AS_NODE', 'THEIA_RESOLVING_ENVIRONMENT', 'DISABLE_AUTO_UPDATE', 'XDG_RUNTIME_DIR'];
+    const restored = ['PATH', 'ELECTRON_RUN_AS_NODE', 'THEIA_RESOLVING_ENVIRONMENT', 'DISABLE_AUTO_UPDATE', 'XDG_RUNTIME_DIR', 'DEBUG'];
     let original: Map<string, string | undefined>;
 
     /** The script writes the given JSON source between the markers, with what dotfiles might print around it. */
     const printing = (json: string) => `process.stdout.write('Welcome!\\n' + process.argv[1] + JSON.stringify(${json}) + process.argv[1] + '\\nbye\\n')`;
+
+    /** The script starts a detached program that inherits the stdout of the "shell" and keeps it open for four seconds. */
+    const backgroundJob = "require('child_process').spawn(process.execPath, ['-e', 'setTimeout(() => { }, 4000)'], "
+        + "{ detached: true, stdio: ['ignore', 'inherit', 'ignore'] }).unref();";
 
     const setup = (script: string, timeout?: string): { environment: TestShellEnvironment, settings: TestSettingService } => {
         const container = new Container({ defaultScope: 'Singleton' });
@@ -87,7 +99,7 @@ describe('ShellEnvironmentImpl', () => {
         container.bind(TestSettingService).toSelf();
         container.bind(SettingService).toService(TestSettingService);
         container.bind(TestShellEnvironment).toSelf();
-        container.bind(ShellEnvironmentImpl).toSelf();
+        container.bind(ShellEnvironmentServerImpl).toSelf();
         const settings = container.get(TestSettingService);
         if (timeout !== undefined) {
             settings.values.set(ShellEnvironmentResolutionTimeout.PREFERENCE, timeout);
@@ -116,23 +128,49 @@ describe('ShellEnvironmentImpl', () => {
         }
     });
 
-    it('applies the environment that the login shell prints, ignoring what its configuration prints around it', async () => {
-        const { environment } = setup(printing(`{ ${prefix}VARIABLE: 'from the shell', ${prefix}RESOLVING: process.env.THEIA_RESOLVING_ENVIRONMENT }`));
+    it('applies the PATH that the login shell prints, ignoring what its configuration prints around it', async () => {
+        const { environment } = setup(printing("{ PATH: '/login/bin:/usr/bin' }"));
         expect(await environment.whenResolved()).to.deep.equal({ status: 'applied' });
-        expect(process.env[`${prefix}VARIABLE`]).to.equal('from the shell');
-        // the shell configuration can tell the resolution from a terminal session
-        expect(process.env[`${prefix}RESOLVING`]).to.equal('1');
+        expect(process.env.PATH).to.equal('/login/bin:/usr/bin');
     });
 
-    it('does not apply the variables added for the resolution nor the runtime directory of the login session', async () => {
+    it('runs the login shell with a variable that tells the shell configuration that the environment is being resolved', async () => {
+        const { environment } = setup(printing("{ PATH: '/resolving/' + process.env.THEIA_RESOLVING_ENVIRONMENT }"));
+        expect(await environment.whenResolved()).to.deep.equal({ status: 'applied' });
+        expect(process.env.PATH).to.equal('/resolving/1');
+    });
+
+    it('applies no variable of the login shell but PATH', async () => {
         const { environment } = setup(printing(`{
+            PATH: '/login/bin', ${prefix}VARIABLE: 'from the shell',
             ELECTRON_RUN_AS_NODE: process.env.ELECTRON_RUN_AS_NODE, THEIA_RESOLVING_ENVIRONMENT: '1',
-            DISABLE_AUTO_UPDATE: 'true', XDG_RUNTIME_DIR: '/run/user/login'
+            DISABLE_AUTO_UPDATE: 'true', XDG_RUNTIME_DIR: '/run/user/login', DEBUG: '*'
         }`));
         expect(await environment.whenResolved()).to.deep.equal({ status: 'applied' });
-        for (const key of restored) {
+        expect(process.env.PATH).to.equal('/login/bin');
+        expect(process.env[`${prefix}VARIABLE`]).to.be.undefined;
+        for (const key of restored.filter(variable => variable !== 'PATH')) {
             expect(process.env[key], key).to.equal(original.get(key));
         }
+    });
+
+    it('hands over the environment of the login shell without the variables that were set for the resolution', async () => {
+        process.env.DISABLE_AUTO_UPDATE = 'backend';
+        const { environment } = setup(printing(`{ ...process.env, PATH: '/login/bin', ${prefix}VARIABLE: 'from the shell' }`));
+        expect(await environment.whenResolved()).to.deep.equal({ status: 'applied' });
+        expect(environment.applied).to.include({ PATH: '/login/bin', [`${prefix}VARIABLE`]: 'from the shell' });
+        for (const key of ['ELECTRON_RUN_AS_NODE', 'ELECTRON_NO_ATTACH_CONSOLE', 'THEIA_RESOLVING_ENVIRONMENT',
+            'DISABLE_AUTO_UPDATE', 'ZSH_TMUX_AUTOSTART', 'ZSH_TMUX_AUTOSTARTED']) {
+            expect(environment.applied![key], key).to.equal(process.env[key]);
+        }
+    });
+
+    it('reports a login shell environment that defines no PATH', async () => {
+        const { environment } = setup(printing(`{ ${prefix}VARIABLE: 'from the shell' }`));
+        const resolution = await environment.whenResolved();
+        expect(resolution.status).to.equal('failed');
+        expect(resolution.reason).to.contain('does not define PATH');
+        expect(process.env.PATH).to.equal(original.get('PATH'));
     });
 
     it('gives up on a login shell that does not answer within the timeout', async function (): Promise<void> {
@@ -146,20 +184,43 @@ describe('ShellEnvironmentImpl', () => {
 
     it('gives up at the timeout even if a program started by the shell configuration keeps the output open', async function (): Promise<void> {
         this.timeout(10_000);
-        // the "shell" starts a detached program that inherits its stdout and exits; the pipe stays open until that program ends
-        const script = "require('child_process').spawn(process.execPath, ['-e', 'setTimeout(() => { }, 4000)'], "
-            + "{ detached: true, stdio: ['ignore', 'inherit', 'ignore'] }).unref()";
-        const { environment } = setup(script, '1');
+        // the detached program escapes the killing of the shell's process group and keeps the pipe open
+        const { environment } = setup(backgroundJob + 'setInterval(() => { }, 1000)', '1');
         const start = Date.now();
         expect(await environment.whenResolved()).to.deep.equal({ status: 'timeout' });
         expect(Date.now() - start).to.be.at.most(2500);
     });
 
+    it('applies the environment once the login shell has exited, even if a program that it started keeps the output open', async function (): Promise<void> {
+        this.timeout(10_000);
+        const { environment } = setup(backgroundJob + printing("{ PATH: '/background/job' }"), '3');
+        const start = Date.now();
+        expect(await environment.whenResolved()).to.deep.equal({ status: 'applied' });
+        expect(Date.now() - start).to.be.at.most(2000);
+        expect(process.env.PATH).to.equal('/background/job');
+    });
+
+    it('reports a login shell that exits without printing its environment while a program that it started keeps the output open',
+        async function (): Promise<void> {
+            this.timeout(10_000);
+            const { environment } = setup(backgroundJob, '1');
+            const resolution = await environment.whenResolved();
+            expect(resolution.status).to.equal('failed');
+            expect(resolution.reason).to.contain('did not print its environment');
+        });
+
+    it('applies the environment that the login shell printed, even if it does not exit within the timeout', async function (): Promise<void> {
+        this.timeout(10_000);
+        const { environment } = setup(printing("{ PATH: '/hanging/shell' }") + '; setInterval(() => { }, 1000)', '1');
+        expect(await environment.whenResolved()).to.deep.equal({ status: 'applied' });
+        expect(process.env.PATH).to.equal('/hanging/shell');
+    });
+
     it('settles with the default timeout when the stored timeout cannot be read', async () => {
-        const { environment, settings } = setup(printing(`{ ${prefix}DEFAULT: 'yes' }`));
+        const { environment, settings } = setup(printing("{ PATH: '/default/timeout' }"));
         settings.get = async () => { throw new Error('The settings cannot be read'); };
         expect(await environment.whenResolved()).to.deep.equal({ status: 'applied' });
-        expect(process.env[`${prefix}DEFAULT`]).to.equal('yes');
+        expect(process.env.PATH).to.equal('/default/timeout');
     });
 
     it('reports a login shell that fails', async () => {
@@ -184,14 +245,14 @@ describe('ShellEnvironmentImpl', () => {
     });
 
     it('resolves once and shares the outcome', async () => {
-        const { environment } = setup(printing(`{ ${prefix}ONCE: 'once' }`));
+        const { environment } = setup(printing("{ PATH: '/once' }"));
         environment.initialize();
         const first = environment.whenResolved();
         expect(environment.whenResolved()).to.equal(first);
         expect(await first).to.deep.equal({ status: 'applied' });
-        delete process.env[`${prefix}ONCE`];
+        process.env.PATH = '/changed';
         expect(await environment.whenResolved()).to.deep.equal({ status: 'applied' });
-        expect(process.env[`${prefix}ONCE`]).to.be.undefined;
+        expect(process.env.PATH).to.equal('/changed');
     });
 
     it('skips the resolution where it does not apply', async () => {
@@ -200,8 +261,8 @@ describe('ShellEnvironmentImpl', () => {
         container.bind(ILogger).to(MockLogger);
         container.bind(Stopwatch).to(NodeStopwatch);
         container.bind(SettingService).toConstantValue(new TestSettingService());
-        container.bind(ShellEnvironmentImpl).toSelf();
-        const unmodified = container.get(ShellEnvironmentImpl);
+        container.bind(ShellEnvironmentServerImpl).toSelf();
+        const unmodified = container.get(ShellEnvironmentServerImpl);
         const resolution = await unmodified.whenResolved();
         expect(resolution.status).to.equal('skipped');
         expect(resolution.reason).to.match(process.platform === 'win32' ? /Windows/ : /Electron/);
@@ -221,8 +282,8 @@ describe('ShellEnvironmentImpl', () => {
             container.bind(ILogger).to(MockLogger);
             container.bind(Stopwatch).to(NodeStopwatch);
             container.bind(SettingService).toConstantValue(new TestSettingService());
-            container.bind(ShellEnvironmentImpl).toSelf();
-            const resolution = await container.get(ShellEnvironmentImpl).whenResolved();
+            container.bind(ShellEnvironmentServerImpl).toSelf();
+            const resolution = await container.get(ShellEnvironmentServerImpl).whenResolved();
             expect(resolution.status).to.equal('skipped');
             expect(resolution.reason).to.contain('login shell');
         } finally {
@@ -263,9 +324,16 @@ describe('ShellEnvironmentImpl', () => {
         expect(posix.slice(0, 3)).to.deep.equal(['-i', '-l', '-c']);
         expect(posix[3]).to.contain(process.execPath).and.to.contain(`"${mark}" + JSON.stringify(process.env) + "${mark}"`);
         expect(environment.getShellArguments('/bin/tcsh', mark).slice(0, 1)).to.deep.equal(['-ic']);
-        const powershell = environment.getShellArguments('/usr/local/bin/pwsh', mark);
-        expect(powershell.slice(0, 2)).to.deep.equal(['-Login', '-Command']);
-        expect(powershell[2]).to.contain(process.execPath).and.to.contain(`''${mark}''`);
+        for (const pwsh of ['/usr/local/bin/pwsh', '/usr/local/bin/pwsh-preview', '/usr/bin/powershell']) {
+            const powershell = environment.getShellArguments(pwsh, mark);
+            expect(powershell.slice(0, 2), pwsh).to.deep.equal(['-Login', '-Command']);
+            expect(powershell[2], pwsh).to.contain(process.execPath).and.to.contain(`''${mark}''`);
+        }
+        const nu = environment.getShellArguments('/opt/homebrew/bin/nu', mark);
+        expect(nu.slice(0, 3)).to.deep.equal(['-i', '-l', '-c']);
+        expect(nu[3]).to.contain(`^'${process.execPath}' -p`).and.to.contain(`"${mark}" + JSON.stringify(process.env) + "${mark}"`);
+        const xonsh = environment.getShellArguments('/usr/bin/xonsh', mark);
+        expect(xonsh).to.deep.equal(['-i', '-l', '-c', `import os, json; print("${mark}", json.dumps(dict(os.environ)), "${mark}")`]);
     });
 
     it('quotes the executable for the shell even if its path contains a single quote', () => {
@@ -275,5 +343,7 @@ describe('ShellEnvironmentImpl', () => {
         expect(environment.getShellArguments('/bin/zsh', 'abc123', executable)[3]).to.contain(quoted);
         expect(environment.getShellArguments('/bin/tcsh', 'abc123', executable)[1]).to.contain(quoted);
         expect(environment.getShellArguments('/usr/local/bin/pwsh', 'abc123', executable)[2]).to.contain("& '/Applications/Theia''s IDE.app/Contents/MacOS/Theia' -p");
+        expect(environment.getShellArguments('/usr/local/bin/nu', 'abc123', executable)[3]).to.contain('^"/Applications/Theia\'s IDE.app/Contents/MacOS/Theia" -p');
+        expect(environment.getShellArguments('/usr/local/bin/nu', 'abc123', '/opt/Theia\'s "IDE"\\theia')[3]).to.contain('^"/opt/Theia\'s \\"IDE\\"\\\\theia" -p');
     });
 });
