@@ -25,12 +25,15 @@ import * as path from 'path';
 import * as cp from 'child_process';
 import { ForwardedPort, RemotePortForwardingProvider } from '@theia/remote/lib/electron-common/remote-port-forwarding-provider';
 import { RemoteDockerContainerConnection } from '../remote-docker-container-connection.js';
+import { ImageMetadataContribution } from './image-metadata-contribution.js';
 import { WorkspaceCreationContribution } from './workspace-creation-contribution.js';
 import { parseWorkspaceMount } from '../dockerode-utils.js';
 
 export function registerContainerCreationContributions(bind: interfaces.Bind): void {
     bind(ContainerCreationContribution).to(ImageFileContribution).inSingletonScope();
     bind(ContainerCreationContribution).to(DockerFileContribution).inSingletonScope();
+    bind(ImageMetadataContribution).toSelf().inSingletonScope();
+    bind(ContainerCreationContribution).toService(ImageMetadataContribution);
     bind(ContainerCreationContribution).to(ForwardPortsContribution).inSingletonScope();
     bind(ContainerCreationContribution).to(MountsContribution).inSingletonScope();
     bind(ContainerCreationContribution).to(RemoteUserContribution).inSingletonScope();
