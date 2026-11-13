@@ -378,4 +378,45 @@ describe('BackendApplication', () => {
 
     });
 
+    describe('process error handlers', () => {
+
+        it('does not log when SIGPIPE is received', () => {
+            const errorStub = sandbox.stub(MockLogger.prototype, 'error').resolves();
+
+            const container = createTestContainer();
+            container.get(TestBackendApplication);
+
+            process.emit('SIGPIPE');
+
+            sinon.assert.notCalled(errorStub);
+        });
+
+        it('does not log an uncaught EPIPE error', () => {
+            const errorStub = sandbox.stub(MockLogger.prototype, 'error').resolves();
+
+            const container = createTestContainer();
+            container.get(TestBackendApplication);
+
+            const error = Object.assign(new Error('write EPIPE'), {
+                code: 'EPIPE'
+            });
+
+            process.emit('uncaughtException', error);
+
+            sinon.assert.notCalled(errorStub);
+        });
+
+        it('continues logging other uncaught exceptions', () => {
+            const errorStub = sandbox.stub(MockLogger.prototype, 'error').resolves();
+
+            const container = createTestContainer();
+            container.get(TestBackendApplication);
+
+            process.emit('uncaughtException', new Error('Unexpected failure'));
+
+            sinon.assert.calledTwice(errorStub);
+        });
+
+    });
+
 });
