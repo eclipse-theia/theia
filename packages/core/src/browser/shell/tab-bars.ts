@@ -824,12 +824,31 @@ export class ScrollableTabBar extends TabBar<Widget> {
 
         super.onAfterAttach(msg);
         this.scrollBar = new PerfectScrollbar(this.contentContainer, this.scrollbarOptions);
+        this.contentContainer.addEventListener('scroll', this.clampScrollLeft);
     }
 
     protected override onBeforeDetach(msg: Message): void {
         super.onBeforeDetach(msg);
+        this.contentContainer.removeEventListener('scroll', this.clampScrollLeft);
         this.scrollBar?.destroy();
     }
+
+    /**
+     * perfect-scrollbar keeps its horizontal rail inside the scroll container, at the current scroll offset and as wide as
+     * the container's rounded width. When Firefox snaps a container at a fractional position to a narrower scrollport, the
+     * rail overhangs it by a pixel, and every scroll at the end grows the scroll range until the tabs are out of view.
+     * See https://github.com/mdbootstrap/perfect-scrollbar/issues/13.
+     */
+    protected readonly clampScrollLeft = (): void => {
+        if (this.orientation !== 'horizontal') {
+            return;
+        }
+        const container = this.contentContainer;
+        const max = Math.max(0, this.contentNode.scrollWidth - container.clientWidth);
+        if (container.scrollLeft > max) {
+            container.scrollLeft = max;
+        }
+    };
 
     protected override onUpdateRequest(msg: Message): void {
         this.updateTabs();
