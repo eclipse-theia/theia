@@ -19,7 +19,7 @@ import { expect } from 'chai';
 import fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
-import { readGrammarFromDisk, getGrammarContributionValidationError } from './read-grammars.js';
+import { readGrammarFromDisk, getGrammarContributionValidationError, toGrammarContribution } from './read-grammars.js';
 
 describe('readGrammarFromDisk', () => {
 
@@ -123,6 +123,32 @@ describe('readGrammarFromDisk', () => {
             scopeName: 'source.sample',
             path: '../outside.tmLanguage.json'
         }, pluginRoot, { onError: (_type, err) => errors.push(err) })).to.equal(undefined);
+
+        expect(String(errors[0])).to.contain('escapes the plugin directory');
+    });
+});
+
+describe('toGrammarContribution', () => {
+
+    it('keeps the location but not the content', () => {
+        const grammar = toGrammarContribution({
+            language: 'sample',
+            scopeName: 'source.sample',
+            path: './syntaxes/sample.tmLanguage.json'
+        }, '/plugin');
+
+        expect(grammar).to.not.have.property('grammar');
+        expect(grammar!.scope).to.equal('source.sample');
+        expect(grammar!.format).to.equal('json');
+        expect(grammar!.grammarLocation).to.equal('./syntaxes/sample.tmLanguage.json');
+    });
+
+    it('returns undefined for invalid contributions and reports via onError', () => {
+        const errors: unknown[] = [];
+        expect(toGrammarContribution({
+            scopeName: 'source.sample',
+            path: '../outside.tmLanguage.json'
+        }, '/plugin', { onError: (_type, err) => errors.push(err) })).to.equal(undefined);
 
         expect(String(errors[0])).to.contain('escapes the plugin directory');
     });

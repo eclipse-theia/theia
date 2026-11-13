@@ -114,6 +114,11 @@ export interface PluginMetadata {
     outOfSync: boolean;
     /** Set when the plugin is loaded from a development workspace (e.g. plugin-dev). */
     isUnderDevelopment?: boolean;
+    /**
+     * The plugin's `package.json`, localized with its default `package.nls.json`. Set by the
+     * browser-only build so the web worker doesn't have to fetch each one at startup.
+     */
+    manifest?: PluginManifest;
 }
 
 /**
