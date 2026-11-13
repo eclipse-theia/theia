@@ -230,12 +230,18 @@ export const CodeWrapper = (props: {
     const ref = React.useRef<HTMLDivElement | null>(null);
     const editorRef = React.useRef<SimpleMonacoEditor | undefined>(undefined);
 
-    const createInputElement = async () => {
+    // The editor is created asynchronously, so the code block can be unmounted (for example when it scrolls
+    // out of view) before the editor exists. Check after each step and dispose whatever was already created.
+    const createInputElement = async (element: HTMLDivElement, isUnmounted: () => boolean) => {
         // Use a unique URI so that a remounted code block cannot reuse the URI of a just disposed one,
         // whose removal may not have reached the plugin host yet.
         const uri = new URI().resolve(`Untitled-${generateUuid()}${props.language ?? ''}`).withScheme(UNTITLED_SCHEME);
         const resource = await props.untitledResourceResolver.createUntitledResource(undefined, props.language, uri);
-        const editor = await props.editorProvider.createSimpleInline(resource.uri, ref.current!, {
+        if (isUnmounted()) {
+            resource.dispose();
+            return;
+        }
+        const editor = await props.editorProvider.createSimpleInline(resource.uri, element, {
             readOnly: true,
             autoSizing: true,
             scrollBeyondLastLine: false,
@@ -251,23 +257,30 @@ export const CodeWrapper = (props: {
             inlayHints: { enabled: 'off' },
             hover: { enabled: 'off' }
         });
+        if (isUnmounted()) {
+            editor.dispose();
+            return;
+        }
         editor.document.textEditorModel.setValue(props.content);
         editor.getControl().onContextMenu(e => props.contextMenuCallback(e.event));
         editorRef.current = editor;
-        if (ref.current) {
-            CodeWrapperEditors.set(ref.current, editor);
-        }
+        CodeWrapperEditors.set(element, editor);
     };
 
     React.useEffect(() => {
-        createInputElement();
         const element = ref.current;
+        let unmounted = false;
+        if (element) {
+            createInputElement(element, () => unmounted);
+        }
         return () => {
+            unmounted = true;
             if (element) {
                 CodeWrapperEditors.remove(element);
             }
             if (editorRef.current) {
                 editorRef.current.dispose();
+                editorRef.current = undefined;
             }
         };
     }, []);
