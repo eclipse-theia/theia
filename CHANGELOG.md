@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.78.0 - tbd
+
+<a name="breaking_changes_1.78.0">[Breaking Changes:](#breaking_changes_1.78.0)</a>
+
+- [filesystem] upgraded opfs-worker from 1.3.1 to 2.3.1. `OPFSFileSystemProvider.writeFile` now writes through opfs-worker's `writeFile` instead of `open`/`write`/`close`, and `OPFSInitialization.getBroadcastChannel()` is replaced by `getBroadcastChannelName()`, which returns the name of the channel instead of a `BroadcastChannel`. Implementations and subclasses that override `getBroadcastChannel()` must implement `getBroadcastChannelName()` instead [#18215](https://github.com/eclipse-theia/theia/pull/18215) - Contributed on behalf of CodeSignal
+
 ## 1.77.0 - 11/5/2026
 
 - [all] switched runtime packages from CommonJS to ES modules [#18216](https://github.com/eclipse-theia/theia/pull/18216)
