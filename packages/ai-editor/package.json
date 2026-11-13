@@ -11,7 +11,7 @@
     "@theia/editor": "1.77.0",
     "@theia/filesystem": "1.77.0",
     "@theia/monaco": "1.77.0",
-    "@theia/monaco-editor-core": "1.108.201",
+    "@theia/monaco-editor-core": "1.144.1",
     "@theia/workspace": "1.77.0",
     "tslib": "^2.8.1"
   },

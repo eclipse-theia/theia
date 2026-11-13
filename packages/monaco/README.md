@@ -33,39 +33,48 @@ process, the steps for undertaking a Monaco uplift are outlined here.
 - <https://github.com/microsoft/vscode.git> - the official VSCode repo.
 - <https://github.com/eclipsesource/ms-vscode.git> - the fork used for building `@theia/monaco-editor-core`.
 
-2. Find the latest release tag in the official VSCode repo, and the most recent uplift branch in the fork.
+2. Pick the target release tag in the official VSCode repo, and find the most recent uplift branch in the fork.
+   The target should usually match the VS Code API version that Theia declares as supported (`DEFAULT_SUPPORTED_API_VERSION` in `dev-packages/application-package/src/api.ts`).
 
- > At the time of this writing the latest release tag is `1.108.2`, and the uplift branch is `monaco_uplift_1.108.2` (<https://github.com/eclipsesource/ms-vscode/tree/monaco_uplift_1.108.2>)
+ > The last uplift used the release tag `1.144.0` and the uplift branch `monaco_uplift_1.144.1` (<https://github.com/eclipsesource/ms-vscode/tree/monaco_uplift_1.144.1>).
 
-3. Check out the release tag, cherry pick the tip of the uplift branch, and resolve any conflicts.
+3. Create a branch `monaco_uplift_<version>` from the release tag, cherry pick the tip of the previous uplift branch, and resolve any conflicts.
 
  > As you resolve conflicts and make changes to the VSCode repo, make sure you end up with a single commit on the uplift branch to make it easier for the next person to rebase.
 
-4. Try to build. At the moment, this means running `npm install` and `npm run gulp editor-distro`.
+4. Use the Node.js version from the `.nvmrc` of the VSCode release tag, then build: `npm install` and `npm run gulp editor-distro`. The output is written to `out-monaco-editor-core/`.
 5. Fix any build errors that arise.
-6. Change the version in `build/monaco/package.json`
+6. Change the version in `build/monaco/package.json`. It follows the VSCode version it is based on, with a higher patch number for Theia-specific rebuilds (e.g. `1.108.201` for VSCode `1.108.2`, `1.144.1` for VSCode `1.144.0`).
 
 #### Current State
 
-- build/gulpfile.editor.js: various changes to modify the treeshaking and output destinations (shakeLevel 0 — file-level only, no class-member shaking).
-- build/lib/standalone.js/ts: changes to output sourcemaps and declarations (`declaration: true`, `sourceMap: true`, `moduleResolution: Classic`).
-- src/vs/base/browser/dompurify/dompurify.js: changes for CommonJS rather than ESM (`module.exports` added).
-- src/vs/base/common/marked/marked.js: changes for CommonJS rather than ESM (`module.exports` added).
-- src/vs/base/common/platform.ts: guards `setTimeout0` with `$globalThis.addEventListener` check for non-browser environments.
-- build/monaco/esm.core.js: added `embeddedDiffEditorWidget` import to `editor.all.ts`.
+The uplift commit contains the following changes:
+
+- `build/gulpfile.editor.ts`: sets `shakeLevel: 0` (file-level tree shaking only, no class-member shaking, so that Theia can use internal API) and adds a `delete-irrelevant-source-files` task that removes everything but `esm/vs` from the output.
+- `build/lib/standalone.ts`: emits declarations and source maps (`declaration: true`, `sourceMap: true`, `moduleResolution: Classic`).
+- `build/monaco/package.json`: renames the package to `@theia/monaco-editor-core`, sets the version, adds a `main` entry and declares `"type": "module"`.
+- `package.json`: replaces the `precommit` hygiene script with a no-op.
+- `src/vs/base/common/platform.ts`: guards `setTimeout0` with a `$globalThis.addEventListener` check for non-browser environments (e.g. unit tests in Node.js).
+- `src/vs/editor/editor.all.ts`: imports `embeddedDiffEditorWidget` so that it is not shaken out.
 
 ### Setting up the Theia side
 
 For initial testing, it's easier to point dependencies to your local VSCode.
 
-1. Having built `monaco-editor-core` using the steps [above](#setting-up-the-vscode-side).
+1. Build `monaco-editor-core` using the steps [above](#setting-up-the-vscode-side).
 2. Find all references to `@theia/monaco-editor-core` in `package.json`s and replace their version with `"file:/<your-path-to>/vscode/out-monaco-editor-core"`.
 
 > Using `file:` means that if you subsequently make changes on the VSCode side, you only need to rebuild VSCode and then rebuild Theia to see the effects.
 
 3. Delete your `node_modules` and `npm install` and build Theia.
-4. Fix any build errors.
-5. Uncomment the `bindMonacoPreferenceExtractor` function in `examples/api-samples/src/browser/monaco-editor-preferences/monaco-editor-preference-extractor.ts` and run the commands there. Fix the `EditorGeneratedPreferenceSchema` as necessary, and add or remove validations from the `MonacoFrontendApplicationContribution` as appropriate.
+4. Fix any build errors. Imports of Monaco internals (`@theia/monaco-editor-core/esm/vs/...`) are the usual suspects, as files get moved, merged or removed upstream.
+   Also check the bundler integration in `dev-packages/bundle-plugin/src/esbuild-plugin.ts` (redirect of `vs/nls` to `packages/monaco/src/browser/monaco-nls.ts`) and the
+   editor worker entry point in `dev-packages/application-manager/src/generator/bundler-generator.ts`.
+5. Start the browser example and run the `API Samples` commands `Extract editor preference schema from Monaco` and `Check for unvalidated editor preferences in Monaco`
+   (contributed by `examples/api-samples/src/browser/monaco-editor-preferences/monaco-editor-preference-extractor.ts`). Fix the generated
+   `packages/editor/src/common/editor-generated-preference-schema.ts` as necessary, and add or remove validations from the `MonacoFrontendApplicationContribution` as appropriate.
+   The command writes the file in its final format and filters out options that Theia does not support (see `removeUnsupportedOptions`). Only the interface entries typed as `Help` or `HelpBadDefaultValue` need to be fixed by hand, usually by taking the type from the previous version of the file.
+   The `editor preference schema` tests of `@theia/monaco` (`monaco-editor-preference-schema.spec.ts`) fail as long as the schema does not match the options of Monaco, and list the differences.
 6. Look for comments that indicate forced types or other code smells that would prevent a build error from being thrown where it should be thrown and check that the assertion still applies.
 
 > If you add these, mark them with @monaco-uplift - that'll make them easier to find in the future. Better: if you can remove them, do! Typically, the cause is mixing imports from
@@ -75,16 +84,19 @@ private API and public API. Often public API fails to satisfy private declaratio
 
 > It may also be necessary to update our various `vscode` dependencies to match the current state of VSCode. It may not be necessary to upgrade all (or any) of these to successfully adopt a new Monaco version, but if something is misbehaving inexplicably, checking dependencies is a reasonable place to start. Check on:
 >
+> - `vscode-builtin-extensions` (root `package.json`)
 > - `vscode-languageserver-protocol`
 > - `vscode-oniguruma`
 > - `vscode-textmate`
 > - `vscode-uri`
 
-### Publishing for testing
+### Packaging and publishing
 
-Once you believe that everything is in working order, you'll need to publish the new `@theia/monaco-editor-core` for testing.
-You can use `npm pack` in the `out-monaco-editor-core/` directory of the VSCode fork to create a tarball, then publish it.
-Once the package is published, point your `package.json`s at the testing version and make sure everything still works, then make a PR.
+1. Create a tarball with `npm pack --pack-destination ..` in the `out-monaco-editor-core/` directory of the VSCode fork.
+   Do not write the tarball into `out-monaco-editor-core/` itself, otherwise it ends up inside the next package.
+2. The tarball can be consumed locally (`"file:/<path>/theia-monaco-editor-core-<version>.tgz"`) to test the packaged result before publishing.
+3. Open the Theia PR and the Eclipse IP check for the new version. Publish `@theia/monaco-editor-core` to npm only once the IP check is complete,
+   then point the `package.json`s at the published version and finalize the PR.
 
 ## Additional Information
 

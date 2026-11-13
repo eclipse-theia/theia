@@ -32,6 +32,8 @@ import {
 } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickAccess.js';
 import { IQuickPickItem, IQuickPickItemWithResource } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickInput.js';
 import { Registry } from '@theia/monaco-editor-core/esm/vs/platform/registry/common/platform.js';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey.js';
 
 interface IAnythingQuickPickItem extends IPickerQuickAccessItem, IQuickPickItemWithResource { }
 
@@ -96,12 +98,12 @@ export class MonacoQuickAccessRegistry implements QuickAccessRegistry {
     }
 
     getQuickAccessProviders(): QuickAccessProviderDescriptor[] {
-        return this.monacoRegistry.getQuickAccessProviders()
+        return this.monacoRegistry.getQuickAccessProviders(StandaloneServices.get(IContextKeyService))
             .filter(provider => provider instanceof TheiaQuickAccessDescriptor)
             .map(provider => (provider as TheiaQuickAccessDescriptor).theiaDescriptor);
     }
     getQuickAccessProvider(prefix: string): QuickAccessProviderDescriptor | undefined {
-        const monacoDescriptor = this.monacoRegistry.getQuickAccessProvider(prefix);
+        const monacoDescriptor = this.monacoRegistry.getQuickAccessProvider(prefix, StandaloneServices.get(IContextKeyService));
         return monacoDescriptor ? (monacoDescriptor as TheiaQuickAccessDescriptor).theiaDescriptor : undefined;
     }
     clear(): void {

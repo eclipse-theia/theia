@@ -30,9 +30,9 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "type": "number",
         "default": 4,
         "minimum": 1,
+        "maximum": 100,
         "markdownDescription": nls.localize("theia/editor/editor.tabSize", "The number of spaces a tab is equal to. This setting is overridden based on the file contents when `#editor.detectIndentation#` is on."),
-        "scope": PreferenceScope.Folder,
-
+        "scope": PreferenceScope.Folder
     },
     "editor.indentSize": {
         "anyOf": [
@@ -49,42 +49,44 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "tabSize",
         "markdownDescription": nls.localizeByDefault("The number of spaces used for indentation or `\"tabSize\"` to use the value from `#editor.tabSize#`. This setting is overridden based on the file contents when `#editor.detectIndentation#` is on."),
-        "scope": PreferenceScope.Folder,
+        "scope": PreferenceScope.Folder
     },
     "editor.insertSpaces": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localize("theia/editor/editor.insertSpaces", "Insert spaces when pressing `Tab`. This setting is overridden based on the file contents when `#editor.detectIndentation#` is on."),
-        "scope": PreferenceScope.Folder,
+        "scope": PreferenceScope.Folder
     },
     "editor.detectIndentation": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localize("theia/editor/editor.detectIndentation", "Controls whether `#editor.tabSize#` and `#editor.insertSpaces#` will be automatically detected when a file is opened based on the file contents."),
-        "scope": PreferenceScope.Folder,
+        "scope": PreferenceScope.Folder
     },
     "editor.trimAutoWhitespace": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Remove trailing auto inserted whitespace."),
-        "scope": PreferenceScope.Folder,
+        "scope": PreferenceScope.Folder
     },
     "editor.largeFileOptimizations": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Special handling for large files to disable certain memory intensive features."),
-        "scope": PreferenceScope.Folder,
+        "scope": PreferenceScope.Folder
     },
     "editor.wordBasedSuggestions": {
         "enum": [
             "off",
+            "offWithInlineSuggestions",
             "currentDocument",
             "matchingDocuments",
             "allDocuments"
         ],
-        "default": "matchingDocuments",
+        "default": "offWithInlineSuggestions",
         "enumDescriptions": [
             nls.localizeByDefault("Turn off Word Based Suggestions."),
+            nls.localizeByDefault("Turn off Word Based Suggestions when Inline Suggestions are present."),
             nls.localizeByDefault("Only suggest words from the active document."),
             nls.localizeByDefault("Suggest words from all open documents of the same language."),
             nls.localizeByDefault("Suggest words from all open documents.")
@@ -105,19 +107,19 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "configuredByTheme",
         "description": nls.localizeByDefault("Controls whether the semanticHighlighting is shown for the languages that support it."),
-        "scope": PreferenceScope.Folder,
+        "scope": PreferenceScope.Folder
     },
     "editor.stablePeek": {
         "type": "boolean",
         "default": false,
         "markdownDescription": nls.localizeByDefault("Keep peek editors open even when double-clicking their content or when hitting `Escape`."),
-        "scope": PreferenceScope.Folder,
+        "scope": PreferenceScope.Folder
     },
     "editor.maxTokenizationLineLength": {
         "type": "integer",
         "default": 20000,
         "description": nls.localizeByDefault("Lines above this length will not be tokenized for performance reasons"),
-        "scope": PreferenceScope.Folder,
+        "scope": PreferenceScope.Folder
     },
     "editor.experimental.asyncTokenization": {
         "type": "boolean",
@@ -126,14 +128,13 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "tags": [
             "experimental"
         ],
-        "scope": PreferenceScope.Folder,
+        "scope": PreferenceScope.Folder
     },
     "editor.experimental.asyncTokenizationLogging": {
         "type": "boolean",
         "default": false,
         "description": nls.localizeByDefault("Controls whether async tokenization should be logged. For debugging only."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.experimental.asyncTokenizationVerification": {
         "type": "boolean",
@@ -143,24 +144,20 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             "experimental"
         ],
         "scope": PreferenceScope.Folder
-
     },
     "editor.experimental.treeSitterTelemetry": {
         "type": "boolean",
         "default": false,
-        "markdownDescription": nls.localizeByDefault('Controls whether tree sitter parsing should be turned on and telemetry collected. Setting `#editor.experimental.preferTreeSitter#` for specific languages will take precedence.'),
+        "markdownDescription": nls.localizeByDefault("Controls whether tree sitter parsing should be turned on and telemetry collected. Setting `#editor.experimental.preferTreeSitter#` for specific languages will take precedence."),
         "tags": [
-            "experimental",
-            "onExP"
+            "experimental"
         ],
         "scope": PreferenceScope.Folder
-
     },
     "editor.experimental.preferTreeSitter.css": {
         "type": "boolean",
         "default": false,
-        "markdownDescription":
-            nls.localizeByDefault("Controls whether tree sitter parsing should be turned on for css. This will take precedence over `#editor.experimental.treeSitterTelemetry#` for css."),
+        "markdownDescription": nls.localizeByDefault("Controls whether tree sitter parsing should be turned on for css. This will take precedence over `#editor.experimental.treeSitterTelemetry#` for css."),
         "tags": [
             "experimental"
         ],
@@ -169,8 +166,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.experimental.preferTreeSitter.typescript": {
         "type": "boolean",
         "default": false,
-        "markdownDescription":
-            nls.localizeByDefault("Controls whether tree sitter parsing should be turned on for typescript. This will take precedence over `#editor.experimental.treeSitterTelemetry#` for typescript."),
+        "markdownDescription": nls.localizeByDefault("Controls whether tree sitter parsing should be turned on for typescript. This will take precedence over `#editor.experimental.treeSitterTelemetry#` for typescript."),
         "tags": [
             "experimental"
         ],
@@ -179,8 +175,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.experimental.preferTreeSitter.ini": {
         "type": "boolean",
         "default": false,
-        "markdownDescription":
-            nls.localizeByDefault("Controls whether tree sitter parsing should be turned on for ini. This will take precedence over `#editor.experimental.treeSitterTelemetry#` for ini."),
+        "markdownDescription": nls.localizeByDefault("Controls whether tree sitter parsing should be turned on for ini. This will take precedence over `#editor.experimental.treeSitterTelemetry#` for ini."),
         "tags": [
             "experimental"
         ],
@@ -189,8 +184,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.experimental.preferTreeSitter.regex": {
         "type": "boolean",
         "default": false,
-        "markdownDescription":
-            nls.localizeByDefault("Controls whether tree sitter parsing should be turned on for regex. This will take precedence over `#editor.experimental.treeSitterTelemetry#` for regex."),
+        "markdownDescription": nls.localizeByDefault("Controls whether tree sitter parsing should be turned on for regex. This will take precedence over `#editor.experimental.treeSitterTelemetry#` for regex."),
         "tags": [
             "experimental"
         ],
@@ -217,7 +211,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             ]
         },
         "scope": PreferenceScope.Folder
-
     },
     "editor.language.colorizedBracketPairs": {
         "type": [
@@ -240,77 +233,75 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             ]
         },
         "scope": PreferenceScope.Folder
-
     },
     "diffEditor.maxComputationTime": {
         "type": "number",
         "default": 5000,
         "description": nls.localizeByDefault("Timeout in milliseconds after which diff computation is cancelled. Use 0 for no timeout."),
         "scope": PreferenceScope.Folder
-
     },
     "diffEditor.maxFileSize": {
         "type": "number",
         "default": 50,
         "description": nls.localizeByDefault("Maximum file size in MB for which to compute diffs. Use 0 for no limit."),
         "scope": PreferenceScope.Folder
-
     },
     "diffEditor.renderSideBySide": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Controls whether the diff editor shows the diff side by side or inline."),
         "scope": PreferenceScope.Folder
-
     },
     "diffEditor.renderSideBySideInlineBreakpoint": {
         "type": "number",
         "default": 900,
         "description": nls.localizeByDefault("If the diff editor width is smaller than this value, the inline view is used."),
         "scope": PreferenceScope.Folder
-
     },
     "diffEditor.useInlineViewWhenSpaceIsLimited": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("If enabled and the editor width is too small, the inline view is used."),
         "scope": PreferenceScope.Folder
-
+    },
+    "diffEditor.hideOriginalLineNumbers": {
+        "type": [
+            "boolean",
+            "null"
+        ],
+        "default": null,
+        "description": nls.localizeByDefault("Controls whether original line numbers are hidden in inline diffs. When set to null, uses the editor's default: hidden in compact multi diff editors and visible in other diff editors."),
+        "scope": PreferenceScope.Folder
     },
     "diffEditor.renderMarginRevertIcon": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("When enabled, the diff editor shows arrows in its glyph margin to revert changes."),
         "scope": PreferenceScope.Folder
-
     },
     "diffEditor.renderGutterMenu": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("When enabled, the diff editor shows a special gutter for revert and stage actions."),
         "scope": PreferenceScope.Folder
-
     },
     "diffEditor.ignoreTrimWhitespace": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("When enabled, the diff editor ignores changes in leading or trailing whitespace."),
         "scope": PreferenceScope.Folder
-
     },
     "diffEditor.renderIndicators": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Controls whether the diff editor shows +/- indicators for added/removed changes."),
         "scope": PreferenceScope.Folder
-
     },
     "diffEditor.codeLens": {
         "type": "boolean",
         "default": false,
         "description": nls.localizeByDefault("Controls whether the editor shows CodeLens."),
         "scope": PreferenceScope.Folder
-
     },
     "diffEditor.wordWrap": {
         "type": "string",
@@ -326,7 +317,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             nls.localize("theia/editor/diffEditor.wordWrap2", "Lines will wrap according to the `#editor.wordWrap#` setting.")
         ],
         "scope": PreferenceScope.Folder
-
     },
     "diffEditor.diffAlgorithm": {
         "type": "string",
@@ -340,14 +330,12 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             nls.localizeByDefault("Uses the advanced diffing algorithm.")
         ],
         "scope": PreferenceScope.Folder
-
     },
     "diffEditor.hideUnchangedRegions.enabled": {
         "type": "boolean",
         "default": false,
         "markdownDescription": nls.localizeByDefault("Controls whether the diff editor shows unchanged regions."),
         "scope": PreferenceScope.Folder
-
     },
     "diffEditor.hideUnchangedRegions.revealLineCount": {
         "type": "integer",
@@ -355,7 +343,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "markdownDescription": nls.localizeByDefault("Controls how many lines are used for unchanged regions."),
         "minimum": 1,
         "scope": PreferenceScope.Folder
-
     },
     "diffEditor.hideUnchangedRegions.minimumLineCount": {
         "type": "integer",
@@ -363,7 +350,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "markdownDescription": nls.localizeByDefault("Controls how many lines are used as a minimum for unchanged regions."),
         "minimum": 1,
         "scope": PreferenceScope.Folder
-
     },
     "diffEditor.hideUnchangedRegions.contextLineCount": {
         "type": "integer",
@@ -371,35 +357,30 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "markdownDescription": nls.localizeByDefault("Controls how many lines are used as context when comparing unchanged regions."),
         "minimum": 1,
         "scope": PreferenceScope.Folder
-
     },
     "diffEditor.experimental.showMoves": {
         "type": "boolean",
         "default": false,
         "markdownDescription": nls.localizeByDefault("Controls whether the diff editor should show detected code moves."),
         "scope": PreferenceScope.Folder
-
     },
     "diffEditor.experimental.showEmptyDecorations": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Controls whether the diff editor shows empty decorations to see where characters got inserted or deleted."),
         "scope": PreferenceScope.Folder
-
     },
     "diffEditor.experimental.useTrueInlineView": {
         "type": "boolean",
         "default": false,
         "description": nls.localizeByDefault("If enabled and the editor uses the inline view, word changes are rendered inline."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.acceptSuggestionOnCommitCharacter": {
         "markdownDescription": nls.localizeByDefault("Controls whether suggestions should be accepted on commit characters. For example, in JavaScript, the semi-colon (`;`) can be a commit character that accepts a suggestion and types that character."),
         "type": "boolean",
         "default": true,
         "scope": PreferenceScope.Folder
-
     },
     "editor.acceptSuggestionOnEnter": {
         "markdownEnumDescriptions": [
@@ -416,7 +397,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "on",
         "scope": PreferenceScope.Folder
-
     },
     "editor.accessibilitySupport": {
         "type": "string",
@@ -436,7 +416,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "description": nls.localizeByDefault("Controls if the UI should run in a mode where it is optimized for screen readers."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.accessibilityPageSize": {
         "description": nls.localizeByDefault("Controls the number of lines in the editor that can be read out by a screen reader at once. When we detect a screen reader we automatically set the default to be 500. Warning: this has a performance implication for numbers larger than the default."),
@@ -444,11 +423,31 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             "accessibility"
         ],
         "type": "integer",
-        "default": 10,
+        "default": 500,
         "minimum": 1,
         "maximum": 1073741824,
         "scope": PreferenceScope.Folder
-
+    },
+    "editor.allowVariableLineHeights": {
+        "description": nls.localizeByDefault("Controls whether to allow using variable line heights in the editor."),
+        "type": "boolean",
+        "default": true,
+        "scope": PreferenceScope.Folder
+    },
+    "editor.allowVariableFonts": {
+        "description": nls.localizeByDefault("Controls whether to allow using variable fonts in the editor."),
+        "type": "boolean",
+        "default": true,
+        "scope": PreferenceScope.Folder
+    },
+    "editor.allowVariableFontsInAccessibilityMode": {
+        "description": nls.localizeByDefault("Controls whether to allow using variable fonts in the editor in the accessibility mode."),
+        "tags": [
+            "accessibility"
+        ],
+        "type": "boolean",
+        "default": false,
+        "scope": PreferenceScope.Folder
     },
     "editor.autoClosingBrackets": {
         "enumDescriptions": [
@@ -467,7 +466,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "languageDefined",
         "scope": PreferenceScope.Folder
-
     },
     "editor.autoClosingComments": {
         "enumDescriptions": [
@@ -486,7 +484,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "languageDefined",
         "scope": PreferenceScope.Folder
-
     },
     "editor.screenReaderAnnounceInlineSuggestion": {
         "description": nls.localizeByDefault("Control whether inline suggestions are announced by a screen reader."),
@@ -496,7 +493,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "type": "boolean",
         "default": true,
         "scope": PreferenceScope.Folder
-
     },
     "editor.autoClosingDelete": {
         "enumDescriptions": [
@@ -513,7 +509,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "auto",
         "scope": PreferenceScope.Folder
-
     },
     "editor.autoClosingOvertype": {
         "enumDescriptions": [
@@ -530,7 +525,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "auto",
         "scope": PreferenceScope.Folder
-
     },
     "editor.autoClosingQuotes": {
         "enumDescriptions": [
@@ -549,7 +543,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "languageDefined",
         "scope": PreferenceScope.Folder
-
     },
     "editor.autoIndent": {
         "enumDescriptions": [
@@ -570,7 +563,18 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "full",
         "scope": PreferenceScope.Folder
-
+    },
+    "editor.autoIndentOnPaste": {
+        "description": nls.localizeByDefault("Controls whether the editor should automatically auto-indent the pasted content."),
+        "type": "boolean",
+        "default": false,
+        "scope": PreferenceScope.Folder
+    },
+    "editor.autoIndentOnPasteWithinString": {
+        "description": nls.localizeByDefault("Controls whether the editor should automatically auto-indent the pasted content when pasted within a string. This takes effect when autoIndentOnPaste is true."),
+        "type": "boolean",
+        "default": true,
+        "scope": PreferenceScope.Folder
     },
     "editor.autoSurround": {
         "enumDescriptions": [
@@ -589,21 +593,18 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "languageDefined",
         "scope": PreferenceScope.Folder
-
     },
     "editor.bracketPairColorization.enabled": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localize("theia/editor/editor.bracketPairColorization.enabled", "Controls whether bracket pair colorization is enabled or not. Use `#workbench.colorCustomizations#` to override the bracket highlight colors."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.bracketPairColorization.independentColorPoolPerBracketType": {
         "type": "boolean",
         "default": false,
         "description": nls.localizeByDefault("Controls whether each bracket type has its own independent color pool."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.guides.bracketPairs": {
         "type": [
@@ -623,7 +624,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "default": false,
         "description": nls.localizeByDefault("Controls whether bracket pair guides are enabled or not."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.guides.bracketPairsHorizontal": {
         "type": [
@@ -643,21 +643,18 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "default": "active",
         "description": nls.localizeByDefault("Controls whether horizontal bracket pair guides are enabled or not."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.guides.highlightActiveBracketPair": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Controls whether the editor should highlight the active bracket pair."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.guides.indentation": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Controls whether the editor should render indent guides."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.guides.highlightActiveIndentation": {
         "type": [
@@ -677,21 +674,18 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "default": true,
         "description": nls.localizeByDefault("Controls whether the editor should highlight the active indent guide."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.codeLens": {
         "description": nls.localizeByDefault("Controls whether the editor shows CodeLens."),
         "type": "boolean",
         "default": true,
         "scope": PreferenceScope.Folder
-
     },
     "editor.codeLensFontFamily": {
         "description": nls.localizeByDefault("Controls the font family for CodeLens."),
         "type": "string",
         "default": "",
         "scope": PreferenceScope.Folder
-
     },
     "editor.codeLensFontSize": {
         "type": "integer",
@@ -700,14 +694,12 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "maximum": 100,
         "markdownDescription": nls.localizeByDefault("Controls the font size in pixels for CodeLens. When set to 0, 90% of `#editor.fontSize#` is used."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.colorDecorators": {
         "description": nls.localizeByDefault("Controls whether the editor should render the inline color decorators and color picker."),
         "type": "boolean",
         "default": true,
         "scope": PreferenceScope.Folder
-
     },
     "editor.colorDecoratorsLimit": {
         "markdownDescription": nls.localizeByDefault("Controls the max number of color decorators that can be rendered in an editor at once."),
@@ -716,35 +708,30 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "minimum": 1,
         "maximum": 1000000,
         "scope": PreferenceScope.Folder
-
     },
     "editor.columnSelection": {
         "description": nls.localizeByDefault("Enable that the selection with the mouse and keys is doing column selection."),
         "type": "boolean",
         "default": false,
         "scope": PreferenceScope.Folder
-
     },
     "editor.comments.insertSpace": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Controls whether a space character is inserted when commenting."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.comments.ignoreEmptyLines": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Controls if empty lines should be ignored with toggle, add or remove actions for line comments."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.copyWithSyntaxHighlighting": {
         "description": nls.localizeByDefault("Controls whether syntax highlighting should be copied into the clipboard."),
         "type": "boolean",
         "default": true,
         "scope": PreferenceScope.Folder
-
     },
     "editor.cursorBlinking": {
         "description": nls.localizeByDefault("Control the cursor animation style."),
@@ -758,7 +745,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "blink",
         "scope": PreferenceScope.Folder
-
     },
     "editor.cursorSmoothCaretAnimation": {
         "enumDescriptions": [
@@ -775,7 +761,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "off",
         "scope": PreferenceScope.Folder
-
     },
     "editor.cursorStyle": {
         "description": nls.localizeByDefault("Controls the cursor style in insert input mode."),
@@ -790,7 +775,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "line",
         "scope": PreferenceScope.Folder
-
     },
     "editor.cursorSurroundingLines": {
         "description": nls.localizeByDefault("Controls the minimal number of visible leading lines (minimum 0) and trailing lines (minimum 1) surrounding the cursor. Known as 'scrollOff' or 'scrollOffset' in some other editors."),
@@ -799,7 +783,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "minimum": 0,
         "maximum": 1073741824,
         "scope": PreferenceScope.Folder
-
     },
     "editor.cursorSurroundingLinesStyle": {
         "enumDescriptions": [
@@ -814,7 +797,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "default",
         "scope": PreferenceScope.Folder
-
     },
     "editor.cursorWidth": {
         "markdownDescription": nls.localizeByDefault("Controls the width of the cursor when `#editor.cursorStyle#` is set to `line`."),
@@ -823,21 +805,26 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "minimum": 0,
         "maximum": 1073741824,
         "scope": PreferenceScope.Folder
-
+    },
+    "editor.cursorHeight": {
+        "markdownDescription": nls.localizeByDefault("Controls the height of the cursor when `#editor.cursorStyle#` is set to `line`. Cursor's max height depends on line height."),
+        "type": "integer",
+        "default": 0,
+        "minimum": 0,
+        "maximum": 1073741824,
+        "scope": PreferenceScope.Folder
     },
     "editor.dragAndDrop": {
         "description": nls.localizeByDefault("Controls whether the editor should allow moving selections via drag and drop."),
         "type": "boolean",
         "default": true,
         "scope": PreferenceScope.Folder
-
     },
     "editor.dropIntoEditor.enabled": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("Controls whether you can drag and drop a file into a text editor by holding down the `Shift` key (instead of opening the file in an editor)."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.dropIntoEditor.showDropSelector": {
         "type": "string",
@@ -852,22 +839,36 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "afterDrop",
         "scope": PreferenceScope.Folder
-
     },
-    "editor.experimentalEditContextEnabled": {
-        "description": nls.localizeByDefault('Controls whether the workbench window should be focused when the debugger breaks.'),
+    "editor.editContext": {
+        "description": nls.localizeByDefault("Sets whether the EditContext API should be used instead of the text area to power input in the editor."),
         "included": true,
         "type": "boolean",
-        "default": false,
+        "default": true,
         "scope": PreferenceScope.Folder
-
     },
     "editor.emptySelectionClipboard": {
         "description": nls.localizeByDefault("Controls whether copying without a selection copies the current line."),
         "type": "boolean",
         "default": true,
         "scope": PreferenceScope.Folder
-
+    },
+    "editor.experimentalGpuAcceleration": {
+        "tags": [
+            "experimental"
+        ],
+        "enumDescriptions": [
+            nls.localizeByDefault("Use regular DOM-based rendering."),
+            nls.localizeByDefault("Use GPU acceleration.")
+        ],
+        "description": nls.localizeByDefault("Controls whether to use the experimental GPU acceleration to render the editor."),
+        "type": "string",
+        "enum": [
+            "off",
+            "on"
+        ],
+        "default": "off",
+        "scope": PreferenceScope.Folder
     },
     "editor.experimentalWhitespaceRendering": {
         "enumDescriptions": [
@@ -884,21 +885,18 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "svg",
         "scope": PreferenceScope.Folder
-
     },
     "editor.fastScrollSensitivity": {
         "markdownDescription": nls.localizeByDefault("Scrolling speed multiplier when pressing `Alt`."),
         "type": "number",
         "default": 5,
         "scope": PreferenceScope.Folder
-
     },
     "editor.find.cursorMoveOnType": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Controls whether the cursor should jump to find matches while typing."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.find.seedSearchStringFromSelection": {
         "type": "string",
@@ -915,7 +913,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "description": nls.localizeByDefault("Controls whether the search string in the Find Widget is seeded from the editor selection."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.find.autoFindInSelection": {
         "type": "string",
@@ -932,21 +929,24 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "description": nls.localizeByDefault("Controls the condition for turning on Find in Selection automatically."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.find.addExtraSpaceOnTop": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Controls whether the Find Widget should add extra lines on top of the editor. When true, you can scroll beyond the first line when the Find Widget is visible."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.find.loop": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Controls whether the search automatically restarts from the beginning (or the end) when no further matches can be found."),
         "scope": PreferenceScope.Folder
-
+    },
+    "editor.find.closeOnResult": {
+        "type": "boolean",
+        "default": false,
+        "description": nls.localizeByDefault("Controls whether the Find Widget closes after an explicit find navigation command lands on a result."),
+        "scope": PreferenceScope.Folder
     },
     "editor.find.history": {
         "type": "string",
@@ -961,14 +961,32 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "description": nls.localizeByDefault("Controls how the find widget history should be stored"),
         "scope": PreferenceScope.Folder
-
+    },
+    "editor.find.replaceHistory": {
+        "type": "string",
+        "enum": [
+            "never",
+            "workspace"
+        ],
+        "default": "workspace",
+        "enumDescriptions": [
+            nls.localizeByDefault("Do not store history from the replace widget."),
+            nls.localizeByDefault("Store replace history across the active workspace")
+        ],
+        "description": nls.localizeByDefault("Controls how the replace widget history should be stored"),
+        "scope": PreferenceScope.Folder
+    },
+    "editor.find.findOnType": {
+        "type": "boolean",
+        "default": true,
+        "description": nls.localizeByDefault("Controls whether the Find Widget should search as you type."),
+        "scope": PreferenceScope.Folder
     },
     "editor.folding": {
         "description": nls.localizeByDefault("Controls whether the editor has code folding enabled."),
         "type": "boolean",
         "default": true,
         "scope": PreferenceScope.Folder
-
     },
     "editor.foldingStrategy": {
         "enumDescriptions": [
@@ -983,21 +1001,18 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "auto",
         "scope": PreferenceScope.Folder
-
     },
     "editor.foldingHighlight": {
         "description": nls.localizeByDefault("Controls whether the editor should highlight folded ranges."),
         "type": "boolean",
         "default": true,
         "scope": PreferenceScope.Folder
-
     },
     "editor.foldingImportsByDefault": {
         "description": nls.localizeByDefault("Controls whether the editor automatically collapses import ranges."),
         "type": "boolean",
         "default": false,
         "scope": PreferenceScope.Folder
-
     },
     "editor.foldingMaximumRegions": {
         "description": nls.localizeByDefault("The maximum number of foldable regions. Increasing this value may result in the editor becoming less responsive when the current source has a large number of foldable regions."),
@@ -1006,21 +1021,18 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "minimum": 10,
         "maximum": 65000,
         "scope": PreferenceScope.Folder
-
     },
     "editor.unfoldOnClickAfterEndOfLine": {
         "description": nls.localizeByDefault("Controls whether clicking on the empty content after a folded line will unfold the line."),
         "type": "boolean",
         "default": false,
         "scope": PreferenceScope.Folder
-
     },
     "editor.fontFamily": {
         "description": nls.localizeByDefault("Controls the font family."),
         "type": "string",
         "default": isOSX ? 'Menlo, Monaco, \'Courier New\', monospace' : isWindows ? 'Consolas, \'Courier New\', monospace' : '\'Droid Sans Mono\', \'monospace\', monospace',
         "scope": PreferenceScope.Folder
-
     },
     "editor.fontLigatures": {
         "anyOf": [
@@ -1036,7 +1048,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "description": nls.localizeByDefault("Configures font ligatures or font features. Can be either a boolean to enable/disable ligatures or a string for the value of the CSS 'font-feature-settings' property."),
         "default": false,
         "scope": PreferenceScope.Folder
-
     },
     "editor.fontSize": {
         "type": "number",
@@ -1045,7 +1056,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "default": isOSX ? 12 : 14,
         "description": nls.localizeByDefault("Controls the font size in pixels."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.fontWeight": {
         "anyOf": [
@@ -1078,7 +1088,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "default": "normal",
         "description": nls.localizeByDefault("Controls the font weight. Accepts \"normal\" and \"bold\" keywords or numbers between 1 and 1000."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.fontVariations": {
         "anyOf": [
@@ -1094,38 +1103,29 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "description": nls.localizeByDefault("Configures font variations. Can be either a boolean to enable/disable the translation from font-weight to font-variation-settings or a string for the value of the CSS 'font-variation-settings' property."),
         "default": false,
         "scope": PreferenceScope.Folder
-
     },
     "editor.formatOnPaste": {
         "description": nls.localizeByDefault("Controls whether the editor should automatically format the pasted content. A formatter must be available and the formatter should be able to format a range in a document."),
         "type": "boolean",
         "default": false,
         "scope": PreferenceScope.Folder
-
     },
     "editor.formatOnType": {
         "description": nls.localizeByDefault("Controls whether the editor should automatically format the line after typing."),
         "type": "boolean",
         "default": false,
         "scope": PreferenceScope.Folder
-
     },
     "editor.glyphMargin": {
         "description": nls.localizeByDefault("Controls whether the editor should render the vertical glyph margin. Glyph margin is mostly used for debugging."),
         "type": "boolean",
         "default": true,
         "scope": PreferenceScope.Folder
-
     },
     "editor.gotoLocation.multiple": {
         "deprecationMessage": "This setting is deprecated, please use separate settings like 'editor.editor.gotoLocation.multipleDefinitions' or 'editor.editor.gotoLocation.multipleImplementations' instead.",
-        "type": [
-            "string",
-            "null"
-        ],
         "default": null,
         "scope": PreferenceScope.Folder
-
     },
     "editor.gotoLocation.multipleDefinitions": {
         "description": nls.localizeByDefault("Controls the behavior the 'Go to Definition'-command when multiple target locations exist."),
@@ -1142,7 +1142,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             nls.localizeByDefault("Go to the primary result and enable Peek-less navigation to others")
         ],
         "scope": PreferenceScope.Folder
-
     },
     "editor.gotoLocation.multipleTypeDefinitions": {
         "description": nls.localizeByDefault("Controls the behavior the 'Go to Type Definition'-command when multiple target locations exist."),
@@ -1159,7 +1158,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             nls.localizeByDefault("Go to the primary result and enable Peek-less navigation to others")
         ],
         "scope": PreferenceScope.Folder
-
     },
     "editor.gotoLocation.multipleDeclarations": {
         "description": nls.localizeByDefault("Controls the behavior the 'Go to Declaration'-command when multiple target locations exist."),
@@ -1176,7 +1174,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             nls.localizeByDefault("Go to the primary result and enable Peek-less navigation to others")
         ],
         "scope": PreferenceScope.Folder
-
     },
     "editor.gotoLocation.multipleImplementations": {
         "description": nls.localizeByDefault("Controls the behavior the 'Go to Implementations'-command when multiple target locations exist."),
@@ -1193,7 +1190,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             nls.localizeByDefault("Go to the primary result and enable Peek-less navigation to others")
         ],
         "scope": PreferenceScope.Folder
-
     },
     "editor.gotoLocation.multipleReferences": {
         "description": nls.localizeByDefault("Controls the behavior the 'Go to References'-command when multiple target locations exist."),
@@ -1210,7 +1206,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             nls.localizeByDefault("Go to the primary result and enable Peek-less navigation to others")
         ],
         "scope": PreferenceScope.Folder
-
     },
     "editor.gotoLocation.alternativeDefinitionCommand": {
         "type": "string",
@@ -1231,7 +1226,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "description": nls.localizeByDefault("Alternative command id that is being executed when the result of 'Go to Definition' is the current location."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.gotoLocation.alternativeTypeDefinitionCommand": {
         "type": "string",
@@ -1252,7 +1246,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "description": nls.localizeByDefault("Alternative command id that is being executed when the result of 'Go to Type Definition' is the current location."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.gotoLocation.alternativeDeclarationCommand": {
         "type": "string",
@@ -1273,7 +1266,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "description": nls.localizeByDefault("Alternative command id that is being executed when the result of 'Go to Declaration' is the current location."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.gotoLocation.alternativeImplementationCommand": {
         "type": "string",
@@ -1294,7 +1286,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "description": nls.localizeByDefault("Alternative command id that is being executed when the result of 'Go to Implementation' is the current location."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.gotoLocation.alternativeReferenceCommand": {
         "type": "string",
@@ -1315,21 +1306,28 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "description": nls.localizeByDefault("Alternative command id that is being executed when the result of 'Go to Reference' is the current location."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.hideCursorInOverviewRuler": {
         "description": nls.localizeByDefault("Controls whether the cursor should be hidden in the overview ruler."),
         "type": "boolean",
         "default": false,
         "scope": PreferenceScope.Folder
-
     },
     "editor.hover.enabled": {
-        "type": "boolean",
-        "default": true,
+        "type": "string",
+        "enum": [
+            "on",
+            "off",
+            "onKeyboardModifier"
+        ],
+        "default": "on",
+        "markdownEnumDescriptions": [
+            nls.localizeByDefault("Hover is enabled."),
+            nls.localizeByDefault("Hover is disabled."),
+            nls.localize("theia/editor/editor.hover.enabled2", "Hover is shown when holding `Control` or `Alt` (the opposite modifier of `#editor.multiCursorModifier#`)")
+        ],
         "description": nls.localizeByDefault("Controls whether the hover is shown."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.hover.delay": {
         "type": "number",
@@ -1338,36 +1336,37 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "maximum": 10000,
         "description": nls.localizeByDefault("Controls the delay in milliseconds after which the hover is shown."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.hover.sticky": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Controls whether the hover should remain visible when mouse is moved over it."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.hover.hidingDelay": {
         "type": "integer",
         "minimum": 0,
         "default": 300,
-        "description": nls.localizeByDefault('Controls the delay in milliseconds after which the hover is hidden. Requires `#editor.hover.sticky#` to be enabled.'),
+        "markdownDescription": nls.localizeByDefault("Controls the delay in milliseconds after which the hover is hidden. Requires `#editor.hover.sticky#` to be enabled."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.hover.above": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Prefer showing hovers above the line, if there's space."),
         "scope": PreferenceScope.Folder
-
+    },
+    "editor.hover.showLongLineWarning": {
+        "type": "boolean",
+        "default": true,
+        "description": nls.localizeByDefault("Controls whether long line warning hovers are shown, such as when tokenization is skipped or rendering is paused."),
+        "scope": PreferenceScope.Folder
     },
     "editor.inlineSuggest.enabled": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Controls whether to automatically show inline suggestions in the editor."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.inlineSuggest.showToolbar": {
         "type": "string",
@@ -1384,72 +1383,147 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "description": nls.localizeByDefault("Controls when to show the inline suggestion toolbar."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.inlineSuggest.syntaxHighlightingEnabled": {
         "type": "boolean",
-        "default": false,
+        "default": true,
         "description": nls.localizeByDefault("Controls whether to show syntax highlighting for inline suggestions in the editor."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.inlineSuggest.suppressSuggestions": {
         "type": "boolean",
         "default": false,
         "description": nls.localizeByDefault("Controls how inline suggestions interact with the suggest widget. If enabled, the suggest widget is not shown automatically when inline suggestions are available."),
         "scope": PreferenceScope.Folder
-
+    },
+    "editor.inlineSuggest.suppressInSnippetMode": {
+        "type": "boolean",
+        "default": true,
+        "description": nls.localizeByDefault("Controls whether inline suggestions are suppressed when in snippet mode."),
+        "scope": PreferenceScope.Folder
+    },
+    "editor.inlineSuggest.minShowDelay": {
+        "type": "number",
+        "default": 0,
+        "minimum": 0,
+        "maximum": 10000,
+        "description": nls.localizeByDefault("Controls the minimal delay in milliseconds after which inline suggestions are shown after typing."),
+        "scope": PreferenceScope.Folder
+    },
+    "editor.inlineSuggest.experimental.suppressInlineSuggestions": {
+        "type": "string",
+        "default": "",
+        "tags": [
+            "experimental"
+        ],
+        "description": nls.localizeByDefault("Suppresses inline completions for specified extension IDs -- comma separated."),
+        "scope": PreferenceScope.Folder
+    },
+    "editor.inlineSuggest.experimental.emptyResponseInformation": {
+        "type": "boolean",
+        "default": true,
+        "tags": [
+            "experimental"
+        ],
+        "description": nls.localizeByDefault("Controls whether to send request information from the inline suggestion provider."),
+        "scope": PreferenceScope.Folder
+    },
+    "editor.inlineSuggest.triggerCommandOnProviderChange": {
+        "type": "boolean",
+        "default": false,
+        "tags": [
+            "experimental"
+        ],
+        "description": nls.localizeByDefault("Controls whether to trigger a command when the inline suggestion provider changes."),
+        "scope": PreferenceScope.Folder
+    },
+    "editor.inlineSuggest.experimental.showOnSuggestConflict": {
+        "type": "string",
+        "default": "never",
+        "tags": [
+            "experimental"
+        ],
+        "enum": [
+            "always",
+            "never",
+            "whenSuggestListIsIncomplete"
+        ],
+        "description": nls.localizeByDefault("Controls whether to show inline suggestions when there is a suggest conflict."),
+        "scope": PreferenceScope.Folder
     },
     "editor.inlineSuggest.fontFamily": {
         "type": "string",
         "default": "default",
         "description": nls.localizeByDefault("Controls the font family of the inline suggestions."),
         "scope": PreferenceScope.Folder
-
     },
-    "editor.inlineSuggest.edits.experimental.enabled": {
-        "type": "boolean",
-        "default": true,
-        "description": nls.localize("theia/editor/editor.inlineSuggest.edits.experimental.enabled", "Controls whether to enable experimental edits in inline suggestions."),
-        "scope": PreferenceScope.Folder
-
-    },
-    "editor.inlineSuggest.edits.experimental.useMixedLinesDiff": {
+    "editor.inlineSuggest.edits.allowCodeShifting": {
         "type": "string",
-        "default": "never",
-        "description": nls.localize("theia/editor/editor.inlineSuggest.edits.experimental.useMixedLinesDiff", "Controls whether to enable experimental edits in inline suggestions."),
+        "default": "always",
+        "description": nls.localizeByDefault("Controls whether showing a suggestion will shift the code to make space for the suggestion inline."),
         "enum": [
-            "never",
-            "whenPossible"
-        ],
-        "scope": PreferenceScope.Folder
-
-    },
-    "editor.inlineSuggest.edits.experimental.useInterleavedLinesDiff": {
-        "type": "string",
-        "default": "never",
-        "description": nls.localize("theia/editor/editor.inlineSuggest.edits.experimental.useInterleavedLinesDiff", "Controls whether to enable experimental interleaved lines diff in inline suggestions."),
-        "enum": [
-            "never",
             "always",
-            "afterJump"
+            "horizontal",
+            "never"
+        ],
+        "tags": [
+            "nextEditSuggestions"
         ],
         "scope": PreferenceScope.Folder
-
     },
-    "editor.inlineSuggest.edits.experimental.onlyShowWhenCloseToCursor": {
+    "editor.inlineSuggest.edits.showLongDistanceHint": {
         "type": "boolean",
         "default": true,
-        "description": nls.localize("theia/editor/editor.inlineSuggest.edits.experimental.onlyShowWhenCloseToCursor", "Controls whether to only show inline suggestions when the cursor is close to the suggestion."),
+        "description": nls.localizeByDefault("Controls whether long distance inline suggestions are shown."),
+        "tags": [
+            "nextEditSuggestions",
+            "experimental"
+        ],
         "scope": PreferenceScope.Folder
-
+    },
+    "editor.inlineSuggest.edits.longDistanceHintContextLineCount": {
+        "type": "number",
+        "default": 0,
+        "minimum": 0,
+        "maximum": 10,
+        "description": nls.localizeByDefault("Controls how many lines of surrounding context are shown above and below the target line in the long distance inline suggestion preview. Set to 0 to only show the target line."),
+        "tags": [
+            "nextEditSuggestions",
+            "experimental"
+        ],
+        "scope": PreferenceScope.Folder
+    },
+    "editor.inlineSuggest.edits.renderSideBySide": {
+        "type": "string",
+        "default": "auto",
+        "description": nls.localizeByDefault("Controls whether larger suggestions can be shown side by side."),
+        "enum": [
+            "auto",
+            "never"
+        ],
+        "enumDescriptions": [
+            nls.localizeByDefault("Larger suggestions will show side by side if there is enough space, otherwise they will be shown below."),
+            nls.localizeByDefault("Larger suggestions are never shown side by side and will always be shown below.")
+        ],
+        "tags": [
+            "nextEditSuggestions"
+        ],
+        "scope": PreferenceScope.Folder
+    },
+    "editor.inlineSuggest.edits.showCollapsed": {
+        "type": "boolean",
+        "default": false,
+        "description": nls.localizeByDefault("Controls whether the suggestion will show as collapsed until jumping to it."),
+        "tags": [
+            "nextEditSuggestions"
+        ],
+        "scope": PreferenceScope.Folder
     },
     "editor.letterSpacing": {
         "description": nls.localizeByDefault("Controls the letter spacing in pixels."),
         "type": "number",
         "default": 0,
         "scope": PreferenceScope.Folder
-
     },
     "editor.lightbulb.enabled": {
         "type": "string",
@@ -1466,14 +1540,14 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "description": nls.localizeByDefault("Enables the Code Action lightbulb in the editor."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.lineHeight": {
         "markdownDescription": nls.localizeByDefault("Controls the line height. \n - Use 0 to automatically compute the line height from the font size.\n - Values between 0 and 8 will be used as a multiplier with the font size.\n - Values greater than or equal to 8 will be used as effective values."),
         "type": "number",
         "default": 0,
+        "minimum": 0,
+        "maximum": 150,
         "scope": PreferenceScope.Folder
-
     },
     "editor.lineNumbers": {
         "type": "string",
@@ -1492,21 +1566,18 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "default": "on",
         "description": nls.localizeByDefault("Controls the display of line numbers."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.linkedEditing": {
         "description": nls.localizeByDefault("Controls whether the editor has linked editing enabled. Depending on the language, related symbols such as HTML tags, are updated while editing."),
         "type": "boolean",
         "default": false,
         "scope": PreferenceScope.Folder
-
     },
     "editor.links": {
         "description": nls.localizeByDefault("Controls whether the editor should detect links and make them clickable."),
         "type": "boolean",
         "default": true,
         "scope": PreferenceScope.Folder
-
     },
     "editor.matchBrackets": {
         "description": nls.localizeByDefault("Highlight matching brackets."),
@@ -1518,21 +1589,28 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "always",
         "scope": PreferenceScope.Folder
-
     },
     "editor.minimap.enabled": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Controls whether the minimap is shown."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.minimap.autohide": {
-        "type": "boolean",
-        "default": false,
+        "type": "string",
+        "enum": [
+            "none",
+            "mouseover",
+            "scroll"
+        ],
+        "enumDescriptions": [
+            nls.localizeByDefault("The minimap is always shown."),
+            nls.localizeByDefault("The minimap is hidden when mouse is not over the minimap and shown when mouse is over the minimap."),
+            nls.localizeByDefault("The minimap is only shown when the editor is scrolled")
+        ],
+        "default": "none",
         "description": nls.localizeByDefault("Controls whether the minimap is hidden automatically."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.minimap.size": {
         "type": "string",
@@ -1549,7 +1627,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "default": "proportional",
         "description": nls.localizeByDefault("Controls the size of the minimap."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.minimap.side": {
         "type": "string",
@@ -1560,7 +1637,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "default": "right",
         "description": nls.localizeByDefault("Controls the side where to render the minimap."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.minimap.showSlider": {
         "type": "string",
@@ -1571,7 +1647,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "default": "mouseover",
         "description": nls.localizeByDefault("Controls when the minimap slider is shown."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.minimap.scale": {
         "type": "number",
@@ -1585,70 +1660,66 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "description": nls.localizeByDefault("Scale of content drawn in the minimap: 1, 2 or 3."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.minimap.renderCharacters": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Render the actual characters on a line as opposed to color blocks."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.minimap.maxColumn": {
         "type": "number",
         "default": 120,
         "description": nls.localizeByDefault("Limit the width of the minimap to render at most a certain number of columns."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.minimap.showRegionSectionHeaders": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Controls whether named regions are shown as section headers in the minimap."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.minimap.showMarkSectionHeaders": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Controls whether MARK: comments are shown as section headers in the minimap."),
         "scope": PreferenceScope.Folder
-
+    },
+    "editor.minimap.markSectionHeaderRegex": {
+        "type": "string",
+        "default": "\\bMARK:\\s*(?<separator>-?)\\s*(?<label>.*)$",
+        "description": nls.localizeByDefault("Defines the regular expression used to find section headers in comments. The regex must contain a named match group `label` (written as `(?<label>.+)`) that encapsulates the section header, otherwise it will not work. Optionally you can include another match group named `separator`. Use \\n in the pattern to match multi-line headers."),
+        "scope": PreferenceScope.Folder
     },
     "editor.minimap.sectionHeaderFontSize": {
         "type": "number",
         "default": 9,
         "description": nls.localizeByDefault("Controls the font size of section headers in the minimap."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.minimap.sectionHeaderLetterSpacing": {
         "type": "number",
         "default": 1,
         "description": nls.localizeByDefault("Controls the amount of space (in pixels) between characters of section header. This helps the readability of the header in small font sizes."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.mouseWheelScrollSensitivity": {
         "markdownDescription": nls.localizeByDefault("A multiplier to be used on the `deltaX` and `deltaY` of mouse wheel scroll events."),
         "type": "number",
         "default": 1,
         "scope": PreferenceScope.Folder
-
     },
     "editor.mouseWheelZoom": {
         "markdownDescription": nls.localizeByDefault("Zoom the font of the editor when using mouse wheel and holding `Ctrl`."),
         "type": "boolean",
         "default": false,
         "scope": PreferenceScope.Folder
-
     },
     "editor.multiCursorMergeOverlapping": {
         "description": nls.localizeByDefault("Merge multiple cursors when they are overlapping."),
         "type": "boolean",
         "default": true,
         "scope": PreferenceScope.Folder
-
     },
     "editor.multiCursorModifier": {
         "markdownEnumDescriptions": [
@@ -1663,14 +1734,24 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "alt",
         "scope": PreferenceScope.Folder
-
+    },
+    "editor.mouseMiddleClickAction": {
+        "description": nls.localizeByDefault("Controls what happens when middle mouse button is clicked in the editor."),
+        "type": "string",
+        "enum": [
+            "default",
+            "openLink",
+            "ctrlLeftClick"
+        ],
+        "default": "default",
+        "scope": PreferenceScope.Folder
     },
     "editor.multiCursorPaste": {
         "markdownEnumDescriptions": [
-            nls.localize("theia/editor/editor.multiCursorPaste/spread", "Each cursor pastes a single line of the text."),
+            nls.localizeByDefault("Each cursor pastes a single line of the text. When pasting column selections into a single cursor, each copied line is pasted on a successive destination line and padded with spaces to form a rectangle."),
             nls.localizeByDefault("Each cursor pastes the full text.")
         ],
-        "markdownDescription": nls.localize("theia/editor/editor.multiCursorPaste/description", "Controls pasting when the line count of the pasted text matches the cursor count."),
+        "markdownDescription": nls.localizeByDefault("Controls pasting when the line count of the pasted text matches the cursor count, or when pasting column selections into a single cursor."),
         "type": "string",
         "enum": [
             "spread",
@@ -1678,7 +1759,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "spread",
         "scope": PreferenceScope.Folder
-
     },
     "editor.multiCursorLimit": {
         "markdownDescription": nls.localizeByDefault("Controls the max number of cursors that can be in an active editor at once."),
@@ -1687,7 +1767,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "minimum": 1,
         "maximum": 100000,
         "scope": PreferenceScope.Folder
-
     },
     "editor.occurrencesHighlight": {
         "markdownEnumDescriptions": [
@@ -1704,7 +1783,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "singleFile",
         "scope": PreferenceScope.Folder
-
     },
     "editor.occurrencesHighlightDelay": {
         "description": nls.localizeByDefault("Controls the delay in milliseconds after which occurrences are highlighted."),
@@ -1712,11 +1790,16 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             "preview"
         ],
         "type": "integer",
-        "default": 250,
+        "default": 0,
         "minimum": 0,
         "maximum": 2000,
         "scope": PreferenceScope.Folder
-
+    },
+    "editor.occurrencesHighlightFromAllProviders": {
+        "description": nls.localizeByDefault("Controls whether single-document highlights from all matching providers are merged. When enabled, basic word-based highlighting is only used if no other provider matches."),
+        "type": "boolean",
+        "default": false,
+        "scope": PreferenceScope.Folder
     },
     "editor.overtypeCursorStyle": {
         "description": nls.localizeByDefault("Controls the cursor style in overtype input mode."),
@@ -1731,21 +1814,18 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "block",
         "scope": PreferenceScope.Folder
-
     },
     "editor.overtypeOnPaste": {
         "description": nls.localizeByDefault("Controls whether pasting should overtype."),
         "type": "boolean",
         "default": true,
         "scope": PreferenceScope.Folder
-
     },
     "editor.overviewRulerBorder": {
         "description": nls.localizeByDefault("Controls whether a border should be drawn around the overview ruler."),
         "type": "boolean",
         "default": true,
         "scope": PreferenceScope.Folder
-
     },
     "editor.padding.top": {
         "type": "number",
@@ -1754,7 +1834,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "maximum": 1000,
         "description": nls.localizeByDefault("Controls the amount of space between the top edge of the editor and the first line."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.padding.bottom": {
         "type": "number",
@@ -1763,14 +1842,12 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "maximum": 1000,
         "description": nls.localizeByDefault("Controls the amount of space between the bottom edge of the editor and the last line."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.pasteAs.enabled": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("Controls whether you can paste content in different ways."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.pasteAs.showPasteSelector": {
         "type": "string",
@@ -1785,21 +1862,18 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "afterPaste",
         "scope": PreferenceScope.Folder
-
     },
     "editor.parameterHints.enabled": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Enables a pop-up that shows parameter documentation and type information as you type."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.parameterHints.cycle": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Controls whether the parameter hints menu cycles or closes when reaching the end of the list."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.peekWidgetDefaultFocus": {
         "enumDescriptions": [
@@ -1814,94 +1888,119 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "tree",
         "scope": PreferenceScope.Folder
-
     },
     "editor.definitionLinkOpensInPeek": {
         "description": nls.localizeByDefault("Controls whether the Go to Definition mouse gesture always opens the peek widget."),
         "type": "boolean",
         "default": false,
         "scope": PreferenceScope.Folder
-
     },
     "editor.quickSuggestions": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-            "strings": {
-                "anyOf": [
-                    {
-                        "type": "boolean"
-                    },
-                    {
-                        "type": "string",
-                        "enum": [
-                            "on",
-                            "inline",
-                            "off"
-                        ],
-                        "enumDescriptions": [
-                            nls.localizeByDefault("Quick suggestions show inside the suggest widget"),
-                            nls.localizeByDefault("Quick suggestions show as ghost text"),
-                            nls.localizeByDefault("Quick suggestions are disabled")
-                        ]
-                    }
-                ],
-                "default": "off",
-                "description": nls.localizeByDefault("Enable quick suggestions inside strings.")
+        "anyOf": [
+            {
+                "type": "boolean"
             },
-            "comments": {
-                "anyOf": [
-                    {
-                        "type": "boolean"
-                    },
-                    {
-                        "type": "string",
-                        "enum": [
-                            "on",
-                            "inline",
-                            "off"
-                        ],
-                        "enumDescriptions": [
-                            nls.localizeByDefault("Quick suggestions show inside the suggest widget"),
-                            nls.localizeByDefault("Quick suggestions show as ghost text"),
-                            nls.localizeByDefault("Quick suggestions are disabled")
-                        ]
-                    }
+            {
+                "type": "string",
+                "enum": [
+                    "on",
+                    "inline",
+                    "off",
+                    "offWhenInlineCompletions"
                 ],
-                "default": "off",
-                "description": nls.localizeByDefault("Enable quick suggestions inside comments.")
+                "enumDescriptions": [
+                    nls.localizeByDefault("Quick suggestions are enabled for all token types"),
+                    nls.localizeByDefault("Quick suggestions show as ghost text for all token types"),
+                    nls.localizeByDefault("Quick suggestions are disabled for all token types"),
+                    nls.localizeByDefault("Quick suggestions are disabled for all token types when inline completions are showing")
+                ]
             },
-            "other": {
-                "anyOf": [
-                    {
-                        "type": "boolean"
-                    },
-                    {
-                        "type": "string",
-                        "enum": [
-                            "on",
-                            "inline",
-                            "off"
+            {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "strings": {
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "on",
+                                    "inline",
+                                    "off",
+                                    "offWhenInlineCompletions"
+                                ],
+                                "enumDescriptions": [
+                                    nls.localizeByDefault("Quick suggestions show inside the suggest widget"),
+                                    nls.localizeByDefault("Quick suggestions show as ghost text"),
+                                    nls.localizeByDefault("Quick suggestions are disabled"),
+                                    nls.localizeByDefault("Quick suggestions are disabled when inline completions are showing")
+                                ]
+                            }
                         ],
-                        "enumDescriptions": [
-                            nls.localizeByDefault("Quick suggestions show inside the suggest widget"),
-                            nls.localizeByDefault("Quick suggestions show as ghost text"),
-                            nls.localizeByDefault("Quick suggestions are disabled")
-                        ]
+                        "default": "off",
+                        "description": nls.localizeByDefault("Enable quick suggestions inside strings.")
+                    },
+                    "comments": {
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "on",
+                                    "inline",
+                                    "off",
+                                    "offWhenInlineCompletions"
+                                ],
+                                "enumDescriptions": [
+                                    nls.localizeByDefault("Quick suggestions show inside the suggest widget"),
+                                    nls.localizeByDefault("Quick suggestions show as ghost text"),
+                                    nls.localizeByDefault("Quick suggestions are disabled"),
+                                    nls.localizeByDefault("Quick suggestions are disabled when inline completions are showing")
+                                ]
+                            }
+                        ],
+                        "default": "off",
+                        "description": nls.localizeByDefault("Enable quick suggestions inside comments.")
+                    },
+                    "other": {
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "on",
+                                    "inline",
+                                    "off",
+                                    "offWhenInlineCompletions"
+                                ],
+                                "enumDescriptions": [
+                                    nls.localizeByDefault("Quick suggestions show inside the suggest widget"),
+                                    nls.localizeByDefault("Quick suggestions show as ghost text"),
+                                    nls.localizeByDefault("Quick suggestions are disabled"),
+                                    nls.localizeByDefault("Quick suggestions are disabled when inline completions are showing")
+                                ]
+                            }
+                        ],
+                        "default": "offWhenInlineCompletions",
+                        "description": nls.localizeByDefault("Enable quick suggestions outside of strings and comments.")
                     }
-                ],
-                "default": "on",
-                "description": nls.localizeByDefault("Enable quick suggestions outside of strings and comments.")
+                }
             }
-        },
+        ],
         "default": {
-            "other": "on",
+            "other": "offWhenInlineCompletions",
             "comments": "off",
             "strings": "off"
         },
         "markdownDescription": nls.localize("theia/editor/editor.quickSuggestions", "Controls whether suggestions should automatically show up while typing. This can be controlled for typing in comments, strings, and other code. Quick suggestion can be configured to show as ghost text or with the suggest widget. Also be aware of the `#editor.suggestOnTriggerCharacters#`-setting which controls if suggestions are triggered by special characters."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.quickSuggestionsDelay": {
         "description": nls.localizeByDefault("Controls the delay in milliseconds after which quick suggestions will show up."),
@@ -1910,16 +2009,20 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "minimum": 0,
         "maximum": 1073741824,
         "scope": PreferenceScope.Folder
-
     },
     "editor.renameOnType": {
         "description": nls.localizeByDefault("Controls whether the editor auto renames on type."),
-        "markdownDeprecationMessage": "Deprecated, use `editor.linkedEditing` instead.",
+        "markdownDeprecationMessage": "Deprecated, use `#editor.linkedEditing#` instead.",
+        "type": "boolean",
+        "default": false,
+        "scope": PreferenceScope.Folder,
+        "deprecationMessage": "Deprecated, use `#editor.linkedEditing#` instead."
+    },
+    "editor.renderRichScreenReaderContent": {
+        "markdownDescription": nls.localizeByDefault("Whether to render rich screen reader content when the `#editor.editContext#` setting is enabled."),
         "type": "boolean",
         "default": false,
         "scope": PreferenceScope.Folder
-        ,
-        "deprecationMessage": "Deprecated, use `editor.linkedEditing` instead."
     },
     "editor.renderControlCharacters": {
         "description": nls.localizeByDefault("Controls whether the editor should render control characters."),
@@ -1935,9 +2038,8 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             "on",
             "dimmed"
         ],
-        "default": "on",
+        "default": "dimmed",
         "scope": PreferenceScope.Folder
-
     },
     "editor.renderLineHighlight": {
         "enumDescriptions": [
@@ -1956,14 +2058,12 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "line",
         "scope": PreferenceScope.Folder
-
     },
     "editor.renderLineHighlightOnlyWhenFocus": {
         "description": nls.localizeByDefault("Controls if the editor should render the current line highlight only when the editor is focused."),
         "type": "boolean",
         "default": false,
         "scope": PreferenceScope.Folder
-
     },
     "editor.renderWhitespace": {
         "enumDescriptions": [
@@ -1984,14 +2084,12 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "selection",
         "scope": PreferenceScope.Folder
-
     },
     "editor.roundedSelection": {
         "description": nls.localizeByDefault("Controls whether selections should have rounded corners."),
         "type": "boolean",
         "default": true,
         "scope": PreferenceScope.Folder
-
     },
     "editor.rulers": {
         "type": "array",
@@ -2022,7 +2120,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "default": [],
         "description": nls.localizeByDefault("Render vertical rulers after a certain number of monospace characters. Use multiple values for multiple rulers. No rulers are drawn if array is empty."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.scrollbar.vertical": {
         "type": "string",
@@ -2039,7 +2136,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "default": "auto",
         "description": nls.localizeByDefault("Controls the visibility of the vertical scrollbar."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.scrollbar.horizontal": {
         "type": "string",
@@ -2056,35 +2152,30 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "default": "auto",
         "description": nls.localizeByDefault("Controls the visibility of the horizontal scrollbar."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.scrollbar.verticalScrollbarSize": {
         "type": "number",
         "default": 14,
         "description": nls.localizeByDefault("The width of the vertical scrollbar."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.scrollbar.horizontalScrollbarSize": {
         "type": "number",
         "default": 12,
         "description": nls.localizeByDefault("The height of the horizontal scrollbar."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.scrollbar.scrollByPage": {
         "type": "boolean",
         "default": false,
         "description": nls.localizeByDefault("Controls whether clicks scroll by page or jump to click position."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.scrollbar.ignoreHorizontalScrollbarInContentHeight": {
         "type": "boolean",
         "default": false,
         "description": nls.localizeByDefault("When set, the horizontal scrollbar will not increase the size of the editor's content."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.scrollBeyondLastColumn": {
         "description": nls.localizeByDefault("Controls the number of extra characters beyond which the editor will scroll horizontally."),
@@ -2093,28 +2184,61 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "minimum": 0,
         "maximum": 1073741824,
         "scope": PreferenceScope.Folder
-
     },
     "editor.scrollBeyondLastLine": {
         "description": nls.localizeByDefault("Controls whether the editor will scroll beyond the last line."),
         "type": "boolean",
         "default": true,
         "scope": PreferenceScope.Folder
-
     },
     "editor.scrollPredominantAxis": {
         "description": nls.localizeByDefault("Scroll only along the predominant axis when scrolling both vertically and horizontally at the same time. Prevents horizontal drift when scrolling vertically on a trackpad."),
         "type": "boolean",
         "default": true,
         "scope": PreferenceScope.Folder
-
+    },
+    "editor.selectionClipboard": {
+        "type": "boolean",
+        "default": true,
+        "description": nls.localizeByDefault("Controls whether the Linux primary clipboard should be supported."),
+        "included": !isOSX && !isWindows,
+        "scope": PreferenceScope.Folder
     },
     "editor.selectionHighlight": {
         "description": nls.localizeByDefault("Controls whether the editor should highlight matches similar to the selection."),
         "type": "boolean",
         "default": true,
         "scope": PreferenceScope.Folder
-
+    },
+    "editor.selectionHighlightMaxLength": {
+        "description": nls.localizeByDefault("Controls how many characters can be in the selection before similar matches are not highlighted. Set to zero for unlimited."),
+        "type": "integer",
+        "default": 200,
+        "minimum": 0,
+        "maximum": 1073741824,
+        "scope": PreferenceScope.Folder
+    },
+    "editor.selectionHighlightMultiline": {
+        "description": nls.localizeByDefault("Controls whether the editor should highlight selection matches that span multiple lines."),
+        "type": "boolean",
+        "default": false,
+        "scope": PreferenceScope.Folder
+    },
+    "editor.selectedTextMatchMode": {
+        "enumDescriptions": [
+            nls.localizeByDefault("Use the Find widget's match case and whole word settings."),
+            nls.localizeByDefault("Match occurrences case-sensitively and independently of the Find widget."),
+            nls.localizeByDefault("Match occurrences case-insensitively and independently of the Find widget.")
+        ],
+        "markdownDescription": nls.localizeByDefault("Controls how occurrences of selected text are matched when selecting the next, previous, or all occurrences and when highlighting selection matches. `caseSensitive` and `caseInsensitive` match substrings independently of the Find widget. An empty selection always starts a whole-word, case-sensitive search."),
+        "type": "string",
+        "enum": [
+            "findOptions",
+            "caseSensitive",
+            "caseInsensitive"
+        ],
+        "default": "findOptions",
+        "scope": PreferenceScope.Folder
     },
     "editor.showFoldingControls": {
         "enumDescriptions": [
@@ -2131,14 +2255,12 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "mouseover",
         "scope": PreferenceScope.Folder
-
     },
     "editor.showUnused": {
         "description": nls.localizeByDefault("Controls fading out of unused code."),
         "type": "boolean",
         "default": true,
         "scope": PreferenceScope.Folder
-
     },
     "editor.snippetSuggestions": {
         "enumDescriptions": [
@@ -2157,35 +2279,30 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "inline",
         "scope": PreferenceScope.Folder
-
     },
     "editor.smartSelect.selectLeadingAndTrailingWhitespace": {
         "description": nls.localizeByDefault("Whether leading and trailing whitespace should always be selected."),
         "default": true,
         "type": "boolean",
         "scope": PreferenceScope.Folder
-
     },
     "editor.smartSelect.selectSubwords": {
         "description": nls.localizeByDefault("Whether subwords (like 'foo' in 'fooBar' or 'foo_bar') should be selected."),
         "default": true,
         "type": "boolean",
         "scope": PreferenceScope.Folder
-
     },
     "editor.smoothScrolling": {
         "description": nls.localizeByDefault("Controls whether the editor will scroll using an animation."),
         "type": "boolean",
         "default": false,
         "scope": PreferenceScope.Folder
-
     },
     "editor.stickyScroll.enabled": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Shows the nested current scopes during the scroll at the top of the editor."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.stickyScroll.maxLineCount": {
         "type": "number",
@@ -2194,7 +2311,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "maximum": 20,
         "description": nls.localizeByDefault("Defines the maximum number of sticky lines to show."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.stickyScroll.defaultModel": {
         "type": "string",
@@ -2206,21 +2322,18 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "default": "outlineModel",
         "description": nls.localizeByDefault("Defines the model to use for determining which lines to stick. If the outline model does not exist, it will fall back on the folding provider model which falls back on the indentation model. This order is respected in all three cases."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.stickyScroll.scrollWithEditor": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Enable scrolling of Sticky Scroll with the editor's horizontal scrollbar."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.stickyTabStops": {
         "description": nls.localizeByDefault("Emulate selection behavior of tab characters when using spaces for indentation. Selection will stick to tab stops."),
         "type": "boolean",
         "default": false,
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.insertMode": {
         "type": "string",
@@ -2235,28 +2348,24 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "default": "insert",
         "description": nls.localizeByDefault("Controls whether words are overwritten when accepting completions. Note that this depends on extensions opting into this feature."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.filterGraceful": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Controls whether filtering and sorting suggestions accounts for small typos."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.localityBonus": {
         "type": "boolean",
         "default": false,
         "description": nls.localizeByDefault("Controls whether sorting favors words that appear close to the cursor."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.shareSuggestSelections": {
         "type": "boolean",
         "default": false,
         "markdownDescription": nls.localizeByDefault("Controls whether remembered suggestion selections are shared between multiple workspaces and windows (needs `#editor.suggestSelection#`)."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.selectionMode": {
         "type": "string",
@@ -2273,268 +2382,224 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             nls.localizeByDefault("Select a suggestion only when triggering IntelliSense as you type.")
         ],
         "default": "always",
-        "markdownDescription": nls.localizeByDefault('Controls whether a suggestion is selected when the widget shows. Note that this only applies to automatically triggered suggestions ({0} and {1}) and that a suggestion is always selected when explicitly invoked, e.g via `Ctrl+Space`.', '`#editor.quickSuggestions#`', '`#editor.suggestOnTriggerCharacters#`'),
+        "markdownDescription": nls.localize("theia/editor/editor.suggest.selectionMode", "Controls whether a suggestion is selected when the widget shows. Note that this only applies to automatically triggered suggestions (`#editor.quickSuggestions#` and `#editor.suggestOnTriggerCharacters#`) and that a suggestion is always selected when explicitly invoked, e.g via `Ctrl+Space`."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.snippetsPreventQuickSuggestions": {
         "type": "boolean",
         "default": false,
         "description": nls.localizeByDefault("Controls whether an active snippet prevents quick suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showIcons": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Controls whether to show or hide icons in suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showStatusBar": {
         "type": "boolean",
         "default": false,
         "description": nls.localizeByDefault("Controls the visibility of the status bar at the bottom of the suggest widget."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.preview": {
         "type": "boolean",
         "default": false,
         "description": nls.localizeByDefault("Controls whether to preview the suggestion outcome in the editor."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showInlineDetails": {
         "type": "boolean",
         "default": true,
         "description": nls.localizeByDefault("Controls whether suggest details show inline with the label or only in the details widget."),
         "scope": PreferenceScope.Folder
-
-    },
-    "editor.suggest.maxVisibleSuggestions": {
-        "type": "number",
-        "deprecationMessage": "This setting is deprecated. The suggest widget can now be resized.",
-        "default": 0,
-        "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.filteredTypes": {
         "type": "object",
         "deprecationMessage": "This setting is deprecated, please use separate settings like 'editor.suggest.showKeywords' or 'editor.suggest.showSnippets' instead.",
         "default": {},
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showMethods": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `method`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showFunctions": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `function`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showConstructors": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `constructor`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showDeprecated": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `deprecated`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.matchOnWordStartOnly": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense filtering requires that the first character matches on a word start. For example, `c` on `Console` or `WebContext` but _not_ on `description`. When disabled IntelliSense will show more results but still sorts them by match quality."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showFields": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `field`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showVariables": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `variable`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showClasses": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `class`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showStructs": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `struct`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showInterfaces": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `interface`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showModules": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `module`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showProperties": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `property`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showEvents": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `event`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showOperators": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `operator`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showUnits": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `unit`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showValues": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `value`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showConstants": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `constant`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showEnums": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `enum`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showEnumMembers": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `enumMember`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showKeywords": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `keyword`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showWords": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `text`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showColors": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `color`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showFiles": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `file`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showReferences": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `reference`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showCustomcolors": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `customcolor`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showFolders": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `folder`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showTypeParameters": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `typeParameter`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showSnippets": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `snippet`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showUsers": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `user`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggest.showIssues": {
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `issues`-suggestions."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggestFontSize": {
         "markdownDescription": nls.localize("theia/editor/editor.suggestFontSize", "Font size for the suggest widget. When set to `0`, the value of `#editor.fontSize#` is used."),
@@ -2543,7 +2608,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "minimum": 0,
         "maximum": 1000,
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggestLineHeight": {
         "markdownDescription": nls.localize("theia/editor/editor.suggestLineHeight", "Line height for the suggest widget. When set to `0`, the value of `#editor.lineHeight#` is used. The minimum value is 8."),
@@ -2552,14 +2616,12 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "minimum": 0,
         "maximum": 1000,
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggestOnTriggerCharacters": {
         "description": nls.localizeByDefault("Controls whether suggestions should automatically show up when typing trigger characters."),
         "type": "boolean",
         "default": true,
         "scope": PreferenceScope.Folder
-
     },
     "editor.suggestSelection": {
         "markdownEnumDescriptions": [
@@ -2576,7 +2638,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "first",
         "scope": PreferenceScope.Folder
-
     },
     "editor.tabCompletion": {
         "enumDescriptions": [
@@ -2593,7 +2654,12 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "off",
         "scope": PreferenceScope.Folder
-
+    },
+    "editor.trimWhitespaceOnDelete": {
+        "description": nls.localizeByDefault("Controls whether the editor will also delete the next line's indentation whitespace when deleting a newline."),
+        "type": "boolean",
+        "default": false,
+        "scope": PreferenceScope.Folder
     },
     "editor.unicodeHighlight.nonBasicASCII": {
         "type": [
@@ -2685,14 +2751,12 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "prompt",
         "scope": PreferenceScope.Folder
-
     },
     "editor.useTabStops": {
         "description": nls.localizeByDefault("Spaces and tabs are inserted and deleted in alignment with tab stops."),
         "type": "boolean",
         "default": true,
         "scope": PreferenceScope.Folder
-
     },
     "editor.wordBreak": {
         "markdownEnumDescriptions": [
@@ -2707,32 +2771,32 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "normal",
         "scope": PreferenceScope.Folder
-
     },
     "editor.wordSegmenterLocales": {
         "anyOf": [
             {
-                "description": nls.localizeByDefault("Locales to be used for word segmentation when doing word related navigations or operations. Specify the BCP 47 language tag of the word you wish to recognize (e.g., ja, zh-CN, zh-Hant-TW, etc.)."),
                 "type": "string"
             },
             {
-                "description": nls.localizeByDefault("Locales to be used for word segmentation when doing word related navigations or operations. Specify the BCP 47 language tag of the word you wish to recognize (e.g., ja, zh-CN, zh-Hant-TW, etc.)."),
                 "type": "array",
                 "items": {
                     "type": "string"
                 }
             }
         ],
+        "description": nls.localizeByDefault("Locales to be used for word segmentation when doing word related navigations or operations. Specify the BCP 47 language tag of the word you wish to recognize (e.g., ja, zh-CN, zh-Hant-TW, etc.)."),
+        "type": "array",
+        "items": {
+            "type": "string"
+        },
         "default": [],
         "scope": PreferenceScope.Folder
-
     },
     "editor.wordSeparators": {
         "description": nls.localizeByDefault("Characters that will be used as word separators when doing word related navigations or operations."),
         "type": "string",
         "default": "`~!@#$%^&*()-=+[{]}\\|;:'\",.<>/?",
         "scope": PreferenceScope.Folder
-
     },
     "editor.wordWrap": {
         "markdownEnumDescriptions": [
@@ -2751,7 +2815,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "off",
         "scope": PreferenceScope.Folder
-
     },
     "editor.wordWrapColumn": {
         "markdownDescription": nls.localizeByDefault("Controls the wrapping column of the editor when `#editor.wordWrap#` is `wordWrapColumn` or `bounded`."),
@@ -2760,7 +2823,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "minimum": 1,
         "maximum": 1073741824,
         "scope": PreferenceScope.Folder
-
     },
     "editor.wrappingIndent": {
         "type": "string",
@@ -2779,7 +2841,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "description": nls.localizeByDefault("Controls the indentation of wrapped lines."),
         "default": "same",
         "scope": PreferenceScope.Folder
-
     },
     "editor.wrappingStrategy": {
         "enumDescriptions": [
@@ -2794,14 +2855,18 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "default": "simple",
         "description": nls.localizeByDefault("Controls the algorithm that computes wrapping points. Note that when in accessibility mode, advanced will be used for the best experience."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.showDeprecated": {
         "description": nls.localizeByDefault("Controls strikethrough deprecated variables."),
         "type": "boolean",
         "default": true,
         "scope": PreferenceScope.Folder
-
+    },
+    "editor.inertialScroll": {
+        "description": nls.localizeByDefault("Make scrolling inertial - mostly useful with touchpad on linux."),
+        "type": "boolean",
+        "default": false,
+        "scope": PreferenceScope.Folder
     },
     "editor.inlayHints.enabled": {
         "type": "string",
@@ -2820,42 +2885,48 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             nls.localizeByDefault("Inlay hints are disabled")
         ],
         "scope": PreferenceScope.Folder
-
     },
     "editor.inlayHints.fontSize": {
         "type": "number",
         "default": 0,
         "markdownDescription": nls.localize("theia/editor/editor.inlayHints.fontSize", "Controls font size of inlay hints in the editor. As default the `#editor.fontSize#` is used when the configured value is less than `5` or greater than the editor font size."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.inlayHints.fontFamily": {
         "type": "string",
         "default": "",
         "markdownDescription": nls.localize("theia/editor/editor.inlayHints.fontFamily", "Controls font family of inlay hints in the editor. When set to empty, the `#editor.fontFamily#` is used."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.inlayHints.padding": {
         "type": "boolean",
         "default": false,
         "description": nls.localizeByDefault("Enables the padding around the inlay hints in the editor."),
         "scope": PreferenceScope.Folder
-
     },
     "editor.inlayHints.maximumLength": {
         "type": "number",
         "default": 43,
         "markdownDescription": nls.localizeByDefault("Maximum overall length of inlay hints, for a single line, before they get truncated by the editor. Set to `0` to never truncate"),
         "scope": PreferenceScope.Folder
-
+    },
+    "editor.wrapOnEscapedLineFeeds": {
+        "markdownDescription": nls.localizeByDefault("Controls whether literal `\\n` shall trigger a wordWrap when `#editor.wordWrap#` is enabled.\n\nFor example:\n```c\nchar* str=\"hello\\nworld\"\n```\nwill be displayed as\n```c\nchar* str=\"hello\\n\n           world\"\n```"),
+        "type": "boolean",
+        "default": false,
+        "scope": PreferenceScope.Folder
+    },
+    "editor.wordWrapIndicator": {
+        "markdownDescription": nls.localizeByDefault("Controls whether an indicator is rendered at the wrapping column of lines that wrap. Only has an effect when `#editor.wordWrap#` is enabled."),
+        "type": "boolean",
+        "default": false,
+        "scope": PreferenceScope.Folder
     },
     "editor.tabFocusMode": {
         "markdownDescription": nls.localizeByDefault("Controls whether the editor receives tabs or defers them to the workbench for navigation."),
         "type": "boolean",
         "default": false,
         "scope": PreferenceScope.Folder
-
     },
     "editor.defaultColorDecorators": {
         "enumDescriptions": [
@@ -2872,7 +2943,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "auto",
         "scope": PreferenceScope.Folder
-
     },
     "editor.colorDecoratorsActivatedOn": {
         "enumDescriptions": [
@@ -2889,54 +2959,69 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "clickAndHover",
         "scope": PreferenceScope.Folder
-
     },
     "editor.inlineCompletionsAccessibilityVerbose": {
         "description": nls.localizeByDefault("Controls whether the accessibility hint should be provided to screen reader users when an inline completion is shown."),
         "type": "boolean",
         "default": false,
         "scope": PreferenceScope.Folder
-
+    },
+    "editor.scrollOnMiddleClick": {
+        "description": nls.localizeByDefault("Controls whether the editor will scroll when the middle button is pressed."),
+        "type": "boolean",
+        "default": false,
+        "scope": PreferenceScope.Folder
+    },
+    "editor.doubleClickSelectsBlock": {
+        "description": nls.localizeByDefault("Controls whether double-clicking next to a bracket or quote selects the content inside."),
+        "type": "boolean",
+        "default": true,
+        "scope": PreferenceScope.Folder
+    },
+    "editor.fullwidthCharacterWidth": {
+        "enumDescriptions": [
+            nls.localizeByDefault("Render full-width characters using the width defined by the font."),
+            nls.localizeByDefault("Render full-width characters centered in exactly two character cells. Only applies to monospace fonts when font ligatures are disabled. Does not apply to multi codepoint full-width characters or to GPU rendering. This has a performance impact on line rendering.")
+        ],
+        "description": nls.localizeByDefault("Controls the width used to render full-width characters."),
+        "type": "string",
+        "enum": [
+            "font",
+            "twoCells"
+        ],
+        "default": "font",
+        "scope": PreferenceScope.Folder
     },
     "editor.codeActionWidget.showHeaders": {
         "type": "boolean",
         "scope": PreferenceScope.Folder,
         "description": nls.localizeByDefault("Enable/disable showing group headers in the Code Action menu."),
-        "default": true,
-
+        "default": true
     },
     "editor.codeActionWidget.includeNearbyQuickFixes": {
         "type": "boolean",
         "scope": PreferenceScope.Folder,
         "description": nls.localizeByDefault("Enable/disable showing nearest Quick Fix within a line when not currently on a diagnostic."),
-        "default": true,
-
+        "default": true
     },
     "editor.codeActions.triggerOnFocusChange": {
         "type": "boolean",
         "scope": PreferenceScope.Folder,
         "markdownDescription": nls.localize("theia/editor/editor.codeActions.triggerOnFocusChange", "Enable triggering `#editor.codeActionsOnSave#` when `#files.autoSave#` is set to `afterDelay`. Code Actions must be set to `always` to be triggered for window and focus changes."),
-        "default": false,
-
+        "default": false
     },
     "editor.rename.enablePreview": {
         "scope": PreferenceScope.Folder,
         "description": nls.localizeByDefault("Enable/disable the ability to preview changes before renaming"),
         "default": true,
-        "type": "boolean",
-
+        "type": "boolean"
     },
     "editor.find.globalFindClipboard": {
         "type": "boolean",
         "default": false,
         "description": nls.localizeByDefault("Controls whether the Find Widget should read or modify the shared find clipboard on macOS."),
-        "included": isOSX
-    },
-    "editor.selectionClipboard": {
-        "type": "boolean",
-        "default": true,
-        "description": nls.localizeByDefault("Controls whether the Linux primary clipboard should be supported."),
-        "included": !isOSX && !isWindows
+        "included": isOSX,
+        "scope": PreferenceScope.Folder
     }
 };
 
@@ -2947,7 +3032,7 @@ export interface GeneratedEditorPreferences {
     'editor.detectIndentation': boolean;
     'editor.trimAutoWhitespace': boolean;
     'editor.largeFileOptimizations': boolean;
-    'editor.wordBasedSuggestions': 'off' | 'currentDocument' | 'matchingDocuments' | 'allDocuments';
+    'editor.wordBasedSuggestions': 'off' | 'offWithInlineSuggestions' | 'currentDocument' | 'matchingDocuments' | 'allDocuments';
     'editor.semanticHighlighting.enabled': true | false | 'configuredByTheme';
     'editor.stablePeek': boolean;
     'editor.maxTokenizationLineLength': number;
@@ -2955,14 +3040,18 @@ export interface GeneratedEditorPreferences {
     'editor.experimental.asyncTokenizationLogging': boolean;
     'editor.experimental.asyncTokenizationVerification': boolean;
     'editor.experimental.treeSitterTelemetry': boolean;
-    'editor.experimental.preferTreeSitter': 'typescript'[];
-    'editor.language.brackets': string[][] | 'null';
-    'editor.language.colorizedBracketPairs': string[][] | 'null';
+    'editor.experimental.preferTreeSitter.css': boolean;
+    'editor.experimental.preferTreeSitter.typescript': boolean;
+    'editor.experimental.preferTreeSitter.ini': boolean;
+    'editor.experimental.preferTreeSitter.regex': boolean;
+    'editor.language.brackets': string[][] | null;
+    'editor.language.colorizedBracketPairs': string[][] | null;
     'diffEditor.maxComputationTime': number;
     'diffEditor.maxFileSize': number;
     'diffEditor.renderSideBySide': boolean;
     'diffEditor.renderSideBySideInlineBreakpoint': number;
     'diffEditor.useInlineViewWhenSpaceIsLimited': boolean;
+    'diffEditor.hideOriginalLineNumbers': boolean | null;
     'diffEditor.renderMarginRevertIcon': boolean;
     'diffEditor.renderGutterMenu': boolean;
     'diffEditor.ignoreTrimWhitespace': boolean;
@@ -2981,6 +3070,9 @@ export interface GeneratedEditorPreferences {
     'editor.acceptSuggestionOnEnter': 'on' | 'smart' | 'off';
     'editor.accessibilitySupport': 'auto' | 'on' | 'off';
     'editor.accessibilityPageSize': number;
+    'editor.allowVariableLineHeights': boolean;
+    'editor.allowVariableFonts': boolean;
+    'editor.allowVariableFontsInAccessibilityMode': boolean;
     'editor.autoClosingBrackets': 'always' | 'languageDefined' | 'beforeWhitespace' | 'never';
     'editor.autoClosingComments': 'always' | 'languageDefined' | 'beforeWhitespace' | 'never';
     'editor.screenReaderAnnounceInlineSuggestion': boolean;
@@ -2988,6 +3080,8 @@ export interface GeneratedEditorPreferences {
     'editor.autoClosingOvertype': 'always' | 'auto' | 'never';
     'editor.autoClosingQuotes': 'always' | 'languageDefined' | 'beforeWhitespace' | 'never';
     'editor.autoIndent': 'none' | 'keep' | 'brackets' | 'advanced' | 'full';
+    'editor.autoIndentOnPaste': boolean;
+    'editor.autoIndentOnPasteWithinString': boolean;
     'editor.autoSurround': 'languageDefined' | 'quotes' | 'brackets' | 'never';
     'editor.bracketPairColorization.enabled': boolean;
     'editor.bracketPairColorization.independentColorPoolPerBracketType': boolean;
@@ -3011,11 +3105,13 @@ export interface GeneratedEditorPreferences {
     'editor.cursorSurroundingLines': number;
     'editor.cursorSurroundingLinesStyle': 'default' | 'all';
     'editor.cursorWidth': number;
+    'editor.cursorHeight': number;
     'editor.dragAndDrop': boolean;
     'editor.dropIntoEditor.enabled': boolean;
     'editor.dropIntoEditor.showDropSelector': 'afterDrop' | 'never';
-    'editor.experimentalEditContextEnabled': boolean;
+    'editor.editContext': boolean;
     'editor.emptySelectionClipboard': boolean;
+    'editor.experimentalGpuAcceleration': 'off' | 'on';
     'editor.experimentalWhitespaceRendering': 'svg' | 'font' | 'off';
     'editor.fastScrollSensitivity': number;
     'editor.find.cursorMoveOnType': boolean;
@@ -3023,7 +3119,10 @@ export interface GeneratedEditorPreferences {
     'editor.find.autoFindInSelection': 'never' | 'always' | 'multiline';
     'editor.find.addExtraSpaceOnTop': boolean;
     'editor.find.loop': boolean;
+    'editor.find.closeOnResult': boolean;
     'editor.find.history': 'never' | 'workspace';
+    'editor.find.replaceHistory': 'never' | 'workspace';
+    'editor.find.findOnType': boolean;
     'editor.folding': boolean;
     'editor.foldingStrategy': 'auto' | 'indentation';
     'editor.foldingHighlight': boolean;
@@ -3033,7 +3132,7 @@ export interface GeneratedEditorPreferences {
     'editor.fontFamily': string;
     'editor.fontLigatures': boolean | string;
     'editor.fontSize': number;
-    'editor.fontWeight': number | string | ('normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900');
+    'editor.fontWeight': number | string | 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
     'editor.fontVariations': boolean | string;
     'editor.formatOnPaste': boolean;
     'editor.formatOnType': boolean;
@@ -3050,20 +3149,28 @@ export interface GeneratedEditorPreferences {
     'editor.gotoLocation.alternativeImplementationCommand': '' | 'editor.action.referenceSearch.trigger' | 'editor.action.goToReferences' | 'editor.action.peekImplementation' | 'editor.action.goToImplementation' | 'editor.action.peekTypeDefinition' | 'editor.action.goToTypeDefinition' | 'editor.action.peekDeclaration' | 'editor.action.revealDeclaration' | 'editor.action.peekDefinition' | 'editor.action.revealDefinitionAside' | 'editor.action.revealDefinition';
     'editor.gotoLocation.alternativeReferenceCommand': '' | 'editor.action.referenceSearch.trigger' | 'editor.action.goToReferences' | 'editor.action.peekImplementation' | 'editor.action.goToImplementation' | 'editor.action.peekTypeDefinition' | 'editor.action.goToTypeDefinition' | 'editor.action.peekDeclaration' | 'editor.action.revealDeclaration' | 'editor.action.peekDefinition' | 'editor.action.revealDefinitionAside' | 'editor.action.revealDefinition';
     'editor.hideCursorInOverviewRuler': boolean;
-    'editor.hover.enabled': boolean;
+    'editor.hover.enabled': 'on' | 'off' | 'onKeyboardModifier';
     'editor.hover.delay': number;
     'editor.hover.sticky': boolean;
     'editor.hover.hidingDelay': number;
     'editor.hover.above': boolean;
+    'editor.hover.showLongLineWarning': boolean;
     'editor.inlineSuggest.enabled': boolean;
     'editor.inlineSuggest.showToolbar': 'always' | 'onHover' | 'never';
     'editor.inlineSuggest.syntaxHighlightingEnabled': boolean;
     'editor.inlineSuggest.suppressSuggestions': boolean;
+    'editor.inlineSuggest.suppressInSnippetMode': boolean;
+    'editor.inlineSuggest.minShowDelay': number;
+    'editor.inlineSuggest.experimental.suppressInlineSuggestions': string;
+    'editor.inlineSuggest.experimental.emptyResponseInformation': boolean;
+    'editor.inlineSuggest.triggerCommandOnProviderChange': boolean;
+    'editor.inlineSuggest.experimental.showOnSuggestConflict': 'always' | 'never' | 'whenSuggestListIsIncomplete';
     'editor.inlineSuggest.fontFamily': string;
-    'editor.inlineSuggest.edits.experimental.enabled': boolean;
-    'editor.inlineSuggest.edits.experimental.useMixedLinesDiff': 'never' | 'whenPossible';
-    'editor.inlineSuggest.edits.experimental.useInterleavedLinesDiff': 'never' | 'always' | 'afterJump';
-    'editor.inlineSuggest.edits.experimental.onlyShowWhenCloseToCursor': boolean;
+    'editor.inlineSuggest.edits.allowCodeShifting': 'always' | 'horizontal' | 'never';
+    'editor.inlineSuggest.edits.showLongDistanceHint': boolean;
+    'editor.inlineSuggest.edits.longDistanceHintContextLineCount': number;
+    'editor.inlineSuggest.edits.renderSideBySide': 'auto' | 'never';
+    'editor.inlineSuggest.edits.showCollapsed': boolean;
     'editor.letterSpacing': number;
     'editor.lightbulb.enabled': 'off' | 'onCode' | 'on';
     'editor.lineHeight': number;
@@ -3072,7 +3179,7 @@ export interface GeneratedEditorPreferences {
     'editor.links': boolean;
     'editor.matchBrackets': 'always' | 'near' | 'never';
     'editor.minimap.enabled': boolean;
-    'editor.minimap.autohide': boolean;
+    'editor.minimap.autohide': 'none' | 'mouseover' | 'scroll';
     'editor.minimap.size': 'proportional' | 'fill' | 'fit';
     'editor.minimap.side': 'left' | 'right';
     'editor.minimap.showSlider': 'always' | 'mouseover';
@@ -3081,16 +3188,19 @@ export interface GeneratedEditorPreferences {
     'editor.minimap.maxColumn': number;
     'editor.minimap.showRegionSectionHeaders': boolean;
     'editor.minimap.showMarkSectionHeaders': boolean;
+    'editor.minimap.markSectionHeaderRegex': string;
     'editor.minimap.sectionHeaderFontSize': number;
     'editor.minimap.sectionHeaderLetterSpacing': number;
     'editor.mouseWheelScrollSensitivity': number;
     'editor.mouseWheelZoom': boolean;
     'editor.multiCursorMergeOverlapping': boolean;
     'editor.multiCursorModifier': 'ctrlCmd' | 'alt';
+    'editor.mouseMiddleClickAction': 'default' | 'openLink' | 'ctrlLeftClick';
     'editor.multiCursorPaste': 'spread' | 'full';
     'editor.multiCursorLimit': number;
     'editor.occurrencesHighlight': 'off' | 'singleFile' | 'multiFile';
     'editor.occurrencesHighlightDelay': number;
+    'editor.occurrencesHighlightFromAllProviders': boolean;
     'editor.overtypeCursorStyle': 'line' | 'block' | 'underline' | 'line-thin' | 'block-outline' | 'underline-thin';
     'editor.overtypeOnPaste': boolean;
     'editor.overviewRulerBorder': boolean;
@@ -3102,13 +3212,14 @@ export interface GeneratedEditorPreferences {
     'editor.parameterHints.cycle': boolean;
     'editor.peekWidgetDefaultFocus': 'tree' | 'editor';
     'editor.definitionLinkOpensInPeek': boolean;
-    'editor.quickSuggestions': {
-        strings: 'on' | 'inline' | 'off',
-        comments: 'on' | 'inline' | 'off'
-        other: 'on' | 'inline' | 'off'
+    'editor.quickSuggestions': boolean | 'on' | 'inline' | 'off' | 'offWhenInlineCompletions' | {
+        strings: boolean | 'on' | 'inline' | 'off' | 'offWhenInlineCompletions',
+        comments: boolean | 'on' | 'inline' | 'off' | 'offWhenInlineCompletions',
+        other: boolean | 'on' | 'inline' | 'off' | 'offWhenInlineCompletions'
     };
     'editor.quickSuggestionsDelay': number;
     'editor.renameOnType': boolean;
+    'editor.renderRichScreenReaderContent': boolean;
     'editor.renderControlCharacters': boolean;
     'editor.renderFinalNewline': 'off' | 'on' | 'dimmed';
     'editor.renderLineHighlight': 'none' | 'gutter' | 'line' | 'all';
@@ -3125,7 +3236,11 @@ export interface GeneratedEditorPreferences {
     'editor.scrollBeyondLastColumn': number;
     'editor.scrollBeyondLastLine': boolean;
     'editor.scrollPredominantAxis': boolean;
+    'editor.selectionClipboard': boolean;
     'editor.selectionHighlight': boolean;
+    'editor.selectionHighlightMaxLength': number;
+    'editor.selectionHighlightMultiline': boolean;
+    'editor.selectedTextMatchMode': 'findOptions' | 'caseSensitive' | 'caseInsensitive';
     'editor.showFoldingControls': 'always' | 'never' | 'mouseover';
     'editor.showUnused': boolean;
     'editor.snippetSuggestions': 'top' | 'bottom' | 'inline' | 'none';
@@ -3147,7 +3262,6 @@ export interface GeneratedEditorPreferences {
     'editor.suggest.showStatusBar': boolean;
     'editor.suggest.preview': boolean;
     'editor.suggest.showInlineDetails': boolean;
-    'editor.suggest.maxVisibleSuggestions': number;
     'editor.suggest.filteredTypes': object;
     'editor.suggest.showMethods': boolean;
     'editor.suggest.showFunctions': boolean;
@@ -3184,6 +3298,7 @@ export interface GeneratedEditorPreferences {
     'editor.suggestOnTriggerCharacters': boolean;
     'editor.suggestSelection': 'first' | 'recentlyUsed' | 'recentlyUsedByPrefix';
     'editor.tabCompletion': 'on' | 'off' | 'onlySnippets';
+    'editor.trimWhitespaceOnDelete': boolean;
     'editor.unicodeHighlight.nonBasicASCII': true | false | 'inUntrustedWorkspace';
     'editor.unicodeHighlight.invisibleCharacters': boolean;
     'editor.unicodeHighlight.ambiguousCharacters': boolean;
@@ -3201,19 +3316,24 @@ export interface GeneratedEditorPreferences {
     'editor.wrappingIndent': 'none' | 'same' | 'indent' | 'deepIndent';
     'editor.wrappingStrategy': 'simple' | 'advanced';
     'editor.showDeprecated': boolean;
+    'editor.inertialScroll': boolean;
     'editor.inlayHints.enabled': 'on' | 'onUnlessPressed' | 'offUnlessPressed' | 'off';
     'editor.inlayHints.fontSize': number;
     'editor.inlayHints.fontFamily': string;
     'editor.inlayHints.padding': boolean;
     'editor.inlayHints.maximumLength': number;
+    'editor.wrapOnEscapedLineFeeds': boolean;
+    'editor.wordWrapIndicator': boolean;
     'editor.tabFocusMode': boolean;
     'editor.defaultColorDecorators': 'auto' | 'always' | 'never';
     'editor.colorDecoratorsActivatedOn': 'clickAndHover' | 'hover' | 'click';
     'editor.inlineCompletionsAccessibilityVerbose': boolean;
+    'editor.scrollOnMiddleClick': boolean;
+    'editor.doubleClickSelectsBlock': boolean;
+    'editor.fullwidthCharacterWidth': 'font' | 'twoCells';
     'editor.codeActionWidget.showHeaders': boolean;
     'editor.codeActionWidget.includeNearbyQuickFixes': boolean;
     'editor.codeActions.triggerOnFocusChange': boolean;
     'editor.rename.enablePreview': boolean;
     'editor.find.globalFindClipboard': boolean;
-    'editor.selectionClipboard': boolean;
 }

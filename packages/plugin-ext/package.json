@@ -29,7 +29,7 @@
     "@theia/markers": "1.77.0",
     "@theia/messages": "1.77.0",
     "@theia/monaco": "1.77.0",
-    "@theia/monaco-editor-core": "1.108.201",
+    "@theia/monaco-editor-core": "1.144.1",
     "@theia/navigator": "1.77.0",
     "@theia/notebook": "1.77.0",
     "@theia/output": "1.77.0",
