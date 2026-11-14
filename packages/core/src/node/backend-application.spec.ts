@@ -54,9 +54,13 @@ describe('BackendApplication', () => {
     let exitStub: sinon.SinonStub;
     let terminateChildrenStub: sinon.SinonStub;
     let savedListeners: Partial<Record<ProcessEventName, AnyListener[]>>;
+    let savedStdoutErrorListeners: AnyListener[];
+    let savedStderrErrorListeners: AnyListener[];
 
     beforeEach(() => {
         sandbox = sinon.createSandbox();
+        savedStdoutErrorListeners = process.stdout.listeners('error') as AnyListener[];
+        savedStderrErrorListeners = process.stderr.listeners('error') as AnyListener[];
 
         // Snapshot any existing listeners so we can restore after each test
         // (BackendApplication installs its own as part of construction).
@@ -76,6 +80,18 @@ describe('BackendApplication', () => {
             process.removeAllListeners(evt);
             for (const listener of savedListeners[evt] ?? []) {
                 process.on(evt, listener);
+            }
+        }
+
+        for (const listener of process.stdout.listeners('error')) {
+            if (!savedStdoutErrorListeners.includes(listener as AnyListener)) {
+                process.stdout.removeListener('error', listener as AnyListener);
+            }
+        }
+
+        for (const listener of process.stderr.listeners('error')) {
+            if (!savedStderrErrorListeners.includes(listener as AnyListener)) {
+                process.stderr.removeListener('error', listener as AnyListener);
             }
         }
 
@@ -378,6 +394,7 @@ describe('BackendApplication', () => {
 
     });
 
+
     describe('process error handlers', () => {
 
         it('does not log when SIGPIPE is received', () => {
@@ -391,19 +408,61 @@ describe('BackendApplication', () => {
             sinon.assert.notCalled(errorStub);
         });
 
-        it('does not log an uncaught EPIPE error', () => {
+        it('ignores EPIPE errors on stdout', () => {
             const errorStub = sandbox.stub(MockLogger.prototype, 'error').resolves();
 
             const container = createTestContainer();
             container.get(TestBackendApplication);
 
-            const error = Object.assign(new Error('write EPIPE'), {
-                code: 'EPIPE'
-            });
+            const error = Object.assign(new Error('write EPIPE'), { code: 'EPIPE' });
+
+            process.stdout.emit('error', error);
+
+            sinon.assert.notCalled(errorStub);
+        });
+
+        it('ignores EPIPE errors on stderr', () => {
+            const errorStub = sandbox.stub(MockLogger.prototype, 'error').resolves();
+
+            const container = createTestContainer();
+            container.get(TestBackendApplication);
+
+            const error = Object.assign(new Error('write EPIPE'), { code: 'EPIPE' });
+
+            process.stderr.emit('error', error);
+
+            sinon.assert.notCalled(errorStub);
+        });
+
+        it('rethrows non-EPIPE stdout errors', () => {
+            const container = createTestContainer();
+            container.get(TestBackendApplication);
+
+            const error = Object.assign(new Error('stdout failure'), { code: 'EIO' });
+
+            expect(() => process.stdout.emit('error', error)).to.throw(error);
+        });
+
+        it('rethrows non-EPIPE stderr errors', () => {
+            const container = createTestContainer();
+            container.get(TestBackendApplication);
+
+            const error = Object.assign(new Error('stderr failure'), { code: 'EIO' });
+
+            expect(() => process.stderr.emit('error', error)).to.throw(error);
+        });
+
+        it('continues logging uncaught EPIPE exceptions', () => {
+            const errorStub = sandbox.stub(MockLogger.prototype, 'error').resolves();
+
+            const container = createTestContainer();
+            container.get(TestBackendApplication);
+
+            const error = Object.assign(new Error('write EPIPE'), { code: 'EPIPE' });
 
             process.emit('uncaughtException', error);
 
-            sinon.assert.notCalled(errorStub);
+            sinon.assert.calledTwice(errorStub);
         });
 
         it('continues logging other uncaught exceptions', () => {
@@ -415,6 +474,20 @@ describe('BackendApplication', () => {
             process.emit('uncaughtException', new Error('Unexpected failure'));
 
             sinon.assert.calledTwice(errorStub);
+        });
+
+        it('handles null uncaught exceptions without throwing', () => {
+            const container = createTestContainer();
+            container.get(TestBackendApplication);
+
+            expect(() => process.emit('uncaughtException', null as unknown as Error)).not.to.throw();
+        });
+
+        it('handles undefined uncaught exceptions without throwing', () => {
+            const container = createTestContainer();
+            container.get(TestBackendApplication);
+
+            expect(() => process.emit('uncaughtException', undefined as unknown as Error)).not.to.throw();
         });
 
     });

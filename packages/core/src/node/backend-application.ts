@@ -221,6 +221,15 @@ export class BackendApplication {
             // Ignore SIGPIPE to avoid logging to a potentially closed output stream.
         });
 
+        const handleOutputStreamError = (error: NodeJS.ErrnoException): void => {
+            if (error.code !== 'EPIPE') {
+                throw error;
+            }
+        };
+
+        process.stdout.on('error', handleOutputStreamError);
+        process.stderr.on('error', handleOutputStreamError);
+
         // Handles normal process termination.
         process.on('exit', () => this.onStop());
 
@@ -508,14 +517,13 @@ export class BackendApplication {
     }
 
     protected handleUncaughtError(error: Error): void {
-        if ((error as NodeJS.ErrnoException).code === 'EPIPE') {
+        if (!error) {
             return;
         }
-        if (error) {
-            this.logger.error('Uncaught Exception: ', error.toString());
-            if (error.stack) {
-                this.logger.error(error.stack);
-            }
+
+        this.logger.error('Uncaught Exception: ', error.toString());
+        if (error.stack) {
+            this.logger.error(error.stack);
         }
     }
 
