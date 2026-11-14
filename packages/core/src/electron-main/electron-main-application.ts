@@ -14,14 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, named } from 'inversify';
+import { inject, injectable, multiInject, named, optional } from 'inversify';
 import {
     screen, app, BrowserWindow, WebContents, Event as ElectronEvent, BrowserWindowConstructorOptions, nativeImage,
     nativeTheme, shell, dialog, session
 } from '../../electron-shared/electron/index.cjs';
 import * as path from 'path';
-import { Argv } from '../../shared/yargs/index.cjs';
-import yargsFactory from 'yargs/yargs';
 import { AddressInfo } from 'net';
 import { promises as fs } from 'fs';
 import { existsSync, mkdirSync } from '../../shared/fs-extra/index.cjs';
@@ -51,8 +49,6 @@ import { ThemeMode } from '../common/theme.js';
 import { backendGlobal } from '../node/backend-global.js';
 
 export { ElectronMainApplicationGlobals };
-
-const createYargs: (argv?: string[], cwd?: string) => Argv = yargsFactory;
 
 const ELECTRON_TIMER_WARNING_THRESHOLD = 50;
 
@@ -214,6 +210,9 @@ export class ElectronMainApplication {
     @inject(LaunchArgsStore)
     protected readonly launchArgsStore: LaunchArgsStore;
 
+    @multiInject(LaunchArgvParser.BooleanOption) @optional()
+    protected readonly booleanLaunchOptions: string[] = [];
+
     protected isPortable = this.makePortable();
 
     protected readonly electronStore = new Storage<{
@@ -257,8 +256,7 @@ export class ElectronMainApplication {
 
     async start(config: FrontendApplicationConfig): Promise<void> {
         const argv = this.processArgv.getProcessArgvWithoutBin(process.argv);
-        createYargs(argv, process.cwd())
-            .help(false)
+        LaunchArgvParser.command(argv, process.cwd(), this.booleanLaunchOptions)
             .command('$0 [file]', false,
                 cmd => cmd
                     .option('electronUserData', {
@@ -266,7 +264,7 @@ export class ElectronMainApplication {
                         describe: 'The area where the electron main process puts its data'
                     })
                     .positional('file', { type: 'string' }),
-                async args => {
+                async ({ file, ...args }) => {
                     if (args.electronUserData) {
                         console.info(`using electron user data area : '${args.electronUserData}'`);
                         await fs.mkdir(args.electronUserData, { recursive: true });
@@ -289,9 +287,9 @@ export class ElectronMainApplication {
                         () => this.startContributions());
                     startupMeasurement.info('Startup sequence completed');
 
-                    const launchArgs = LaunchArgvParser.parse(argv);
+                    const launchArgs = LaunchArgvParser.fromParsed(args);
                     this.handleMainCommand({
-                        file: args.file,
+                        file,
                         cwd: process.cwd(),
                         secondInstance: false,
                         claimed: await this.isWindowClaimed(launchArgs)
@@ -938,15 +936,14 @@ export class ElectronMainApplication {
             this.openUrl(originalArgv[originalArgv.length - 1]);
         } else {
             const argv = this.processArgv.getProcessArgvWithoutBin(originalArgv);
-            createYargs(argv, cwd)
-                .help(false)
+            LaunchArgvParser.command(argv, cwd, this.booleanLaunchOptions)
                 .command('$0 [file]', false,
                     cmd => cmd
                         .positional('file', { type: 'string' }),
-                    async args => {
-                        const launchArgs = LaunchArgvParser.parse(argv);
+                    async ({ file, ...args }) => {
+                        const launchArgs = LaunchArgvParser.fromParsed(args);
                         await this.handleMainCommand({
-                            file: args.file,
+                            file,
                             cwd: cwd,
                             secondInstance: true,
                             launchArgs,
