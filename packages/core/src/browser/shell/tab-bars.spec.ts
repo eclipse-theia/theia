@@ -17,6 +17,7 @@
 import { enableJSDOM } from '../test/jsdom.js';
 let disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 
 import { MessageLoop } from '@lumino/messaging';
 import { Signal } from '@lumino/signaling';
@@ -514,19 +515,26 @@ describe('ScrollableTabBar pinned tabs', () => {
     });
 
     it('suspends pinned tab transitions only for the first frame of a drag', async () => {
-        // jsdom has no requestAnimationFrame unless it is polyfilled
-        (window as unknown as { requestAnimationFrame?: unknown }).requestAnimationFrame ??=
-            (callback: FrameRequestCallback): number => setTimeout(() => callback(performance.now()), 0) as unknown as number;
-        const tabBar = createRenderedTabBar();
-        tabBar.pinnedTabSizingMode = 'shrink';
-        const suspend = (): void =>
-            (tabBar as unknown as { suspendPinnedTabTransitionsOnDragStart(): void }).suspendPinnedTabTransitionsOnDragStart();
-        suspend();
-        expect(tabBar.node.classList.contains('theia-pinned-tab-drag-start')).to.be.true;
-        // the class is removed again after the next frame, so that lumino's
-        // transition slides the pinned tabs for the rest of the drag
-        await new Promise(resolve => setTimeout(resolve, 10));
-        expect(tabBar.node.classList.contains('theia-pinned-tab-drag-start')).to.be.false;
+        // use sinon's fake timers so the test does not depend on the real timer resolution:
+        const clock = sinon.useFakeTimers();
+        try {
+            // jsdom has no requestAnimationFrame unless it is polyfilled
+            (window as unknown as { requestAnimationFrame?: unknown }).requestAnimationFrame ??=
+                (callback: FrameRequestCallback): number => setTimeout(() => callback(performance.now()), 0) as unknown as number;
+            const tabBar = createRenderedTabBar();
+            tabBar.pinnedTabSizingMode = 'shrink';
+            const suspend = (): void =>
+                (tabBar as unknown as { suspendPinnedTabTransitionsOnDragStart(): void }).suspendPinnedTabTransitionsOnDragStart();
+            suspend();
+            expect(tabBar.node.classList.contains('theia-pinned-tab-drag-start')).to.be.true;
+            // the class is removed again after the next frame, so that lumino's
+            // transition slides the pinned tabs for the rest of the drag; tick far enough
+            // to run both nested frames regardless of how many there are
+            await clock.tickAsync(100);
+            expect(tabBar.node.classList.contains('theia-pinned-tab-drag-start')).to.be.false;
+        } finally {
+            clock.restore();
+        }
     });
 
     describe('revealTab', () => {
