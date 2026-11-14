@@ -15,18 +15,51 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import yargs from '@theia/core/shared/yargs';
+import { Container } from '@theia/core/shared/inversify';
+import { LaunchArguments } from '@theia/core/lib/common/launch-arguments';
+import { LaunchArgvParser } from '@theia/core/lib/electron-main/launch-argv-parser';
+import devContainerElectronMainModule from '../electron-main/dev-container-electron-main-module.js';
+import { DevContainerClaimContribution } from '../electron-main/dev-container-claim-contribution.js';
 import { DevContainerCliContribution } from './dev-container-cli-contribution.js';
-import { Arguments } from '@theia/core/shared/yargs';
 
-function createArgs(overrides: Record<string, unknown> = {}): Arguments {
+function createArgs(overrides: Record<string, unknown> = {}): yargs.Arguments {
     return {
         _: [],
         '$0': '',
         ...overrides
-    } as unknown as Arguments;
+    } as unknown as yargs.Arguments;
 }
 
 describe('DevContainerCliContribution', () => {
+
+    it('claims the same container and resolves dev-json the same way as the cold-start CLI', () => {
+        const container = new Container();
+        container.load(devContainerElectronMainModule);
+        const claim = container.get(DevContainerClaimContribution);
+        const booleanOptions = container.getAll<string>(LaunchArgvParser.BooleanOption);
+
+        for (const argv of [
+            ['--attachContainer=X', '--devJson=false', 'my workspace'],
+            ['--attach-container', '0x10', '--no-dev-json', 'my workspace'],
+            ['--attach-container=false', '--dev-json', 'my workspace'],
+            ['--attachContainer=X', '--no-dev-json', '--devJson', 'my workspace']
+        ]) {
+            const backend = new DevContainerCliContribution();
+            const cli = yargs(argv);
+            backend.configure(cli);
+            backend.setArguments(cli.parseSync());
+
+            LaunchArgvParser.command(argv, process.cwd(), booleanOptions)
+                .command('$0 [file]', false, cmd => cmd.positional('file', { type: 'string' }), ({ file, ...options }) => {
+                    const forwarded = LaunchArgvParser.fromParsed(options);
+                    expect(file).to.equal('my workspace');
+                    expect(claim.claimsWindow(forwarded)).to.be.true;
+                    expect(LaunchArguments.lastValue(forwarded, 'attach-container')).to.equal(backend.getAttachContainerId());
+                    expect(!LaunchArguments.isNegated(forwarded, 'dev-json')).to.equal(backend.shouldScanForDevJson());
+                }).parseSync();
+        }
+    });
 
     describe('setArguments / getAttachContainerId', () => {
 

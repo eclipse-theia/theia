@@ -14,53 +14,58 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import type { Arguments, Argv } from '../../shared/yargs/index.cjs';
+import { Parser } from 'yargs/helpers';
+import createYargs from 'yargs/yargs';
 import { LaunchArguments } from '../common/launch-arguments.js';
 
+function aliasOf(name: string, convert: (part: string) => string): string {
+    return name.split('.').map(part => convert(part)).join('.');
+}
+
 /**
- * Parses the `argv` of a forwarded launch into {@link LaunchArguments}.
- *
- * This lives in the Electron main process on purpose: the command line is parsed once, here, and
- * every consumer (main-process contributions and the window the launch opened) works with the
- * parsed result. No argument grammar is shipped to the renderer.
- *
- * The grammar mirrors what yargs accepts on cold start for the same flags: a value given as either
- * `--name value` or `--name=value`, options repeatable to yield multiple values, a token that
- * itself looks like an option (starts with `-`) never consumed as a value, and `--no-name` /
- * `--name=false` recognised as an explicit negation.
+ * Projects the Electron main process's yargs result into the per-window {@link LaunchArguments}.
  *
  * @experimental
  */
 export namespace LaunchArgvParser {
 
+    /** Bind the name of a boolean CLI option in Electron main so yargs leaves the following workspace positional. */
+    export const BooleanOption = Symbol('LaunchArgvParser.BooleanOption');
+
+    export function command(argv: readonly string[], cwd: string, booleanOptions: readonly string[] = []): Argv {
+        return createYargs(argv, cwd).help(false).boolean(booleanOptions).parserConfiguration({
+            // Forward extension values verbatim, including numeric-looking IDs and dotted option names.
+            'parse-numbers': false,
+            'dot-notation': false
+        });
+    }
+
     export function parse(argv: readonly string[]): LaunchArguments {
-        const values: Record<string, string[]> = {};
-        const negated: string[] = [];
-        for (let i = 0; i < argv.length; i++) {
-            const token = argv[i];
-            if (!token.startsWith('--')) {
-                continue;
-            }
-            const name = token.substring(2);
-            const equalsIndex = name.indexOf('=');
-            if (equalsIndex >= 0) {
-                const key = name.substring(0, equalsIndex);
-                const value = name.substring(equalsIndex + 1);
-                if (value === 'false') {
-                    negated.push(key);
-                } else {
-                    (values[key] ??= []).push(value);
+        return fromParsed(command(argv, process.cwd()).version(false).parseSync());
+    }
+
+    export function fromParsed({ _, $0, ...options }: Arguments): LaunchArguments {
+        const values = new Map<string, string[]>();
+        const negated = new Set<string>();
+        for (const name of Object.keys(options)) {
+            // For undeclared options yargs creates the camel alias when it first sees a dashed name.
+            // Only the camel entry also contains values supplied before that first dashed spelling.
+            const camel = name.includes('-') ? aliasOf(name, Parser.camelCase) : name;
+            const option = options[camel] ?? options[name];
+            const entries: unknown[] = Array.isArray(option) ? option : [option];
+            const strings = entries.filter((value): value is string => typeof value === 'string');
+            for (const alias of [name, aliasOf(camel, Parser.decamelize)]) {
+                if (strings.length) {
+                    values.set(alias, strings);
                 }
-            } else if (name.startsWith('no-')) {
-                negated.push(name.substring('no-'.length));
-            } else {
-                const next = argv[i + 1];
-                // Like yargs, do not consume a following option-looking token (`-x`/`--x`) as the value.
-                if (next !== undefined && !next.startsWith('-')) {
-                    (values[name] ??= []).push(next);
-                    i++;
+                // Undeclared options can carry the literal string "false". Keep its value as well
+                // as the explicit negation recognized by existing LaunchArguments consumers.
+                if (entries.includes(false) || entries.includes('false')) {
+                    negated.add(alias);
                 }
             }
         }
-        return { values, negated };
+        return { values: Object.fromEntries(values), negated: [...negated] };
     }
 }
