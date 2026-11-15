@@ -68,6 +68,23 @@ class TestDebugChannel implements DebugChannel {
     close(): void { }
 }
 
+/** A debug adapter that answers every request with `success: false`. */
+class FailingDebugChannel extends TestDebugChannel {
+    override send(content: string): void {
+        const request: DebugProtocol.Request = JSON.parse(content);
+        const response: DebugProtocol.Response = {
+            type: 'response', seq: 0, request_seq: request.seq, command: request.command,
+            success: false, message: 'request failed'
+        };
+        this.receive(response);
+    }
+}
+
+/** A debug adapter that never answers requests. */
+class SilentDebugChannel extends TestDebugChannel {
+    override send(_content: string): void { /* never responds */ }
+}
+
 describe('DebugSession', () => {
 
     before(() => disableJSDOM = enableJSDOM());
@@ -111,6 +128,51 @@ describe('DebugSession', () => {
             channel.receive({ type: 'event', seq: 0, event: 'capabilities', body: { capabilities: { supportsRestartFrame: false } } } as DebugProtocol.CapabilitiesEvent);
             expect(changes).to.equal(2);
             expect(session.capabilities.supportsRestartFrame).to.be.false;
+        });
+    });
+
+    describe('regression tests for #18345', () => {
+
+        async function expectNoUnhandledRejection(fn: () => Promise<void>): Promise<void> {
+            const unhandledRejectionListeners = process.listeners('unhandledRejection');
+            process.removeAllListeners('unhandledRejection');
+            try {
+                const unhandledRejections: unknown[] = [];
+                const onUnhandledRejection = (reason: unknown) => unhandledRejections.push(reason);
+                process.on('unhandledRejection', onUnhandledRejection);
+                try {
+                    await fn();
+                    // ensure Node.js has fully processed and emitted any unhandled rejections
+                    // (unhandled rejections happen asynchronously at the end of the event loop turn)
+                    await new Promise(resolve => setImmediate(resolve));
+                    expect(unhandledRejections).to.have.length(0);
+                } finally {
+                    process.off('unhandledRejection', onUnhandledRejection);
+                }
+            } finally {
+                for (const listener of unhandledRejectionListeners) {
+                    process.on('unhandledRejection', listener);
+                }
+            }
+        }
+
+        it('no unhandled rejection when a request fails', async () => {
+            const channel = new FailingDebugChannel({});
+            const connection = new DebugSessionConnection('test', async () => channel, undefined);
+            await expectNoUnhandledRejection(async () => {
+                const response = await connection.sendRequest('threads', {}, 1000).catch(error => error as DebugProtocol.Response);
+                expect(response.success).to.be.false;
+            });
+        });
+
+        it('no unhandled rejection when a request times out', async () => {
+            const channel = new SilentDebugChannel({});
+            const connection = new DebugSessionConnection('test', async () => channel, undefined);
+            await expectNoUnhandledRejection(async () => {
+                const response = await connection.sendRequest('threads', {}, 30).catch(error => error as DebugProtocol.Response);
+                expect(response.success).to.be.false;
+                expect(response.message).to.contain('timed out');
+            });
         });
     });
 });
