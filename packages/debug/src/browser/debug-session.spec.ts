@@ -113,5 +113,4 @@ describe('DebugSession', () => {
             expect(session.capabilities.supportsRestartFrame).to.be.false;
         });
     });
-
 });
