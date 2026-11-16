@@ -579,11 +579,23 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
 
     /**
      * Like VS Code, a resource is in a root only if it has the same scheme and authority as the root, and its path is in the root's path.
+     *
+     * The paths are compared as strings, so a resource with a `.` or `..` segment is never in a root:
+     * reading it resolves the segment, e.g. `fetch` reads `http://host/root/../other` as `http://host/other`.
      */
     protected isInResourceRoot(root: URI, resource: URI): boolean {
         return root.scheme === resource.scheme
             && root.authority.toLowerCase() === resource.authority.toLowerCase()
+            && !this.hasDotSegment(resource)
             && root.path.isEqualOrParent(resource.path);
+    }
+
+    /**
+     * Whether the path of `resource` has a `.` or `..` segment, including one with trailing dots or spaces, which Windows drops.
+     * Browsers resolve such segments in the URL of a request, so they only get here encoded, e.g. as `..%2F`.
+     */
+    protected hasDotSegment(resource: URI): boolean {
+        return resource.path.toString().split('/').some(segment => /^\.[. ]*$/.test(segment));
     }
 
     protected normalizeRequestUri(requestPath: string): URI {

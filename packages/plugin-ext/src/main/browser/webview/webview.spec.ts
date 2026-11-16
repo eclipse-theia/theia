@@ -110,6 +110,41 @@ describe('WebviewWidget', () => {
         expect(loaded.reads).to.be.empty;
     });
 
+    it('does not serve an http resource whose path leaves its root through .. segments', async () => {
+        const loaded = await loadResource(['http://localhost:3000/hostedPlugin/acme_sample'], '/http//localhost:3000/hostedPlugin/acme_sample/..%2F..%2Fother');
+
+        expect(loaded.status).to.equal(404);
+        expect(loaded.reads).to.be.empty;
+    });
+
+    it('does not serve a file resource whose path leaves its root through .. segments', async () => {
+        const loaded = await loadResource(['file:///home/user/project'], '/file///home/user/project/media%2F..%2F..%2Fother%2Ffile.txt');
+
+        expect(loaded.status).to.equal(404);
+        expect(loaded.reads).to.be.empty;
+    });
+
+    it('does not serve a resource with .. segments separated by backslashes', async () => {
+        const loaded = await loadResource(['file:///home/user/project'], '/file///home/user/project/..%5C..%5Cother%5Cfile.txt');
+
+        expect(loaded.status).to.equal(404);
+        expect(loaded.reads).to.be.empty;
+    });
+
+    it('does not serve a resource with a .. segment followed by spaces', async () => {
+        const loaded = await loadResource(['file:///home/user/project'], '/file///home/user/project/..%20%2Fother%2Ffile.txt');
+
+        expect(loaded.status).to.equal(404);
+        expect(loaded.reads).to.be.empty;
+    });
+
+    it('serves a resource in a folder whose name starts with a dot', async () => {
+        const loaded = await loadResource(['file:///home/user/project'], '/file///home/user/project/.media/style.css');
+
+        expect(loaded.status).to.equal(200);
+        expect(loaded.reads.map(read => read.uri)).to.deep.equal(['file:///home/user/project/.media/style.css']);
+    });
+
     it('serves an http resource under its root without the resource cache', async () => {
         const loaded = await loadResource(['http://localhost:3000/hostedPlugin/acme_sample'], '/http//localhost:3000/hostedPlugin/acme_sample/media/style.css');
 
