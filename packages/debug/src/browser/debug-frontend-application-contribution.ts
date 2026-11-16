@@ -305,6 +305,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
         registerMenuActions(DebugWatchWidget.EDIT_MENU,
             DebugCommands.EDIT_WATCH_EXPRESSION,
+            DebugCommands.SET_WATCH_VALUE,
             DebugCommands.COPY_WATCH_EXPRESSION_VALUE
         );
         registerMenuActions(DebugWatchWidget.REMOVE_MENU,
@@ -836,6 +837,11 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             },
             isEnabled: () => !!this.watchExpression,
             isVisible: () => !!this.watchExpression
+        });
+        registry.registerCommand(DebugCommands.SET_WATCH_VALUE, {
+            execute: () => this.watchExpression?.openSetValue(),
+            isEnabled: () => !!this.watchExpression && this.watchExpression.supportSetExpression && this.watchExpression.available && !this.watchExpression.readOnly,
+            isVisible: () => !!this.watchExpression && this.watchExpression.supportSetExpression
         });
         registry.registerCommand(DebugCommands.COPY_WATCH_EXPRESSION_VALUE, {
             execute: () => this.copyValue(this.watchExpression),

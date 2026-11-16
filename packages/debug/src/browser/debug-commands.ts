@@ -293,6 +293,11 @@ export namespace DebugCommands {
         category: DEBUG_CATEGORY,
         label: 'Edit Expression'
     });
+    export const SET_WATCH_VALUE = Command.toDefaultLocalizedCommand({
+        id: 'debug.watch.setValue',
+        category: DEBUG_CATEGORY,
+        label: 'Set Value'
+    });
     export const COPY_WATCH_EXPRESSION_VALUE = Command.toLocalizedCommand({
         id: 'debug.watch.copyExpressionValue',
         category: DEBUG_CATEGORY,

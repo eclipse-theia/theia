@@ -99,4 +99,25 @@ export class DebugWatchExpression extends ExpressionItem {
         return this.evaluateForClipboard(this.expression, 'watch', this.value);
     }
 
+    get supportSetExpression(): boolean {
+        return !!this.session?.capabilities.supportsSetExpression;
+    }
+    async setValue(value: string): Promise<void> {
+        const session = this.session;
+        const frame = session?.currentFrame;
+        if (!session || !frame || !this.supportSetExpression || value === this.value) {
+            return;
+        }
+        await session.sendRequest('setExpression', { expression: this.expression, value, frameId: frame.raw.id });
+        await this.evaluate();
+        frame.forgetScopes();
+        session['fireDidChange']();
+    }
+
+    async openSetValue(): Promise<void> {
+        if (!this.supportSetExpression || !this.available || this.readOnly) {
+            return;
+        }
+        await this.openSetValueDialog(nls.localizeByDefault('Set Value'), this.value, value => this.setValue(value));
+    }
 }
