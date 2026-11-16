@@ -70,6 +70,9 @@ export class PreferenceTreeModel extends TreeModelImpl {
     protected lastSearchedFuzzy: string = '';
     protected lastSearchedLiteral: string = '';
     protected lastSearchedTags: string[] = [];
+    protected lastSearchedExtensions: string[] = [];
+    /** The IDs of the extensions that match the `@ext:` filters of the search term, undefined if there are none */
+    protected searchedExtensionIds: Set<string> | undefined;
     protected _currentScope: number = Number(Preference.DEFAULT_SCOPE.scope);
     protected _isFiltered: boolean = false;
     protected _currentRows: Map<string, PreferenceTreeNodeRow> = new Map();
@@ -136,7 +139,11 @@ export class PreferenceTreeModel extends TreeModelImpl {
             }),
             this.filterInput.onFilterChanged(newSearchTerm => {
                 this.lastSearchedTags = Array.from(newSearchTerm.matchAll(/@tag:([^\s]+)/g)).map(match => match[0].slice(5));
-                const newSearchTermWithoutTags = newSearchTerm.replace(/@tag:[^\s]+/g, '');
+                this.lastSearchedExtensions = Array.from(newSearchTerm.matchAll(/@ext:(\S*)/g))
+                    .flatMap(match => match[1].toLowerCase().split(','))
+                    .filter(extensionId => extensionId.length > 0);
+                this.updateSearchedExtensionIds();
+                const newSearchTermWithoutTags = newSearchTerm.replace(/@tag:[^\s]+/g, '').replace(/@ext:\S*/g, '').trim();
                 this.lastSearchedLiteral = newSearchTermWithoutTags;
                 this.lastSearchedFuzzy = newSearchTermWithoutTags.replace(/\s/g, '');
                 const wasFiltered = this._isFiltered;
@@ -168,6 +175,7 @@ export class PreferenceTreeModel extends TreeModelImpl {
 
     private handleNewSchema(newRoot: CompositeTreeNode): void {
         this.root = newRoot;
+        this.updateSearchedExtensionIds();
         if (this._categoryFilterId && !this.getNode(this._categoryFilterId)) {
             this._categoryFilterId = undefined;
         }
@@ -308,9 +316,43 @@ export class PreferenceTreeModel extends TreeModelImpl {
         if (!this.lastSearchedTags.every(tag => node.preference.data.tags?.includes(tag))) {
             return false;
         }
+        if (this.searchedExtensionIds && !this.searchedExtensionIds.has(this.schemaProvider.getSchemaForProperty(prefID)?.extensionInfo?.id ?? '')) {
+            return false;
+        }
         return fuzzy.test(this.lastSearchedFuzzy, prefID) // search matches preference name.
             // search matches description. Fuzzy isn't ideal here because the score depends on the order of discovery.
             || (node.preference.data.description ?? '').includes(this.lastSearchedLiteral);
+    }
+
+    /**
+     * Collects the IDs of the extensions that contribute preferences and match the `@ext:` filters of the search term,
+     * so that the filters are evaluated once per extension rather than once per preference.
+     */
+    protected updateSearchedExtensionIds(): void {
+        if (!this.lastSearchedExtensions.length) {
+            this.searchedExtensionIds = undefined;
+            return;
+        }
+        const checked = new Set<string>();
+        const matching = new Set<string>();
+        for (const preferenceId of this.schemaProvider.getSchemaProperties().keys()) {
+            const extensionId = this.schemaProvider.getSchemaForProperty(preferenceId)?.extensionInfo?.id;
+            if (extensionId && !checked.has(extensionId)) {
+                checked.add(extensionId);
+                if (this.lastSearchedExtensions.some(filter => this.matchesExtensionFilter(extensionId, filter))) {
+                    matching.add(extensionId);
+                }
+            }
+        }
+        this.searchedExtensionIds = matching;
+    }
+
+    /**
+     * Whether an extension matches a filter of the form `@ext:<filter>` in the search term.
+     * @param filter The filter in lower case
+     */
+    protected matchesExtensionFilter(extensionId: string, filter: string): boolean {
+        return extensionId.toLowerCase().includes(filter);
     }
 
     protected override isVisibleSelectableNode(node: TreeNode): node is SelectableTreeNode {
