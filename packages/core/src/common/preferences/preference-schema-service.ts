@@ -145,6 +145,10 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
                 property.overridable = schema.defaultOverridable;
             }
 
+            if (property.restricted === undefined && schema.defaultRestricted !== undefined) {
+                property.restricted = schema.defaultRestricted;
+            }
+
             this.properties.set(key, property);
             this.setJSONSchemasProperty(key, property);
             if (property.default !== undefined) {
@@ -382,6 +386,7 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         schema.properties![key] = prop;
         delete prop['scope'];
         delete prop['overridable'];
+        delete prop['restricted'];
         if (property.overridable) {
             for (const overrideIdentifier of this._overrideIdentifiers) {
                 const overrideSchema: IJSONSchema = schema.properties![`[${overrideIdentifier}]`] || {

@@ -21,6 +21,7 @@ export * from './preference-provider-impl.js';
 export * from './preference-provider.js';
 export * from './preference-schema-service.js';
 export * from './preference-schema.js';
+export * from './preference-exclusion.js';
 export * from './preference-scope.js';
 export * from './preference-service.js';
 export * from './injectable-preference-proxy.js';
