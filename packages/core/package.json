@@ -222,6 +222,9 @@
       "backendElectron": "lib/electron-node/token/electron-token-backend-module"
     },
     {
+      "frontendElectron": "lib/electron-browser/shell-environment/electron-shell-environment-module"
+    },
+    {
       "backend": "lib/node/hosting/backend-hosting-module",
       "backendElectron": "lib/electron-node/hosting/electron-backend-hosting-module"
     },

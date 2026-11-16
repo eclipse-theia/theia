@@ -27,7 +27,7 @@ import { BackendApplicationContribution } from '../backend-application.js';
 export default new ContainerModule(bind => {
     bind(LocalizationProvider).toSelf().inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new RpcConnectionHandler(localizationPath, () => ctx.container.get(LocalizationProvider))
+        new RpcConnectionHandler(localizationPath, () => ctx.container.get(LocalizationProvider), { independentOfShellEnvironment: true })
     ).inSingletonScope();
     bind(LocalizationRegistry).toSelf().inSingletonScope();
     bindRootContributionProvider(bind, LocalizationContribution);
@@ -35,7 +35,7 @@ export default new ContainerModule(bind => {
     bind(LocalizationServer).toService(LocalizationServerImpl);
     bind(BackendApplicationContribution).toService(LocalizationServerImpl);
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new RpcConnectionHandler(LocalizationServerPath, () => ctx.container.get(LocalizationServer))
+        new RpcConnectionHandler(LocalizationServerPath, () => ctx.container.get(LocalizationServer), { independentOfShellEnvironment: true })
     ).inSingletonScope();
     bind(TheiaLocalizationContribution).toSelf().inSingletonScope();
     bind(LocalizationContribution).toService(TheiaLocalizationContribution);
