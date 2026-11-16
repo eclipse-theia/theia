@@ -21,7 +21,9 @@ import { Container } from 'inversify';
 import { ILogger } from '../common/logger.js';
 import { MockLogger } from '../common/test/mock-logger.js';
 import { ProcessUtils } from './process-utils.js';
-import { EXITING_BACKEND_EXIT_CODE, EXITING_BACKEND_GRACEFUL, EXITING_BACKEND_NO_POWERSHELL } from './test/exiting-backend.js';
+import {
+    EXITING_BACKEND_CHILD_IGNORES_SIGTERM, EXITING_BACKEND_EXIT_CODE, EXITING_BACKEND_GRACEFUL, EXITING_BACKEND_NO_POWERSHELL
+} from './test/exiting-backend.js';
 
 interface ExitingProcessResult {
     exitCode: number | null;
@@ -71,8 +73,8 @@ describe('ProcessUtils (real processes)', function (): void {
     afterEach(() => {
         // Do not leak processes if a test fails.
         for (const pid of childPids.splice(0)) {
-            if (isAlive(pid)) {
-                process.kill(pid);
+            if (Number.isInteger(pid) && isAlive(pid)) {
+                process.kill(pid, 'SIGKILL');
             }
         }
     });
@@ -96,6 +98,91 @@ describe('ProcessUtils (real processes)', function (): void {
     it('kills the children of the backend on graceful shutdown', async () => {
         // `BackendApplication.gracefulShutdown` exits with code 1 on purpose.
         await expectTerminatedTree({ env: { [EXITING_BACKEND_GRACEFUL]: 'true' } }, 1);
+    });
+
+    (process.platform === 'win32' ? it.skip : it)('kills a child of the backend that ignores SIGTERM on graceful shutdown', async () => {
+        await expectTerminatedTree({ env: { [EXITING_BACKEND_GRACEFUL]: 'true', [EXITING_BACKEND_CHILD_IGNORES_SIGTERM]: 'true' } }, 1);
+    });
+
+    describe('processes that ignore SIGTERM', () => {
+
+        // `console.log` would color the PID when `FORCE_COLOR` is set, even though stdout is a pipe.
+        const ignoringScript = 'process.on("SIGTERM", () => {}); process.stdout.write(process.pid + "\\n"); setInterval(() => {}, 1000);';
+
+        function createProcessUtils(): ProcessUtils {
+            const container = new Container();
+            container.bind(ProcessUtils).toSelf().inSingletonScope();
+            container.bind(ILogger).to(MockLogger).inSingletonScope();
+            const processUtils = container.get(ProcessUtils);
+            (processUtils as unknown as { unixForceKillDelay: number }).unixForceKillDelay = 1000;
+            return processUtils;
+        }
+
+        /**
+         * Starts a process that runs the given script, which prints the PID of a process that ignores SIGTERM on a line
+         * once it is ready.
+         */
+        async function startProcess(script: string, options: cp.SpawnOptions = {}): Promise<{ pid: number, ignoringPid: number }> {
+            const started = cp.spawn(process.execPath, ['-e', script], { ...options, stdio: ['ignore', 'pipe', 'ignore'] });
+            childPids.push(started.pid!);
+            const ignoringPid = await new Promise<number>((resolve, reject) => {
+                let output = '';
+                const onData = (data: Buffer): void => {
+                    output += data;
+                    const newline = output.indexOf('\n');
+                    if (newline < 0) {
+                        return;
+                    }
+                    started.stdout!.off('data', onData);
+                    started.off('exit', onExit);
+                    const line = output.substring(0, newline).trim();
+                    if (/^\d+$/.test(line)) {
+                        resolve(Number.parseInt(line, 10));
+                    } else {
+                        reject(new Error(`Expected the PID of the process that ignores SIGTERM, got ${JSON.stringify(output)}`));
+                    }
+                };
+                const onExit = (): void => reject(new Error(`Exited before printing the PID of the process that ignores SIGTERM, got ${JSON.stringify(output)}`));
+                started.stdout!.on('data', onData);
+                started.once('exit', onExit);
+            });
+            childPids.push(ignoringPid);
+            return { pid: started.pid!, ignoringPid };
+        }
+
+        (process.platform === 'win32' ? it.skip : it)('kills a descendant that ignores SIGTERM with SIGKILL', async () => {
+            const processUtils = createProcessUtils();
+            const { pid, ignoringPid } = await startProcess(`const child = require('child_process').spawn(process.execPath, ['-e', ${JSON.stringify(ignoringScript)}],
+                { stdio: ['ignore', 'pipe', 'ignore'] });
+                child.stdout.once('data', data => process.stdout.write(data));
+                setInterval(() => {}, 1000);`);
+
+            processUtils.terminateProcessTree(pid);
+
+            expect(isAlive(ignoringPid), 'the child should survive SIGTERM').to.be.true;
+            expect(await isAliveAfterKill(pid), 'the parent should exit on SIGTERM').to.be.false;
+            expect(await isAliveAfterKill(ignoringPid), 'the child should be killed with SIGKILL').to.be.false;
+        });
+
+        (process.platform === 'win32' ? it.skip : it)('kills a member of the group of the tree that ignores SIGTERM and was reparented with SIGKILL', async () => {
+            const processUtils = createProcessUtils();
+            // The group leader's grandchild outlives its parent, so it is no longer a descendant of the leader.
+            const { pid, ignoringPid } = await startProcess(`const middle = require('child_process').spawn(process.execPath, ['-e',
+                ${JSON.stringify(`const child = require('child_process').spawn(process.execPath, ['-e', ${JSON.stringify(ignoringScript)}],
+                    { stdio: ['ignore', 'pipe', 'ignore'] });
+                    child.stdout.once('data', data => { process.stdout.write(data); process.exit(); });`)}],
+                { stdio: ['ignore', 'pipe', 'ignore'] });
+                let ignoringPid;
+                middle.stdout.once('data', data => ignoringPid = data);
+                middle.on('exit', () => process.stdout.write(ignoringPid));
+                setInterval(() => {}, 1000);`, { detached: true });
+
+            processUtils.terminateProcessTree(pid);
+
+            expect(isAlive(ignoringPid), 'the group member should survive SIGTERM').to.be.true;
+            expect(await isAliveAfterKill(pid), 'the group leader should exit on SIGTERM').to.be.false;
+            expect(await isAliveAfterKill(ignoringPid), 'the group member should be killed with SIGKILL').to.be.false;
+        });
     });
 
     (process.platform === 'win32' ? it : it.skip)('kills the whole tree of the backend when PowerShell cannot be run', async () => {

@@ -51,6 +51,6 @@ export const messagingBackendModule = new ContainerModule(bind => {
             markForClose: (channelId: string) => {
                 connectionService.markForClose(channelId);
             }
-        }));
+        }), { independentOfShellEnvironment: true });
     }).inSingletonScope();
 });
