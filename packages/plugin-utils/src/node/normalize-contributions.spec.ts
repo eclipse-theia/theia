@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import { CustomEditorPriority, type GrammarsContribution, type PluginPackageView, type PluginUiTheme, type WalkthroughContribution } from '../common/contribution-types.js';
-import { PreferenceScope } from '../common/protocol-shims.js';
+import { PreferenceScope, type PreferenceSchema } from '../common/protocol-shims.js';
 import {
     deriveDefaultForType,
     extractPluginViewsIds,
@@ -693,10 +693,12 @@ describe('normalize-contributions', () => {
 
             expect(contributions.configurationDefaults).to.deep.equal({ 'sample.enabled': true });
 
-            const configuration = contributions.configuration as Array<{ title?: string; properties: Record<string, { owner?: string; group?: string }> }>;
+            const configuration = contributions.configuration as PreferenceSchema[];
             expect(configuration).to.have.lengthOf(2);
-            expect(configuration[0].properties['sample.enabled'].owner).to.equal('Orchestrator Extension');
-            expect(configuration[0].properties['sample.enabled'].group).to.equal('General');
+            expect(configuration.map(config => config.title)).to.deep.equal(['General', 'Advanced']);
+            for (const config of configuration) {
+                expect(config.extensionInfo).to.deep.equal({ id: 'acme.orchestrator', displayName: 'Orchestrator Extension' });
+            }
 
             expect(contributions.submenus).to.deep.equal([{
                 icon: '$(gear)',
