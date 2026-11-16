@@ -34,6 +34,8 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
     // Storage structures
     protected readonly schemas = new Set<PreferenceSchema>();
     protected readonly properties = new Map<string, PreferenceDataProperty>();
+    /** The schema that registered each property */
+    protected readonly propertySchemas = new Map<string, PreferenceSchema>();
     /**
      * This map stores default overrides. The primary map key is the base preference name.
      * The preference name maps to a second map keyed by the override identifier or a special object value `NO_OVERRIDE',
@@ -146,6 +148,7 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
             }
 
             this.properties.set(key, property);
+            this.propertySchemas.set(key, schema);
             this.setJSONSchemasProperty(key, property);
             if (property.default !== undefined) {
                 this.defaultValueChangedEmitter.fire(this.changeFor(key, undefined, this.defaultOverrides.get(key), undefined, property.default!));
@@ -160,6 +163,9 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
                 for (const [key, property] of Object.entries(schema.properties)) {
                     this.deleteFromJSONSchemas(key, property);
                     this.properties.delete(key);
+                    if (this.propertySchemas.get(key) === schema) {
+                        this.propertySchemas.delete(key);
+                    }
                     const overrides = this.defaultOverrides.get(key);
 
                     const baseOverride = overrides?.get(NO_OVERRIDE);
@@ -198,6 +204,10 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
 
     getSchemaProperty(key: string): PreferenceDataProperty | undefined {
         return this.properties.get(key);
+    }
+
+    getSchemaForProperty(key: string): PreferenceSchema | undefined {
+        return this.propertySchemas.get(key);
     }
 
     updateSchemaProperty(key: string, property: PreferenceDataProperty): void {

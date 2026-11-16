@@ -60,11 +60,23 @@ export interface IndexedAccess<T> {
     [name: string]: T;
 }
 
+/**
+ * Identifies the extension that contributed a {@link PreferenceSchema}.
+ */
+export interface PreferenceSchemaExtensionInfo {
+    /** The unversioned identifier of the extension, i.e. `publisher.name` */
+    id: string;
+    /** The human-readable name of the extension */
+    displayName: string;
+}
+
 export interface PreferenceSchema {
     /** The default scope for properties in this schema */
     scope?: PreferenceScope,
     /** Optional title to be used in UI */
     title?: string,
+    /** The extension that contributed this schema, if any. Its preferences are listed under that extension in the UI. */
+    extensionInfo?: PreferenceSchemaExtensionInfo,
     /** Whether properties in this schema are overridable by default. Defaults to false. */
     defaultOverridable?: boolean;
     properties: IndexedAccess<PreferenceDataProperty>;
@@ -133,6 +145,12 @@ export interface PreferenceSchemaService {
     isValidInScope(preferenceName: string, scope: PreferenceScope): boolean;
     getSchemaProperty(key: string): PreferenceDataProperty | undefined;
     getSchemaProperties(): ReadonlyMap<string, PreferenceDataProperty>;
+    /**
+     * Get the schema that registered a property
+     * @param key The property key
+     * @returns The schema the property was registered with, or undefined if the property is not registered
+     */
+    getSchemaForProperty(key: string): PreferenceSchema | undefined;
 
     /**
      * Update a property in the schema. The corresponding JSON Schemas, etc. will be updated

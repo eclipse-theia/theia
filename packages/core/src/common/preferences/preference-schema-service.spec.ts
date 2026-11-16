@@ -41,6 +41,23 @@ describe('PreferenceSchemaServiceImpl', () => {
 
     afterEach(() => service.dispose());
 
+    it('should return the schema that registered a property until it is removed', () => {
+        const schema = { extensionInfo: { id: 'acme.sample', displayName: 'Sample' }, properties: { 'sample.value': { type: 'string' } } } as const;
+        const registration = service.addSchema(schema);
+
+        expect(service.getSchemaForProperty('sample.value')).to.equal(schema);
+
+        registration.dispose();
+        expect(service.getSchemaForProperty('sample.value')).to.be.undefined;
+    });
+
+    it('should keep the schema that registered a property first', () => {
+        const duplicate = { properties: { [KEY]: { type: 'string' } } } as const;
+        service.addSchema(duplicate);
+
+        expect(service.getSchemaForProperty(KEY)).to.not.equal(duplicate);
+    });
+
     it('should restore the previous default when the newest override is removed', () => {
         service.registerOverride(KEY, undefined, 'first');
         const newest = service.registerOverride(KEY, undefined, 'second');
