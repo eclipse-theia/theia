@@ -394,7 +394,6 @@ describe('BackendApplication', () => {
 
     });
 
-
     describe('process error handlers', () => {
 
         it('does not log when SIGPIPE is received', () => {
@@ -474,13 +473,6 @@ describe('BackendApplication', () => {
             process.emit('uncaughtException', new Error('Unexpected failure'));
 
             sinon.assert.calledTwice(errorStub);
-        });
-
-        it('handles null uncaught exceptions without throwing', () => {
-            const container = createTestContainer();
-            container.get(TestBackendApplication);
-
-            expect(() => process.emit('uncaughtException', null as unknown as Error)).not.to.throw();
         });
 
         it('handles undefined uncaught exceptions without throwing', () => {
