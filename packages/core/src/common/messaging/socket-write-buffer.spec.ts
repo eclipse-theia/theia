@@ -55,6 +55,30 @@ describe('SocketWriteBuffer', () => {
         expect(sent).to.deep.equal(['one', 'two']);
     });
 
+    it('sends what was buffered even if the caller changes its buffer afterwards', () => {
+        const buffer = new SocketWriteBuffer();
+        const data = encode('one');
+        buffer.buffer(data);
+        data.set(encode('two'));
+        const { socket, sent } = recordingSocket();
+
+        buffer.flush(socket);
+
+        expect(sent).to.deep.equal(['one']);
+    });
+
+    it('copies a Node Buffer too, whose slice() shares memory', () => {
+        const buffer = new SocketWriteBuffer();
+        const data = Buffer.from(encode('one'));
+        buffer.buffer(data);
+        data.set(encode('two'));
+        const { socket, sent } = recordingSocket();
+
+        buffer.flush(socket);
+
+        expect(sent).to.deep.equal(['one']);
+    });
+
     it('refuses a message that would take it past its size limit until drained', () => {
         const buffer = new SocketWriteBuffer();
         buffer.buffer(new Uint8Array(100 * 1024 - 1));

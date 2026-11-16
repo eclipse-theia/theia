@@ -28,9 +28,13 @@ export class SocketWriteBuffer {
         return SocketWriteBuffer.DEFAULT_DISCONNECTED_BUFFER_SIZE;
     }
 
+    /**
+     * Stores a copy of `data`, so the caller can reuse its buffer before the next flush.
+     */
     buffer(data: Uint8Array): void {
         this.ensureWriteBuffer(data.byteLength);
-        this.bufferedMessages.push(data);
+        // Not `data.slice()`: on a Node `Buffer` that returns a view of the same memory.
+        this.bufferedMessages.push(new Uint8Array(data));
         this.bufferedBytes += data.byteLength;
     }
 
