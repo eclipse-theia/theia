@@ -25,6 +25,7 @@ export const RETRY_DELAY_RATE_LIMIT = 'ai-features.google.retryDelayOnRateLimitE
 export const RETRY_DELAY_OTHER_ERRORS = 'ai-features.google.retryDelayOnOtherErrors';
 
 export const GooglePreferencesSchema: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [API_KEY_PREF]: {
             type: 'string',

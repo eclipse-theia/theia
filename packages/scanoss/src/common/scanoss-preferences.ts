@@ -19,6 +19,7 @@ import { LINUX_ENV_HINT, PreferenceSchema } from '@theia/core';
 export const SCAN_OSS_API_KEY_PREF = 'ai-features.SCANOSS.apiKey';
 
 export const ScanOSSPreferencesSchema: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [SCAN_OSS_API_KEY_PREF]: {
             type: 'string',

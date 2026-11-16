@@ -70,6 +70,7 @@ export const TOOL_CONFIRMATION_MODE_DESCRIPTIONS = [
 ];
 
 export const chatToolPreferences: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [DEFAULT_TOOL_CONFIRMATION_PREFERENCE]: {
             type: 'string',

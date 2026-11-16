@@ -21,6 +21,7 @@ export const API_KEY_PREF = 'ai-features.huggingFace.apiKey';
 export const MODELS_PREF = 'ai-features.huggingFace.models';
 
 export const HuggingFacePreferencesSchema: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [API_KEY_PREF]: {
             type: 'string',

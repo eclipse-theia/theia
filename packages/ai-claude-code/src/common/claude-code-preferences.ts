@@ -21,6 +21,7 @@ export const CLAUDE_CODE_EXECUTABLE_PATH_PREF = 'ai-features.claudeCode.executab
 export const CLAUDE_CODE_API_KEY_PREF = 'ai-features.claudeCode.apiKey';
 
 export const ClaudeCodePreferencesSchema: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [CLAUDE_CODE_EXECUTABLE_PATH_PREF]: {
             type: 'string',

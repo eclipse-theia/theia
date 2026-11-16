@@ -20,6 +20,7 @@ import { LINUX_ENV_HINT, nls, PreferenceSchema, PreferenceScope } from '@theia/c
 export const GITHUB_TOKEN_PREF = 'ai-features.registry.githubToken';
 
 export const SkillRegistryPreferencesSchema: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [GITHUB_TOKEN_PREF]: {
             type: 'string',

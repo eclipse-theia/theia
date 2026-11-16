@@ -24,7 +24,6 @@ import { DefaultLanguageModelAliasRegistry } from './frontend-language-model-ali
 import { HideAiPreferencesContribution, aiConfigurationOpenPlaceholderSchema } from './hide-ai-preferences-contribution.js';
 import { ModelDiscoveryStatusService } from './model-discovery-status-service.js';
 import { FavoriteModelsService } from './favorite-models-service.js';
-import { TrustAwarePreferenceReader } from './trust-aware-preference-reader.js';
 import { AiConfigurationServiceImpl } from './ai-configuration-service-impl.js';
 import { LanguageModelAliasRegistry } from '../common/language-model-alias.js';
 import {
@@ -231,9 +230,6 @@ export default new ContainerModule(bind => {
 
     bind(ModelDiscoveryStatusService).toSelf().inSingletonScope();
     bind(FavoriteModelsService).toSelf().inSingletonScope();
-
-    // Internal implementation detail of AiConfigurationService; consumers inject AiConfigurationService.
-    bind(TrustAwarePreferenceReader).toSelf().inSingletonScope();
 
     bind(AiConfigurationServiceImpl).toSelf().inSingletonScope();
     bind(AiConfigurationService).toService(AiConfigurationServiceImpl);

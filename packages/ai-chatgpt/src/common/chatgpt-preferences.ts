@@ -41,6 +41,7 @@ const MODELS_DESCRIPTION = nls.localize('theia/ai/chatgpt/models/mdDescription',
 Leave this empty to offer the models your ChatGPT plan actually grants, which are queried once you are signed in.');
 
 export const ChatGptPreferencesSchema: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [CHATGPT_ENABLED_PREF]: {
             type: 'boolean',

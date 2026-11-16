@@ -20,6 +20,7 @@ import { nls, PreferenceSchema } from '@theia/core';
 export const CODEX_API_KEY_PREF = 'ai-features.codex.apiKey';
 
 export const CodexPreferencesSchema: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [CODEX_API_KEY_PREF]: {
             type: 'string',
