@@ -1131,26 +1131,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
      * It should be aligned with https://code.visualstudio.com/api/references/theme-color#integrated-terminal-colors
      */
     registerColors(colors: ColorRegistry): void {
-        colors.register({
-            id: 'terminal.background',
-            defaults: {
-                dark: 'panel.background',
-                light: 'panel.background',
-                hcDark: 'panel.background',
-                hcLight: 'panel.background'
-            },
-            description: nls.localizeByDefault('The background color of the terminal, this allows coloring the terminal differently to the panel.')
-        });
-        colors.register({
-            id: 'terminal.foreground',
-            defaults: {
-                light: '#333333',
-                dark: '#CCCCCC',
-                hcDark: '#FFFFFF',
-                hcLight: '#292929'
-            },
-            description: nls.localizeByDefault('The foreground color of the terminal.')
-        });
+        // `terminal.background`, `terminal.foreground` and the ANSI colors are registered in core.
         colors.register({
             id: 'terminalCursor.foreground',
             description: nls.localizeByDefault('The foreground color of the terminal cursor.')

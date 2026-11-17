@@ -153,7 +153,7 @@ import { ViewColumnService } from './shell/view-column-service.js';
 import { DomInputUndoRedoHandler, UndoRedoHandler, UndoRedoHandlerService } from './undo-redo-handler.js';
 import { WidgetStatusBarContribution, WidgetStatusBarService } from './widget-status-bar-service.js';
 import { SymbolIconColorContribution } from './symbol-icon-color-contribution.js';
-import { TerminalAnsiColorContribution } from './terminal-ansi-color-contribution.js';
+import { TerminalColorContribution } from './terminal-color-contribution.js';
 import { CorePreferences, bindCorePreferences } from '../common/core-preferences.js';
 import { bindBadgeDecoration } from './badges/index.js';
 import { PerspectiveContribution, PerspectiveService, PerspectiveServiceImpl, PerspectiveServiceInternal, WidgetAreaResolverImpl } from './perspective-service.js';
@@ -319,8 +319,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     );
     bind(SymbolIconColorContribution).toSelf().inSingletonScope();
     bind(ColorContribution).toService(SymbolIconColorContribution);
-    bind(TerminalAnsiColorContribution).toSelf().inSingletonScope();
-    bind(ColorContribution).toService(TerminalAnsiColorContribution);
+    bind(TerminalColorContribution).toSelf().inSingletonScope();
+    bind(ColorContribution).toService(TerminalColorContribution);
 
     bindCommonStylingParticipants(bind);
 

@@ -21,12 +21,33 @@ import { ColorContribution } from './color-application-contribution.js';
 import { ColorRegistry } from './color-registry.js';
 
 /**
- * Registers the 16 `terminal.ansi*` colors. They live in core because ANSI-colored output is rendered
- * outside the terminal too, e.g. by core's `ansi.css` and the output view.
+ * Registers the terminal colors that are used outside the terminal: `terminal.background`, `terminal.foreground`
+ * and the 16 `terminal.ansi*` colors. They live in core because terminal-like output is rendered outside the
+ * terminal too, e.g. by core's `ansi.css`, the output view and AI tool output.
  */
 @injectable()
-export class TerminalAnsiColorContribution implements ColorContribution {
+export class TerminalColorContribution implements ColorContribution {
     registerColors(colors: ColorRegistry): void {
+        colors.register({
+            id: 'terminal.background',
+            defaults: {
+                dark: 'panel.background',
+                light: 'panel.background',
+                hcDark: 'panel.background',
+                hcLight: 'panel.background'
+            },
+            description: nls.localizeByDefault('The background color of the terminal, this allows coloring the terminal differently to the panel.')
+        });
+        colors.register({
+            id: 'terminal.foreground',
+            defaults: {
+                light: '#333333',
+                dark: '#CCCCCC',
+                hcDark: '#FFFFFF',
+                hcLight: '#292929'
+            },
+            description: nls.localizeByDefault('The foreground color of the terminal.')
+        });
         // eslint-disable-next-line guard-for-in
         for (const id in terminalAnsiColorMap) {
             const entry = terminalAnsiColorMap[id];

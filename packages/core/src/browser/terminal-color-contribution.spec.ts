@@ -18,7 +18,7 @@ import { expect } from 'chai';
 import { Disposable } from '../common/disposable.js';
 import { ColorDefinition } from '../common/color.js';
 import { ColorRegistry } from './color-registry.js';
-import { TerminalAnsiColorContribution } from './terminal-ansi-color-contribution.js';
+import { TerminalColorContribution } from './terminal-color-contribution.js';
 
 class RecordingColorRegistry extends ColorRegistry {
 
@@ -30,19 +30,42 @@ class RecordingColorRegistry extends ColorRegistry {
     }
 }
 
-describe('TerminalAnsiColorContribution', () => {
+describe('TerminalColorContribution', () => {
 
     let registry: RecordingColorRegistry;
 
     beforeEach(() => {
         registry = new RecordingColorRegistry();
-        new TerminalAnsiColorContribution().registerColors(registry);
+        new TerminalColorContribution().registerColors(registry);
     });
 
-    it('registers the 16 terminal ANSI colors', () => {
+    it('registers the terminal background, foreground and 16 ANSI colors', () => {
         const names = ['Black', 'Red', 'Green', 'Yellow', 'Blue', 'Magenta', 'Cyan', 'White'];
-        const expected = [...names.map(name => `terminal.ansi${name}`), ...names.map(name => `terminal.ansiBright${name}`)];
+        const expected = [
+            'terminal.background',
+            'terminal.foreground',
+            ...names.map(name => `terminal.ansi${name}`),
+            ...names.map(name => `terminal.ansiBright${name}`)
+        ];
         expect([...registry.definitions.keys()]).to.have.members(expected);
+    });
+
+    it('uses the panel background as the terminal background', () => {
+        expect(registry.definitions.get('terminal.background')?.defaults).to.deep.equal({
+            dark: 'panel.background',
+            light: 'panel.background',
+            hcDark: 'panel.background',
+            hcLight: 'panel.background'
+        });
+    });
+
+    it('uses the VS Code default terminal foreground', () => {
+        expect(registry.definitions.get('terminal.foreground')?.defaults).to.deep.equal({
+            light: '#333333',
+            dark: '#CCCCCC',
+            hcDark: '#FFFFFF',
+            hcLight: '#292929'
+        });
     });
 
     it('uses the VS Code default colors', () => {
