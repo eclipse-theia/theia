@@ -94,14 +94,25 @@ export class PreferenceTreeGenerator {
         const visibleProperties = Array.from(properties.entries()).filter(([propertyName, property]) =>
             !property.hidden && !property.deprecationMessage && !this.preferenceConfigs.isSectionName(propertyName) && !OVERRIDE_PROPERTY_PATTERN.test(propertyName)
         );
-        const extensionCategories = this.getExtensionCategories(visibleProperties.map(([propertyName]) => propertyName));
+        const extensionProperties = new Map<string, Array<{ propertyName: string, property: PreferenceDataProperty, schema: PreferenceSchema }>>();
         for (const [propertyName, property] of visibleProperties) {
             const schema = this.schemaProvider.getSchemaForProperty(propertyName);
             if (schema?.extensionInfo) {
-                const hasCategories = (extensionCategories.get(schema.extensionInfo.id)?.size ?? 0) > 1;
-                this.createPluginLeafNode(propertyName, property, schema, hasCategories, root, groups);
+                let properties = extensionProperties.get(schema.extensionInfo.id);
+                if (!properties) {
+                    properties = [];
+                    extensionProperties.set(schema.extensionInfo.id, properties);
+                }
+                properties.push({ propertyName, property, schema });
             } else {
                 this.createBuiltinLeafNode(propertyName, property, root, groups);
+            }
+        }
+        for (const properties of extensionProperties.values()) {
+            // Every configuration contributed by an extension is a category, identified by its title.
+            const hasCategories = new Set(properties.map(({ schema }) => this.getCategoryName(schema, schema.extensionInfo!))).size > 1;
+            for (const { propertyName, property, schema } of properties) {
+                this.createPluginLeafNode(propertyName, property, schema, hasCategories, root, groups);
             }
         }
 
@@ -134,26 +145,6 @@ export class PreferenceTreeGenerator {
     protected createBuiltinLeafNode(name: string, property: PreferenceDataProperty, root: CompositeTreeNode, groups: Map<string, Preference.CompositeTreeNode>): void {
         const { immediateParent, topLevelParent } = this.getParents(name, root, groups);
         this.createLeafNode(name, immediateParent || topLevelParent, property);
-    }
-
-    /**
-     * Collects the categories of the preferences that each extension contributes, keyed by extension ID.
-     * Every configuration contributed by an extension is a category, identified by its title.
-     */
-    protected getExtensionCategories(propertyNames: string[]): Map<string, Set<string>> {
-        const categories = new Map<string, Set<string>>();
-        for (const propertyName of propertyNames) {
-            const schema = this.schemaProvider.getSchemaForProperty(propertyName);
-            if (schema?.extensionInfo) {
-                let extensionCategories = categories.get(schema.extensionInfo.id);
-                if (!extensionCategories) {
-                    extensionCategories = new Set();
-                    categories.set(schema.extensionInfo.id, extensionCategories);
-                }
-                extensionCategories.add(this.getCategoryName(schema, schema.extensionInfo));
-            }
-        }
-        return categories;
     }
 
     protected getCategoryName(schema: PreferenceSchema, extensionInfo: PreferenceSchemaExtensionInfo): string {
@@ -191,7 +182,8 @@ export class PreferenceTreeGenerator {
             label: hasCategories ? extensionInfo.displayName : categoryName
         });
         const categoryParent = hasCategories && categoryName !== extensionInfo.displayName ? this.getOrCreatePreferencesGroup({
-            id: [extensionID, categoryName].join('.'),
+            // Extension IDs cannot contain ':', so that the ID of a category cannot be the ID of an extension or of another category.
+            id: `${extensionID}:${categoryName}`,
             group: extensionID,
             root: extensionParent,
             groups,
