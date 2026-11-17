@@ -836,29 +836,6 @@ button.agent-chip:focus-visible {
   padding: calc(var(--theia-ui-padding) * 2);
 }
 
-/* Welcome message container */
-.theia-WelcomeMessage-Container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  overflow-y: auto;
-  height: 100%;
-  width: 100%;
-}
-
-.theia-WelcomeMessage-Container-Inner {
-  margin: auto 0;
-  /* Centred vertically */
-  width: 100%;
-}
-
-.theia-WelcomeMessage-Divider {
-  align-self: stretch;
-  height: 0;
-  border-top: 1px solid var(--theia-dropdown-border);
-  margin: calc(var(--theia-ui-padding) * 2) calc(var(--theia-ui-padding) * 3);
-}
-
 .theia-WelcomeMessage {
   display: flex;
   flex-direction: column;
@@ -2149,17 +2126,6 @@ button.agent-chip:focus-visible {
 .ai-sessions-view-empty .codicon {
   font-size: calc(var(--theia-ui-font-size1) * 2.5);
   opacity: 0.5;
-}
-
-/* Persistent banner strip rendered above the AI chat content when an AI session
- * override (e.g. --session-preference) is active. */
-.chat-banner-host {
-  flex: none;
-  width: 100%;
-}
-
-.chat-banner-host:empty {
-  display: none;
 }
 
 .theia-ai-allow-all-mode-strip {

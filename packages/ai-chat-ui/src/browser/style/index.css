@@ -17,6 +17,40 @@
   flex: 1;
 }
 
+/* Persistent banner strip rendered above the AI chat content when an AI session
+ * override (e.g. --session-preference) is active. */
+.chat-banner-host {
+  flex: none;
+  width: 100%;
+}
+
+.chat-banner-host:empty {
+  display: none;
+}
+
+/* Welcome message container */
+.theia-WelcomeMessage-Container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
+  height: 100%;
+  width: 100%;
+}
+
+.theia-WelcomeMessage-Container-Inner {
+  margin: auto 0;
+  /* Centred vertically */
+  width: 100%;
+}
+
+.theia-WelcomeMessage-Divider {
+  align-self: stretch;
+  height: 0;
+  border-top: 1px solid var(--theia-dropdown-border);
+  margin: calc(var(--theia-ui-padding) * 2) calc(var(--theia-ui-padding) * 3);
+}
+
 .chat-input-widget>.ps__rail-x,
 .chat-input-widget>.ps__rail-y {
   display: none !important;
