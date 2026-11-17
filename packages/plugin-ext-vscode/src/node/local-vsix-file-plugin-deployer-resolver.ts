@@ -89,15 +89,29 @@ export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerReso
         // The handler skips IDs that it knows and would keep the old metadata, so a redeploy of this version always needs an undeploy.
         // The handler also keeps that metadata for a version that it uninstalled, for example after an upgrade, although the directory is gone.
         // Other versions need no removal here: the handler uninstalls them when it deploys this one.
+        const undeployOld = () => this.undeployUserPlugin(versionedId, unversionedId);
         let extensionDeploymentDir: string;
         if (existsOnDisk) {
-            const undeployOld = () => this.pluginDeployerHandler.undeployPlugin(versionedId);
             extensionDeploymentDir = await replaceInDeploymentDir(this.environment, localPath, versionedId, undeployOld, this.archiveExtractor);
         } else {
-            await this.pluginDeployerHandler.undeployPlugin(versionedId);
+            await undeployOld();
             extensionDeploymentDir = await unpackToDeploymentDir(this.environment, localPath, versionedId, this.archiveExtractor);
         }
         pluginResolverContext.addPlugin(versionedId, extensionDeploymentDir);
+    }
+
+    /**
+     * Undeploys the given version, unless a built-in extension has this ID and version.
+     * An undeploy deletes the directories of the plugin, and for a built-in extension these are part of the application.
+     */
+    protected async undeployUserPlugin(versionedId: PluginIdentifiers.VersionedId, unversionedId: PluginIdentifiers.UnversionedId): Promise<void> {
+        const isBuiltIn = this.pluginDeployerHandler.getDeployedPluginsById(unversionedId)
+            .some(plugin => plugin.type !== PluginType.User && PluginIdentifiers.componentsToVersionedId(plugin.metadata.model) === versionedId);
+        if (isBuiltIn) {
+            this.logger.info(`[${versionedId}]: A built-in extension has this ID and version. It stays deployed.`);
+            return;
+        }
+        await this.pluginDeployerHandler.undeployPlugin(versionedId);
     }
 
     /**

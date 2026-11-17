@@ -196,11 +196,28 @@ describe('LocalVSIXFilePluginDeployerResolver', () => {
             expect(added).to.deep.equal([['foo.bar@1.0.0', deploymentDirOf('1.0.0')]]);
         });
 
+        it('does not undeploy a built-in extension with the same ID and version', async () => {
+            await writeVsix(vsix, '1.0.0');
+            plugins = [deployed('1.0.0', PluginType.System)];
+            await resolve(options);
+            expect(undeployed).to.be.empty;
+            expect(added).to.deep.equal([['foo.bar@1.0.0', deploymentDirOf('1.0.0')]]);
+        });
+
+        it('does not undeploy a built-in extension when it replaces a user copy with the same ID and version', async () => {
+            await writeVsix(vsix, '1.0.0');
+            plugins = [deployed('1.0.0', PluginType.System)];
+            await fs.ensureDir(deploymentDirOf('1.0.0'));
+            await resolve(options);
+            expect(undeployed).to.be.empty;
+            expect(await deployedVersionOnDisk('1.0.0')).to.equal('1.0.0');
+        });
+
         it('keeps the installed content if the undeploy fails', async () => {
             await writeVsix(vsix, '1.0.0');
             const existingFile = path.join(deploymentDirOf('1.0.0'), 'existing.txt');
             await fs.outputFile(existingFile, 'old');
-            Object.assign(resolver, { pluginDeployerHandler: { undeployPlugin: async () => { throw new Error('undeploy failed'); } } });
+            Object.assign(resolver, { pluginDeployerHandler: { getDeployedPluginsById: () => [], undeployPlugin: async () => { throw new Error('undeploy failed'); } } });
             const error = await resolveError(options);
             expect(error).to.be.instanceOf(Error).with.property('message', 'undeploy failed');
             expect(await fs.pathExists(existingFile)).to.equal(true);
