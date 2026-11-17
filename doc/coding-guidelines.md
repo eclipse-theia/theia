@@ -583,6 +583,11 @@ See: <https://github.com/eclipse-theia/theia/issues/10877#issuecomment-110700022
 * [3.](#no-styles-in-code) Do not define styles in code. Introduce proper CSS classes.
 
 > Why? It is not possible to play with such styles in the dev tools without recompiling the code. CSS classes can be edited in the dev tools.
+<a name="css-ship-with-markup"></a>
+
+* [4.](#css-ship-with-markup) Ship the CSS for a package's markup with the package itself or with one of its dependencies. The same applies to the colors it uses: register them in the package or in one of its dependencies. Another package may restyle that markup inside its own UI, but it must not be the only place that styles it.
+
+> Why? An application does not have to contain every Theia package. If the only rule for a class, or the only registration of a color, ships with a package that the application leaves out, the markup is rendered unstyled. `npm run lint:css` reports such cases and runs as part of `npm run lint`.
 
 ## Theming
 
