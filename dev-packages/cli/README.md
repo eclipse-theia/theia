@@ -231,7 +231,7 @@ To debug the backend server:
 
     theia start --inspect
 
-Theia CLI accepts `--inspect` node flag: <https://nodejs.org/en/docs/inspector/#command-line-options>.
+Theia CLI accepts `--inspect` node flag: <https://nodejs.org/learn/getting-started/debugging#command-line-options>.
 
 ## Testing
 

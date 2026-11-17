@@ -344,7 +344,7 @@ npx lerna run watch --scope @theia/navigator --include-filtered-dependencies --p
 
 - Pass `--${server-name}-inspect` arg to the backend server.
   - For example `--nsfw-watcher-inspect=0` to inspect nsfw watcher processes with dynamic port allocation.
-  - All variations of `--inspect` flag are supported: <https://nodejs.org/en/docs/inspector/#command-line-options>.
+  - All variations of `--inspect` flag are supported: <https://nodejs.org/learn/getting-started/debugging#command-line-options>.
 - Attach the debugger to the logged port.
 
 In order to look up `server-name` run the backend server with `--log-level=debug` flag to enable logging of IPC servers instantiation.
@@ -462,18 +462,18 @@ You can fix it by modifying your `tsconfig.json`:
 
 ### Profile the backend process
 
-- Pass `--inspect` arg to the backend server: <https://nodejs.org/en/docs/inspector/#command-line-options>.
+- Pass `--inspect` arg to the backend server: <https://nodejs.org/learn/getting-started/debugging#command-line-options>.
 
 ### Profile IPC servers
 
 - Pass `--${server-name}-inspect` arg to the backend server.
   - For example `--nsfw-watcher-inspect=0` to inspect nsfw watcher processes with dynamic port allocation.
-  - All variations of `--inspect` flag are supported: <https://nodejs.org/en/docs/inspector/#command-line-options>.
+  - All variations of `--inspect` flag are supported: <https://nodejs.org/learn/getting-started/debugging#command-line-options>.
 
 ### Profile the plugin host
 
 - Pass `--hosted-plugin-inspect` arg to the backend server.
-  - All variations of `--inspect` flag are supported: <https://nodejs.org/en/docs/inspector/#command-line-options>.
+  - All variations of `--inspect` flag are supported: <https://nodejs.org/learn/getting-started/debugging#command-line-options>.
 
 ## Testing
 
