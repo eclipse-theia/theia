@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
-import { CancellationToken } from '@theia/core';
+import { CancellationToken, nls } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
@@ -155,10 +155,16 @@ export class LaunchRunnerProvider implements ToolProvider {
         return {
             id: RUN_LAUNCH_CONFIGURATION_FUNCTION_ID,
             name: RUN_LAUNCH_CONFIGURATION_FUNCTION_ID,
+            confirmAlwaysAllow: nls.localize('theia/ai/ide/runLaunchConfiguration/confirmAlwaysAllow',
+                'This tool starts launch configurations, which can run any program, and tasks before and after the launch. ' +
+                'Agents can write launch configurations themselves, so always allowing it is like always allowing shell execution.'),
             description: 'Starts a launch configuration and returns immediately — the application continues running in the background. ' +
                 'Use listLaunchConfigurations first to discover available configuration names and check whether one is already running. ' +
                 'If multiple configurations share the same name, specify the workspaceRoot parameter to disambiguate. ' +
-                'The response includes the debug session ID on success. If the configuration name doesn\'t match any available configuration, returns an error.',
+                'The response includes the debug session ID on success. If the configuration name doesn\'t match any available configuration, returns an error. ' +
+                'Only start launch configurations that already existed or that the user asked for: never create or modify a launch configuration ' +
+                'or a task it runs in order to run a command, and if shell execution is unavailable or was denied, stop and tell the user ' +
+                'instead of using a launch configuration as a workaround.',
             parameters: {
                 type: 'object',
                 properties: {

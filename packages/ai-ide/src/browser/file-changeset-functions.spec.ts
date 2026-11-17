@@ -49,6 +49,9 @@ import { URI } from '@theia/core/lib/common/uri';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { withWorkspaceServiceDefaults } from '@theia/workspace/lib/browser/test/with-workspace-service-defaults';
 import { WRITE_CONTENT_MAX_SIZE_KB_PREF } from '../common/workspace-preferences.js';
+import { bindPreferenceConfigurations } from '@theia/core/lib/common/preferences/preference-configurations';
+import { WorkspaceFileService } from '@theia/workspace/lib/common/workspace-file-service';
+import { ExecutableWorkspaceConfiguration } from './executable-workspace-configuration.js';
 
 disableJSDOM();
 
@@ -125,6 +128,9 @@ describe('File Changeset Functions Cancellation Tests', () => {
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(ChangeSetFileElementFactory).toConstantValue(mockFileChangeFactory);
         container.bind(FileChangeSetTitleProvider).to(DefaultFileChangeSetTitleProvider).inSingletonScope();
+        bindPreferenceConfigurations(container.bind.bind(container));
+        container.bind(WorkspaceFileService).toSelf().inSingletonScope();
+        container.bind(ExecutableWorkspaceConfiguration).toSelf().inSingletonScope();
         container.bind(ReplaceContentInFileFunctionHelper).toSelf();
         container.bind(SuggestFileContent).toSelf();
         container.bind(WriteFileContent).toSelf();
@@ -403,6 +409,7 @@ describe('File Changeset Functions access control', () => {
     let container: Container;
     let ctx: ChatToolContext;
     let written: Array<{ uri: URI; content: string }>;
+    let pending: ChangeSetElement[];
     let contributedRoots: URI[];
 
     before(() => { disableJSDOM = enableJSDOM(); });
@@ -410,10 +417,14 @@ describe('File Changeset Functions access control', () => {
 
     beforeEach(() => {
         written = [];
+        pending = [];
         contributedRoots = [];
 
         const changeSet: Partial<ChangeSet> = {
-            addElements: () => true,
+            addElements: (...elements: ChangeSetElement[]) => {
+                pending.push(...elements);
+                return true;
+            },
             setTitle: () => { },
             removeElements: () => true,
             getElementByURI: () => undefined
@@ -460,6 +471,9 @@ describe('File Changeset Functions access control', () => {
         } as ChangeSetFileElement));
         container.bind(FileChangeSetTitleProvider).to(DefaultFileChangeSetTitleProvider).inSingletonScope();
         container.bind(ReplaceContentInFileFunctionHelperV2).toSelf();
+        bindPreferenceConfigurations(container.bind.bind(container));
+        container.bind(WorkspaceFileService).toSelf().inSingletonScope();
+        container.bind(ExecutableWorkspaceConfiguration).toSelf().inSingletonScope();
         container.bind(WriteFileContent).toSelf();
         container.bind(WriteFileReplacements).toSelf();
     });
@@ -498,5 +512,23 @@ describe('File Changeset Functions access control', () => {
         const result = await writeContent('/home/test/.theia/workspace-metadata/uuid/memory/wiki/index.md');
         expect(result).to.include('Successfully');
         expect(written.map(w => w.uri.toString())).to.deep.equal(['file:///home/test/.theia/workspace-metadata/uuid/memory/wiki/index.md']);
+    });
+
+    describe('executable workspace configuration', () => {
+        it('leaves a written task definition pending for the user to review instead of applying it', async () => {
+            const result = await writeContent('.vscode/tasks.json');
+
+            expect(written).to.be.empty;
+            expect(pending.map(element => element.uri.toString())).to.deep.equal(['file:///workspace/.vscode/tasks.json']);
+            expect(result).to.include('not applied');
+        });
+
+        it('leaves replacements in a launch configuration pending for the user to review instead of applying them', async () => {
+            const result = await writeReplacements('.vscode/launch.json');
+
+            expect(written).to.be.empty;
+            expect(pending.map(element => element.uri.toString())).to.deep.equal(['file:///workspace/.vscode/launch.json']);
+            expect(result).to.include('not applied');
+        });
     });
 });

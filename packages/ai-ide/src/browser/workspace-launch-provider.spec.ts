@@ -258,6 +258,11 @@ describe('Launch Management Tool Providers', () => {
             ]);
         });
 
+        it('asks for confirmation before being always allowed, as launch configurations can run any program', () => {
+            const tool = launchRunnerProvider.getTool();
+            expect(tool.confirmAlwaysAllow).to.be.a('string').that.is.not.empty;
+        });
+
         it('should start a valid configuration', async () => {
             const tool = launchRunnerProvider.getTool();
             const result = await tool.handler(

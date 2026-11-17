@@ -23,6 +23,7 @@ import { URI } from '@theia/core/lib/common/uri';
 import { inject, injectable, named, optional } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceFunctionScope } from './workspace-functions.js';
+import { ExecutableWorkspaceConfiguration } from './executable-workspace-configuration.js';
 
 import { nls, ILogger, PreferenceService } from '@theia/core';
 import { extractJsonStringField } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/toolcall-utils';
@@ -61,6 +62,15 @@ function createPathShortLabel(args: string, hasMore: boolean): { label: string; 
  */
 function staleFileError(path: string): string {
     return `File ${path} changed since you last read it. Read it again before overwriting it, so that the changes made in the meantime are not lost.`;
+}
+
+/**
+ * Applying an agent's change to executable workspace configuration would let it run any command through `runTask` or
+ * `runLaunchConfiguration` without the confirmation `shellExecute` asks for, so such changes wait for the user's review.
+ */
+function pendingExecutableConfigurationMessage(path: string): string {
+    return `The change to ${path} was not applied: the file can define tasks or launch configurations, so the user must review it first. ` +
+        'It is pending in the change set until the user applies it. Do not run tasks or launch configurations from it before then.';
 }
 
 const DEFAULT_WRITE_CONTENT_MAX_SIZE_KB = 256;
@@ -220,6 +230,9 @@ export class WriteFileContent implements ToolProvider {
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
+    @inject(ExecutableWorkspaceConfiguration)
+    protected readonly executableWorkspaceConfiguration: ExecutableWorkspaceConfiguration;
+
     getTool(): ToolRequest {
         const preferenceService = this.preferenceService;
         return {
@@ -292,6 +305,9 @@ export class WriteFileContent implements ToolProvider {
                 ctx.request.session.changeSet.setTitle(this.fileChangeSetTitleProvider.getChangeSetTitle(ctx));
                 ctx.request.session.changeSet.addElements(fileElement);
 
+                if (this.executableWorkspaceConfiguration.is(uri)) {
+                    return pendingExecutableConfigurationMessage(path);
+                }
                 try {
                     await fileElement.apply();
                     return `Successfully wrote content to file ${path}.`;
@@ -320,6 +336,9 @@ export class ReplaceContentInFileFunctionHelper {
 
     @inject(ILogger) @named('ai-ide:ReplaceContentInFileFunctionHelper')
     protected readonly logger: ILogger;
+
+    @inject(ExecutableWorkspaceConfiguration)
+    protected readonly executableWorkspaceConfiguration: ExecutableWorkspaceConfiguration;
 
     private replacer: ContentReplacer;
 
@@ -438,6 +457,9 @@ export class ReplaceContentInFileFunctionHelper {
             }
 
             if (result.fileElement) {
+                if (this.executableWorkspaceConfiguration.is(result.fileElement.uri)) {
+                    return pendingExecutableConfigurationMessage(result.path);
+                }
                 await result.fileElement.apply();
 
                 const action = result.reset ? 'reset and' : '';
