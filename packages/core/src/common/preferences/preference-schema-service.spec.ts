@@ -69,6 +69,22 @@ describe('PreferenceSchemaServiceImpl', () => {
         expect(service.getJSONSchema(PreferenceScope.User).properties?.[KEY]).to.not.be.undefined;
     });
 
+    it('should hand a property over to the next schema that declares it when its schema is removed', () => {
+        const first = { properties: { 'sample.value': { type: 'string', default: 'first' } } } as const;
+        const second = { properties: { 'sample.value': { type: 'string', default: 'second' } } } as const;
+        const firstRegistration = service.addSchema(first);
+        service.addSchema(second);
+        const events: DefaultValueChangedEvent[] = [];
+        service.onDidChangeDefaultValue(event => events.push(event));
+
+        firstRegistration.dispose();
+
+        expect(service.getSchemaForProperty('sample.value')).to.equal(second);
+        expect(service.getDefaultValue('sample.value', undefined)).to.equal('second');
+        expect(service.getJSONSchema(PreferenceScope.User).properties?.['sample.value']).to.not.be.undefined;
+        expect(events).to.deep.equal([{ key: 'sample.value', overrideIdentifier: undefined, oldValue: 'first', newValue: 'second' }]);
+    });
+
     it('should restore the previous default when the newest override is removed', () => {
         service.registerOverride(KEY, undefined, 'first');
         const newest = service.registerOverride(KEY, undefined, 'second');
