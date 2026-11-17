@@ -154,6 +154,7 @@ import { DomInputUndoRedoHandler, UndoRedoHandler, UndoRedoHandlerService } from
 import { WidgetStatusBarContribution, WidgetStatusBarService } from './widget-status-bar-service.js';
 import { SymbolIconColorContribution } from './symbol-icon-color-contribution.js';
 import { TerminalColorContribution } from './terminal-color-contribution.js';
+import { NotificationColorContribution } from './notification-color-contribution.js';
 import { CorePreferences, bindCorePreferences } from '../common/core-preferences.js';
 import { bindBadgeDecoration } from './badges/index.js';
 import { PerspectiveContribution, PerspectiveService, PerspectiveServiceImpl, PerspectiveServiceInternal, WidgetAreaResolverImpl } from './perspective-service.js';
@@ -321,6 +322,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(ColorContribution).toService(SymbolIconColorContribution);
     bind(TerminalColorContribution).toSelf().inSingletonScope();
     bind(ColorContribution).toService(TerminalColorContribution);
+    bind(NotificationColorContribution).toSelf().inSingletonScope();
+    bind(ColorContribution).toService(NotificationColorContribution);
 
     bindCommonStylingParticipants(bind);
 
