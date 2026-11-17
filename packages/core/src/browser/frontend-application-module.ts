@@ -23,6 +23,8 @@ import '../../src/browser/style/materialcolors.css';
 import 'font-awesome/css/font-awesome.min.css';
 import 'file-icons-js/css/style.css';
 import '@vscode/codicons/dist/codicon.css';
+// Import after file-icons-js so that Theia's sizing of the file icons takes precedence.
+import '../../src/browser/style/file-icons.css';
 
 import { ContainerModule } from 'inversify';
 import {
