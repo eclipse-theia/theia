@@ -119,21 +119,6 @@
   overflow: hidden;
 }
 
-/* Section headers and spacing */
-.settings-section-title {
-  font-size: var(--theia-ui-font-size3);
-  font-weight: 600;
-  margin: 0 0 calc(var(--theia-ui-padding) * 1.5) 0;
-  padding: 0 0 calc(var(--theia-ui-padding) / 2) 0;
-  border-bottom: var(--theia-border-width) solid var(--theia-widget-border);
-}
-
-.settings-section-title pre {
-  font-size: calc(var(--theia-ui-font-size0) * 0.9);
-  color: var(--theia-descriptionForeground);
-  margin-top: calc(var(--theia-ui-padding) / 2);
-}
-
 /* Agent title with toggle */
 .agent-title-with-toggle {
   display: block;
