@@ -20,7 +20,7 @@ import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { ThemeChangeEvent } from '@theia/core/lib/common/theme';
 import { Emitter, Event } from '@theia/core';
-import { terminalAnsiColorMap } from '../common/terminal-preferences.js';
+import { terminalAnsiColorMap } from '@theia/core/lib/common/terminal-ansi-color-map';
 
 @injectable()
 export class TerminalThemeService {
