@@ -84,6 +84,6 @@ Newest first. One entry per merged update and target branch.
 | 2026-06-25 | master | (18.3.1) | #17708 | Specs added after #17567 made React 19 compatible |
 | 2026-06-18 | master | 18.3.1 (peer `^18.3.1 \|\| ^19.0.0`) | #17567 | React moved to peer + dev dependencies of core; React 19 type/ref fixes; breaking (1.73.0) |
 | 2026-04-10 | master | 18.2.0 → 18.3.1 | #17282 | NPM upgrade; `react-tooltip` 4.5.1, `react-virtuoso` 2.19.1 |
-| 2025-09-23 | master | — | #16306 | Fix duplicate `createRoot` on singleton dialogs |
-| 2022-08-16 | master | — | #11553 | `react-virtualized` → `react-virtuoso` |
+| 2025-09-23 | master | n/a | #16306 | Fix duplicate `createRoot` on singleton dialogs |
+| 2022-08-16 | master | n/a | #11553 | `react-virtualized` → `react-virtuoso` |
 | 2022-08-09 | master | 16.8.0 → 18.2.0 | #11455 | `createRoot`, `onRender` removed, `react-dom/client` re-export; Migration v1.29.0 |

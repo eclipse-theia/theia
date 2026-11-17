@@ -8,7 +8,8 @@ Split this file into `ISSUES.md` and `LOG.md` next to it once a section gets too
 
 ## Steps
 
-1. Branch from master, e.g. `npm-upgrade-1.77.0`. Use the npm bundled with a supported Node.js (npm 11.19+), never an older global npm (see Known issues).
+1. Work on the branch the user has checked out (based on master after the release, see SKILL.md Branches). Use the npm bundled with a supported Node.js (npm 11.19+), never an older global npm (see Known issues).
+   Take the vulnerability baseline first ([deps/vulnerabilities](../vulnerabilities/GUIDE.md) step 1).
 2. Run `npm upgrade --save` at the root (Publishing 3.7). It rewrites the lockfile and aligns the ranges in all `package.json` files with the resolved versions.
 3. Review the `package.json` diff by hand and revert ranges that must not move:
    - `@types/vscode` in `sample-plugins/*/*`: keep the floor at the `engines.vscode` value (#18005).
@@ -18,9 +19,11 @@ Split this file into `ISSUES.md` and `LOG.md` next to it once a section gets too
 5. Sync `allowScripts` in the root `package.json` with every lockfile entry that has `hasInstallScript` (`true` if needed, `false` if cosmetic), see lockfile-maintenance.md.
 6. Fix compile errors and failing tests caused by new transitive types (see Known issues). Keep code changes minimal and comment casts.
 7. Commit the regenerated `packages/core/README.md` (re-export versions, rewritten by `afterInstall` → `generate-theia-re-exports`).
-8. Packages that cannot be upgraded (major with API changes, ESM-only, breaks types): leave them, list them under "Currently not fixable" in the PR body, follow up separately. The Electron version moves in its own update (deps/electron), not here.
-9. Commit `chore(deps): NPM upgrade after <version>` with a bullet list: ranges aligned, overrides added/removed, code adaptations, held-back packages.
-10. License check: run `npm run license:check:review` locally with a committer's Eclipse GitLab PAT in `DASH_TOKEN`. It opens one IP Lab ticket per unvetted package; post the ticket links as a PR comment. Merge only once the "3PP License Check" workflow is green (all tickets approved).
+8. Reduce the remaining vulnerabilities ([deps/vulnerabilities](../vulnerabilities/GUIDE.md) steps 3 to 7).
+9. Packages that cannot be upgraded (major with API changes, ESM-only, breaks types): leave them, list them under "Currently not fixable" in the PR body, follow up separately. The Electron version moves in its own update (deps/electron), not here.
+10. Commit `chore(deps): NPM upgrade after <version>` with a flat bullet list: ranges aligned, overrides added/removed (`override <pkg> (<parent>) to patched versions`), code adaptations, `reduces npm audit from <n> to <m>`. Unrelated cleanups found on the way (tooling removal, doc fixes) get their own commit (#18005).
+    PR body (template): "What it does" with the same bullets plus the audit counts before/after, then "Currently not fixable" (package, severity, reason); "Follow-ups" with the issues for replacements and migrations; Attribution "Contributed on behalf of STMicroelectronics". Examples: #18005 (detailed), #18149 (short).
+11. License check: run `npm run license:check:review` locally with a committer's Eclipse GitLab PAT in `DASH_TOKEN`. It opens one IP Lab ticket per unvetted package; post the ticket links as a PR comment. Merge only once the "3PP License Check" workflow is green (all tickets approved).
 
 ## Coupled versions
 
@@ -35,7 +38,7 @@ Split this file into `ISSUES.md` and `LOG.md` next to it once a section gets too
 ## Checks
 
 - `node scripts/verify-lockfile-platforms.js` (`libc` fields, `allowScripts` cross-check; also runs in CI).
-- `git diff --stat`: besides the lockfile only `package.json` files, `packages/core/README.md` and intended code fixes.
+- `git diff --stat <start commit>`: besides the lockfile only `package.json` files, `packages/core/README.md` and intended code fixes.
 - `npm ci`, `npm run lint`, `npm run build`, `npm run test` (unit tests changed in #15688 because of new HTML attribute order).
 - `npm run build:browser-only` if `@theia/filesystem` browser-only deps moved (`tar-stream`, #18005).
 - `npm ls` for every package in `overrides`.

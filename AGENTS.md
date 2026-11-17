@@ -79,7 +79,7 @@ which bundles the frontend. Bundling runs via `theia build`, which uses esbuild 
 
 ## Updating Dependencies
 
-To update a frequently updated dependency (Electron, Monaco, VS Code API version, TypeScript, Node.js, React, AI SDKs, the NPM upgrade after a release), follow the skill in `.agents/skills/update-dependency/SKILL.md`.
+For the dependency update after a release (NPM upgrade, reducing dependency vulnerabilities from npm audit and Dependabot, Electron) and for single updates of frequently updated dependencies (Electron, Monaco, TypeScript, Node.js, React, AI SDKs), follow the skill in `.agents/skills/update-dependency/SKILL.md`.
 
 ## Start Theia
 

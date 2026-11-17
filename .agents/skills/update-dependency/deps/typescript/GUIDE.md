@@ -24,7 +24,7 @@ Split this file into `ISSUES.md` and `LOG.md` next to it once a section gets too
 | `typescript` (root) | same `~x.y.z` in `localization-manager`, `private-re-exports`, `examples/playwright`, `copilot-sdk-mirror.yml` |
 | `typescript` minor/major | `@typescript-eslint/*` (peer range), `typedoc` (peer range); `.vscode/settings.json` `typescript.tsdk` stays `node_modules/typescript/lib` |
 | `target` / `lib` in `configs/base.tsconfig.json` | `lib` in `configs/build.eslintrc.json`; the minimum Node.js in [doc/runtime-policy.md](../../../../../doc/runtime-policy.md) must support the target |
-| any `compilerOptions` change | `examples/api-tests/test-ts-workspace/tsconfig.json`, which must stay valid for the TypeScript bundled with the built-in `vscode.typescript-language-features` (see deps/vscode-api) |
+| any `compilerOptions` change | `examples/api-tests/test-ts-workspace/tsconfig.json`, which must stay valid for the TypeScript bundled with the built-in `vscode.typescript-language-features` |
 | options that make emit use more `tslib` helpers (`importHelpers`, `esModuleInterop`) | `tslib` in `dependencies` of every published package whose output `require("tslib")` |
 | any upgrade | Theia IDE needs the same update (Publishing 3.6 ticket) |
 

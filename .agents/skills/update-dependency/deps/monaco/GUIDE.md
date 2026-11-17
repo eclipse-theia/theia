@@ -35,7 +35,7 @@ The version is the VS Code release the fork is based on (`1.108.2`). Republished
 | When this changes | Also update |
 |---|---|
 | `@theia/monaco-editor-core` version | All ~25 `package.json` pins, `package-lock.json`, `DEFAULT_SUPPORTED_MONACO_VERSION` in `dev-packages/application-package/src/api.ts`, example version in `packages/monaco/README.md` |
-| VS Code base of the fork | `nls.metadata.json`, supported VS Code API version and built-in extensions: see [deps/vscode-api](../vscode-api/GUIDE.md). 1.108 was tested together with updated built-ins; stale nls metadata leaves Monaco strings untranslated |
+| VS Code base of the fork | `nls.metadata.json`, supported VS Code API version and built-in extensions (separate monthly VS Code API update, not part of this skill). 1.108 was tested together with updated built-ins; stale nls metadata leaves Monaco strings untranslated |
 | Monaco editor options | `editor-generated-preference-schema.ts` via the preference extractor |
 | Monaco tokenization API | `vscode-textmate`, `vscode-oniguruma` (updated right after 1.96 in #14848) |
 
@@ -62,7 +62,7 @@ Once the service overrides took effect everywhere, Theia's patched `IConfigurati
 
 ### Monaco context menu, Selection menu or commands untranslated in a non-English locale
 
-The `localize`/`localize2` override must run before any Monaco code is loaded, and the keys must match `nls.metadata.json`. 1.96 dropped the override from `monaco-init.ts` by accident. Today `monaco-nls.ts` replaces `vs/nls` at bundle time; check it after every uplift and update the metadata (vscode-api guide). (#13557, #15016)
+The `localize`/`localize2` override must run before any Monaco code is loaded, and the keys must match `nls.metadata.json`. 1.96 dropped the override from `monaco-init.ts` by accident. Today `monaco-nls.ts` replaces `vs/nls` at bundle time; check it after every uplift and update `packages/core/src/common/i18n/nls.metadata.json` from the matching VS Code tag. (#13557, #15016)
 
 ### Command palette distorted, `Got bad scroll event` when no editor was opened yet
 
