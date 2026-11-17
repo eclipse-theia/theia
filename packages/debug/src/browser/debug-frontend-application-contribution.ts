@@ -1356,14 +1356,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                 },
                 description: nls.localizeByDefault('Icon color for all breakpoint stack frames.')
             },
-            {
-                id: 'debugIcon.startForeground', defaults: {
-                    dark: '#89D185',
-                    light: '#388A34',
-                    hcDark: '#89D185',
-                    hcLight: '#388A34'
-                }, description: nls.localizeByDefault('Debug toolbar icon for start debugging.')
-            },
+            // `debugIcon.startForeground` and `debugIcon.stopForeground` are registered by `DebugIconColorContribution` in core
             {
                 id: 'debugIcon.pauseForeground', defaults: {
                     dark: '#75BEFF',
@@ -1371,14 +1364,6 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     hcDark: '#75BEFF',
                     hcLight: '#007ACC'
                 }, description: nls.localizeByDefault('Debug toolbar icon for pause.')
-            },
-            {
-                id: 'debugIcon.stopForeground', defaults: {
-                    dark: '#F48771',
-                    light: '#A1260D',
-                    hcDark: '#F48771',
-                    hcLight: '#A1260D'
-                }, description: nls.localizeByDefault('Debug toolbar icon for stop.')
             },
             {
                 id: 'debugIcon.disconnectForeground', defaults: {
