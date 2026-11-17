@@ -50,6 +50,7 @@ describe('PreferenceTreeModel', () => {
     let schemaEmitter: Emitter<CompositeTreeNode>;
     let scopeEmitter: Emitter<Preference.SelectedScopeDetails>;
     let isValidInScope: (preferenceId: string, scope: number) => boolean;
+    let extensionIds: Map<string, string>;
 
     function createComposite(group: string, id: string, parent: CompositeTreeNode, depth: number, expandable: boolean): Preference.CompositeTreeNode {
         const node: Preference.CompositeTreeNode = {
@@ -114,6 +115,7 @@ describe('PreferenceTreeModel', () => {
         schemaEmitter = new Emitter<CompositeTreeNode>();
         scopeEmitter = new Emitter<Preference.SelectedScopeDetails>();
         isValidInScope = () => true;
+        extensionIds = new Map();
         parent.bind(ILogger).to(MockLogger).inSingletonScope();
         parent.bind(LabelProvider).toConstantValue({
             getName: () => '',
@@ -123,6 +125,11 @@ describe('PreferenceTreeModel', () => {
         parent.bind(PreferenceSchemaService).toConstantValue({
             getSchemaProperties: () => new Map(),
             isValidInScope: (preferenceId: string, scope: number) => isValidInScope(preferenceId, scope),
+            getSchemaForProperty: (preferenceId: string) => {
+                const id = extensionIds.get(preferenceId);
+                return id ? { extensionInfo: { id, displayName: id }, properties: {} } : undefined;
+            },
+            getSchemas: () => new Set(Array.from(new Set(extensionIds.values()), id => ({ extensionInfo: { id, displayName: id }, properties: {} }))),
         } as any);
         parent.bind(PreferenceService).toConstantValue({
             ready: Promise.resolve(),
@@ -334,6 +341,74 @@ describe('PreferenceTreeModel', () => {
             searchbarEmitter.fire('');
             expect(model.selectedNodes[0]?.id).to.equal(fixture.commonlyUsed!.id);
             expect(model.categoryFilterId).to.equal(fixture.commonlyUsed!.id);
+        });
+    });
+
+    describe('extension filter', () => {
+
+        function visiblePreferences(model: PreferenceTreeModel): string[] {
+            return Array.from(model.currentRows.values())
+                .map(row => row.node)
+                .filter((node): node is Preference.LeafNode => Preference.LeafNode.is(node))
+                .map(node => node.preferenceId);
+        }
+
+        async function createExtensionModel(): Promise<PreferenceTreeModel> {
+            const model = await createModel(createFixture());
+            extensionIds.set('editor.fontSize', 'acme.sample');
+            extensionIds.set('editor.cursorStyle', 'other.sample');
+            return model;
+        }
+
+        it('shows only the preferences of the extension', async () => {
+            const model = await createExtensionModel();
+            searchbarEmitter.fire('@ext:Acme.Sample');
+            expect(visiblePreferences(model)).to.deep.equal(['editor.fontSize']);
+        });
+
+        it('shows the preferences of any of several extensions', async () => {
+            const model = await createExtensionModel();
+            searchbarEmitter.fire('@ext:acme.sample,other.sample');
+            expect(visiblePreferences(model)).to.have.members(['editor.fontSize', 'editor.cursorStyle']);
+        });
+
+        it('combines with the search text', async () => {
+            const model = await createExtensionModel();
+            searchbarEmitter.fire('@ext:acme.sample @ext:other.sample cursor');
+            expect(visiblePreferences(model)).to.deep.equal(['editor.cursorStyle']);
+        });
+
+        it('matches part of the extension ID', async () => {
+            const model = await createExtensionModel();
+            searchbarEmitter.fire('@ext:ACME');
+            expect(visiblePreferences(model)).to.deep.equal(['editor.fontSize']);
+            searchbarEmitter.fire('@ext:sample');
+            expect(visiblePreferences(model)).to.have.members(['editor.fontSize', 'editor.cursorStyle']);
+        });
+
+        it('matches only the extension with a full ID', async () => {
+            const model = await createExtensionModel();
+            extensionIds.set('editor.cursorStyle', 'acme.sample-nightly');
+            searchbarEmitter.fire('@ext:acme.sample');
+            expect(visiblePreferences(model)).to.deep.equal(['editor.fontSize']);
+            searchbarEmitter.fire('@ext:acme.samp');
+            expect(visiblePreferences(model)).to.have.members(['editor.fontSize', 'editor.cursorStyle']);
+        });
+
+        it('shows no preferences if no extension matches', async () => {
+            const model = await createExtensionModel();
+            searchbarEmitter.fire('@ext:unknown');
+            expect(visiblePreferences(model)).to.be.empty;
+        });
+
+        it('includes extensions that contribute preferences during the search', async () => {
+            const fixture = createFixture();
+            const model = await createModel(fixture);
+            searchbarEmitter.fire('@ext:acme');
+            expect(visiblePreferences(model)).to.be.empty;
+            extensionIds.set('editor.fontSize', 'acme.sample');
+            schemaEmitter.fire(fixture.root);
+            expect(visiblePreferences(model)).to.deep.equal(['editor.fontSize']);
         });
     });
 
