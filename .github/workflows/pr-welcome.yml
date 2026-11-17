@@ -12,10 +12,12 @@
 #
 # SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 
-# Welcomes external contributors with the review flow. For first-time
-# contributors, a second comment lists failed basic checks (ECA, lint errors,
-# several CI failures, PR template) and is removed once they pass. Authors with write
-# access and bots are skipped. See doc/pull-requests.md#review-flow.
+# Welcomes external contributors with the review flow. On drafts, the welcome
+# comment notes that the review starts once the PR is ready for review and is
+# updated when the draft state changes. For first-time contributors, a second
+# comment lists failed basic checks (ECA, lint errors, several CI failures, PR
+# template) and is removed once they pass. Authors with write access and bots
+# are skipped. See doc/pull-requests.md#review-flow.
 #
 # The workflow never checks out PR code, so the privileged events are safe.
 # The status and workflow_run events update the basic checks once the ECA
@@ -29,7 +31,7 @@ on:
   pull_request_target:
     branches: [master]
     # After a push, the ECA check and the workflows of the PR update the basic checks
-    types: [opened, reopened, edited, ready_for_review]
+    types: [opened, reopened, edited, ready_for_review, converted_to_draft]
   status:
   workflow_run:
     # All workflows with a pull_request trigger, so that the last finished one updates the checks
@@ -124,6 +126,12 @@ jobs:
                   + 'The PR is merged after the approval of a maintainer.',
                 '',
                 `See the [review flow](${rules}#external-contributor-flow) for details.`,
+                ...(pr.draft ? [
+                  '',
+                  '> [!NOTE]',
+                  '> This PR is a draft. We review it once it is marked as ready for review. '
+                    + `For [early feedback on the approach](${rules}#design-review), ask for it in a comment.`,
+                ] : []),
               ].join('\n');
             }
 
@@ -229,12 +237,16 @@ jobs:
               return;
             }
             const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: pr.number, per_page: 100 });
-            if (!comments.some(c => c.user?.login === bot && c.body?.startsWith(welcomeMarker))) {
+            const welcome = comments.find(c => c.user?.login === bot && c.body?.startsWith(welcomeMarker));
+            if (!welcome) {
               // PRs opened before this workflow existed get no comments
               if (context.eventName !== 'pull_request_target' || context.payload.action !== 'opened') {
                 return;
               }
               await github.rest.issues.createComment({ owner, repo, issue_number: pr.number, body: welcomeMessage(pr) });
+            } else if (welcome.body !== welcomeMessage(pr)) {
+              // Adds or removes the draft note when the draft state changed
+              await github.rest.issues.updateComment({ owner, repo, comment_id: welcome.id, body: welcomeMessage(pr) });
             }
             // The basic checks are meant for newcomers. An existing checks comment is kept up to date.
             if (comments.some(c => c.user?.login === bot && c.body?.startsWith(checksMarker)) || await isFirstTime(pr)) {
