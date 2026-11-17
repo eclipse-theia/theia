@@ -32,7 +32,7 @@ import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { OPFSFileSystem, WatchEventType, type FileStat, type OPFSError, type WatchEvent } from 'opfs-worker';
+import { createOPFS, WatchEventType, type FileStat, type OPFSError, type OPFSFacade, type OPFSOptions, type WatchEvent } from 'opfs-worker';
 import { OPFSInitialization } from './opfs-filesystem-initialization.js';
 import { ReadableStreamEvents, newWriteableStream } from '@theia/core/lib/common/stream';
 import { readFileIntoStream } from '../common/io.js';
@@ -65,8 +65,10 @@ export class OPFSFileSystemProvider implements Disposable,
     @inject(EncodingService)
     protected readonly encodingService: EncodingService;
 
-    private fs!: OPFSFileSystem;
+    private fs!: OPFSFacade;
     private initialized: Promise<true>;
+    /** The listener of every watch, so that opfs-worker reports a change once when several watches match it. */
+    private readonly watchListener = (event: WatchEvent) => this.handleFileSystemChange(event);
 
     protected readonly toDispose = new DisposableCollection(
         this.onDidChangeFileEmitter
@@ -79,17 +81,18 @@ export class OPFSFileSystemProvider implements Disposable,
     protected init(): void {
         const setup = async (): Promise<true> => {
             const root = await this.initialization.getRootDirectory();
-            const broadcastChannel = this.initialization.getBroadcastChannel();
 
-            // Set up file change listening via BroadcastChannel
-            broadcastChannel.onmessage = this.handleFileSystemChange.bind(this);
-
-            // Initialize the file system
-            this.fs = new OPFSFileSystem({
+            const fs = this.createFileSystem({
                 root,
-                broadcastChannel,
+                broadcastChannel: this.initialization.getBroadcastChannelName(),
                 hashAlgorithm: false,
             });
+            if (this.toDispose.disposed) {
+                fs.dispose();
+                return true;
+            }
+            this.fs = fs;
+            this.toDispose.push(Disposable.create(() => fs.dispose()));
 
             await this.initialization.initializeFS(new Proxy(this, {
                 get(target, prop, receiver): unknown {
@@ -105,6 +108,10 @@ export class OPFSFileSystemProvider implements Disposable,
         this.initialized = setup();
     }
 
+    protected createFileSystem(options: OPFSOptions): OPFSFacade {
+        return createOPFS(options);
+    }
+
     /**
      * Watches a resource for file system changes
      */
@@ -116,7 +123,7 @@ export class OPFSFileSystemProvider implements Disposable,
         const unwatch = this.fs.watch(formatPath(resource), {
             recursive: opts.recursive,
             exclude: opts.excludes,
-        });
+        }, this.watchListener);
 
         return Disposable.create(unwatch);
     }
@@ -129,7 +136,7 @@ export class OPFSFileSystemProvider implements Disposable,
         for (const [uri, content] of entries) {
             arrayEntries.push([formatPath(uri), content]);
         }
-        await this.fs.createIndex(arrayEntries);
+        await this.fs.importFiles(arrayEntries);
     }
 
     /**
@@ -313,7 +320,7 @@ export class OPFSFileSystemProvider implements Disposable,
         await this.initialized;
 
         try {
-            return await this.fs.readFile(formatPath(resource), 'binary') as Uint8Array;
+            return await this.fs.readFile(formatPath(resource), 'binary');
         } catch (error) {
             throw toFileSystemProviderError(error as Error | OPFSError);
         }
@@ -339,8 +346,6 @@ export class OPFSFileSystemProvider implements Disposable,
     async writeFile(resource: URI, content: Uint8Array, opts: FileWriteOptions): Promise<void> {
         await this.initialized;
 
-        let handle: number | undefined = undefined;
-
         if (!resource || !resource.path) {
             throw createFileSystemProviderError('Invalid resource URI', FileSystemProviderErrorCode.FileNotFound);
         }
@@ -364,17 +369,9 @@ export class OPFSFileSystemProvider implements Disposable,
                 }
             }
 
-            // Open
-            handle = await this.open(resource, { create: true });
-
-            // Write content at once
-            await this.write(handle, 0, content, 0, content.byteLength);
+            await this.fs.writeFile(path, content);
         } catch (error) {
             throw toFileSystemProviderError(error as Error | OPFSError);
-        } finally {
-            if (typeof handle === 'number') {
-                await this.close(handle);
-            }
         }
     }
 
@@ -485,19 +482,15 @@ export class OPFSFileSystemProvider implements Disposable,
     // #endregion
 
     /**
-     * Handles file system change events from BroadcastChannel
+     * Handles file system change events from opfs-worker
      */
-    private async handleFileSystemChange(event: MessageEvent<WatchEvent>): Promise<void> {
-        if (!event.data?.path) {
-            return;
-        }
-
-        const resource = new URI('file://' + event.data.path);
+    private handleFileSystemChange(event: WatchEvent): void {
+        const resource = new URI('file://' + event.path);
         let changeType: FileChangeType;
 
-        if (event.data.type === WatchEventType.Added) {
+        if (event.type === WatchEventType.Added) {
             changeType = FileChangeType.ADDED;
-        } else if (event.data.type === WatchEventType.Removed) {
+        } else if (event.type === WatchEventType.Removed) {
             changeType = FileChangeType.DELETED;
         } else {
             changeType = FileChangeType.UPDATED;
