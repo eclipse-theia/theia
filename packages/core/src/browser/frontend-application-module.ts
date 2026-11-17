@@ -156,6 +156,7 @@ import { SymbolIconColorContribution } from './symbol-icon-color-contribution.js
 import { TerminalColorContribution } from './terminal-color-contribution.js';
 import { NotificationColorContribution } from './notification-color-contribution.js';
 import { DebugIconColorContribution } from './debug-icon-color-contribution.js';
+import { EditorGutterColorContribution } from './editor-gutter-color-contribution.js';
 import { CorePreferences, bindCorePreferences } from '../common/core-preferences.js';
 import { bindBadgeDecoration } from './badges/index.js';
 import { PerspectiveContribution, PerspectiveService, PerspectiveServiceImpl, PerspectiveServiceInternal, WidgetAreaResolverImpl } from './perspective-service.js';
@@ -327,6 +328,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(ColorContribution).toService(NotificationColorContribution);
     bind(DebugIconColorContribution).toSelf().inSingletonScope();
     bind(ColorContribution).toService(DebugIconColorContribution);
+    bind(EditorGutterColorContribution).toSelf().inSingletonScope();
+    bind(ColorContribution).toService(EditorGutterColorContribution);
 
     bindCommonStylingParticipants(bind);
 
