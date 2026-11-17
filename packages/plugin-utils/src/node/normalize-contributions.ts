@@ -80,7 +80,7 @@ import {
     type PluginPackageWalkthroughStepMedia,
 } from '../common/contribution-types.js';
 import { rawContributes, type PluginManifest } from '../common/manifest-types.js';
-import { UNPUBLISHED } from '../common/constants.js';
+import { getUnversionedPluginId } from '../common/plugin-model.js';
 
 function isPluginUiTheme(value: unknown): value is PluginUiTheme {
     return value === 'vs' || value === 'vs-dark' || value === 'hc-black' || value === 'hc-light';
@@ -197,7 +197,7 @@ export async function normalizeContributions<TContrib extends object>(
         if (contributes.configuration) {
             const configurations = Array.isArray(contributes.configuration) ? contributes.configuration : [contributes.configuration];
             const extensionInfo = {
-                id: `${(rawPlugin.publisher ?? UNPUBLISHED).toLowerCase()}.${rawPlugin.name.toLowerCase()}`,
+                id: getUnversionedPluginId(rawPlugin),
                 displayName: rawPlugin.displayName ?? rawPlugin.name
             };
             output.configuration = [];
@@ -471,7 +471,7 @@ export function readWalkthroughs(
     if (!walkthroughs) {
         return undefined;
     }
-    const pluginId = `${(pck.publisher ?? UNPUBLISHED).toLowerCase()}.${pck.name.toLowerCase()}`;
+    const pluginId = getUnversionedPluginId(pck);
     // `PluginModel` does not carry the extension icon, so it travels with the walkthroughs that show it.
     const pluginIcon = pck.icon ? ctx.resolveUrl(pck.icon) : undefined;
     const result: WalkthroughContribution[] = [];

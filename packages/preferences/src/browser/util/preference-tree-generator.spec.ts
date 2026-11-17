@@ -95,8 +95,8 @@ describe('preference-tree-generator', () => {
         addSchema({ extensionInfo, title: 'Advanced' }, 'sample.count');
         addSchema({ extensionInfo, title: 'Sample Extension' }, 'sample.root');
 
-        expect(parentOf('sample.enabled')?.id).to.equal('extensions.acme.sample@extensions.acme.sample.General');
-        expect(parentOf('sample.count')?.id).to.equal('extensions.acme.sample@extensions.acme.sample.Advanced');
+        expect(parentOf('sample.enabled')?.id).to.equal('extensions.acme.sample@extensions.acme.sample:General');
+        expect(parentOf('sample.count')?.id).to.equal('extensions.acme.sample@extensions.acme.sample:Advanced');
         expect(parentOf('sample.root')?.id).to.equal('extensions@extensions.acme.sample');
     });
 
@@ -106,6 +106,15 @@ describe('preference-tree-generator', () => {
 
         expect(parentOf('sample.enabled')?.id).to.equal('extensions@extensions.acme.sample');
         expect(parentOf('other.enabled')?.id).to.equal('extensions@extensions.other.sample');
+    });
+
+    it('does not confuse a category with an extension whose ID ends in the title of the category', () => {
+        addSchema({ extensionInfo: { id: 'acme.tools', displayName: 'Tools' }, title: 'lint' }, 'tools.lint');
+        addSchema({ extensionInfo: { id: 'acme.tools', displayName: 'Tools' }, title: 'format' }, 'tools.format');
+        addSchema({ extensionInfo: { id: 'acme.tools.lint', displayName: 'Lint' } }, 'lint.enabled');
+
+        expect(parentOf('tools.lint')?.id).to.equal('extensions.acme.tools@extensions.acme.tools:lint');
+        expect(parentOf('lint.enabled')?.id).to.equal('extensions@extensions.acme.tools.lint');
     });
 
     it('places preferences without an extension according to the layout', () => {

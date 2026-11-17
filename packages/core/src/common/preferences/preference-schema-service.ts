@@ -165,11 +165,13 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         return Disposable.create(() => {
             if (this.schemas.delete(schema)) {
                 for (const [key, property] of Object.entries(schema.properties)) {
+                    // Properties that another schema registered first were skipped when this schema was added.
+                    if (this.propertySchemas.get(key) !== schema) {
+                        continue;
+                    }
                     this.deleteFromJSONSchemas(key, property);
                     this.properties.delete(key);
-                    if (this.propertySchemas.get(key) === schema) {
-                        this.propertySchemas.delete(key);
-                    }
+                    this.propertySchemas.delete(key);
                     const overrides = this.defaultOverrides.get(key);
 
                     const baseOverride = overrides?.get(NO_OVERRIDE);
@@ -212,6 +214,10 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
 
     getSchemaForProperty(key: string): PreferenceSchema | undefined {
         return this.propertySchemas.get(key);
+    }
+
+    getSchemas(): ReadonlySet<PreferenceSchema> {
+        return this.schemas;
     }
 
     updateSchemaProperty(key: string, property: PreferenceDataProperty): void {

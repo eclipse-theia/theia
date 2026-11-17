@@ -58,6 +58,17 @@ describe('PreferenceSchemaServiceImpl', () => {
         expect(service.getSchemaForProperty(KEY)).to.not.equal(duplicate);
     });
 
+    it('should keep a property when a schema that also declared it is removed', () => {
+        const original = service.getSchemaForProperty(KEY);
+        const duplicate = service.addSchema({ properties: { [KEY]: { type: 'number' } } });
+
+        duplicate.dispose();
+
+        expect(service.getSchemaProperty(KEY)?.type).to.equal('string');
+        expect(service.getSchemaForProperty(KEY)).to.equal(original);
+        expect(service.getJSONSchema(PreferenceScope.User).properties?.[KEY]).to.not.be.undefined;
+    });
+
     it('should restore the previous default when the newest override is removed', () => {
         service.registerOverride(KEY, undefined, 'first');
         const newest = service.registerOverride(KEY, undefined, 'second');

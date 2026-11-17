@@ -333,26 +333,25 @@ export class PreferenceTreeModel extends TreeModelImpl {
             this.searchedExtensionIds = undefined;
             return;
         }
-        const checked = new Set<string>();
-        const matching = new Set<string>();
-        for (const preferenceId of this.schemaProvider.getSchemaProperties().keys()) {
-            const extensionId = this.schemaProvider.getSchemaForProperty(preferenceId)?.extensionInfo?.id;
-            if (extensionId && !checked.has(extensionId)) {
-                checked.add(extensionId);
-                if (this.lastSearchedExtensions.some(filter => this.matchesExtensionFilter(extensionId, filter))) {
-                    matching.add(extensionId);
-                }
+        const extensionIds = new Set<string>();
+        for (const schema of this.schemaProvider.getSchemas()) {
+            if (schema.extensionInfo) {
+                extensionIds.add(schema.extensionInfo.id);
             }
         }
-        this.searchedExtensionIds = matching;
+        const candidates = Array.from(extensionIds);
+        this.searchedExtensionIds = new Set(this.lastSearchedExtensions.flatMap(filter => this.getExtensionsMatchingFilter(filter, candidates)));
     }
 
     /**
-     * Whether an extension matches a filter of the form `@ext:<filter>` in the search term.
+     * Returns the extensions that match a filter of the form `@ext:<filter>` in the search term.
+     * A filter that is the full ID of an extension matches only that extension, as in VS Code.
+     * Any other filter matches all extensions whose ID contains it.
      * @param filter The filter in lower case
      */
-    protected matchesExtensionFilter(extensionId: string, filter: string): boolean {
-        return extensionId.toLowerCase().includes(filter);
+    protected getExtensionsMatchingFilter(filter: string, extensionIds: string[]): string[] {
+        const exactMatch = extensionIds.find(extensionId => extensionId.toLowerCase() === filter);
+        return exactMatch ? [exactMatch] : extensionIds.filter(extensionId => extensionId.toLowerCase().includes(filter));
     }
 
     protected override isVisibleSelectableNode(node: TreeNode): node is SelectableTreeNode {

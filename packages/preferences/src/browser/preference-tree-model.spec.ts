@@ -123,12 +123,13 @@ describe('PreferenceTreeModel', () => {
             getLongName: () => '',
         } as any);
         parent.bind(PreferenceSchemaService).toConstantValue({
-            getSchemaProperties: () => new Map(Array.from(extensionIds.keys(), preferenceId => [preferenceId, {}])),
+            getSchemaProperties: () => new Map(),
             isValidInScope: (preferenceId: string, scope: number) => isValidInScope(preferenceId, scope),
             getSchemaForProperty: (preferenceId: string) => {
                 const id = extensionIds.get(preferenceId);
                 return id ? { extensionInfo: { id, displayName: id }, properties: {} } : undefined;
             },
+            getSchemas: () => new Set(Array.from(new Set(extensionIds.values()), id => ({ extensionInfo: { id, displayName: id }, properties: {} }))),
         } as any);
         parent.bind(PreferenceService).toConstantValue({
             ready: Promise.resolve(),
@@ -382,6 +383,15 @@ describe('PreferenceTreeModel', () => {
             searchbarEmitter.fire('@ext:ACME');
             expect(visiblePreferences(model)).to.deep.equal(['editor.fontSize']);
             searchbarEmitter.fire('@ext:sample');
+            expect(visiblePreferences(model)).to.have.members(['editor.fontSize', 'editor.cursorStyle']);
+        });
+
+        it('matches only the extension with a full ID', async () => {
+            const model = await createExtensionModel();
+            extensionIds.set('editor.cursorStyle', 'acme.sample-nightly');
+            searchbarEmitter.fire('@ext:acme.sample');
+            expect(visiblePreferences(model)).to.deep.equal(['editor.fontSize']);
+            searchbarEmitter.fire('@ext:acme.samp');
             expect(visiblePreferences(model)).to.have.members(['editor.fontSize', 'editor.cursorStyle']);
         });
 

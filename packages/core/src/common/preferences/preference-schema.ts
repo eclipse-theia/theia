@@ -64,7 +64,7 @@ export interface IndexedAccess<T> {
  * Identifies the extension that contributed a {@link PreferenceSchema}.
  */
 export interface PreferenceSchemaExtensionInfo {
-    /** The unversioned identifier of the extension, i.e. `publisher.name` */
+    /** The unversioned identifier of the extension, i.e. `publisher.name`. It must not contain `:`. */
     id: string;
     /** The human-readable name of the extension */
     displayName: string;
@@ -158,6 +158,10 @@ export interface PreferenceSchemaService {
      * @returns The schema the property was registered with, or undefined if the property is not registered
      */
     getSchemaForProperty(key: string): PreferenceSchema | undefined;
+    /**
+     * Get all registered schemas
+     */
+    getSchemas(): ReadonlySet<PreferenceSchema>;
 
     /**
      * Update a property in the schema. The corresponding JSON Schemas, etc. will be updated
