@@ -61,6 +61,12 @@ describe('OutputLinkComputer', () => {
         expect(urls('c:/src/b.ts(3,4)', driveRoot)).to.deep.equal(['file:///c:/src/b.ts#L3,4']);
     });
 
+    it('should not link URLs if the workspace folder is a file system root', () => {
+        const posixRoot = new OutputLinkComputer();
+        posixRoot.setWorkspaceFolders([{ uri: new URI('file:///'), fsPath: '/' }]);
+        expect(urls('GET https://example.com/api 200', posixRoot)).to.be.empty;
+    });
+
     it('should compute the range of the link', () => {
         const [link] = computer.computeLinks(['first line', 'see /workspace/project/a.ts']);
         expect(link.range).to.deep.equal({ startLineNumber: 2, startColumn: 5, endLineNumber: 2, endColumn: 28 });

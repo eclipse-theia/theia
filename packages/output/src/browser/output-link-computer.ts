@@ -76,6 +76,10 @@ export class OutputLinkComputer {
                     regExp.lastIndex = 0;
                     let match: RegExpExecArray | null;
                     while (match = regExp.exec(line)) {
+                        if (/^[\\/]/.test(match.groups!.path!)) {
+                            // e.g. the `//host/path` of a URL if the workspace folder is a file system root
+                            continue;
+                        }
                         const startColumn = match.index + 1;
                         const endColumn = startColumn + match[0].length;
                         const overlaps = lineLinks.some(link => link.range.startColumn < endColumn && startColumn < link.range.endColumn);
@@ -101,4 +105,3 @@ export class OutputLinkComputer {
         return uri.withFragment(groups.column ? `L${groups.line},${groups.column}` : `L${groups.line}`);
     }
 }
-
