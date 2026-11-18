@@ -60,7 +60,7 @@ export class ChatGptCodexAuthService extends ChatGptAuthServiceImpl {
         const requestBody = new URLSearchParams(body);
         requestBody.set('client_id', this.config.clientId);
         requestBody.delete('resource');
-        const proxyFetch = createProxyFetch(undefined) ?? fetch;
+        const proxyFetch = createProxyFetch() ?? fetch;
         const response = await proxyFetch(codex.CHATGPT_TOKEN_URL, {
             method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: requestBody,
             redirect: 'error', signal: AbortSignal.timeout(30_000)

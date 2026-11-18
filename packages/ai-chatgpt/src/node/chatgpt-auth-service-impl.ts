@@ -320,7 +320,7 @@ export class ChatGptAuthServiceImpl implements ChatGptBackendAuthSession {
                 this.logger.warn('OpenAI discovery did not provide a revocation endpoint. Disconnecting locally.');
                 return;
             }
-            const proxyFetch = createProxyFetch(undefined) ?? fetch;
+            const proxyFetch = createProxyFetch() ?? fetch;
             const response = await proxyFetch(endpoint, {
                 method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({
@@ -544,7 +544,7 @@ export class ChatGptAuthServiceImpl implements ChatGptBackendAuthSession {
     protected async requestTokens(body: URLSearchParams, clientId: string, nonce?: string): Promise<TokenGrant> {
         let response: Response;
         try {
-            const proxyFetch = createProxyFetch(undefined) ?? fetch;
+            const proxyFetch = createProxyFetch() ?? fetch;
             response = await proxyFetch(CHATGPT_TOKEN_URL, {
                 method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body,
                 redirect: 'error', signal: AbortSignal.timeout(30_000)

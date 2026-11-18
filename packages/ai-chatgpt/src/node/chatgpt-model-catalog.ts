@@ -100,7 +100,7 @@ export class ChatGptModelCatalog {
                 headers['chatgpt-account-id'] = credentials.accountId!;
                 headers.originator = CHATGPT_ORIGINATOR;
             }
-            const proxyFetch = createProxyFetch(undefined) ?? fetch;
+            const proxyFetch = createProxyFetch() ?? fetch;
             const response = await proxyFetch(url, {
                 headers,
                 redirect: 'error',

@@ -153,7 +153,7 @@ export class ChatGptIdTokenVerifier {
     }
 
     protected async readJson(url: string): Promise<unknown> {
-        const proxyFetch = createProxyFetch(undefined) ?? fetch;
+        const proxyFetch = createProxyFetch() ?? fetch;
         const response = await proxyFetch(url, { redirect: 'error', signal: AbortSignal.timeout(30_000) });
         if (!response.ok) {
             throw new Error('Could not load OpenAI signing keys.');

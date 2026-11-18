@@ -121,6 +121,7 @@ export interface RequestConfiguration {
     strictSSL?: boolean;
     /** Whether to trust the CA certificates of the operating system in addition to Node's default ones. */
     systemCertificates?: boolean;
+    /** Hosts that bypass the proxy, in addition to those of the `no_proxy` environment variable. */
     noProxy?: string[];
 }
 export interface RequestService {
