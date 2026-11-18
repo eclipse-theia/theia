@@ -33,8 +33,10 @@ export async function replaceFfmpeg(options: ffmpeg.FfmpegOptions = {}): Promise
         electronDist = path.resolve(require.resolve('electron/package.json'), '..', 'dist'),
         electronVersion = await readElectronVersion(electronDist),
         ffmpegPath = path.resolve(electronDist, ffmpegLocation, ffmpegName),
+        platform = process.platform,
+        arch = process.arch,
     } = options;
-    const ffmpegCachedPath = path.join(os.tmpdir(), `theia-cli/cache/electron-v${electronVersion}`, ffmpegName);
+    const ffmpegCachedPath = path.join(os.tmpdir(), `theia-cli/cache/electron-v${electronVersion}-${platform}-${arch}`, ffmpegName);
     if (await fs.pathExists(ffmpegCachedPath)) {
         shouldDownload = false; // If the file is already cached, do not download.
         console.warn('Found cached ffmpeg library.');
@@ -50,7 +52,9 @@ export async function replaceFfmpeg(options: ffmpeg.FfmpegOptions = {}): Promise
     if (shouldDownload) {
         const ffmpegZipPath = await electronGet.downloadArtifact({
             version: electronVersion,
-            artifactName: 'ffmpeg'
+            artifactName: 'ffmpeg',
+            platform,
+            arch,
         });
         const ffmpegZip = await unzipper.Open.file(ffmpegZipPath);
         const file = ffmpegZip.files.find(f => f.path.endsWith(ffmpegName));

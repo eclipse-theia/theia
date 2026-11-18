@@ -32,6 +32,7 @@
   "scripts": {
     "compile": "theiaext compile",
     "lint": "theiaext lint",
+    "test": "theiaext test",
     "build": "theiaext build",
     "watch": "theiaext watch",
     "clean": "theiaext clean"
