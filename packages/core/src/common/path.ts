@@ -316,7 +316,7 @@ export class Path {
             }
         });
         if (resultArray.length === 0) {
-            if (this.isRoot) {
+            if (this.isAbsolute) {
                 return new Path('/');
             } else {
                 return new Path('.');
