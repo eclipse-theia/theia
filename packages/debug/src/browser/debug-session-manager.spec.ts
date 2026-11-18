@@ -22,24 +22,30 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { Container, interfaces } from '@theia/core/shared/inversify';
-import { ILogger, MessageService, ProgressService } from '@theia/core';
-import { ApplicationShell } from '@theia/core/lib/browser';
+import { CommandService, ContributionProvider, ILogger, MessageClient, MessageService, ProgressService } from '@theia/core';
+import { ApplicationShell, LabelProvider } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService, ContextKeyServiceDummyImpl, ContextKeyValue } from '@theia/core/lib/browser/context-key-service';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { Emitter } from '@theia/core/lib/common/event';
+import { Emitter, Event } from '@theia/core/lib/common/event';
+import { EditorManager } from '@theia/editor/lib/browser';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { QuickOpenTask } from '@theia/task/lib/browser/quick-open-task';
 import { TaskService } from '@theia/task/lib/browser/task-service';
 import { TaskIdentifier } from '@theia/task/lib/common';
+import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
+import { TestService } from '@theia/test/lib/browser/test-service';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
-import { WorkspaceTrustService } from '@theia/workspace/lib/browser';
+import { WorkspaceService, WorkspaceTrustService } from '@theia/workspace/lib/browser';
 import { DebugConfiguration } from '../common/debug-common.js';
 import { DebugPreferences } from '../common/debug-preferences.js';
-import { DebugService } from '../common/debug-service.js';
+import { DebugChannel, DebugService } from '../common/debug-service.js';
 import { BreakpointManager } from './breakpoint/breakpoint-manager.js';
 import { DebugConfigurationManager } from './debug-configuration-manager.js';
-import { DebugSession, DebugState } from './debug-session.js';
+import { DebugContribution } from './debug-contribution.js';
+import { DebugSession, DebugSessionData, DebugState } from './debug-session.js';
 import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider.js';
+import { DebugSessionConnection } from './debug-session-connection.js';
 import { DebugSessionContributionRegistry, DebugSessionFactory } from './debug-session-contribution.js';
 import { DebugSessionManager } from './debug-session-manager.js';
 import { DebugConfigurationSessionOptions, InternalDebugSessionOptions } from './debug-session-options.js';
@@ -218,6 +224,140 @@ describe('DebugSessionManager', () => {
             session.end();
             expect(manager.currentSession).to.be.undefined;
             expectKeys(false, false);
+        });
+    });
+
+    describe('postDebugTask on terminated session', () => {
+
+        class TerminatingDebugChannel implements DebugChannel {
+            protected messageHandler: (message: string) => void = () => { };
+            protected closeHandler: (code: number, reason: string) => void = () => { };
+            onRequest?: (request: DebugProtocol.Request) => void;
+
+            send(content: string): void {
+                const request: DebugProtocol.Request = JSON.parse(content);
+                if (this.onRequest && request.command !== 'initialize') {
+                    this.onRequest(request);
+                    return;
+                }
+                const response: DebugProtocol.Response = { type: 'response', seq: 0, request_seq: request.seq, command: request.command, success: true, body: {} };
+                this.receive(response);
+            }
+
+            receive(message: DebugProtocol.ProtocolMessage): void {
+                this.messageHandler(JSON.stringify(message));
+            }
+
+            onMessage(cb: (message: string) => void): void {
+                this.messageHandler = cb;
+            }
+
+            onError(): void { }
+            onClose(cb: (code: number, reason: string) => void): void {
+                this.closeHandler = cb;
+            }
+            close(): void {
+                this.closeHandler(0, '');
+            }
+        }
+
+        function setupManager(channel: TerminatingDebugChannel): {
+            manager: DebugSessionManager;
+            terminatedSessions: string[];
+            ranTasks: (string | TaskIdentifier)[];
+        } {
+            const terminatedSessions: string[] = [];
+            const ranTasks: (string | TaskIdentifier)[] = [];
+            const container = new Container();
+            container.bind(ContextKeyService).toConstantValue(new MockContextKeyService());
+            container.bind(DebugSessionContributionRegistry).toConstantValue({ get: () => undefined } as unknown as DebugSessionContributionRegistry);
+            container.bind(BreakpointManager).toConstantValue({
+                onDidChangeMarkers: Event.None,
+                getDataBreakpoints: () => [],
+                updateSessionData: () => { },
+                clearExceptionSessionEnablement: () => { },
+                getExceptionBreakpoints: () => []
+            } as unknown as BreakpointManager);
+            container.bind(DebugPreferences).toConstantValue({} as DebugPreferences);
+            container.bind(ContributionProvider).toConstantValue({ getContributions: () => [] }).whenTargetNamed(DebugContribution);
+            container.bind(DebugService).toConstantValue({
+                terminateDebugSession: async (sessionId: string) => { terminatedSessions.push(sessionId); }
+            } as unknown as DebugService);
+            container.bind(TaskService).toConstantValue({
+                startUserAction: () => 'action',
+                runWorkspaceTask: async (_action: string, _folder: string | undefined, taskName: string | TaskIdentifier) => {
+                    ranTasks.push(taskName);
+                    return undefined;
+                }
+            } as unknown as TaskService);
+            const services: interfaces.ServiceIdentifier<unknown>[] = [
+                VariableResolverService, MessageService, ProgressService, DebugConfigurationManager,
+                QuickOpenTask, ApplicationShell, DebugSessionConfigurationLabelProvider, ILogger, WorkspaceTrustService, WindowService,
+                CommandService, TestService, TerminalService, EditorManager, LabelProvider, MessageClient, FileService, WorkspaceService
+            ];
+            for (const service of services) {
+                container.bind(service).toConstantValue({});
+            }
+            container.bind(DebugSessionManager).toSelf().inSingletonScope();
+            container.bind(DebugSessionFactory).toConstantValue({
+                createSession: (sessionId: string, options: DebugConfigurationSessionOptions, parentSession?: DebugSession) => {
+                    const data: DebugSessionData = { id: sessionId, options, parentSession };
+                    const connection = new DebugSessionConnection(sessionId, async () => channel, undefined);
+                    return DebugSession.createContainer(container, data, connection).get(DebugSession);
+                }
+            });
+            return {
+                manager: container.get(DebugSessionManager),
+                terminatedSessions,
+                ranTasks
+            };
+        }
+
+        async function startSession(manager: DebugSessionManager): Promise<DebugSession> {
+            const options: DebugConfigurationSessionOptions = {
+                name: 'Debug',
+                configuration: { type: 'node', name: 'Debug', request: 'launch', postDebugTask: 'cleanup' }
+            };
+            const session = await (manager as unknown as { doStart(id: string, opts: DebugConfigurationSessionOptions): Promise<DebugSession> })
+                .doStart('session-1', options);
+            await session.start();
+            return session;
+        }
+
+        it('runs postDebugTask and terminates the session when the adapter closes before replying to disconnect', async () => {
+            const channel = new TerminatingDebugChannel();
+            const { manager, terminatedSessions, ranTasks } = setupManager(channel);
+            await startSession(manager);
+            channel.onRequest = request => {
+                if (request.command === 'disconnect') {
+                    channel.close();
+                }
+            };
+
+            channel.receive({ type: 'event', seq: 0, event: 'terminated' } as DebugProtocol.TerminatedEvent);
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            expect(terminatedSessions).to.deep.equal(['session-1']);
+            expect(ranTasks).to.deep.equal(['cleanup']);
+            expect(manager.getSession('session-1')).to.be.undefined;
+        });
+
+        it('terminates the session on exited when the adapter closes before replying to disconnect', async () => {
+            const channel = new TerminatingDebugChannel();
+            const { manager, terminatedSessions, ranTasks } = setupManager(channel);
+            await startSession(manager);
+            channel.onRequest = request => {
+                if (request.command === 'disconnect') {
+                    channel.close();
+                }
+            };
+
+            channel.receive({ type: 'event', seq: 0, event: 'exited', body: { exitCode: 0 } } as DebugProtocol.ExitedEvent);
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            expect(terminatedSessions).to.deep.equal(['session-1']);
+            expect(ranTasks).to.deep.equal([]);
+            expect(manager.getSession('session-1')).to.be.undefined;
         });
     });
 });
