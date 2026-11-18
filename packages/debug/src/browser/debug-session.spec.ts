@@ -22,7 +22,7 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { Container, interfaces } from '@theia/core/shared/inversify';
-import { CommandService, ContributionProvider, ILogger, MessageClient } from '@theia/core';
+import { CommandService, ContributionProvider, ILogger, MessageClient, nls } from '@theia/core';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { Event } from '@theia/core/lib/common/event';
 import { EditorManager } from '@theia/editor/lib/browser';
@@ -44,11 +44,13 @@ disableJSDOM();
 /** A debug adapter that answers every request successfully, and the `initialize` request with the given capabilities. */
 class TestDebugChannel implements DebugChannel {
     protected messageHandler: (message: string) => void = () => { };
+    readonly requests: DebugProtocol.Request[] = [];
 
     constructor(protected readonly capabilities: DebugProtocol.Capabilities) { }
 
     send(content: string): void {
         const request: DebugProtocol.Request = JSON.parse(content);
+        this.requests.push(request);
         const body = request.command === 'initialize' ? this.capabilities : {};
         const response: DebugProtocol.Response = { type: 'response', seq: 0, request_seq: request.seq, command: request.command, success: true, body };
         this.receive(response);
@@ -68,10 +70,61 @@ class TestDebugChannel implements DebugChannel {
     close(): void { }
 }
 
+function createSession(channel: TestDebugChannel): DebugSession {
+    const container = new Container();
+    container.bind(BreakpointManager).toConstantValue({ onDidChangeMarkers: Event.None } as unknown as BreakpointManager);
+    container.bind(ContributionProvider).toConstantValue({ getContributions: () => [] }).whenTargetNamed(DebugContribution);
+    container.bind(DebugPreferences).toConstantValue({} as DebugPreferences);
+    // not used by these tests
+    const services: interfaces.ServiceIdentifier<unknown>[] = [
+        CommandService, ILogger, TestService, DebugSessionManager, TerminalService, EditorManager, LabelProvider, MessageClient, FileService, WorkspaceService
+    ];
+    for (const service of services) {
+        container.bind(service).toConstantValue({});
+    }
+    const options = { name: 'test', configuration: { type: 'node', name: 'test', request: 'launch' } } as DebugConfigurationSessionOptions;
+    const data: DebugSessionData = { id: 'test', options, parentSession: undefined };
+    const connection = new DebugSessionConnection('test', async () => channel, undefined);
+    return DebugSession.createContainer(container, data, connection).get(DebugSession);
+}
+
 describe('DebugSession', () => {
 
     before(() => disableJSDOM = enableJSDOM());
     after(() => disableJSDOM());
+
+    describe('initialize', () => {
+
+        let channel: TestDebugChannel;
+        let session: DebugSession;
+        let locale: string | undefined;
+
+        beforeEach(() => {
+            channel = new TestDebugChannel({});
+            session = createSession(channel);
+            locale = nls.locale;
+        });
+
+        afterEach(() => Object.assign(nls, { locale }));
+
+        function initializeArguments(): DebugProtocol.InitializeRequestArguments {
+            const request = channel.requests.find(r => r.command === 'initialize');
+            expect(request).to.not.be.undefined;
+            return request!.arguments;
+        }
+
+        it('sends the selected display language as locale', async () => {
+            Object.assign(nls, { locale: 'de' });
+            await session.start();
+            expect(initializeArguments().locale).to.equal('de');
+        });
+
+        it('sends the default locale if no display language is selected', async () => {
+            Object.assign(nls, { locale: undefined });
+            await session.start();
+            expect(initializeArguments().locale).to.equal(nls.defaultLocale);
+        });
+    });
 
     describe('onDidChangeCapabilities', () => {
 
@@ -81,21 +134,7 @@ describe('DebugSession', () => {
 
         beforeEach(() => {
             channel = new TestDebugChannel({ supportsRestartFrame: true });
-            const container = new Container();
-            container.bind(BreakpointManager).toConstantValue({ onDidChangeMarkers: Event.None } as unknown as BreakpointManager);
-            container.bind(ContributionProvider).toConstantValue({ getContributions: () => [] }).whenTargetNamed(DebugContribution);
-            container.bind(DebugPreferences).toConstantValue({} as DebugPreferences);
-            // not used by these tests
-            const services: interfaces.ServiceIdentifier<unknown>[] = [
-                CommandService, ILogger, TestService, DebugSessionManager, TerminalService, EditorManager, LabelProvider, MessageClient, FileService, WorkspaceService
-            ];
-            for (const service of services) {
-                container.bind(service).toConstantValue({});
-            }
-            const options = { name: 'test', configuration: { type: 'node', name: 'test', request: 'launch' } } as DebugConfigurationSessionOptions;
-            const data: DebugSessionData = { id: 'test', options, parentSession: undefined };
-            const connection = new DebugSessionConnection('test', async () => channel, undefined);
-            session = DebugSession.createContainer(container, data, connection).get(DebugSession);
+            session = createSession(channel);
             changes = 0;
             session.onDidChangeCapabilities(() => changes++);
         });
