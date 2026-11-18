@@ -49,6 +49,9 @@ export function updateActivationEvents(manifest: Pick<PluginManifest, 'contribut
     if (Array.isArray(contributes.notebooks)) {
         updateNotebookContributions(contributes.notebooks, activationEvents);
     }
+    if (isObject(contributes.terminal) && Array.isArray(contributes.terminal.profiles)) {
+        updateTerminalProfileContributions(contributes.terminal.profiles, activationEvents);
+    }
 
     manifest.activationEvents = Array.from(activationEvents);
 }
@@ -97,6 +100,14 @@ function updateNotebookContributions(notebooks: unknown[], activationEvents: Set
     for (const notebook of notebooks) {
         if (isObject(notebook) && typeof notebook.type === 'string') {
             activationEvents.add(`onNotebookSerializer:${notebook.type}`);
+        }
+    }
+}
+
+function updateTerminalProfileContributions(profiles: unknown[], activationEvents: Set<string>): void {
+    for (const profile of profiles) {
+        if (isObject(profile) && typeof profile.id === 'string') {
+            activationEvents.add(`onTerminalProfile:${profile.id}`);
         }
     }
 }
