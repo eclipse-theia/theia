@@ -196,6 +196,12 @@ describe('proxy', () => {
                 expect(authorizations).to.deep.equal([`Basic ${Buffer.from('user:pass').toString('base64')}`]);
             });
 
+            it('should send the proxyAuthorization option if the proxy URL has a username but no password', async () => {
+                const proxyWithUsername = proxyURL.replace('http://', 'http://user@');
+                await request(`http://${proxiedHost}/`, {}, { proxyUrl: proxyWithUsername, proxyAuthorization: 'Basic dG9rZW4=' });
+                expect(authorizations).to.deep.equal(['Basic dG9rZW4=']);
+            });
+
             it('should use the proxy for hosts that only look like loopback hosts', async () => {
                 await request(`http://localhost.${proxiedHost}/`, {}, { proxyUrl: proxyURL });
                 await request(`http://127.0.0.1.${proxiedHost}/`, {}, { proxyUrl: proxyURL });
