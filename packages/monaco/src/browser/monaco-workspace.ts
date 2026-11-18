@@ -16,35 +16,40 @@
 
 /* eslint-disable no-null/no-null */
 
-import { URI as Uri } from '@theia/core/shared/vscode-uri';
-import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
-import { Emitter } from '@theia/core/lib/common/event';
 import { ILogger } from '@theia/core';
-import { FileSystemPreferences } from '@theia/filesystem/lib/common';
-import { EditorManager } from '@theia/editor/lib/browser';
-import { MonacoTextModelService } from './monaco-text-model-service.js';
-import { MonacoEditorModel, MonacoModelContentChangedEvent } from './monaco-editor-model.js';
-import { MonacoEditor } from './monaco-editor.js';
-import { ProblemManager } from '@theia/markers/lib/browser';
+import { SaveableService } from '@theia/core/lib/browser';
+import { isObject, MaybePromise, nls } from '@theia/core/lib/common';
+import { Emitter } from '@theia/core/lib/common/event';
 import { ArrayUtils } from '@theia/core/lib/common/types';
+import URI from '@theia/core/lib/common/uri';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { URI as Uri } from '@theia/core/shared/vscode-uri';
+import { EditorManager } from '@theia/editor/lib/browser';
+import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileSystemPreferences } from '@theia/filesystem/lib/common';
 import { FileSystemProviderCapabilities } from '@theia/filesystem/lib/common/files';
+import { ProblemManager } from '@theia/markers/lib/browser';
 import * as monaco from '@theia/monaco-editor-core';
 import {
     IBulkEditOptions,
-    IBulkEditResult, ResourceEdit, ResourceFileEdit as MonacoResourceFileEdit,
-    ResourceTextEdit as MonacoResourceTextEdit
+    IBulkEditResult,
+    ResourceFileEdit as MonacoResourceFileEdit,
+    ResourceTextEdit as MonacoResourceTextEdit,
+    ResourceEdit
 } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService.js';
-import { IEditorWorkerService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/editorWorker.js';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
-import { EndOfLineSequence } from '@theia/monaco-editor-core/esm/vs/editor/common/model.js';
-import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser.js';
+import { Selection } from '@theia/monaco-editor-core/esm/vs/editor/common/core/selection.js';
 import { TextEdit } from '@theia/monaco-editor-core/esm/vs/editor/common/languages.js';
+import { EndOfLineSequence } from '@theia/monaco-editor-core/esm/vs/editor/common/model.js';
+import { IEditorWorkerService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/editorWorker.js';
+import { TextModelEditSource } from '@theia/monaco-editor-core/esm/vs/editor/common/textModelEditSource.js';
 import { SnippetController2 } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetController2.js';
-import { isObject, MaybePromise, nls } from '@theia/core/lib/common';
-import { SaveableService } from '@theia/core/lib/browser';
-import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
+import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser.js';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { UndoRedoGroup } from '@theia/monaco-editor-core/esm/vs/platform/undoRedo/common/undoRedo.js';
+import { MonacoEditorModel, MonacoModelContentChangedEvent } from './monaco-editor-model.js';
+import { MonacoEditor } from './monaco-editor.js';
+import { MonacoTextModelService } from './monaco-text-model-service.js';
 
 export namespace WorkspaceFileEdit {
     export function is(arg: Edit): arg is monaco.languages.IWorkspaceFileEdit {
@@ -218,14 +223,25 @@ export class MonacoWorkspace {
      * Applies given edits to the given model.
      * The model is saved if no editors is opened for it.
      */
-    applyBackgroundEdit(model: MonacoEditorModel, editOperations: monaco.editor.IIdentifiedSingleEditOperation[],
-        shouldSave?: boolean | ((openEditor: MonacoEditor | undefined, wasDirty: boolean) => boolean)): Promise<void> {
+    applyBackgroundEdit(
+        model: MonacoEditorModel,
+        editOperations: monaco.editor.IIdentifiedSingleEditOperation[],
+        shouldSave?: boolean | ((openEditor: MonacoEditor | undefined, wasDirty: boolean) => boolean),
+        undoRedoGroup?: UndoRedoGroup,
+        reason?: TextModelEditSource
+    ): Promise<void> {
         return this.suppressOpenIfDirty(model, async () => {
             const editor = MonacoEditor.findByDocument(this.editorManager, model)[0];
             const wasDirty = !!editor?.document.dirty;
             const cursorState = editor && editor.getControl().getSelections() || [];
+
+            // Unsafe cast to handle duplicate types in @theia/monaco-editor-core
+            // Using types in @theia/monaco-editor-core/esm/vs/editor/common/core/selection.d.ts
+            // instead of     @theia/monaco-editor-core/esm/vs/editor/editor.api.d.ts
+            const cursorStateCore = cursorState as unknown as Selection[];
+
             model.textEditorModel.pushStackElement();
-            model.textEditorModel.pushEditOperations(cursorState, editOperations, () => cursorState);
+            model.textEditorModel.pushEditOperations(cursorStateCore, editOperations, () => cursorStateCore, undoRedoGroup, reason);
             model.textEditorModel.pushStackElement();
             if ((typeof shouldSave === 'function' && shouldSave(editor, wasDirty)) || (!editor && shouldSave)) {
                 await model.save();
