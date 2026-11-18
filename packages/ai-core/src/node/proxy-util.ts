@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as undici from 'undici';
-import { shouldBypassProxy } from '../common/proxy-util.js';
+import { shouldBypassProxyForEnv } from '@theia/core/shared/@theia/request';
 
 /**
  * Creates a custom fetch function that routes requests through the given HTTP proxy.
@@ -40,14 +40,15 @@ export function createProxyFetch(proxyUrl: string | undefined): typeof fetch | u
  * Resolution order:
  * 1. If `settingsProxy` is provided (e.g., from Theia `http.proxy` preference), use it.
  * 2. Otherwise check environment variables based on the target URL scheme.
- * 3. If a proxy is resolved, check `no_proxy`/`NO_PROXY` — if bypass, return `undefined`.
+ * 3. If a proxy is resolved, check `noProxy` and `no_proxy`/`NO_PROXY`. If bypassed, return `undefined`.
  * 4. Return the resolved proxy URL or `undefined` if none found.
  *
  * @param targetUrl - The URL for which to resolve a proxy.
  * @param settingsProxy - An optional proxy URL from application settings.
+ * @param noProxy - Optional hosts that bypass the proxy (e.g., from Theia `http.noProxy` preference), combined with `no_proxy`/`NO_PROXY`.
  * @returns The proxy URL to use, or `undefined` if no proxy should be used.
  */
-export function getProxyUrl(targetUrl: string | undefined, settingsProxy?: string): string | undefined {
+export function getProxyUrl(targetUrl: string | undefined, settingsProxy?: string, noProxy?: string[]): string | undefined {
     let proxyUrl: string | undefined;
 
     if (settingsProxy) {
@@ -75,9 +76,8 @@ export function getProxyUrl(targetUrl: string | undefined, settingsProxy?: strin
         return undefined;
     }
 
-    // Check no_proxy / NO_PROXY
-    const noProxy = process.env.no_proxy ?? process.env.NO_PROXY;
-    if (shouldBypassProxy(targetUrl, noProxy)) {
+    // Check the `http.noProxy` setting and no_proxy / NO_PROXY
+    if (targetUrl && URL.canParse(targetUrl) && shouldBypassProxyForEnv(new URL(targetUrl), process.env, noProxy)) {
         return undefined;
     }
 

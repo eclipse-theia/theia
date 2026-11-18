@@ -25,6 +25,7 @@ export interface NodeRequestOptions extends RequestOptions {
 
 export class NodeRequestService implements RequestService {
     protected proxyUrl?: string;
+    protected noProxy?: string[];
     protected strictSSL?: boolean;
     protected authorization?: string;
 
@@ -35,6 +36,9 @@ export class NodeRequestService implements RequestService {
     async configure(config: RequestConfiguration): Promise<void> {
         if (config.proxyUrl !== undefined) {
             this.proxyUrl = config.proxyUrl;
+        }
+        if (config.noProxy !== undefined) {
+            this.noProxy = config.noProxy;
         }
         if (config.strictSSL !== undefined) {
             this.strictSSL = config.strictSSL;
@@ -53,6 +57,7 @@ export class NodeRequestService implements RequestService {
             options.dispatcher = getProxyAgent(options.url || '', process.env, {
                 proxyUrl: await this.getProxyUrl(options.url),
                 strictSSL: options.strictSSL,
+                noProxy: this.noProxy,
                 proxyAuthorization: options.proxyAuthorization || headerAuthorization || this.authorization
             });
         }

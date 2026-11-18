@@ -65,7 +65,10 @@ export class ChatGptFrontendApplicationContribution implements FrontendApplicati
                 modelIdPrefix: CHATGPT_PROVIDER_ID,
                 refresh: () => this.refreshModels()
             });
-            this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
+            this.manager.setProxyUrl(
+                this.preferenceService.get<string>('http.proxy', undefined),
+                this.preferenceService.get<string[]>('http.noProxy', undefined)
+            );
             this.refreshModels();
 
             this.preferenceService.onPreferenceChanged(event => {
@@ -80,8 +83,11 @@ export class ChatGptFrontendApplicationContribution implements FrontendApplicati
                     event.preferenceName === PREFERENCE_NAME_SERVER_SIDE_COMPACTION ||
                     event.preferenceName === PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD) {
                     this.refreshModels();
-                } else if (event.preferenceName === 'http.proxy') {
-                    this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
+                } else if (event.preferenceName === 'http.proxy' || event.preferenceName === 'http.noProxy') {
+                    this.manager.setProxyUrl(
+                        this.preferenceService.get<string>('http.proxy', undefined),
+                        this.preferenceService.get<string[]>('http.noProxy', undefined)
+                    );
                     this.refreshModels();
                 }
             });

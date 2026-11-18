@@ -119,6 +119,7 @@ export interface RequestConfiguration {
     proxyUrl?: string;
     proxyAuthorization?: string;
     strictSSL?: boolean;
+    noProxy?: string[];
 }
 export interface RequestService {
     configure(config: RequestConfiguration): Promise<void>;
