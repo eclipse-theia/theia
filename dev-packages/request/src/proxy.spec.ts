@@ -18,7 +18,6 @@ import { expect } from 'chai';
 import * as http from 'http';
 import * as net from 'net';
 import * as tls from 'tls';
-import { AddressInfo } from 'net';
 import { Agent, Dispatcher, fetch, getGlobalDispatcher, MockAgent, setGlobalDispatcher } from 'undici';
 import { createProxyDispatcher, getProxyAgent, ProxySettings } from './proxy';
 
@@ -240,5 +239,5 @@ describe('proxy', () => {
 
 async function listen(server: http.Server): Promise<number> {
     await new Promise<void>(resolve => server.listen(0, resolve));
-    return (server.address() as AddressInfo).port;
+    return (server.address() as net.AddressInfo).port;
 }

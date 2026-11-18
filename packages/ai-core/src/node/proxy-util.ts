@@ -27,7 +27,7 @@ import { shouldBypassProxy } from '../common/proxy-util.js';
  * @param noProxy - Hosts that bypass the proxy, e.g. from the `http.noProxy` preference.
  * @returns A custom fetch function using the proxy, or `undefined`.
  */
-export function createProxyFetch(proxyUrl: string | undefined, noProxy?: string[]): typeof fetch | undefined {
+export function createProxyFetch(proxyUrl?: string, noProxy?: string[]): typeof fetch | undefined {
     const dispatcher = createProxyDispatcher(process.env, { proxyUrl, noProxy });
     if (!dispatcher) {
         return undefined;

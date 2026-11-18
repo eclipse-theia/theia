@@ -83,7 +83,7 @@ export class ChatGptModelCatalog {
             if (!credentials) {
                 return [];
             }
-            const proxyFetch = createProxyFetch(undefined) ?? fetch;
+            const proxyFetch = createProxyFetch() ?? fetch;
             const response = await proxyFetch(CHATGPT_MODELS_URL, {
                 headers: {
                     Authorization: `Bearer ${credentials.accessToken}`,

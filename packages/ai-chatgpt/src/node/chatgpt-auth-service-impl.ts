@@ -359,7 +359,7 @@ export class ChatGptAuthServiceImpl implements ChatGptBackendAuthService {
     }
 
     protected async requestTokens(body: URLSearchParams): Promise<TokenGrant> {
-        const proxyFetch = createProxyFetch(undefined) ?? fetch;
+        const proxyFetch = createProxyFetch() ?? fetch;
         const response = await proxyFetch(CHATGPT_TOKEN_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
