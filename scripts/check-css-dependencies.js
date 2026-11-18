@@ -43,11 +43,8 @@
 // - Class names are found in string literals of TS/TSX sources. Class names that are computed at runtime,
 //   rules that select elements by tag name only and colors contributed by VS Code extensions are not covered.
 //
-// Usage: node scripts/check-css-dependencies.js [--exceptions <file.json>] [--report <out.md>]
+// Usage: node scripts/check-css-dependencies.js [--report <out.md>]
 //
-// --exceptions  a JSON array of `{ "kind": "class" | "color", "name": "<class or --theia-variable>", "user"?: "<package>",
-//               "reason": "<why>" }` entries for findings that are accepted for now. An entry that matches no
-//               finding is an error, so that the file does not outlive its entries.
 // --report      writes all findings, variables that are used but never defined and CSS files that are never imported
 //               to a Markdown file.
 //
@@ -63,7 +60,6 @@ const root = path.resolve(__dirname, '..');
 const args = process.argv.slice(2);
 /** @param {string} name */
 const option = name => args.includes(name) ? args[args.indexOf(name) + 1] : undefined;
-const exceptionsFile = option('--exceptions');
 const reportFile = option('--report');
 
 /**
@@ -536,7 +532,7 @@ const monacoVars = monacoColorVars();
 /**
  * @typedef {'class' | 'color' | 'color-fallback' | 'class-bleed' | 'class-unrelated'} FindingKind
  * @typedef {{ severity: 'error' | 'warning', kind: FindingKind, name: string, user: string, owner: string[], location: string,
- *     evidence: string[], message: string, excepted?: string }} Finding
+ *     evidence: string[], message: string }} Finding
  */
 /** @type {Finding[]} */
 const findings = [];
@@ -623,20 +619,6 @@ for (const { definers, uses } of colorGroups.values()) {
     });
 }
 
-// ---------- exceptions ----------
-
-/** @type {{ kind: FindingKind, name: string, user?: string, reason: string }[]} */
-const exceptions = exceptionsFile ? JSON.parse(fs.readFileSync(exceptionsFile, 'utf8')) : [];
-const usedExceptions = new Set();
-for (const finding of findings) {
-    const exception = exceptions.find(e => e.kind === finding.kind && e.name === finding.name && (!e.user || e.user === finding.user));
-    if (exception) {
-        finding.excepted = exception.reason;
-        usedExceptions.add(exception);
-    }
-}
-const staleExceptions = exceptions.filter(e => !usedExceptions.has(e));
-
 // ---------- report ----------
 
 /**
@@ -644,8 +626,8 @@ const staleExceptions = exceptions.filter(e => !usedExceptions.has(e));
  * @param {Finding} b
  */
 const order = (a, b) => a.user.localeCompare(b.user) || a.name.localeCompare(b.name);
-const errors = findings.filter(finding => finding.severity === 'error' && !finding.excepted).sort(order);
-const warnings = findings.filter(finding => finding.severity === 'warning' || finding.excepted).sort(order);
+const errors = findings.filter(finding => finding.severity === 'error').sort(order);
+const warnings = findings.filter(finding => finding.severity === 'warning').sort(order);
 for (const finding of errors) {
     console.log(`error    ${finding.location}  ${finding.message}`);
     if (process.env.GITHUB_ACTIONS) {
@@ -653,13 +635,10 @@ for (const finding of errors) {
         console.log(`::error file=${file},line=${line},title=CSS dependency::${finding.message}`);
     }
 }
-for (const exception of staleExceptions) {
-    console.log(`error    ${exceptionsFile}  the exception for ${exception.kind} '${exception.name}' matches no finding anymore, remove it.`);
-}
 for (const finding of warnings) {
-    console.log(`warning  ${finding.location}  ${finding.excepted ? `${finding.message} (excepted: ${finding.excepted})` : finding.message}`);
+    console.log(`warning  ${finding.location}  ${finding.message}`);
 }
-console.log(`\nCSS dependencies: ${errors.length + staleExceptions.length} error(s), ${warnings.length} warning(s), `
+console.log(`\nCSS dependencies: ${errors.length} error(s), ${warnings.length} warning(s), `
     + `${undefinedVars.size} variable(s) used but never defined (see --report)`);
 
 if (reportFile) {
@@ -676,7 +655,7 @@ if (reportFile) {
         items.forEach(item => out.push(format(item)));
     };
     /** @param {Finding} finding */
-    const formatFinding = finding => `- **${finding.user}** → \`${finding.name}\` (owner: ${finding.owner.join(', ')})${finding.excepted ? ` _excepted: ${finding.excepted}_` : ''}\n`
+    const formatFinding = finding => `- **${finding.user}** → \`${finding.name}\` (owner: ${finding.owner.join(', ')})\n`
         + `  - used: \`${finding.location}\`\n`
         + finding.evidence.map(e => `  - ${finding.kind.startsWith('color') ? '' : 'styled: '}${e}`).join('\n');
     /** @param {FindingKind} kind */
@@ -692,4 +671,4 @@ if (reportFile) {
     fs.writeFileSync(reportFile, out.join('\n') + '\n');
 }
 
-process.exitCode = errors.length || staleExceptions.length ? 1 : 0;
+process.exitCode = errors.length ? 1 : 0;
