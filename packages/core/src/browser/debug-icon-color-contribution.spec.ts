@@ -15,20 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { Disposable } from '../common/disposable.js';
-import { ColorDefinition } from '../common/color.js';
-import { ColorRegistry } from './color-registry.js';
 import { DebugIconColorContribution } from './debug-icon-color-contribution.js';
-
-class RecordingColorRegistry extends ColorRegistry {
-
-    readonly definitions = new Map<string, ColorDefinition>();
-
-    protected override doRegister(definition: ColorDefinition): Disposable {
-        this.definitions.set(definition.id, definition);
-        return Disposable.NULL;
-    }
-}
+import { RecordingColorRegistry } from './test/recording-color-registry.js';
 
 describe('DebugIconColorContribution', () => {
 
