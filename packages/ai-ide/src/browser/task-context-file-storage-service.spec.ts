@@ -86,12 +86,48 @@ describe('TaskContextFileStorageService', () => {
         const service = container.get(TaskContextFileStorageService);
         await service.store({ id: 'task-1', sessionId: 'session-1', label: 'Fix the build', summary: '# Plan\n\nDo it.' });
 
-        const content = files.get(storageLocation.resolve('Fix-the-build.md').toString());
+        const content = files.get(storageLocation.resolve('Fix-the-build-task-1.md').toString());
         expect(content).to.not.be.undefined;
         const lines = content!.split('\n');
         expect(lines[0]).to.equal('---');
         expect(lines).to.include.members(['id: task-1', 'sessionId: session-1', 'label: Fix the build']);
         expect(content).to.match(/\n---\n# Plan\n\nDo it\.$/);
+    });
+
+    it('keeps summaries with the same title in separate files', async () => {
+        const service = container.get(TaskContextFileStorageService);
+        await service.store({ id: 'summary-1', sessionId: 'session-1', label: 'Same title', summary: 'first' });
+        await service.store({ id: 'summary-2', sessionId: 'session-2', label: 'Same title', summary: 'second' });
+
+        expect([...files.keys()]).to.have.members([
+            storageLocation.resolve('Same-title-summary-1.md').toString(),
+            storageLocation.resolve('Same-title-summary-2.md').toString()
+        ]);
+        expect(files.get(storageLocation.resolve('Same-title-summary-1.md').toString())).to.match(/\nfirst$/);
+        expect(files.get(storageLocation.resolve('Same-title-summary-2.md').toString())).to.match(/\nsecond$/);
+    });
+
+    it('writes an update to the file of the stored summary', async () => {
+        const service = container.get(TaskContextFileStorageService);
+        await service.store({ id: 'task-1', label: 'Fix the build', summary: 'first' });
+        const stored = await service.get('task-1');
+
+        await service.store({ ...stored!, summary: 'changed' });
+
+        expect([...files.keys()]).to.deep.equal([storageLocation.resolve('Fix-the-build-task-1.md').toString()]);
+        expect(files.get(storageLocation.resolve('Fix-the-build-task-1.md').toString())).to.match(/\nchanged$/);
+    });
+
+    it('keeps the name of a file written by an older version when updating it', async () => {
+        const legacyUri = storageLocation.resolve('Fix-the-build.md').toString();
+        files.set(legacyUri, '---\nid: task-1\nlabel: Fix the build\n---\nfirst');
+        const service = await loadStoredFiles();
+        const stored = await service.get('task-1');
+
+        await service.store({ ...stored!, summary: 'changed' });
+
+        expect([...files.keys()]).to.deep.equal([legacyUri]);
+        expect(files.get(legacyUri)).to.match(/\nchanged$/);
     });
 
     it('reads back the body without the frontmatter', async () => {
