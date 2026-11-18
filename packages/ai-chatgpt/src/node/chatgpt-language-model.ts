@@ -60,7 +60,8 @@ export class ChatGptModel implements LanguageModel {
         public reasoningSupport?: ReasoningSupport,
         public maxInputTokens?: number,
         public serverSideCompactionEnabledByDefault: boolean = true,
-        public serverSideCompactionTokenThresholdByDefault?: number
+        public serverSideCompactionTokenThresholdByDefault?: number,
+        public noProxy?: string[]
     ) { }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -96,7 +97,7 @@ export class ChatGptModel implements LanguageModel {
             apiKey: async () => (await this.credentials())?.accessToken ?? '',
             baseURL: CHATGPT_RESPONSES_BASE_URL,
             maxRetries: this.maxRetries,
-            fetch: createProxyFetch(this.proxy),
+            fetch: createProxyFetch(this.proxy, this.noProxy),
             defaultHeaders: {
                 'chatgpt-account-id': credentials.accountId,
                 'OpenAI-Beta': 'responses=experimental',

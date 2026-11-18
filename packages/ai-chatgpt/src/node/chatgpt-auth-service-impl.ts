@@ -19,7 +19,7 @@ import http from 'http';
 import { Disposable, Emitter, Event, ILogger } from '@theia/core';
 import { KeyStoreService } from '@theia/core/lib/common/key-store';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { createProxyFetch, getProxyUrl } from '@theia/ai-core/lib/node';
+import { createProxyFetch } from '@theia/ai-core/lib/node';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import {
     ChatGptAuthService,
@@ -359,7 +359,7 @@ export class ChatGptAuthServiceImpl implements ChatGptBackendAuthService {
     }
 
     protected async requestTokens(body: URLSearchParams): Promise<TokenGrant> {
-        const proxyFetch = createProxyFetch(getProxyUrl(CHATGPT_TOKEN_URL)) ?? fetch;
+        const proxyFetch = createProxyFetch(undefined) ?? fetch;
         const response = await proxyFetch(CHATGPT_TOKEN_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

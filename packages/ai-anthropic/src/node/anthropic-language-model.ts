@@ -325,7 +325,10 @@ export interface AnthropicModelParams {
     url: string | undefined;
     maxTokens?: number;
     maxRetries?: number;
+    /** The proxy, e.g. from the `http.proxy` preference. Without it, the proxy of the environment variables is used. */
     proxy?: string;
+    /** Hosts that bypass the proxy, e.g. from the `http.noProxy` preference. */
+    noProxy?: string[];
     reasoningSupport?: ReasoningSupport;
     reasoningApi?: ReasoningApi;
     maxInputTokens?: number;
@@ -374,6 +377,8 @@ export interface AnthropicClientOptions {
     /** Base URL of a custom endpoint; the SDK's own default is used without one. */
     readonly baseURL?: string;
     readonly proxyUrl?: string;
+    /** Hosts that bypass the proxy. */
+    readonly noProxy?: string[];
     /** Additional HTTP headers sent with every request, e.g. headers required by a gateway in front of the API. */
     readonly headers?: Record<string, string>;
 }
@@ -388,7 +393,7 @@ export function createAnthropicClient(options: AnthropicClientOptions): Anthropi
         // The SDK refuses to be constructed without a key, so an endpoint that needs none still gets one.
         apiKey: options.apiKey ?? 'no-key',
         baseURL: options.baseURL,
-        fetch: createProxyFetch(options.proxyUrl),
+        fetch: createProxyFetch(options.proxyUrl, options.noProxy),
         defaultHeaders: options.headers
     });
 }
@@ -410,6 +415,7 @@ export class AnthropicModel implements LanguageModel {
     maxTokens: number;
     maxRetries: number;
     proxy?: string;
+    noProxy?: string[];
     reasoningSupport?: ReasoningSupport;
     reasoningApi?: ReasoningApi;
     maxInputTokens?: number;
@@ -445,6 +451,7 @@ export class AnthropicModel implements LanguageModel {
         this.maxTokens = params.maxTokens ?? DEFAULT_MAX_TOKENS;
         this.maxRetries = params.maxRetries ?? 3;
         this.proxy = params.proxy;
+        this.noProxy = params.noProxy;
         this.reasoningSupport = params.reasoningSupport;
         this.reasoningApi = params.reasoningApi;
         this.maxInputTokens = params.maxInputTokens;
@@ -826,7 +833,7 @@ export class AnthropicModel implements LanguageModel {
             throw new Error('Please provide ANTHROPIC_API_KEY in preferences or via environment variable');
         }
 
-        return createAnthropicClient({ apiKey, baseURL: this.url, proxyUrl: this.proxy, headers: this.headers });
+        return createAnthropicClient({ apiKey, baseURL: this.url, proxyUrl: this.proxy, noProxy: this.noProxy, headers: this.headers });
     }
 
     /**

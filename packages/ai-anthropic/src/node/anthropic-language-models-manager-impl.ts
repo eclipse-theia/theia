@@ -17,7 +17,7 @@
 import {
     ApiKeySource, DiscoveredModel, DiscoveredModels, LanguageModelRegistry, LanguageModelStatus, ModelDiscoveryResult, ReasoningApi, ReasoningSupport
 } from '@theia/ai-core';
-import { getProxyUrl, ModelDiscoveryFetcher } from '@theia/ai-core/lib/node';
+import { ModelDiscoveryFetcher } from '@theia/ai-core/lib/node';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { APIConnectionError } from '@anthropic-ai/sdk';
 import type { ModelInfo } from '@anthropic-ai/sdk/resources/models';
@@ -26,7 +26,6 @@ import { ANTHROPIC_SERVER_TOOLS } from './anthropic-server-tools.js';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common/index.js';
 import { ILogger } from '@theia/core';
 
-const ANTHROPIC_DEFAULT_BASE_URL = 'https://api.anthropic.com';
 const ANTHROPIC_SNAPSHOT_FILE = 'anthropic-models.json';
 
 const ANTHROPIC_BUDGET_REASONING_SUPPORT: ReasoningSupport = {
@@ -93,11 +92,10 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
         if (!apiKey) {
             return { models: [], fromCache: false };
         }
-        const proxyUrl = getProxyUrl(ANTHROPIC_DEFAULT_BASE_URL, this._proxyUrl, this._noProxy);
         return this.discoveryFetcher.fetch({
             snapshotFile: ANTHROPIC_SNAPSHOT_FILE,
             providerLabel: 'Anthropic',
-            listModels: async () => this.toDiscoveredModels(await this.listModels(apiKey, proxyUrl)),
+            listModels: async () => this.toDiscoveredModels(await this.listModels(apiKey, this._proxyUrl, this._noProxy)),
             // Retry only transient connection errors; auth/HTTP errors fail fast.
             isRetryable: error => error instanceof APIConnectionError
         });
@@ -123,8 +121,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
     }
 
     /** Iterates the (auto-paginated) `/v1/models` endpoint. Overridable for testing. */
-    protected async listModels(apiKey: string, proxyUrl: string | undefined): Promise<ModelInfo[]> {
-        const anthropic = createAnthropicClient({ apiKey, proxyUrl });
+    protected async listModels(apiKey: string, proxyUrl: string | undefined, noProxy?: string[]): Promise<ModelInfo[]> {
+        const anthropic = createAnthropicClient({ apiKey, proxyUrl, noProxy });
         const models: ModelInfo[] = [];
         for await (const model of anthropic.models.list()) {
             models.push(model);
@@ -143,11 +141,9 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
             }
             return undefined;
         };
-        const proxyUrl = getProxyUrl(modelDescription.url ?? 'https://api.anthropic.com', this._proxyUrl, this._noProxy);
-
         const apiKey = apiKeyProvider();
         const status = this.calculateStatus(modelDescription, apiKey);
-        const metadata = await this.resolveMetadata(modelDescription, apiKey, proxyUrl);
+        const metadata = await this.resolveMetadata(modelDescription, apiKey, this._proxyUrl, this._noProxy);
 
         if (model) {
             if (!(model instanceof AnthropicModel)) {
@@ -163,7 +159,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                 status,
                 maxTokens: metadata.maxTokens,
                 maxRetries: modelDescription.maxRetries,
-                proxy: proxyUrl,
+                proxy: this._proxyUrl,
+                noProxy: this._noProxy,
                 reasoningSupport: metadata.reasoningSupport,
                 reasoningApi: metadata.reasoningApi,
                 maxInputTokens: metadata.maxInputTokens,
@@ -184,7 +181,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                     url: modelDescription.url,
                     maxTokens: metadata.maxTokens,
                     maxRetries: modelDescription.maxRetries,
-                    proxy: proxyUrl,
+                    proxy: this._proxyUrl,
+                    noProxy: this._noProxy,
                     reasoningSupport: metadata.reasoningSupport,
                     reasoningApi: metadata.reasoningApi,
                     maxInputTokens: metadata.maxInputTokens,
@@ -203,9 +201,10 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
     protected async resolveMetadata(
         description: AnthropicModelDescription,
         apiKey: string | undefined,
-        proxyUrl: string | undefined
+        proxyUrl: string | undefined,
+        noProxy?: string[]
     ): Promise<ResolvedModelMetadata> {
-        const info = await this.fetchModelInfo(description, apiKey, proxyUrl);
+        const info = await this.fetchModelInfo(description, apiKey, proxyUrl, noProxy);
         const reasoningApi = this.deriveReasoningApi(info);
         const effort = info?.capabilities?.effort;
         const supportedEfforts = effort?.supported === false ? [] : (['low', 'medium', 'high', 'xhigh', 'max'] as const).filter(level =>
@@ -246,7 +245,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
     protected async fetchModelInfo(
         modelDescription: AnthropicModelDescription,
         apiKey: string | undefined,
-        proxyUrl: string | undefined
+        proxyUrl: string | undefined,
+        noProxy?: string[]
     ): Promise<ModelInfo | undefined> {
         if (!apiKey) {
             return undefined;
@@ -256,7 +256,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
         if (cached) {
             return cached;
         }
-        const fetchPromise = this.retrieveModelInfo(modelDescription, apiKey, proxyUrl);
+        const fetchPromise = this.retrieveModelInfo(modelDescription, apiKey, proxyUrl, noProxy);
         this.modelInfoCache.set(cacheKey, fetchPromise);
         try {
             return await fetchPromise;
@@ -271,9 +271,10 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
     protected retrieveModelInfo(
         modelDescription: AnthropicModelDescription,
         apiKey: string,
-        proxyUrl: string | undefined
+        proxyUrl: string | undefined,
+        noProxy?: string[]
     ): Promise<ModelInfo> {
-        const anthropic = createAnthropicClient({ apiKey, baseURL: modelDescription.url, proxyUrl, headers: modelDescription.headers });
+        const anthropic = createAnthropicClient({ apiKey, baseURL: modelDescription.url, proxyUrl, noProxy, headers: modelDescription.headers });
         return anthropic.models.retrieve(modelDescription.model);
     }
 

@@ -37,6 +37,10 @@ export interface ChatGptModelDescription {
 }
 
 export interface ChatGptLanguageModelsManager {
+    /**
+     * Sets the proxy and the hosts that bypass it, i.e. the `http.proxy` and `http.noProxy` preferences.
+     * Without a proxy, the proxy of the environment variables is used.
+     */
     setProxyUrl(proxyUrl: string | undefined, noProxy?: string[]): void;
     /**
      * The models the signed in ChatGPT plan grants. Falls back to a built-in list while they cannot be determined,
