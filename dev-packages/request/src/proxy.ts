@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as tls from 'tls';
 import { ProxyAgent, Agent, Dispatcher } from 'undici';
 
 function getSystemProxyURI(requestURL: URL, env: typeof process.env): string | undefined {
@@ -26,11 +27,37 @@ function getSystemProxyURI(requestURL: URL, env: typeof process.env): string | u
     return undefined;
 }
 
+function isLoopback(requestURL: URL): boolean {
+    const hostname = requestURL.hostname.toLowerCase();
+    return hostname === 'localhost' || hostname.endsWith('.localhost') || hostname === '[::1]' || /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname);
+}
+
+const secureContexts = new WeakMap<readonly string[], tls.SecureContext>();
+const directAgents = new WeakMap<tls.SecureContext, Agent>();
+
+/**
+ * Returns a secure context that trusts exactly the given CA certificates.
+ * The context is created once per array, so that the certificates aren't parsed again for every connection.
+ */
+function getSecureContext(ca: readonly string[]): tls.SecureContext {
+    let context = secureContexts.get(ca);
+    if (!context) {
+        context = tls.createSecureContext({ ca: [...ca] });
+        secureContexts.set(ca, context);
+    }
+    return context;
+}
+
 export interface ProxySettings {
     proxyUrl?: string;
     strictSSL?: boolean;
     /** Sent as `Proxy-Authorization` when the proxy URL carries no credentials of its own. */
     proxyAuthorization?: string;
+    /**
+     * The CA certificates to trust for TLS connections, in place of Node's default ones.
+     * Reuse the same array across requests: a secure context is created once per array.
+     */
+    ca?: readonly string[];
 }
 
 export function getProxyAgent(rawRequestURL: string, env: typeof process.env, options: ProxySettings = {}): Dispatcher | undefined {
@@ -41,13 +68,29 @@ export function getProxyAgent(rawRequestURL: string, env: typeof process.env, op
         return undefined;
     }
 
-    const proxyURL = options.proxyUrl || getSystemProxyURI(requestURL, env);
+    const proxyURL = isLoopback(requestURL) ? undefined : options.proxyUrl || getSystemProxyURI(requestURL, env);
+    const secureContext = options.ca ? getSecureContext(options.ca) : undefined;
+    const requestTls: tls.ConnectionOptions = {};
+    if (secureContext) {
+        requestTls.secureContext = secureContext;
+    }
+    if (options.strictSSL === false) {
+        requestTls.rejectUnauthorized = false;
+    }
+    const hasRequestTls = Object.keys(requestTls).length > 0;
 
     if (!proxyURL) {
         if (options.strictSSL === false) {
-            return new Agent({
-                connect: { rejectUnauthorized: false }
-            });
+            return new Agent({ connect: requestTls });
+        }
+        if (secureContext) {
+            // shared, so that connections are reused as with the global dispatcher
+            let agent = directAgents.get(secureContext);
+            if (!agent) {
+                agent = new Agent({ connect: requestTls });
+                directAgents.set(secureContext, agent);
+            }
+            return agent;
         }
         return undefined;
     }
@@ -70,8 +113,11 @@ export function getProxyAgent(rawRequestURL: string, env: typeof process.env, op
             : options.proxyAuthorization,
     };
 
-    if (options.strictSSL === false) {
-        proxyAgentOptions.requestTls = { rejectUnauthorized: false };
+    if (hasRequestTls) {
+        proxyAgentOptions.requestTls = requestTls;
+    }
+    if (secureContext && proxyEndpoint.protocol === 'https:') {
+        proxyAgentOptions.proxyTls = { secureContext };
     }
 
     return new ProxyAgent(proxyAgentOptions);
