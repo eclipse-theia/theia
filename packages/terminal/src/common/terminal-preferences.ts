@@ -24,13 +24,13 @@ import { nls } from '@theia/core/lib/common/nls';
 import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/common/editor-generated-preference-schema';
 import { OS } from '@theia/core';
 import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
-import { terminalAnsiColorMap } from '@theia/core/lib/common/terminal-ansi-color-map';
+import { terminalAnsiColorMap as coreTerminalAnsiColorMap } from '@theia/core/lib/common/terminal-ansi-color-map';
 
 /**
  * @deprecated since 1.78.0. The ANSI colors moved to core, which uses them outside the terminal, too.
  * Import `terminalAnsiColorMap` from `@theia/core/lib/common/terminal-ansi-color-map` instead.
  */
-export { terminalAnsiColorMap };
+export const terminalAnsiColorMap = coreTerminalAnsiColorMap;
 
 const commonProfileProperties: PreferenceSchema['properties'] = {
     env: {
@@ -50,7 +50,7 @@ const commonProfileProperties: PreferenceSchema['properties'] = {
     },
     color: {
         type: 'string',
-        enum: Object.getOwnPropertyNames(terminalAnsiColorMap),
+        enum: Object.getOwnPropertyNames(coreTerminalAnsiColorMap),
         description: nls.localize('theia/terminal/profileColor', 'A terminal theme color ID to associate with the terminal.')
     }
 };
