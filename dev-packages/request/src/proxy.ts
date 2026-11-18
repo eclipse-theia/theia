@@ -132,9 +132,9 @@ export function createProxyDispatcher(env: typeof process.env, options: ProxySet
         return directAgent;
     }
 
-    // undici's ProxyAgent prefers the token over the credentials of the proxy URL.
+    // undici's ProxyAgent prefers the token over the credentials of the proxy URL, and only uses credentials with a password.
     // EnvHttpProxyAgent takes a single token for both proxies, so credentials in either URL drop it for both.
-    const hasCredentials = !!httpProxyURL?.username || !!httpsProxyURL?.username;
+    const hasCredentials = !!(httpProxyURL?.username && httpProxyURL.password) || !!(httpsProxyURL?.username && httpsProxyURL.password);
     // Empty values keep undici from falling back to `process.env`
     const proxyAgent = new EnvHttpProxyAgent({
         httpProxy: httpProxyURL ? httpProxy : '',
