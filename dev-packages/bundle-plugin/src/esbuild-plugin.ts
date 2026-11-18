@@ -365,16 +365,18 @@ class PluginImpl implements Plugin {
             contents = contents.replace('require(`./parsers/${name}`)', 'require(`./parsers/${name}.js`)');
             return { contents, loader: 'js' };
         });
-        build.onEnd(() => {
+        build.onEnd(async () => {
+            const copies: Promise<void>[] = [];
             if (this.options.trash) {
-                copyTrashHelper(outdir);
+                copies.push(copyTrashHelper(outdir));
             }
             if (this.options.ripgrep) {
-                copyRipgrep(outdir);
+                copies.push(copyRipgrep(outdir));
             }
             if (this.options.pty) {
-                copyNodePtySpawnHelper(outdir);
+                copies.push(copyNodePtySpawnHelper(outdir));
             }
+            await Promise.all(copies);
         });
         this.setupNodeRequires(build);
     }
@@ -474,11 +476,22 @@ async function copyTrashHelper(outdir: string): Promise<void> {
     }
 }
 
+/**
+ * Copies an executable into the bundle. An existing target is replaced rather than overwritten in place:
+ * macOS caches the code signature of an executable per file and kills a process started from a file that was rewritten,
+ * and Linux does not allow writing to an executable that is running.
+ */
 async function copyExecutable(source: string, target: string): Promise<void> {
     const targetDirectory = path.dirname(target);
     await fs.promises.mkdir(targetDirectory, { recursive: true });
-    await fs.promises.copyFile(source, target);
-    await fs.promises.chmod(target, 0o777);
+    const temporaryTarget = `${target}.${process.pid}.tmp`;
+    try {
+        await fs.promises.copyFile(source, temporaryTarget);
+        await fs.promises.chmod(temporaryTarget, 0o777);
+        await fs.promises.rename(temporaryTarget, target);
+    } finally {
+        await fs.promises.rm(temporaryTarget, { force: true });
+    }
 }
 
 const bindingsReplacement = (bindings: Record<string, string>) => {
