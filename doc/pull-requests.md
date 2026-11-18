@@ -152,7 +152,7 @@ sequenceDiagram
 
 <a name="flow-external-welcome"></a>
 
-- [1.](#flow-external-welcome) A GitHub Action welcomes the author with a summary of this flow. For first-time contributors, a second comment lists failed basic checks: a missing [ECA](https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#eclipse-contributor-agreement), lint errors, more than one failed CI job or an incomplete [PR template](#pr-template). The comment is removed once they pass.
+- [1.](#flow-external-welcome) A GitHub Action welcomes the author with a summary of this flow. On drafts, it notes that the review starts once the PR is marked as ready for review. For first-time contributors, a second comment lists failed basic checks: a missing [ECA](https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#eclipse-contributor-agreement), lint errors, more than one failed CI job or an incomplete [PR template](#pr-template). The comment is removed once they pass.
 <a name="flow-external-classification"></a>
 - [2.](#flow-external-classification) The PR steward approves pending CI runs before or with the high level classification. The classification is one comment on the approach, no line comments:
   - Go: The steward requests the AI review or, if it is skipped, a review from a maintainer
