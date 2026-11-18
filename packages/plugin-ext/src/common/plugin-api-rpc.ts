@@ -336,6 +336,8 @@ export interface TerminalServiceExt {
 export interface OutputChannelRegistryExt {
     createOutputChannel(name: string, pluginInfo: PluginInfo): theia.OutputChannel,
     createOutputChannel(name: string, pluginInfo: PluginInfo, options: { log: true }): theia.LogOutputChannel
+    $setLogLevel(channelName: string, logLevel: number): void;
+    $setGlobalLogLevel(logLevel: number): void;
 }
 
 export interface ConnectionMain {
@@ -1598,6 +1600,7 @@ export interface OutputChannelRegistryMain {
     $dispose(channelName: string): PromiseLike<void>;
     $reveal(channelName: string, preserveFocus: boolean): PromiseLike<void>;
     $close(channelName: string): PromiseLike<void>;
+    $registerLogChannel(channelName: string): PromiseLike<void>;
 }
 
 export type CharacterPair = [string, string];
@@ -1918,7 +1921,7 @@ export interface LanguagesMainFactory {
 
 export const OutputChannelRegistryFactory = Symbol('OutputChannelRegistryFactory');
 export interface OutputChannelRegistryFactory {
-    (): OutputChannelRegistryMain;
+    (rpc: RPCProtocol): OutputChannelRegistryMain;
 }
 
 export interface LanguagesMain {

@@ -144,7 +144,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     rpc.set(PLUGIN_RPC_CONTEXT.TREE_VIEWS_MAIN, treeViewsMain);
 
     const outputChannelRegistryFactory: OutputChannelRegistryFactory = container.get(OutputChannelRegistryFactory);
-    const outputChannelRegistryMain = outputChannelRegistryFactory();
+    const outputChannelRegistryMain = outputChannelRegistryFactory(rpc);
     rpc.set(PLUGIN_RPC_CONTEXT.OUTPUT_CHANNEL_REGISTRY_MAIN, outputChannelRegistryMain);
 
     const languagesMainFactory: LanguagesMainFactory = container.get(LanguagesMainFactory);

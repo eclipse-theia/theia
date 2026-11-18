@@ -29,9 +29,9 @@ export class LogOutputChannelImpl extends OutputChannelImpl implements theia.Log
     readonly onDidChangeLogLevel: theia.Event<theia.LogLevel> = this.onDidChangeLogLevelEmitter.event;
     public logLevel: theia.LogLevel;
 
-    constructor(name: string, proxy: OutputChannelRegistryMain, pluginInfo: PluginInfo) {
+    constructor(name: string, proxy: OutputChannelRegistryMain, pluginInfo: PluginInfo, logLevel: theia.LogLevel = LogLevel.Info, protected readonly onDispose?: () => void) {
         super(name, proxy, pluginInfo);
-        this.setLogLevel(LogLevel.Info);
+        this.logLevel = logLevel;
 
         // Bind overridden and new methods to preserve 'this' context
         // These bindings are needed because the parent class bindings don't apply to overridden methods
@@ -68,6 +68,7 @@ export class LogOutputChannelImpl extends OutputChannelImpl implements theia.Log
     override dispose(): void {
         super.dispose();
         this.onDidChangeLogLevelEmitter.dispose();
+        this.onDispose?.();
     }
 
     protected log(level: theia.LogLevel, message: string): void {
@@ -81,7 +82,7 @@ export class LogOutputChannelImpl extends OutputChannelImpl implements theia.Log
     }
 
     private checkLogLevel(level: theia.LogLevel): boolean {
-        return this.logLevel <= level;
+        return this.logLevel !== LogLevel.Off && this.logLevel <= level;
     }
 
     trace(message: string, ...args: any[]): void {
