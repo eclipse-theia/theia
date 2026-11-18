@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { Event } from '@theia/core';
-import { LanguageModelMetaData } from './language-model';
-import { TokenUsage } from './token-usage-service';
+import { LanguageModelMetaData } from './language-model.js';
+import { TokenUsage } from './token-usage-service.js';
 
 export const LanguageModelRegistryClient = Symbol('LanguageModelRegistryClient');
 export interface LanguageModelRegistryClient {

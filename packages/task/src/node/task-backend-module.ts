@@ -18,15 +18,15 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import { bindRootContributionProvider } from '@theia/core';
 import { ConnectionHandler, RpcConnectionHandler } from '@theia/core/lib/common/messaging';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import { bindProcessTaskRunnerModule } from './process/process-task-runner-backend-module';
-import { bindCustomTaskRunnerModule } from './custom/custom-task-runner-backend-module';
-import { TaskBackendApplicationContribution } from './task-backend-application-contribution';
-import { TaskManager } from './task-manager';
-import { TaskRunnerContribution, TaskRunnerRegistry } from './task-runner';
-import { TaskServerImpl } from './task-server';
-import { createCommonBindings } from '../common/task-common-module';
-import { TaskClient, TaskServer, taskPath } from '../common';
-import { bindTaskPreferences } from '../common/task-preferences';
+import { bindProcessTaskRunnerModule } from './process/process-task-runner-backend-module.js';
+import { bindCustomTaskRunnerModule } from './custom/custom-task-runner-backend-module.js';
+import { TaskBackendApplicationContribution } from './task-backend-application-contribution.js';
+import { TaskManager } from './task-manager.js';
+import { TaskRunnerContribution, TaskRunnerRegistry } from './task-runner.js';
+import { TaskServerImpl } from './task-server.js';
+import { createCommonBindings } from '../common/task-common-module.js';
+import { TaskClient, TaskServer, taskPath } from '../common/index.js';
+import { bindTaskPreferences } from '../common/task-preferences.js';
 
 export default new ContainerModule(bind => {
 

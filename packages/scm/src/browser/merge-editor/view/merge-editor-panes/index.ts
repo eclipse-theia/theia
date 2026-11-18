@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './merge-editor-pane';
-export * from './merge-editor-pane-header';
-export * from './merge-editor-base-pane';
-export * from './merge-editor-side-pane';
-export * from './merge-editor-result-pane';
+export * from './merge-editor-pane.js';
+export * from './merge-editor-pane-header.js';
+export * from './merge-editor-base-pane.js';
+export * from './merge-editor-side-pane.js';
+export * from './merge-editor-result-pane.js';

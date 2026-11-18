@@ -16,8 +16,8 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { HostedPluginClient } from '../../common/plugin-protocol';
-import { LogPart } from '../../common/types';
+import { HostedPluginClient } from '../../common/plugin-protocol.js';
+import { LogPart } from '../../common/types.js';
 
 @injectable()
 export class HostedPluginWatcher {

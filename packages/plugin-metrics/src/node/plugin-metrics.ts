@@ -16,9 +16,9 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { MetricsContribution } from '@theia/metrics/lib/node/metrics-contribution';
-import { METRICS_TIMEOUT } from '../common/metrics-protocol';
-import { PluginMetricsContributor } from './metrics-contributor';
-import { PluginMetricStringGenerator } from './metric-string-generator';
+import { METRICS_TIMEOUT } from '../common/metrics-protocol.js';
+import { PluginMetricsContributor } from './metrics-contributor.js';
+import { PluginMetricStringGenerator } from './metric-string-generator.js';
 
 @injectable()
 export class PluginMetricsContribution implements MetricsContribution {

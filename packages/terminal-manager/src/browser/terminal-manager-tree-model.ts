@@ -17,7 +17,7 @@
 import { injectable, postConstruct } from '@theia/core/shared/inversify';
 import { TreeModelImpl, CompositeTreeNode, SelectableTreeNode, DepthFirstTreeIterator, TreeNode } from '@theia/core/lib/browser';
 import { Emitter, nls } from '@theia/core';
-import { TerminalManagerTreeTypes, SpecialPageConfig } from './terminal-manager-types';
+import { TerminalManagerTreeTypes, SpecialPageConfig } from './terminal-manager-types.js';
 
 @injectable()
 export class TerminalManagerTreeModel extends TreeModelImpl {

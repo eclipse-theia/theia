@@ -16,7 +16,7 @@
 
 import { PreferenceContribution } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { AICodeCompletionPreferencesSchema } from '../common/ai-code-completion-preference';
+import { AICodeCompletionPreferencesSchema } from '../common/ai-code-completion-preference.js';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: AICodeCompletionPreferencesSchema });

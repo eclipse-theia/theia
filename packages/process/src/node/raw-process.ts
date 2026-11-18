@@ -15,15 +15,15 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { ProcessManager } from './process-manager';
+import { ProcessManager } from './process-manager.js';
 import { ILogger } from '@theia/core/lib/common';
-import { Process, ProcessType, ProcessOptions, ForkOptions, ProcessErrorEvent } from './process';
+import { Process, ProcessType, ProcessOptions, ForkOptions, ProcessErrorEvent } from './process.js';
 import { ChildProcess, spawn, fork } from 'child_process';
 import * as stream from 'stream';
 
 // The class was here before, exporting to not break anything.
-export { DevNullStream } from './dev-null-stream';
-import { DevNullStream } from './dev-null-stream';
+export { DevNullStream } from './dev-null-stream.js';
+import { DevNullStream } from './dev-null-stream.js';
 
 export const RawProcessOptions = Symbol('RawProcessOptions');
 

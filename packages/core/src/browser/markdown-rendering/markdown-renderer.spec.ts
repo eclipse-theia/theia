@@ -14,15 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '../test/jsdom';
+import { enableJSDOM } from '../test/jsdom.js';
 const disableJSDOM = enableJSDOM();
 
 import { Container } from 'inversify';
 import { expect } from 'chai';
-import { CommandService } from '../../common';
-import { MarkdownStringImpl } from '../../common/markdown-rendering/markdown-string';
-import { LabelParser } from '../label-parser';
-import { MarkdownRenderer, MarkdownRendererImpl } from './markdown-renderer';
+import { CommandService } from '../../common/index.js';
+import { MarkdownStringImpl } from '../../common/markdown-rendering/markdown-string.js';
+import { LabelParser } from '../label-parser.js';
+import { MarkdownRenderer, MarkdownRendererImpl } from './markdown-renderer.js';
 
 disableJSDOM();
 

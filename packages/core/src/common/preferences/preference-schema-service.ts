@@ -15,16 +15,16 @@
 // *****************************************************************************
 
 import { inject, injectable, named, postConstruct } from 'inversify';
-import { Disposable } from '../disposable';
-import { Emitter } from '../event';
-import { IJSONSchema } from '../json-schema';
+import { Disposable } from '../disposable.js';
+import { Emitter } from '../event.js';
+import { IJSONSchema } from '../json-schema.js';
 import { JSONObject, JSONValue } from '@lumino/coreutils';
-import { PreferenceDataProperty, PreferenceSchema, PreferenceSchemaService, DefaultValueChangedEvent, PreferenceContribution } from './preference-schema';
-import { PreferenceScope, ValidPreferenceScopes } from './preference-scope';
-import { PreferenceUtils } from './preference-provider';
-import { ContributionProvider } from '../contribution-provider';
-import { Deferred } from '../promise-util';
-import { ILogger } from '../logger';
+import { PreferenceDataProperty, PreferenceSchema, PreferenceSchemaService, DefaultValueChangedEvent, PreferenceContribution } from './preference-schema.js';
+import { PreferenceScope, ValidPreferenceScopes } from './preference-scope.js';
+import { PreferenceUtils } from './preference-provider.js';
+import { ContributionProvider } from '../contribution-provider.js';
+import { Deferred } from '../promise-util.js';
+import { ILogger } from '../logger.js';
 
 export const NO_OVERRIDE = {};
 export const OVERRIDE_PROPERTY = '\\[(.*)\\]$';
@@ -251,7 +251,7 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
 
         const oldValue = this.getDefaultValue(key, overrideIdentifier);
 
-        const overrideValueId = this.nextOverrideValueId;
+        const overrideValueId = this.nextOverrideValueId++;
         let override = overrides.get(overrideId);
         if (!override) {
             override = [];
@@ -276,18 +276,9 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
 
     protected changeFor(key: string, overrideIdentifier: string | undefined,
         overrides: Map<string | object, [number, JSONValue][]> | undefined, oldValue: JSONValue | undefined, newValue: JSONValue | undefined): DefaultValueChangedEvent {
-        const affectedOverrides = [];
-        if (!overrideIdentifier) {
-            for (const id of this._overrideIdentifiers) {
-                if (!overrides?.has(id)) {
-                    affectedOverrides.push(id);
-                }
-            }
-        }
         return {
             key,
             overrideIdentifier: overrideIdentifier,
-            otherAffectedOverrides: affectedOverrides,
             oldValue,
             newValue
         };
@@ -300,32 +291,25 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
             const values = overrides.get(overrideId);
             if (values) {
                 const index = values.findIndex(v => v[0] === overrideValueId);
-                if (index) {
+                if (index >= 0) {
                     const oldValue = this.getDefaultValue(key, overrideIdentifier);
                     values.splice(index, 1);
+                    if (values.length === 0) {
+                        overrides.delete(overrideId);
+                    }
                     const newValue = this.getDefaultValue(key, overrideIdentifier);
                     if (!PreferenceUtils.deepEqual(oldValue, newValue)) {
-
-                        const affectedOverrides = [];
-                        if (!overrideIdentifier) {
-                            for (const id of this._overrideIdentifiers) {
-                                if (!overrides.has(id)) {
-                                    affectedOverrides.push(id);
-                                }
-                            }
-                        }
-
                         this.defaultValueChangedEmitter.fire({
                             key,
                             overrideIdentifier,
-                            otherAffectedOverrides: affectedOverrides,
                             oldValue,
                             newValue
                         });
                     }
-                }
-                if (values.length === 0) {
-                    overrides.delete(overrideId);
+                    const property = this.properties.get(key);
+                    if (property) {
+                        this.setJSONSchemasProperty(key, property);
+                    }
                 }
             }
             if (overrides.size === 0) {

@@ -16,9 +16,9 @@
 
 import { JSONObject, JSONValue } from '@lumino/coreutils';
 import { injectable, postConstruct } from 'inversify';
-import { PreferenceProvider, PreferenceProviderDataChange } from './preference-provider';
-import { PreferenceProviderImpl } from './preference-provider-impl';
-import { PreferenceScope } from './preference-scope';
+import { PreferenceProvider, PreferenceProviderDataChange } from './preference-provider.js';
+import { PreferenceProviderImpl } from './preference-provider-impl.js';
+import { PreferenceScope } from './preference-scope.js';
 
 /**
  * In-memory preference provider used for process-lifetime overrides such as those
@@ -27,7 +27,6 @@ import { PreferenceScope } from './preference-scope';
  */
 @injectable()
 export class SessionPreferenceProvider extends PreferenceProviderImpl implements PreferenceProvider {
-
     protected readonly preferences = new Map<string, JSONValue>();
 
     @postConstruct()
@@ -47,21 +46,23 @@ export class SessionPreferenceProvider extends PreferenceProviderImpl implements
         return result;
     }
 
-    async setPreference(key: string, value: JSONValue | undefined): Promise<boolean> {
-        const oldValue = this.preferences.get(key);
+    override async setPreference(key: string, value: JSONValue | undefined, _resourceUri?: string, overrideIdentifier?: string): Promise<boolean> {
+        const storageKey = overrideIdentifier ? `[${overrideIdentifier}].${key}` : key;
+        const oldValue = this.preferences.get(storageKey);
         if (value === undefined) {
-            if (!this.preferences.has(key)) {
+            if (!this.preferences.has(storageKey)) {
                 return false;
             }
-            this.preferences.delete(key);
+            this.preferences.delete(storageKey);
         } else {
-            this.preferences.set(key, value);
+            this.preferences.set(storageKey, value);
         }
         const change: PreferenceProviderDataChange = {
             preferenceName: key,
             newValue: value,
             oldValue,
-            scope: PreferenceScope.Session
+            scope: PreferenceScope.Session,
+            overrideIdentifier
         };
         await this.emitPreferencesChangedEvent([change]);
         return true;

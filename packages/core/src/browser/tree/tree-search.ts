@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { Disposable, DisposableCollection } from '../../common/disposable';
-import { Event, Emitter } from '../../common/event';
-import { Tree, TreeNode } from './tree';
-import { TreeDecoration } from './tree-decorator';
-import { FuzzySearch } from './fuzzy-search';
-import { TopDownTreeIterator } from './tree-iterator';
-import { LabelProvider } from '../label-provider';
+import { Disposable, DisposableCollection } from '../../common/disposable.js';
+import { Event, Emitter } from '../../common/event.js';
+import { Tree, TreeNode } from './tree.js';
+import { TreeDecoration } from './tree-decorator.js';
+import { FuzzySearch } from './fuzzy-search.js';
+import { TopDownTreeIterator } from './tree-iterator.js';
+import { LabelProvider } from '../label-provider.js';
 
 @injectable()
 export class TreeSearch implements Disposable {

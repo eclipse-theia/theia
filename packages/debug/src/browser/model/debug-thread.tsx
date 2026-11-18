@@ -16,10 +16,10 @@
 
 import * as React from '@theia/core/shared/react';
 import { CancellationTokenSource, Emitter, Event, MessageType, nls } from '@theia/core';
-import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
+import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol.js';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
-import { DebugStackFrame } from './debug-stack-frame';
-import { DebugSession } from '../debug-session';
+import { DebugStackFrame } from './debug-stack-frame.js';
+import { DebugSession } from '../debug-session.js';
 import * as monaco from '@theia/monaco-editor-core';
 import URI from '@theia/core/lib/common/uri';
 

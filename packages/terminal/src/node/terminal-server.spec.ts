@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import * as chai from 'chai';
-import { createTerminalTestContainer } from './test/terminal-test-container';
-import { ITerminalServer } from '../common/terminal-protocol';
+import { createTerminalTestContainer } from './test/terminal-test-container.js';
+import { ITerminalServer } from '../common/terminal-protocol.js';
 
 /**
  * Globals

@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { CommandContribution } from '../../common/command';
-import { KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator } from '../../common/keyboard/keyboard-layout-provider';
-import { BrowserKeyboardLayoutProvider } from './browser-keyboard-layout-provider';
-import { BrowserKeyboardFrontendContribution } from './browser-keyboard-frontend-contribution';
+import { CommandContribution } from '../../common/command.js';
+import { KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator } from '../../common/keyboard/keyboard-layout-provider.js';
+import { BrowserKeyboardLayoutProvider } from './browser-keyboard-layout-provider.js';
+import { BrowserKeyboardFrontendContribution } from './browser-keyboard-frontend-contribution.js';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(BrowserKeyboardLayoutProvider).toSelf().inSingletonScope();

@@ -24,7 +24,7 @@ FrontendApplicationConfigProvider.set({ applicationName: 'Test IDE' });
 import 'reflect-metadata';
 
 import { expect } from 'chai';
-import { ProductNameVariableContribution, PRODUCT_NAME_VARIABLE } from './product-name-variable-contribution';
+import { ProductNameVariableContribution, PRODUCT_NAME_VARIABLE } from './product-name-variable-contribution.js';
 
 disableJSDOM();
 

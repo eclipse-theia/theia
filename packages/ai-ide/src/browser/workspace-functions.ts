@@ -27,7 +27,7 @@ import {
     FILE_CONTENT_FUNCTION_ID, GET_FILE_DIAGNOSTICS_ID,
     GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID,
     GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FIND_FILES_BY_PATTERN_FUNCTION_ID
-} from '../common/workspace-functions';
+} from '../common/workspace-functions.js';
 import { extractJsonStringField } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/toolcall-utils';
 import ignore from 'ignore';
 import { Minimatch } from 'minimatch';
@@ -36,7 +36,7 @@ import {
     CONSIDER_GITIGNORE_PREF,
     FILE_CONTENT_MAX_SIZE_KB_PREF,
     USER_EXCLUDE_PATTERN_PREF
-} from '../common/workspace-preferences';
+} from '../common/workspace-preferences.js';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { ProblemManager } from '@theia/markers/lib/browser';
@@ -83,7 +83,7 @@ export class WorkspaceFunctionScope {
     @inject(ContributionProvider) @named(AccessibleRootContribution) @optional()
     protected readonly accessibleRootContributions: ContributionProvider<AccessibleRootContribution> | undefined;
 
-    private gitignoreMatchers = new Map<string, ReturnType<typeof ignore> | undefined>();
+    private gitignoreMatchers = new Map<string, ReturnType<typeof ignore.default> | undefined>();
     private gitignoreWatchersInitialized = new Set<string>();
 
     private _allRootUris: URI[] | undefined;
@@ -545,7 +545,7 @@ export class WorkspaceFunctionScope {
      * The cache is invalidated by {@link initializeGitignoreWatcher} when the `.gitignore` is
      * created, changed, or deleted, so individual exclusion checks need no filesystem RPC.
      */
-    protected async getGitignoreMatcher(workspaceRoot: URI): Promise<ReturnType<typeof ignore> | undefined> {
+    protected async getGitignoreMatcher(workspaceRoot: URI): Promise<ReturnType<typeof ignore.default> | undefined> {
         await this.initializeGitignoreWatcher(workspaceRoot);
 
         const rootKey = workspaceRoot.toString();
@@ -553,11 +553,12 @@ export class WorkspaceFunctionScope {
             return this.gitignoreMatchers.get(rootKey);
         }
 
-        let matcher: ReturnType<typeof ignore> | undefined;
+        let matcher: ReturnType<typeof ignore.default> | undefined;
         try {
             const gitignoreUri = workspaceRoot.resolve(this.GITIGNORE_FILE_NAME);
             const gitignoreContent = await this.fileService.read(gitignoreUri);
-            matcher = ignore().add(gitignoreContent.value);
+            // `ignore` is a CommonJS module that also provides itself as `default` export.
+            matcher = ignore.default().add(gitignoreContent.value);
         } catch {
             // No .gitignore (or it cannot be read): cache the absence so we don't retry on every check.
             matcher = undefined;

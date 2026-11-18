@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider } from '../common/contribution-provider';
-import { Theme, ThemeType } from '../common/theme';
-import { ColorRegistry } from './color-registry';
-import { DecorationStyle } from './decoration-style';
-import { FrontendApplicationContribution } from './frontend-application-contribution';
-import { ThemeService } from './theming';
-import { SecondaryWindowHandler } from './secondary-window-handler';
+import { ContributionProvider } from '../common/contribution-provider.js';
+import { Theme, ThemeType } from '../common/theme.js';
+import { ColorRegistry } from './color-registry.js';
+import { DecorationStyle } from './decoration-style.js';
+import { FrontendApplicationContribution } from './frontend-application-contribution.js';
+import { ThemeService } from './theming.js';
+import { SecondaryWindowService } from './window/secondary-window-service.js';
 
 export const StylingParticipant = Symbol('StylingParticipant');
 
@@ -52,15 +52,14 @@ export class StylingService implements FrontendApplicationContribution {
     @inject(ContributionProvider) @named(StylingParticipant)
     protected readonly themingParticipants: ContributionProvider<StylingParticipant>;
 
-    @inject(SecondaryWindowHandler)
-    protected readonly secondaryWindowHandler: SecondaryWindowHandler;
+    @inject(SecondaryWindowService)
+    protected readonly secondaryWindowService: SecondaryWindowService;
 
     onStart(): void {
         this.registerWindow(window);
-        this.secondaryWindowHandler.onWillAddWidget(([widget, window]) => {
-            this.registerWindow(window);
-        });
-        this.secondaryWindowHandler.onWillRemoveWidget(([widget, window]) => {
+        // registered per window rather than per widget, as a window may contain several widgets
+        this.secondaryWindowService.onWindowLoaded(win => this.registerWindow(win));
+        this.secondaryWindowService.onWindowClosed(window => {
             this.cssElements.delete(window);
         });
 

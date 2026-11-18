@@ -1,14 +1,15 @@
 {
   "name": "@theia/notebook",
-  "version": "1.76.0",
+  "version": "1.77.0",
   "description": "Theia - Notebook Extension",
+  "type": "module",
   "dependencies": {
-    "@theia/core": "1.76.0",
-    "@theia/editor": "1.76.0",
-    "@theia/filesystem": "1.76.0",
-    "@theia/monaco": "1.76.0",
+    "@theia/core": "1.77.0",
+    "@theia/editor": "1.77.0",
+    "@theia/filesystem": "1.77.0",
+    "@theia/monaco": "1.77.0",
     "@theia/monaco-editor-core": "1.108.201",
-    "@theia/outline-view": "1.76.0",
+    "@theia/outline-view": "1.77.0",
     "advanced-mark.js": "^2.7.1",
     "react-perfect-scrollbar": "^1.5.8",
     "tslib": "^2.8.1"
@@ -47,12 +48,21 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.76.0",
+    "@theia/ext-scripts": "1.77.0",
     "@types/markdown-it": "^12.2.3",
     "@types/vscode-notebook-renderer": "^1.72.4"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "21358137e41342742707f660b8e222f940a27652",
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/browser": "./lib/browser/index.js",
+    "./lib/common": "./lib/common/index.js",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  }
 }

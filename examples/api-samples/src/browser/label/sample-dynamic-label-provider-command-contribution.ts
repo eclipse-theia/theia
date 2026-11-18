@@ -17,7 +17,7 @@
 import { injectable, inject, interfaces } from '@theia/core/shared/inversify';
 import { Command, CommandContribution, CommandRegistry, CommandHandler } from '@theia/core';
 import { FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
-import { SampleDynamicLabelProviderContribution } from './sample-dynamic-label-provider-contribution';
+import { SampleDynamicLabelProviderContribution } from './sample-dynamic-label-provider-contribution.js';
 
 export namespace ExampleLabelProviderCommands {
     const API_SAMPLES_CATEGORY = 'API Samples';

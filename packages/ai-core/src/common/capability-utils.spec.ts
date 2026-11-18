@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { parseCapabilitiesFromTemplate, parseCapabilityArgument } from './capability-utils';
+import { parseCapabilitiesFromTemplate, parseCapabilityArgument } from './capability-utils.js';
 
 describe('capability-utils', () => {
     describe('parseCapabilitiesFromTemplate', () => {

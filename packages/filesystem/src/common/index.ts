@@ -14,6 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './filesystem';
-export * from './filesystem-utils';
-export * from './filesystem-preferences';
+export * from './filesystem.js';
+export * from './filesystem-utils.js';
+export * from './filesystem-preferences.js';

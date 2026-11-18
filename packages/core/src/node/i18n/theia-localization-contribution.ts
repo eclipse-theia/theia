@@ -15,26 +15,26 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { LocalizationContribution, LocalizationRegistry } from './localization-contribution';
+import { LocalizationContribution, LocalizationRegistry } from './localization-contribution.js';
 
 @injectable()
 export class TheiaLocalizationContribution implements LocalizationContribution {
     async registerLocalizations(registry: LocalizationRegistry): Promise<void> {
         // Attempt to use the same languages as VS Code
         // See https://code.visualstudio.com/docs/getstarted/locales#_available-locales
-        registry.registerLocalizationFromRequire('zh-cn', require('../../../i18n/nls.zh-cn.json'));
-        registry.registerLocalizationFromRequire('zh-tw', require('../../../i18n/nls.zh-tw.json'));
-        registry.registerLocalizationFromRequire('fr', require('../../../i18n/nls.fr.json'));
-        registry.registerLocalizationFromRequire('de', require('../../../i18n/nls.de.json'));
-        registry.registerLocalizationFromRequire('it', require('../../../i18n/nls.it.json'));
-        registry.registerLocalizationFromRequire('es', require('../../../i18n/nls.es.json'));
-        registry.registerLocalizationFromRequire('ja', require('../../../i18n/nls.ja.json'));
-        registry.registerLocalizationFromRequire('ko', require('../../../i18n/nls.ko.json'));
-        registry.registerLocalizationFromRequire('ru', require('../../../i18n/nls.ru.json'));
-        registry.registerLocalizationFromRequire('pt-br', require('../../../i18n/nls.pt-br.json'));
-        registry.registerLocalizationFromRequire('tr', require('../../../i18n/nls.tr.json'));
-        registry.registerLocalizationFromRequire('pl', require('../../../i18n/nls.pl.json'));
-        registry.registerLocalizationFromRequire('cs', require('../../../i18n/nls.cs.json'));
-        registry.registerLocalizationFromRequire('hu', require('../../../i18n/nls.hu.json'));
+        registry.registerLocalizationFromRequire('zh-cn', (await import('../../../i18n/nls.zh-cn.json', { with: { type: 'json' } })).default);
+        registry.registerLocalizationFromRequire('zh-tw', (await import('../../../i18n/nls.zh-tw.json', { with: { type: 'json' } })).default);
+        registry.registerLocalizationFromRequire('fr', (await import('../../../i18n/nls.fr.json', { with: { type: 'json' } })).default);
+        registry.registerLocalizationFromRequire('de', (await import('../../../i18n/nls.de.json', { with: { type: 'json' } })).default);
+        registry.registerLocalizationFromRequire('it', (await import('../../../i18n/nls.it.json', { with: { type: 'json' } })).default);
+        registry.registerLocalizationFromRequire('es', (await import('../../../i18n/nls.es.json', { with: { type: 'json' } })).default);
+        registry.registerLocalizationFromRequire('ja', (await import('../../../i18n/nls.ja.json', { with: { type: 'json' } })).default);
+        registry.registerLocalizationFromRequire('ko', (await import('../../../i18n/nls.ko.json', { with: { type: 'json' } })).default);
+        registry.registerLocalizationFromRequire('ru', (await import('../../../i18n/nls.ru.json', { with: { type: 'json' } })).default);
+        registry.registerLocalizationFromRequire('pt-br', (await import('../../../i18n/nls.pt-br.json', { with: { type: 'json' } })).default);
+        registry.registerLocalizationFromRequire('tr', (await import('../../../i18n/nls.tr.json', { with: { type: 'json' } })).default);
+        registry.registerLocalizationFromRequire('pl', (await import('../../../i18n/nls.pl.json', { with: { type: 'json' } })).default);
+        registry.registerLocalizationFromRequire('cs', (await import('../../../i18n/nls.cs.json', { with: { type: 'json' } })).default);
+        registry.registerLocalizationFromRequire('hu', (await import('../../../i18n/nls.hu.json', { with: { type: 'json' } })).default);
     }
 }

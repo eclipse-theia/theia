@@ -35,10 +35,10 @@ import { PreferenceService } from '@theia/core/lib/common/preferences/preference
 import { FuzzySearch } from '@theia/core/lib/common/fuzzy-search';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
-import { VSXExtensionsModel } from './vsx-extensions-model';
-import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
-import { VSXExtensionsSource, VSXExtensionsSourceOptions } from './vsx-extensions-source';
-import { ExtensionsSourceContribution, SearchResult } from './extensions-source-contribution';
+import { VSXExtensionsModel } from './vsx-extensions-model.js';
+import { VSXExtensionsSearchModel } from './vsx-extensions-search-model.js';
+import { VSXExtensionsSource, VSXExtensionsSourceOptions } from './vsx-extensions-source.js';
+import { ExtensionsSourceContribution, SearchResult } from './extensions-source-contribution.js';
 
 after(() => disableJSDOM());
 

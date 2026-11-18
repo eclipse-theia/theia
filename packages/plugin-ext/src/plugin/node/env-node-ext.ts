@@ -15,11 +15,12 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import * as mac from 'macaddress';
-import { EnvExtImpl } from '../env';
+// A CommonJS module whose exports cannot be detected statically, so it is imported as a whole.
+import mac from 'macaddress';
+import { EnvExtImpl } from '../env.js';
 import { createHash } from 'crypto';
 import { generateUuid } from '@theia/core/lib/common/uuid';
-import fs = require('fs');
+import * as fs from 'fs';
 
 /**
  * Provides machineId using mac address. It's only possible on node side
@@ -56,7 +57,7 @@ export class EnvNodeExtImpl extends EnvExtImpl {
     }
 
     private computeIsNewAppInstall(): boolean {
-        const creation = fs.statSync(__filename).birthtimeMs;
+        const creation = fs.statSync(import.meta.filename).birthtimeMs;
         const current = Date.now();
         const dayMs = 24 * 3600 * 1000;
         return (current - creation) < dayMs;

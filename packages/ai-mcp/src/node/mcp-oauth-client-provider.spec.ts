@@ -16,12 +16,12 @@
 
 import { expect } from 'chai';
 import { KeyStoreService } from '@theia/core/lib/common/key-store';
-import { MCPOAuthFrontendDelegate } from '../common/mcp-oauth';
-import { MCPOAuthClientProvider } from './mcp-oauth-client-provider';
-import { MCPOAuthAuthorizationRequiredError } from './mcp-oauth-errors';
-import { MCPOAuthClientProviderFactory } from './mcp-oauth-client-provider-factory';
-import { MCPOAuthCredentialStore } from './mcp-oauth-credential-store';
-import { MCP_OAUTH_AUTHORIZATION_CANCELLED, MCPOAuthCallbackService } from './mcp-oauth-callback-service';
+import { MCPOAuthFrontendDelegate } from '../common/mcp-oauth.js';
+import { MCPOAuthClientProvider } from './mcp-oauth-client-provider.js';
+import { MCPOAuthAuthorizationRequiredError } from './mcp-oauth-errors.js';
+import { MCPOAuthClientProviderFactory } from './mcp-oauth-client-provider-factory.js';
+import { MCPOAuthCredentialStore } from './mcp-oauth-credential-store.js';
+import { MCP_OAUTH_AUTHORIZATION_CANCELLED, MCPOAuthCallbackService } from './mcp-oauth-callback-service.js';
 
 class TestKeyStore implements KeyStoreService {
     readonly values = new Map<string, string>();

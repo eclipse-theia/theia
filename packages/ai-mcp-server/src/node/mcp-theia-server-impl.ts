@@ -23,9 +23,9 @@ import { generateUuid } from '@theia/core';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import * as express from '@theia/core/shared/express';
 import { randomUUID } from 'crypto';
-import { MCPTheiaServer } from './mcp-theia-server';
-import { MCPBackendContributionManager } from './mcp-backend-contribution-manager';
-import { MCPFrontendContributionManager } from './mcp-frontend-contribution-manager';
+import { MCPTheiaServer } from './mcp-theia-server.js';
+import { MCPBackendContributionManager } from './mcp-backend-contribution-manager.js';
+import { MCPFrontendContributionManager } from './mcp-frontend-contribution-manager.js';
 
 @injectable()
 export class MCPTheiaServerImpl implements MCPTheiaServer, BackendApplicationContribution {

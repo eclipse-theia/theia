@@ -18,12 +18,12 @@ import { bindRootContributionProvider } from '@theia/core/lib/common';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { TelemetrySink } from '@theia/telemetry/lib/node';
-import { ExtensionMetricsContribution } from './extensions-metrics-contribution';
-import { MeasurementMetricsBackendContribution } from './measurement-metrics-contribution';
-import { MeasurementTelemetryContribution } from './measurement-telemetry-contribution';
-import { MetricsBackendApplicationContribution } from './metrics-backend-application-contribution';
-import { MetricsContribution } from './metrics-contribution';
-import { NodeMetricsContribution } from './node-metrics-contribution';
+import { ExtensionMetricsContribution } from './extensions-metrics-contribution.js';
+import { MeasurementMetricsBackendContribution } from './measurement-metrics-contribution.js';
+import { MeasurementTelemetryContribution } from './measurement-telemetry-contribution.js';
+import { MetricsBackendApplicationContribution } from './metrics-backend-application-contribution.js';
+import { MetricsContribution } from './metrics-contribution.js';
+import { NodeMetricsContribution } from './node-metrics-contribution.js';
 
 export default new ContainerModule(bind => {
     bindRootContributionProvider(bind, MetricsContribution);

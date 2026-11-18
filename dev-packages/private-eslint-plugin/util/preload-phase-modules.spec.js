@@ -43,9 +43,9 @@ const targets = ['browser', 'electron', 'browser-only'];
 const preloadPhaseEnd = 'await preload(container)';
 
 /**
- * A `require('...')` of the emitted code.
+ * A static or dynamic import (or a `require('...')`) of the emitted code.
  */
-const emittedRequire = /require\('([^']*)'\)/g;
+const emittedImport = /(?:\brequire\(|\bimport\(|\bfrom |^import )'([^']*)'/gm;
 
 /**
  * Reaches the emitted index, which the generator only writes to disk as a whole application.
@@ -69,7 +69,7 @@ function emittedPreloadPhaseModules(target) {
         const indexJs = new GeneratorProbe(new ApplicationPackage({ projectPath: project.resolve('.') })).indexJs();
         const end = indexJs.indexOf(preloadPhaseEnd);
         assert.ok(end >= 0, `the emitted index of a '${target}' application does not end the preload phase with '${preloadPhaseEnd}'`);
-        return [...indexJs.slice(0, end).matchAll(emittedRequire)].map(([, specifier]) => specifier);
+        return [...indexJs.slice(0, end).matchAll(emittedImport)].map(([, specifier]) => specifier);
     } finally {
         project.dispose();
     }

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { PreferenceLayoutProvider } from './preference-layout';
+import { PreferenceLayoutProvider } from './preference-layout.js';
 
 describe('preference-layout', () => {
 

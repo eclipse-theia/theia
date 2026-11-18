@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as chai from 'chai';
-import { PROMETHEUS_REGEXP, toPrometheusValidName } from './prometheus';
+import { PROMETHEUS_REGEXP, toPrometheusValidName } from './prometheus.js';
 
 const expect = chai.expect;
 

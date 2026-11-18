@@ -18,9 +18,9 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { MaybePromise, URI } from '@theia/core';
 import { OpenHandler, OpenerOptions } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { BreakpointManager } from '../breakpoint/breakpoint-manager';
-import { DebugSessionManager } from '../debug-session-manager';
-import { DEBUG_BREAKPOINT_SCHEME } from '../breakpoint/breakpoint-marker';
+import { BreakpointManager } from '../breakpoint/breakpoint-manager.js';
+import { DebugSessionManager } from '../debug-session-manager.js';
+import { DEBUG_BREAKPOINT_SCHEME } from '../breakpoint/breakpoint-marker.js';
 
 @injectable()
 export class DebugBreakpointOpener implements OpenHandler {

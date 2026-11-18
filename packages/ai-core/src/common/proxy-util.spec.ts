@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { shouldBypassProxy } from './proxy-util';
+import { shouldBypassProxy } from './proxy-util.js';
 
 describe('proxy-util', () => {
     describe('shouldBypassProxy', () => {

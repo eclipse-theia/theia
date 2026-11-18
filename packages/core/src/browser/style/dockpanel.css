@@ -86,6 +86,15 @@
   background: var(--theia-panel-dropBackground);
 }
 
+/* marks where a dragged tab is inserted when it is dropped on a tab bar */
+.lm-TabBar-tab.theia-mod-drop-before {
+  box-shadow: inset 2px 0 0 var(--theia-tab-dragAndDropBorder) !important;
+}
+
+.lm-TabBar-tab.theia-mod-drop-after {
+  box-shadow: inset -2px 0 0 var(--theia-tab-dragAndDropBorder) !important;
+}
+
 .lm-TabBar-tab.theia-drag-not-allowed {
   cursor: not-allowed !important;
   background-color: var(--theia-errorBackground) !important;

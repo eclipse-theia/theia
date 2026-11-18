@@ -18,11 +18,11 @@ import { expect } from 'chai';
 import { promises as fs } from 'fs';
 import { Container } from 'inversify';
 import * as sinon from 'sinon';
-import { EnvVariablesServer } from '../common/env-variables';
-import { ILogger } from '../common/logger';
-import { MockLogger } from '../common/test/mock-logger';
-import { URI } from '../common/uri';
-import { SettingServiceImpl } from './setting-service';
+import { EnvVariablesServer } from '../common/env-variables/index.js';
+import { ILogger } from '../common/logger.js';
+import { MockLogger } from '../common/test/mock-logger.js';
+import { URI } from '../common/uri.js';
+import { SettingServiceImpl } from './setting-service.js';
 
 describe('SettingServiceImpl', () => {
     const mockConfigDirUri = new URI('mock');

@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Event } from '../event';
-import { isObject } from '../types';
+import { Event } from '../event.js';
+import { isObject } from '../types.js';
 
 export const MAIN_MENU_BAR: MenuPath = ['menubar'];
 export type MenuPath = string[];

@@ -28,13 +28,13 @@ import { inject, injectable, named, postConstruct, preDestroy } from '@theia/cor
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import {
     WorkspaceTrustPreferences, WORKSPACE_TRUST_EMPTY_WINDOW, WORKSPACE_TRUST_ENABLED, WORKSPACE_TRUST_STARTUP_PROMPT, WORKSPACE_TRUST_TRUSTED_FOLDERS, WorkspaceTrustPrompt
-} from '../common/workspace-trust-preferences';
+} from '../common/workspace-trust-preferences.js';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
-import { WorkspaceService } from './workspace-service';
-import { WorkspaceCommands } from './workspace-commands';
+import { WorkspaceService } from './workspace-service.js';
+import { WorkspaceCommands } from './workspace-commands.js';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { WorkspaceTrustDialog } from './workspace-trust-dialog';
-import { UntitledWorkspaceService } from '../common/untitled-workspace-service';
+import { WorkspaceTrustDialog } from './workspace-trust-dialog.js';
+import { UntitledWorkspaceService } from '../common/untitled-workspace-service.js';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 
 const STORAGE_TRUSTED = 'trusted';

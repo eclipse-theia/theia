@@ -21,8 +21,8 @@ import { ChatToolRequest } from '@theia/ai-chat/lib/common/chat-tool-request-ser
 import { AbstractStreamParsingChatAgent, SystemMessageDescription } from '@theia/ai-chat/lib/common/chat-agents';
 import { MutableChatRequestModel, InformationalChatResponseContentImpl } from '@theia/ai-chat/lib/common/chat-model';
 import { generateUuid, ILogger, nls, PreferenceService } from '@theia/core';
-import { orchestratorTemplate } from './orchestrator-prompt-template';
-import { PREFERENCE_NAME_ORCHESTRATOR_EXCLUSION_LIST } from './ai-ide-preferences';
+import { orchestratorTemplate } from './orchestrator-prompt-template.js';
+import { PREFERENCE_NAME_ORCHESTRATOR_EXCLUSION_LIST } from './ai-ide-preferences.js';
 
 export const OrchestratorChatAgentId = 'Orchestrator';
 const OrchestratorRequestIdKey = 'orchestratorRequestIdKey';

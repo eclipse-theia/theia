@@ -20,9 +20,9 @@ import { Emitter } from '@theia/core/lib/common/event';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
-import { OutputWidget } from './output-widget';
-import { OutputCommands } from './output-commands';
-import { OutputChannelManager } from './output-channel';
+import { OutputWidget } from './output-widget.js';
+import { OutputCommands } from './output-commands.js';
+import { OutputChannelManager } from './output-channel.js';
 import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()

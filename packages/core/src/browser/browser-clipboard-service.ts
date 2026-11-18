@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from 'inversify';
-import { isFirefox } from './browser';
-import { ClipboardService } from './clipboard-service';
-import { Emitter, Event } from '../common/event';
-import { ILogger } from '../common/logger';
-import { MessageService } from '../common/message-service';
-import { nls } from '../common/nls';
+import { isFirefox } from './browser.js';
+import { ClipboardService } from './clipboard-service.js';
+import { Emitter, Event } from '../common/event.js';
+import { ILogger } from '../common/logger.js';
+import { MessageService } from '../common/message-service.js';
+import { nls } from '../common/nls.js';
 
 export interface NavigatorClipboard {
     readText(): Promise<string>;

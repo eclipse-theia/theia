@@ -18,8 +18,8 @@ import * as fs from '@theia/core/shared/fs-extra';
 import * as os from 'os';
 import * as path from 'path';
 import * as crypto from 'crypto';
-import { ParsedKey } from 'ssh2';
-import * as ssh2 from 'ssh2';
+import ssh2, { ParsedKey } from 'ssh2';
+// A CommonJS module whose exports cannot be detected statically, so it is imported as a whole.
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core';
 

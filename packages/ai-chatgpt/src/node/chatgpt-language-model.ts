@@ -23,9 +23,9 @@ import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-model-utils';
 import { applyResponseApiCompaction, getOpenAiRequestSettings } from '@theia/ai-openai/lib/node/openai-request-settings';
 import { OPENAI_SERVER_TOOLS } from '@theia/ai-openai/lib/node/openai-server-tools';
 import { OpenAI } from 'openai';
-import { CHATGPT_RESPONSES_BASE_URL, ChatGptCredentials } from '../common';
-import { CHATGPT_ORIGINATOR } from './chatgpt-oauth';
-import { ChatGptResponseApiUtils } from './chatgpt-response-api-utils';
+import { CHATGPT_RESPONSES_BASE_URL, ChatGptCredentials } from '../common/index.js';
+import { CHATGPT_ORIGINATOR } from './chatgpt-oauth.js';
+import { ChatGptResponseApiUtils } from './chatgpt-response-api-utils.js';
 
 /**
  * A model served by the ChatGPT subscription of the signed in user. The endpoint only implements the streaming

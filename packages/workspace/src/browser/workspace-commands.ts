@@ -24,23 +24,22 @@ import { FileDialogService } from '@theia/filesystem/lib/browser';
 import { SingleTextInputDialog, ConfirmDialog, Dialog } from '@theia/core/lib/browser/dialogs';
 import { OpenerService, OpenHandler, open, FrontendApplication, LabelProvider, CommonCommands } from '@theia/core/lib/browser';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
-import { WorkspaceService } from './workspace-service';
+import { WorkspaceService } from './workspace-service.js';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { WorkspacePreferences } from '../common/workspace-preferences';
-import { WorkspaceDeleteHandler } from './workspace-delete-handler';
-import { WorkspaceDuplicateHandler } from './workspace-duplicate-handler';
+import { WorkspacePreferences } from '../common/workspace-preferences.js';
+import { WorkspaceDeleteHandler } from './workspace-delete-handler.js';
+import { WorkspaceDuplicateHandler } from './workspace-duplicate-handler.js';
 import { FileSystemUtils } from '@theia/filesystem/lib/common';
-import { WorkspaceCompareHandler } from './workspace-compare-handler';
+import { WorkspaceCompareHandler } from './workspace-compare-handler.js';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import { FileSystemCommands } from '@theia/filesystem/lib/browser/filesystem-frontend-contribution';
-import { WorkspaceInputDialog } from './workspace-input-dialog';
+import { WorkspaceInputDialog } from './workspace-input-dialog.js';
 import { Emitter, EOL, Event, OS } from '@theia/core/lib/common';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { nls } from '@theia/core/lib/common/nls';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
-
-const validFilename: (arg: string) => boolean = require('valid-filename');
+import validFilename from 'valid-filename';
 
 export namespace WorkspaceCommands {
 

@@ -17,11 +17,11 @@
 import { ToolInvocationContext, ToolRequest } from '@theia/ai-core';
 import { ILogger } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { ChatToolRequestService, normalizeToolArgs } from '../common/chat-tool-request-service';
-import { raceConfirmationWithTimeout } from '../common/chat-tool-confirmation-timeout';
-import { MutableChatRequestModel, ToolCallChatResponseContent } from '../common/chat-model';
-import { ToolConfirmationMode, ChatToolPreferences, TOOL_CONFIRMATION_TIMEOUT_PREFERENCE } from '../common/chat-tool-preferences';
-import { ToolConfirmationManager } from './chat-tool-preference-bindings';
+import { ChatToolRequestService, normalizeToolArgs } from '../common/chat-tool-request-service.js';
+import { raceConfirmationWithTimeout } from '../common/chat-tool-confirmation-timeout.js';
+import { MutableChatRequestModel, ToolCallChatResponseContent } from '../common/chat-model.js';
+import { ToolConfirmationMode, ChatToolPreferences, TOOL_CONFIRMATION_TIMEOUT_PREFERENCE } from '../common/chat-tool-preferences.js';
+import { ToolConfirmationManager } from './chat-tool-preference-bindings.js';
 
 /**
  * Frontend-specific implementation of ChatToolRequestService that handles tool confirmation
@@ -83,13 +83,14 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
                                 ? sessionTimeout
                                 : this.preferences[TOOL_CONFIRMATION_TIMEOUT_PREFERENCE];
                             toolCallContent.confirmationTimeout = timeoutSeconds;
+                            const confirmation = raceConfirmationWithTimeout(toolCallContent, timeoutSeconds);
                             toolCallContent.requestUserConfirmation();
                             request.response.fireInteractionNeeded(toolCallContent);
                             // Mark the response as waiting for input so the pending confirmation is
                             // surfaced consistently with agent questions (e.g. in the session overview).
                             request.response.waitForInput();
                             try {
-                                confirmed = await raceConfirmationWithTimeout(toolCallContent, timeoutSeconds);
+                                confirmed = await confirmation;
                             } finally {
                                 request.response.stopWaitingForInput();
                             }

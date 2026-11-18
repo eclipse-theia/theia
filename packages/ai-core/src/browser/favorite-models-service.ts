@@ -16,10 +16,10 @@
 
 import { Emitter, Event, PreferenceScope, PreferenceService } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { PREFERENCE_NAME_FAVORITE_MODELS, PREFERENCE_NAME_HIDDEN_MODELS } from '../common/ai-core-preferences';
-import { DiscoveredModel, ModelDiscoveryStatus } from '../common/model-discovery-status';
-import { DiscoveredModels } from '../common/model-discovery-util';
-import { ModelDiscoveryStatusService } from './model-discovery-status-service';
+import { PREFERENCE_NAME_FAVORITE_MODELS, PREFERENCE_NAME_HIDDEN_MODELS } from '../common/ai-core-preferences.js';
+import { DiscoveredModel, ModelDiscoveryStatus } from '../common/model-discovery-status.js';
+import { DiscoveredModels } from '../common/model-discovery-util.js';
+import { ModelDiscoveryStatusService } from './model-discovery-status-service.js';
 
 /**
  * How many of a provider's models are offered without the user asking. Enough to cover a provider's

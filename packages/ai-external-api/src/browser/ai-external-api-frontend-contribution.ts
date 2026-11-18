@@ -21,8 +21,8 @@ import {
 import { Disposable } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import debounce = require('@theia/core/shared/lodash.debounce');
-import { ExternalChatSessionBackendService } from '../common/external-chat-session-provider';
+import debounce from '@theia/core/shared/lodash.debounce';
+import { ExternalChatSessionBackendService } from '../common/external-chat-session-provider.js';
 
 /**
  * Connects this frontend to the external session API of the backend.

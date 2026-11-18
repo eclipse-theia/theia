@@ -15,8 +15,8 @@
 // *****************************************************************************
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { bindViewContribution, WidgetFactory } from '@theia/core/lib/browser';
-import { AIHistoryViewContribution } from './ai-history-contribution';
-import { AIHistoryView } from './ai-history-widget';
+import { AIHistoryViewContribution } from './ai-history-contribution.js';
+import { AIHistoryView } from './ai-history-widget.js';
 import '../../src/browser/style/ai-history.css';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 

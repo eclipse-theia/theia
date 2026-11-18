@@ -22,7 +22,7 @@ import {
     ThinkingChatResponseContentImpl, ToolCallChatResponseContentImpl
 } from '@theia/ai-chat/lib/common';
 import { expect } from 'chai';
-import { ChatFindMatcher, ChatFindOptions } from './chat-find-matcher';
+import { ChatFindMatcher, ChatFindOptions } from './chat-find-matcher.js';
 disableJSDOM();
 
 const plain: ChatFindOptions = { matchCase: false, wholeWord: false, useRegex: false };

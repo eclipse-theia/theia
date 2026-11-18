@@ -27,7 +27,7 @@ import {
     EDIT_TASK_CONTEXT_FUNCTION_ID,
     LIST_TASK_CONTEXTS_FUNCTION_ID,
     REWRITE_TASK_CONTEXT_FUNCTION_ID
-} from '../common/task-context-function-ids';
+} from '../common/task-context-function-ids.js';
 
 @injectable()
 export class CreateTaskContextFunction implements ToolProvider {

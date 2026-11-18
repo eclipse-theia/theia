@@ -16,8 +16,8 @@
 
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ContributionProvider, MaybePromise, URI } from '@theia/core';
-import { ChangeSetElement } from './change-set';
-import { SerializableChangeSetElement } from './chat-model-serialization';
+import { ChangeSetElement } from './change-set.js';
+import { SerializableChangeSetElement } from './chat-model-serialization.js';
 
 export const ChangeSetElementDeserializer = Symbol('ChangeSetElementDeserializer');
 

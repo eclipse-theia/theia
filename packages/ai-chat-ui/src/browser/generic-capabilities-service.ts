@@ -31,7 +31,7 @@ import {
     AIVariableService
 } from '@theia/ai-core';
 import { ChatAgentService } from '@theia/ai-chat';
-import debounce = require('@theia/core/shared/lodash.debounce');
+import debounce from '@theia/core/shared/lodash.debounce';
 
 // Re-export types from ai-core for backward compatibility
 export { GenericCapabilityItem, GenericCapabilityGroup, GenericCapabilitiesContribution };

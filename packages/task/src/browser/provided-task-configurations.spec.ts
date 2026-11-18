@@ -16,10 +16,10 @@
 
 import { assert } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { ProvidedTaskConfigurations } from './provided-task-configurations';
-import { TaskDefinitionRegistry } from './task-definition-registry';
-import { TaskProviderRegistry } from './task-contribution';
-import { TaskConfiguration } from '../common';
+import { ProvidedTaskConfigurations } from './provided-task-configurations.js';
+import { TaskDefinitionRegistry } from './task-definition-registry.js';
+import { TaskProviderRegistry } from './task-contribution.js';
+import { TaskConfiguration } from '../common/index.js';
 
 describe('provided-task-configurations', () => {
     let container: Container;

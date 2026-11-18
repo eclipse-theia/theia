@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { MutableChatRequestModel, CodeChatResponseContentImpl, MarkdownChatResponseContentImpl } from './chat-model';
-import { parseContents } from './parse-contents';
-import { ResponseContentMatcher } from './response-content-matcher';
+import { MutableChatRequestModel, CodeChatResponseContentImpl, MarkdownChatResponseContentImpl } from './chat-model.js';
+import { parseContents } from './parse-contents.js';
+import { ResponseContentMatcher } from './response-content-matcher.js';
 
 const fakeRequest = {} as MutableChatRequestModel;
 

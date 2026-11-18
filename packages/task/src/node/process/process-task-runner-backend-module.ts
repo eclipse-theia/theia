@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { interfaces, Container } from '@theia/core/shared/inversify';
-import { ProcessTask, TaskFactory, TaskProcessOptions } from './process-task';
-import { ProcessTaskRunner } from './process-task-runner';
-import { ProcessTaskRunnerContribution } from './process-task-runner-contribution';
-import { TaskRunnerContribution } from '../task-runner';
+import { ProcessTask, TaskFactory, TaskProcessOptions } from './process-task.js';
+import { ProcessTaskRunner } from './process-task-runner.js';
+import { ProcessTaskRunnerContribution } from './process-task-runner-contribution.js';
+import { TaskRunnerContribution } from '../task-runner.js';
 
 export function bindProcessTaskRunnerModule(bind: interfaces.Bind): void {
 

@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MaybePromise } from '../../common/types';
+import { MaybePromise } from '../../common/types.js';
 import { inject, injectable, interfaces, named } from 'inversify';
-import { ContributionProvider } from '../../common/contribution-provider';
+import { ContributionProvider } from '../../common/contribution-provider.js';
 
 export const PreloadContribution = Symbol('PreloadContribution') as symbol & interfaces.Abstract<PreloadContribution>;
 

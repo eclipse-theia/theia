@@ -18,10 +18,10 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { MaybeArray, UNTITLED_SCHEME, nls } from '@theia/core/lib/common';
 import { LabelProvider } from '@theia/core/lib/browser';
-import { FileStat } from '../../common/files';
-import { DirNode } from '../file-tree';
-import { OpenFileDialogFactory, OpenFileDialogProps, SaveFileDialogFactory, SaveFileDialogProps } from './file-dialog';
-import { FileService } from '../file-service';
+import { FileStat } from '../../common/files.js';
+import { DirNode } from '../file-tree/index.js';
+import { OpenFileDialogFactory, OpenFileDialogProps, SaveFileDialogFactory, SaveFileDialogProps } from './file-dialog.js';
+import { FileService } from '../file-service.js';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { UserWorkingDirectoryProvider } from '@theia/core/lib/browser/user-working-directory-provider';
 

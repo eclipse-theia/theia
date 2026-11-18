@@ -19,7 +19,7 @@ import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Tree } from '@theia/core/lib/browser/tree/tree';
 import { DepthFirstTreeIterator } from '@theia/core/lib/browser/tree/tree-iterator';
 import { TreeDecorator, TreeDecoration } from '@theia/core/lib/browser/tree/tree-decorator';
-import { MonacoOutlineSymbolInformationNode } from './monaco-outline-contribution';
+import { MonacoOutlineSymbolInformationNode } from './monaco-outline-contribution.js';
 
 @injectable()
 export class MonacoOutlineDecorator implements TreeDecorator {

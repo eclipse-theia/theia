@@ -17,12 +17,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from 'chai';
-import { WalkthroughService } from './walkthrough-service';
+import { WalkthroughService } from './walkthrough-service.js';
 import { Emitter } from '@theia/core/lib/common/event';
 import { WalkthroughContribution } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { ContextKeyChangeEvent } from '@theia/core/lib/browser/context-key-service';
-import { WalkthroughProvider } from '../common/walkthrough-provider';
-import { WalkthroughDefinition } from '../common/walkthrough-types';
+import { WalkthroughProvider } from '../common/walkthrough-provider.js';
+import { WalkthroughDefinition } from '../common/walkthrough-types.js';
 
 describe('WalkthroughService', () => {
 

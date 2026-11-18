@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { DebugConfiguration } from '../common/debug-configuration';
-import { DebugService, DebuggerDescription, DynamicDebugConfigurationProvider } from '../common/debug-service';
+import { DebugConfiguration } from '../common/debug-configuration.js';
+import { DebugService, DebuggerDescription, DynamicDebugConfigurationProvider } from '../common/debug-service.js';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { CommandIdVariables } from '@theia/variable-resolver/lib/common/variable-types';
-import { DebugAdapterSessionManager } from './debug-adapter-session-manager';
-import { DebugAdapterContributionRegistry } from '../common/debug-adapter-contribution-registry';
+import { DebugAdapterSessionManager } from './debug-adapter-session-manager.js';
+import { DebugAdapterContributionRegistry } from '../common/debug-adapter-contribution-registry.js';
 import { Event, ILogger } from '@theia/core';
 
 /**

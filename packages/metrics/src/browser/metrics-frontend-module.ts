@@ -16,7 +16,7 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { MetricsFrontendApplicationContribution } from './metrics-frontend-application-contribution';
+import { MetricsFrontendApplicationContribution } from './metrics-frontend-application-contribution.js';
 
 export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).to(MetricsFrontendApplicationContribution).inSingletonScope();

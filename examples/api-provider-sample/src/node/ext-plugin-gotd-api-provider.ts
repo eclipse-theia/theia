@@ -24,7 +24,7 @@ export class ExtPluginGotdApiProvider implements ExtPluginApiProvider {
         // entry-point script. Moreover, the application build packages that script in
         // the `../backend/` directory from its source `../plugin/` location, alongside
         // the scripts for all other plugin API providers.
-        const universalInitPath = path.join(__dirname, '../backend/gotd-api-init');
+        const universalInitPath = path.join(import.meta.dirname, '../backend/gotd-api-init');
         return {
             backendInitPath: universalInitPath,
             headlessInitPath: universalInitPath

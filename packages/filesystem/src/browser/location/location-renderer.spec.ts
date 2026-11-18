@@ -20,9 +20,9 @@ let disableJSDOM = enableJSDOM();
 import URI from '@theia/core/lib/common/uri';
 import { expect } from 'chai';
 import * as React from '@theia/core/shared/react';
-import type { FileDialogModel } from '../file-dialog/file-dialog-model';
-import { LocationListRenderer } from './location-renderer';
-import type { LocationService } from './location-service';
+import type { FileDialogModel } from '../file-dialog/file-dialog-model.js';
+import { LocationListRenderer } from './location-renderer.js';
+import type { LocationService } from './location-service.js';
 
 disableJSDOM();
 

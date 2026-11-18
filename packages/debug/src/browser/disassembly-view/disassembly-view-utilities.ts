@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { IDisposable, IEvent } from '@theia/monaco-editor-core';
-import { BareFontInfo } from '@theia/monaco-editor-core/esm/vs/editor/common/config/fontInfo';
+import { BareFontInfo } from '@theia/monaco-editor-core/esm/vs/editor/common/config/fontInfo.js';
 import { DebugProtocol } from '@vscode/debugprotocol';
 
 export interface DisassemblyViewRendererReference {

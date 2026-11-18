@@ -19,9 +19,9 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/status-bar/status-bar-types';
 import { Disposable, DisposableCollection, nls, PreferenceService } from '@theia/core';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
-import { CopilotAuthService, CopilotAuthState } from '../common/copilot-auth-service';
-import { CopilotCommands } from './copilot-command-contribution';
-import { COPILOT_ENABLED_PREF } from '../common/copilot-preferences';
+import { CopilotAuthService, CopilotAuthState } from '../common/copilot-auth-service.js';
+import { CopilotCommands } from './copilot-command-contribution.js';
+import { COPILOT_ENABLED_PREF } from '../common/copilot-preferences.js';
 
 const COPILOT_STATUS_BAR_ID = 'copilot-auth-status';
 

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './task-protocol';
-export * from './task-watcher';
-export * from './problem-matcher-protocol';
-export * from './task-util';
+export * from './task-protocol.js';
+export * from './task-watcher.js';
+export * from './problem-matcher-protocol.js';
+export * from './task-util.js';

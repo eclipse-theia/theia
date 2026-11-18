@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { interfaces } from 'inversify';
-import { ContributionFilterRegistry } from './contribution-filter';
+import { ContributionFilterRegistry } from './contribution-filter/index.js';
 
 export const ContributionProvider = Symbol('ContributionProvider');
 

@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { HostedInstanceManager, ElectronNodeHostedPluginRunner } from '../node/hosted-instance-manager';
+import { HostedInstanceManager, ElectronNodeHostedPluginRunner } from '../node/hosted-instance-manager.js';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
-import { bindCommonHostedBackend } from '../node/plugin-dev-backend-module';
+import { bindCommonHostedBackend } from '../node/plugin-dev-backend-module.js';
 
 const hostedBackendConnectionModule = ConnectionContainerModule.create(({ bind }) => {
     bind(HostedInstanceManager).to(ElectronNodeHostedPluginRunner);

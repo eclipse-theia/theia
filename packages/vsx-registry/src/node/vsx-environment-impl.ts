@@ -18,8 +18,8 @@ import URI from '@theia/core/lib/common/uri';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { OVSXRouterConfig } from '@theia/ovsx-client';
 import { PluginVsCodeCliContribution } from '@theia/plugin-ext-vscode/lib/node/plugin-vscode-cli-contribution';
-import { VSXEnvironment } from '../common/vsx-environment';
-import { VsxCli } from './vsx-cli';
+import { VSXEnvironment } from '../common/vsx-environment.js';
+import { VsxCli } from './vsx-cli.js';
 
 @injectable()
 export class VSXEnvironmentImpl implements VSXEnvironment {

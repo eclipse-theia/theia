@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { AbstractViewContribution } from '@theia/core/lib/browser';
-import { TestOutputWidget } from './test-output-widget';
+import { TestOutputWidget } from './test-output-widget.js';
 import { injectable } from '@theia/core/shared/inversify';
 import { nls } from '@theia/core';
 

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { LaunchArguments } from '../common/launch-arguments';
+import { LaunchArguments } from '../common/launch-arguments.js';
 
 /**
  * Holds the parsed CLI options of *forwarded* launches (see the `second-instance` handling in

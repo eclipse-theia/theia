@@ -33,7 +33,7 @@ import { LanguageModel } from '@theia/ai-core/lib/common';
 import { DiscoveredModel, ModelDiscoveryAction, ModelDiscoveryStatus } from '@theia/ai-core/lib/common/model-discovery-status';
 import { FavoriteModelsService } from '@theia/ai-core/lib/browser';
 import { Emitter } from '@theia/core';
-import { ProviderModelDiscoverySection } from './provider-model-discovery-section';
+import { ProviderModelDiscoverySection } from './provider-model-discovery-section.js';
 
 disableJSDOM();
 

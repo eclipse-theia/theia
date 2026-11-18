@@ -17,11 +17,12 @@
 import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { RemoteCopyRegistry, RemoteFile, RemoteCopyOptions } from '@theia/core/lib/node/remote/remote-copy-contribution';
-import { glob as globCallback } from 'glob';
+// A CommonJS module whose exports cannot be detected statically, so it is imported as a whole.
+import glob from 'glob';
 import { promisify } from 'util';
 import * as path from 'path';
 
-const promiseGlob = promisify(globCallback);
+const promiseGlob = promisify(glob);
 
 @injectable()
 export class RemoteCopyRegistryImpl implements RemoteCopyRegistry {

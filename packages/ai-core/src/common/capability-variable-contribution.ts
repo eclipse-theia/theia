@@ -25,10 +25,10 @@ import {
     AIVariableResolverWithVariableDependencies,
     AIVariableArg,
     AIVariableContext
-} from './variable-service';
-import { isCustomizedPromptFragment, PromptService } from './prompt-service';
-import { PromptText } from './prompt-text';
-import { CapabilityAwareContext, parseCapabilityArgument } from './capability-utils';
+} from './variable-service.js';
+import { isCustomizedPromptFragment, PromptService } from './prompt-service.js';
+import { PromptText } from './prompt-text.js';
+import { CapabilityAwareContext, parseCapabilityArgument } from './capability-utils.js';
 
 export const CAPABILITY_VARIABLE: AIVariable = {
     id: 'capability-provider',

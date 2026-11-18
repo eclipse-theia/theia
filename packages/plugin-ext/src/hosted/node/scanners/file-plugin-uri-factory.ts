@@ -18,8 +18,8 @@ import { injectable } from '@theia/core/shared/inversify';
 import * as path from 'path';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/common/file-uri';
-import { PluginPackage } from '../../../common';
-import { PluginUriFactory } from './plugin-uri-factory';
+import { PluginPackage } from '../../../common/index.js';
+import { PluginUriFactory } from './plugin-uri-factory.js';
 /**
  * The default implementation of PluginUriFactory simply returns a File URI from the concatenated
  * package path and relative path.

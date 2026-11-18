@@ -19,25 +19,27 @@ import { ApplicationShell, ConfirmDialog } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import URI from '@theia/core/lib/common/uri';
+import { deepClone } from '@theia/core/lib/common/objects';
 import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
+import deepEqual from 'fast-deep-equal';
 import * as monaco from '@theia/monaco-editor-core';
 import { QuickOpenTask } from '@theia/task/lib/browser/quick-open-task';
 import { TaskEndedInfo, TaskEndedTypes, TaskService } from '@theia/task/lib/browser/task-service';
 import { TaskIdentifier } from '@theia/task/lib/common';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser';
-import { DebugConfiguration } from '../common/debug-common';
-import { DebugPreferences } from '../common/debug-preferences';
-import { DebugError, DebugService } from '../common/debug-service';
-import { BreakpointManager } from './breakpoint/breakpoint-manager';
-import { DebugVariable } from './console/debug-console-items';
-import { DebugConfigurationManager } from './debug-configuration-manager';
-import { DebugSession, DebugState, debugStateContextValue } from './debug-session';
-import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider';
-import { DebugSessionContributionRegistry, DebugSessionFactory } from './debug-session-contribution';
-import { DebugCompoundRoot, DebugCompoundSessionOptions, DebugConfigurationSessionOptions, DebugSessionOptions, InternalDebugSessionOptions } from './debug-session-options';
-import { DebugStackFrame } from './model/debug-stack-frame';
-import { DebugThread } from './model/debug-thread';
+import { DebugConfiguration } from '../common/debug-common.js';
+import { DebugPreferences } from '../common/debug-preferences.js';
+import { DebugError, DebugService } from '../common/debug-service.js';
+import { BreakpointManager } from './breakpoint/breakpoint-manager.js';
+import { DebugVariable } from './console/debug-console-items.js';
+import { DebugConfigurationManager } from './debug-configuration-manager.js';
+import { DebugSession, DebugState, debugStateContextValue } from './debug-session.js';
+import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider.js';
+import { DebugSessionContributionRegistry, DebugSessionFactory } from './debug-session-contribution.js';
+import { DebugCompoundRoot, DebugCompoundSessionOptions, DebugConfigurationSessionOptions, DebugSessionOptions, InternalDebugSessionOptions } from './debug-session-options.js';
+import { DebugStackFrame } from './model/debug-stack-frame.js';
+import { DebugThread } from './model/debug-thread.js';
 
 export interface WillStartDebugSession extends WaitUntilEvent {
 }
@@ -107,6 +109,8 @@ export class DebugSessionManager {
         this.debugTypeKey.set(current?.configuration.type);
         this.inDebugModeKey.set(this.inDebugMode);
         this.debugStateKey.set(debugStateContextValue(this.state));
+        this.restartFrameSupportedKey.set(!!this.currentSession?.capabilities.supportsRestartFrame);
+        this.stackFrameSupportsRestartKey.set(!!this.currentFrame?.isRestartable);
         this.onDidChangeEmitter.fire(current);
     }
 
@@ -167,12 +171,18 @@ export class DebugSessionManager {
     protected debugTypeKey: ContextKey<string>;
     protected inDebugModeKey: ContextKey<boolean>;
     protected debugStateKey: ContextKey<string>;
+    /** Whether the current session supports `restartFrame` requests, as in VS Code. */
+    protected restartFrameSupportedKey: ContextKey<boolean>;
+    /** Whether the current stack frame can be restarted, as in VS Code. */
+    protected stackFrameSupportsRestartKey: ContextKey<boolean>;
 
     @postConstruct()
     protected init(): void {
         this.debugTypeKey = this.contextKeyService.createKey<string>('debugType', undefined);
         this.inDebugModeKey = this.contextKeyService.createKey<boolean>('inDebugMode', this.inDebugMode);
         this.debugStateKey = this.contextKeyService.createKey<string>('debugState', debugStateContextValue(this.state));
+        this.restartFrameSupportedKey = this.contextKeyService.createKey<boolean>('restartFrameSupported', false);
+        this.stackFrameSupportsRestartKey = this.contextKeyService.createKey<boolean>('stackFrameSupportsRestart', false);
     }
 
     get inDebugMode(): boolean {
@@ -181,6 +191,14 @@ export class DebugSessionManager {
 
     isCurrentEditorFrame(uri: URI | string | monaco.Uri): boolean {
         return this.currentFrame?.source?.uri.toString() === (uri instanceof URI ? uri : new URI(uri.toString())).toString();
+    }
+
+    protected saveBeforeStart(configuration: DebugConfiguration): Promise<boolean> {
+        // If a parent session is available saving should be handled by the parent
+        if (configuration.parentSessionId || configuration.suppressSaveBeforeStart) {
+            return Promise.resolve(true);
+        }
+        return this.saveAll();
     }
 
     protected async saveAll(): Promise<boolean> {
@@ -217,8 +235,7 @@ export class DebugSessionManager {
 
         return this.progressService.withProgress(nls.localizeByDefault('Starting...'), 'debug', async () => {
             try {
-                // If a parent session is available saving should be handled by the parent
-                if (!options.configuration.parentSessionId && !options.configuration.suppressSaveBeforeStart && !await this.saveAll()) {
+                if (!await this.saveBeforeStart(options.configuration)) {
                     return undefined;
                 }
                 await this.fireWillStartDebugSession();
@@ -355,6 +372,19 @@ export class DebugSessionManager {
         if (InternalDebugSessionOptions.is(options)) {
             return options;
         }
+        const resolved = await this.resolveSessionOptions(options);
+        if (!resolved) {
+            return resolved;
+        }
+        const key = resolved.configuration.name + options.workspaceFolderUri;
+        const id = this.configurationIds.has(key) ? this.configurationIds.get(key)! + 1 : 0;
+        this.configurationIds.set(key, id);
+        return { id, ...resolved };
+    }
+
+    protected async resolveSessionOptions(
+        options: Readonly<DebugConfigurationSessionOptions>
+    ): Promise<Omit<InternalDebugSessionOptions, 'id'> & DebugConfigurationSessionOptions | undefined | null> {
         const { workspaceFolderUri } = options;
         let configuration = await this.resolveDebugConfiguration(options.configuration, workspaceFolderUri);
 
@@ -380,16 +410,28 @@ export class DebugSessionManager {
             return configuration;
         }
 
-        const key = configuration.name + workspaceFolderUri;
-        const id = this.configurationIds.has(key) ? this.configurationIds.get(key)! + 1 : 0;
-        this.configurationIds.set(key, id);
-
         return {
-            id,
             ...options,
             name: configuration.name,
-            configuration
+            configuration,
+            unresolvedConfiguration: options.configuration,
+            launchConfiguration: this.launchConfigurationOf(options)
         };
+    }
+
+    /**
+     * The launch configuration the options were made from, if any. Options can add keys to it, such as `noDebug`.
+     */
+    protected launchConfigurationOf(options: Readonly<DebugConfigurationSessionOptions>): DebugConfiguration | undefined {
+        if (DebugSessionOptions.isDynamic(options)) {
+            return undefined;
+        }
+        const { configuration } = options;
+        const launch = this.debugConfigurationManager.findConfiguration(configuration.name, options.workspaceFolderUri);
+        if (launch && Object.keys(launch).every(key => deepEqual(launch[key], configuration[key]))) {
+            return deepClone(launch);
+        }
+        return undefined;
     }
 
     protected async resolveDebugConfiguration(
@@ -437,11 +479,17 @@ export class DebugSessionManager {
             // The selection logic in widgets will handle not jumping to non-stopped threads
             this.fireDidChange(session);
         });
+        // e.g. for the `restartFrameSupported` context key, which is only read from the current session
+        session.onDidChangeCapabilities(() => {
+            if (session === this.currentSession) {
+                this.fireDidChange(session);
+            }
+        });
         session.on('terminated', async event => {
             const restart = event.body && event.body.restart;
             if (restart) {
                 // postDebugTask isn't run in case of auto restart as well as preLaunchTask
-                this.doRestart(session, !!restart);
+                this.doRestart(session, !!restart, false);
             } else {
                 await session.disconnect(false, () => this.debug.terminateDebugSession(session.id));
                 await this.runTask(session.options.workspaceFolderUri, session.configuration.postDebugTask);
@@ -485,16 +533,59 @@ export class DebugSessionManager {
         }
     }
 
-    protected async doRestart(session: DebugSession, isRestart: boolean): Promise<DebugSession | undefined> {
+    /**
+     * @param userInitiated a restart the user asked for, as opposed to one the debug adapter requested.
+     * As in VS Code, it saves, uses the launch configuration as it is now and runs the `preLaunchTask` again.
+     */
+    protected async doRestart(session: DebugSession, isRestart: boolean, userInitiated = false): Promise<DebugSession | undefined> {
+        if (userInitiated && !await this.saveBeforeStart(session.configuration)) {
+            return undefined;
+        }
+        const options = userInitiated ? await this.optionsForRestart(session) : session.options;
+        if (!options) {
+            return undefined;
+        }
+
         if (session.canRestart()) {
-            await session.restart();
+            if (userInitiated && !await this.runTask(options.workspaceFolderUri, options.configuration.preLaunchTask, true)) {
+                return undefined;
+            }
+            await session.restart(options);
             return session;
         }
 
-        const { options, configuration } = session;
         session.stop(isRestart, () => this.debug.terminateDebugSession(session.id));
-        configuration.__restart = isRestart;
-        return this.start(options);
+        const configuration = { ...options.configuration };
+        if (userInitiated) {
+            delete configuration.__restart;
+        } else {
+            configuration.__restart = isRestart;
+        }
+        return this.start({ ...options, configuration });
+    }
+
+    /**
+     * The session's options, resolved again if its launch configuration changed since the session started.
+     */
+    protected async optionsForRestart(session: DebugSession): Promise<DebugConfigurationSessionOptions | undefined> {
+        const { options } = session;
+        if (!InternalDebugSessionOptions.is(options) || !options.launchConfiguration || !options.unresolvedConfiguration) {
+            return options;
+        }
+        const { launchConfiguration, unresolvedConfiguration } = options;
+        const current = this.debugConfigurationManager.findConfiguration(launchConfiguration.name, options.workspaceFolderUri);
+        if (!current || deepEqual(current, launchConfiguration)) {
+            return options;
+        }
+        // Keep what the session added to the launch configuration, such as `noDebug` or a parent session.
+        const added = Object.fromEntries(Object.entries(unresolvedConfiguration).filter(([key]) => !(key in launchConfiguration)));
+        const { id, ...unresolvedOptions } = options;
+        const resolved = await this.resolveSessionOptions({ ...unresolvedOptions, configuration: { ...added, ...current } });
+        if (!resolved) {
+            return undefined;
+        }
+        const restartOptions: DebugConfigurationSessionOptions & { id: number } = { ...resolved, id };
+        return restartOptions;
     }
 
     async terminateSession(session?: DebugSession): Promise<void> {
@@ -523,7 +614,7 @@ export class DebugSessionManager {
             if (session.parentSession && session.configuration.lifecycleManagedByParent) {
                 return this.restartSession(session.parentSession);
             } else {
-                return this.doRestart(session, true);
+                return this.doRestart(session, true, true);
             }
         }
     }

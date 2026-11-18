@@ -15,14 +15,15 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { TerminalSearchWidget, TerminalSearchWidgetFactory } from './terminal-search-widget';
-import { Terminal } from 'xterm';
+import { TerminalSearchWidget, TerminalSearchWidgetFactory } from './terminal-search-widget.js';
+// A CommonJS module whose exports cannot be detected statically, so it is imported as a whole.
+import xterm, { type Terminal } from 'xterm';
 
 export function createTerminalSearchFactory(container: interfaces.Container): TerminalSearchWidgetFactory {
     container.bind(TerminalSearchWidget).toSelf().inSingletonScope();
 
     return (terminal: Terminal) => {
-        container.bind(Terminal).toConstantValue(terminal);
+        container.bind(xterm.Terminal).toConstantValue(terminal);
         return container.get(TerminalSearchWidget);
     };
 }

@@ -18,11 +18,11 @@
 import * as http from 'http';
 import * as https from 'https';
 import { AddressInfo } from 'net';
-import { servicesPath } from '../../../common';
-import { WebSocketConnectionSource } from '../../../browser/messaging/ws-connection-source';
+import { servicesPath } from '../../../common/index.js';
+import { WebSocketConnectionSource } from '../../../browser/messaging/ws-connection-source.js';
 import { Container, inject } from 'inversify';
-import { RemoteConnectionProvider, ServiceConnectionProvider } from '../../../browser/messaging/service-connection-provider';
-import { messagingFrontendModule } from '../../../browser/messaging/messaging-frontend-module';
+import { RemoteConnectionProvider, ServiceConnectionProvider } from '../../../browser/messaging/service-connection-provider.js';
+import { messagingFrontendModule } from '../../../browser/messaging/messaging-frontend-module.js';
 import { Socket, io } from 'socket.io-client';
 
 const websocketUrl = Symbol('testWebsocketUrl');

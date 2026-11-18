@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Base64ImageContent, ImageContent, ImageMessage, LanguageModelMessage } from '@theia/ai-core';
-import type { BlobMessageAttachment, ModelInfo, SystemMessageConfig } from './copilot-sdk-types';
+import type { BlobMessageAttachment, ModelInfo, SystemMessageConfig } from './copilot-sdk-types.js';
 
 /**
  * Selects the model IDs that should be surfaced to Theia from the list returned

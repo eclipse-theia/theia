@@ -25,7 +25,7 @@ import URI from '@theia/core/lib/common/uri';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
-import { WorkspaceFunctionScope } from './workspace-functions';
+import { WorkspaceFunctionScope } from './workspace-functions.js';
 import {
     ContentRef,
     USER_INTERACTION_FUNCTION_ID,
@@ -38,7 +38,7 @@ import {
     normalizeUserInteractionLink,
     parseUserInteractionArgs,
     resolveContentRef
-} from '../common/user-interaction-tool';
+} from '../common/user-interaction-tool.js';
 import { ILogger } from '@theia/core';
 
 interface PendingInteraction {

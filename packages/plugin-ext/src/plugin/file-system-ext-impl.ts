@@ -28,20 +28,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @theia/explicit-return-type */
 
-import { Schemes as Schemas, UriComponents } from '../common/uri-components';
-import { FileChangeType, FileSystemError, URI } from './types-impl';
-import { RPCProtocol } from '../common/rpc-protocol';
-import { PLUGIN_RPC_CONTEXT, FileSystemExt, FileSystemMain, IFileChangeDto } from '../common/plugin-api-rpc';
+import { Schemes as Schemas, UriComponents } from '../common/uri-components.js';
+import { FileChangeType, FileSystemError, URI } from './types-impl.js';
+import { RPCProtocol } from '../common/rpc-protocol.js';
+import { PLUGIN_RPC_CONTEXT, FileSystemExt, FileSystemMain, IFileChangeDto } from '../common/plugin-api-rpc.js';
 import * as vscode from '@theia/plugin';
 import * as files from '@theia/filesystem/lib/common/files';
-import * as typeConverter from './type-converters';
-import { State, StateMachine, LinkComputer, Edge } from '../common/link-computer';
+import * as typeConverter from './type-converters.js';
+import { State, StateMachine, LinkComputer, Edge } from '../common/link-computer.js';
 import { commonPrefixLength } from '@theia/core/lib/common/strings';
 import { CharCode } from '@theia/core/lib/common/char-code';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { MarkdownString } from '../common/plugin-api-rpc-model';
+import { MarkdownString } from '../common/plugin-api-rpc-model.js';
 import { Emitter } from '@theia/core/lib/common';
-import { createAPIObject } from './plugin-context';
+import { createAPIObject } from './plugin-context.js';
 
 type IDisposable = vscode.Disposable;
 

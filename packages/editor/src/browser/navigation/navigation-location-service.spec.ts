@@ -24,11 +24,11 @@ import { ILogger } from '@theia/core/lib/common/logger';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { OpenerService } from '@theia/core/lib/browser/opener-service';
 import { MockOpenerService } from '@theia/core/lib/browser/test/mock-opener-service';
-import { NavigationLocationUpdater } from './navigation-location-updater';
-import { NoopNavigationLocationUpdater } from './test/mock-navigation-location-updater';
-import { NavigationLocationSimilarity } from './navigation-location-similarity';
-import { CursorLocation, Position, NavigationLocation, RecentlyClosedEditor } from './navigation-location';
-import { NavigationLocationService } from './navigation-location-service';
+import { NavigationLocationUpdater } from './navigation-location-updater.js';
+import { NoopNavigationLocationUpdater } from './test/mock-navigation-location-updater.js';
+import { NavigationLocationSimilarity } from './navigation-location-similarity.js';
+import { CursorLocation, Position, NavigationLocation, RecentlyClosedEditor } from './navigation-location.js';
+import { NavigationLocationService } from './navigation-location-service.js';
 
 disableJSDOM();
 

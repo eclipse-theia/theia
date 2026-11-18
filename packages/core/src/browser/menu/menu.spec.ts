@@ -20,7 +20,7 @@ import {
     MenuModelRegistry, MenuNode, MenuNodeFactory, MutableCompoundMenuNode, Submenu,
     SubmenuImpl,
     SubMenuLink
-} from '../../common';
+} from '../../common/index.js';
 
 const expect = chai.expect;
 

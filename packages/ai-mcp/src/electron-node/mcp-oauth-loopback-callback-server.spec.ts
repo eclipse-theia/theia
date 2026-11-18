@@ -19,14 +19,14 @@ import * as http from 'http';
 import { AddressInfo } from 'net';
 import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { MCPOAuthCallbackService } from '../node/mcp-oauth-callback-service';
-import { MCPOAuthCallbackResponder } from '../node/mcp-oauth-callback-responder';
+import { MCPOAuthCallbackService } from '../node/mcp-oauth-callback-service.js';
+import { MCPOAuthCallbackResponder } from '../node/mcp-oauth-callback-responder.js';
 import {
     MCPOAuthLoopbackCallbackServer,
     MCP_OAUTH_CALLBACK_PORT_ENV,
     MCP_OAUTH_DEFAULT_ELECTRON_CALLBACK_PORT,
     MCP_OAUTH_LOOPBACK_HOST
-} from './mcp-oauth-loopback-callback-server';
+} from './mcp-oauth-loopback-callback-server.js';
 
 class TestableMCPOAuthLoopbackCallbackServer extends MCPOAuthLoopbackCallbackServer {
     portOverride: number | undefined;

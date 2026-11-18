@@ -42,6 +42,9 @@
   margin-top: 2px;
   margin-left: auto;
   margin-right: auto;
+  max-width: calc(100% - 160px);
+  text-align: center;
+  pointer-events: none;
   zoom: 1;
   -webkit-app-region: drag !important;
 }

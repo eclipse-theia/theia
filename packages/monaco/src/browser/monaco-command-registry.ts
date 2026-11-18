@@ -17,8 +17,8 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { Command, CommandHandler, CommandRegistry, SelectionService } from '@theia/core';
 import { TextEditorSelection } from '@theia/editor/lib/browser';
-import { MonacoEditor } from './monaco-editor';
-import { MonacoEditorProvider } from './monaco-editor-provider';
+import { MonacoEditor } from './monaco-editor.js';
+import { MonacoEditorProvider } from './monaco-editor-provider.js';
 
 export interface MonacoEditorCommandHandler {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

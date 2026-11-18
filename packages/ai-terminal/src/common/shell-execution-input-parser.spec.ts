@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { parseShellExecutionInput } from './shell-execution-input-parser';
+import { parseShellExecutionInput } from './shell-execution-input-parser.js';
 
 describe('parseShellExecutionInput', () => {
     describe('complete JSON', () => {

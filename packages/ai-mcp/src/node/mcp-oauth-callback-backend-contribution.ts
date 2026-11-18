@@ -17,8 +17,8 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import * as express from '@theia/core/shared/express';
-import { MCP_OAUTH_CALLBACK_PATH } from '../common/mcp-oauth';
-import { MCPOAuthCallbackResponder } from './mcp-oauth-callback-responder';
+import { MCP_OAUTH_CALLBACK_PATH } from '../common/mcp-oauth.js';
+import { MCPOAuthCallbackResponder } from './mcp-oauth-callback-responder.js';
 
 /**
  * Browser/hosted transport for the MCP OAuth callback: a thin Express adapter over the shared

@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MarkdownString } from '../../common/markdown-rendering/markdown-string';
-import { AccessibilityInformation } from '../../common/accessibility';
-import { CancellationToken, MaybePromise } from '../../common';
+import { MarkdownString } from '../../common/markdown-rendering/markdown-string.js';
+import { AccessibilityInformation } from '../../common/accessibility.js';
+import { CancellationToken, MaybePromise } from '../../common/index.js';
 
 export interface StatusBarEntry {
     /**

@@ -19,15 +19,15 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as theia from '@theia/plugin';
-import * as rpc from '../../common';
-import { EditorsAndDocumentsExtImpl } from '../editors-and-documents';
+import * as rpc from '../../common/index.js';
+import { EditorsAndDocumentsExtImpl } from '../editors-and-documents.js';
 import * as notebookCommon from '@theia/notebook/lib/common';
 import { Disposable, URI } from '@theia/core';
-import * as typeConverters from '../type-converters';
-import { ModelAddedData, NotebookCellDto, NotebookCellsChangedEventDto, NotebookModelAddedData, NotebookOutputDto } from '../../common';
-import { NotebookRange } from '../types-impl';
-import { DocumentsExtImpl } from '../documents';
-import { UriComponents } from '../../common/uri-components';
+import * as typeConverters from '../type-converters.js';
+import { ModelAddedData, NotebookCellDto, NotebookCellsChangedEventDto, NotebookModelAddedData, NotebookOutputDto } from '../../common/index.js';
+import { NotebookRange } from '../types-impl.js';
+import { DocumentsExtImpl } from '../documents.js';
+import { UriComponents } from '../../common/uri-components.js';
 
 class RawContentChangeEvent {
 

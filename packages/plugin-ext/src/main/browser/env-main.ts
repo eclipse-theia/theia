@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { QueryParameters } from '../../common/env';
-export { EnvMainImpl } from '../common/env-main';
+import { QueryParameters } from '../../common/env.js';
+export { EnvMainImpl } from '../common/env-main.js';
 
 /**
  * Returns query parameters from current page.

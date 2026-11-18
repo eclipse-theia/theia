@@ -14,23 +14,23 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import debounce = require('lodash.debounce');
+import debounce from '../../../../shared/lodash.debounce/index.cjs';
 import { inject, injectable, named } from 'inversify';
 // eslint-disable-next-line max-len
-import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter, Event, MenuModelRegistry, MenuPath, ILogger } from '../../../common';
-import { ContextKeyService, ContextMatcher } from '../../context-key-service';
-import { FrontendApplicationContribution } from '../../frontend-application-contribution';
-import { Widget } from '../../widgets';
-import { Navigatable } from '../../navigatable-types';
-import { ResourceContextKey } from '../../resource-context-key';
-import { WidgetContextKeyContribution } from '../../widget-context-key-contribution';
-import { ReactTabBarToolbarAction, RenderedToolbarAction } from './tab-bar-toolbar-types';
-import { CommandMenuAsToolbarItemWrapper, SubmenuAsToolbarItemWrapper, ToolbarActionWrapper } from './tab-bar-toolbar-menu-adapters';
-import { KeybindingRegistry } from '../../keybinding';
-import { LabelParser } from '../../label-parser';
-import { ContextMenuRenderer } from '../../context-menu-renderer';
-import { CommandMenu, CompoundMenuNode, MenuNode, RenderedMenuNode } from '../../../common/menu';
-import { ReactToolbarItemImpl, RenderedToolbarItemImpl, TabBarToolbarItem } from './tab-toolbar-item';
+import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter, Event, MenuModelRegistry, MenuPath, ILogger } from '../../../common/index.js';
+import { ContextKeyService, ContextMatcher } from '../../context-key-service.js';
+import { FrontendApplicationContribution } from '../../frontend-application-contribution.js';
+import { Widget } from '../../widgets/index.js';
+import { Navigatable } from '../../navigatable-types.js';
+import { ResourceContextKey } from '../../resource-context-key.js';
+import { WidgetContextKeyContribution } from '../../widget-context-key-contribution.js';
+import { ReactTabBarToolbarAction, RenderedToolbarAction } from './tab-bar-toolbar-types.js';
+import { CommandMenuAsToolbarItemWrapper, SubmenuAsToolbarItemWrapper, ToolbarActionWrapper } from './tab-bar-toolbar-menu-adapters.js';
+import { KeybindingRegistry } from '../../keybinding.js';
+import { LabelParser } from '../../label-parser.js';
+import { ContextMenuRenderer } from '../../context-menu-renderer.js';
+import { CommandMenu, CompoundMenuNode, MenuNode, RenderedMenuNode } from '../../../common/menu/index.js';
+import { ReactToolbarItemImpl, RenderedToolbarItemImpl, TabBarToolbarItem } from './tab-toolbar-item.js';
 
 /**
  * Clients should implement this interface if they want to contribute to the tab-bar toolbar.

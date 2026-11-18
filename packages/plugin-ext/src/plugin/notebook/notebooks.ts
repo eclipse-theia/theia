@@ -19,25 +19,25 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { CancellationToken, Disposable, DisposableCollection, Emitter, Event, URI } from '@theia/core';
-import { URI as TheiaURI } from '../types-impl';
+import { URI as TheiaURI } from '../types-impl.js';
 import type * as theia from '@theia/plugin';
 import {
     NotebookCellStatusBarListDto, NotebookDataDto,
     NotebookDocumentsAndEditorsDelta, NotebookDocumentShowOptions, NotebookDocumentsMain, NotebookEditorAddData, NotebookEditorsMain, NotebooksExt, NotebooksMain, Plugin,
     PLUGIN_RPC_CONTEXT
-} from '../../common';
-import { Cache } from '../../common/cache';
-import { RPCProtocol } from '../../common/rpc-protocol';
-import { UriComponents } from '../../common/uri-components';
-import { CommandRegistryImpl, CommandsConverter } from '../command-registry';
-import * as typeConverters from '../type-converters';
+} from '../../common/index.js';
+import { Cache } from '../../common/cache.js';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
+import { UriComponents } from '../../common/uri-components.js';
+import { CommandRegistryImpl, CommandsConverter } from '../command-registry.js';
+import * as typeConverters from '../type-converters.js';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { Cell, NotebookDocument } from './notebook-document';
-import { NotebookEditor } from './notebook-editor';
-import { EditorsAndDocumentsExtImpl } from '../editors-and-documents';
-import { DocumentsExtImpl } from '../documents';
+import { Cell, NotebookDocument } from './notebook-document.js';
+import { NotebookEditor } from './notebook-editor.js';
+import { EditorsAndDocumentsExtImpl } from '../editors-and-documents.js';
+import { DocumentsExtImpl } from '../documents.js';
 import { CellUri, NotebookCellModelResource, NotebookModelResource } from '@theia/notebook/lib/common';
-import { PluginLogger } from '../logger';
+import { PluginLogger } from '../logger.js';
 
 export class NotebooksExtImpl implements NotebooksExt {
 

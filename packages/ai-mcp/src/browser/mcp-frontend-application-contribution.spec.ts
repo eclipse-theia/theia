@@ -31,10 +31,10 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
 import { MessageService, PreferenceService, ProgressMessage, ILogger } from '@theia/core';
-import { McpFrontendApplicationContribution } from './mcp-frontend-application-contribution';
+import { McpFrontendApplicationContribution } from './mcp-frontend-application-contribution.js';
 import {
     MCPFrontendNotificationService, MCPFrontendService, MCPOAuthFrontendDelegate, MCPServerDescription, MCPServerManager, MCPServersPreference, MCPServerStatus
-} from '../common';
+} from '../common/index.js';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';

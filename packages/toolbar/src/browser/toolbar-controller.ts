@@ -25,12 +25,12 @@ import {
     ToolbarTreeSchema,
     ToolbarAlignment,
     ToolbarItemPosition,
-} from './toolbar-interfaces';
-import { ToolbarStorageProvider, TOOLBAR_BAD_JSON_ERROR_MESSAGE } from './toolbar-storage-provider';
+} from './toolbar-interfaces.js';
+import { ToolbarStorageProvider, TOOLBAR_BAD_JSON_ERROR_MESSAGE } from './toolbar-storage-provider.js';
 import { ReactToolbarItemImpl, RenderedToolbarItemImpl, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar/tab-toolbar-item';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { LabelParser } from '@theia/core/lib/browser/label-parser';
-import { ToolbarCommands } from './toolbar-constants';
+import { ToolbarCommands } from './toolbar-constants.js';
 
 @injectable()
 export class ToolbarController {

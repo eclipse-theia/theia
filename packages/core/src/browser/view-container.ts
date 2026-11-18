@@ -18,30 +18,30 @@ import { interfaces, injectable, inject, postConstruct } from 'inversify';
 import { find, some, every, map, ArrayExt } from '@lumino/algorithm';
 import {
     Widget, EXPANSION_TOGGLE_CLASS, COLLAPSED_CLASS, CODICON_TREE_ITEM_CLASSES, MessageLoop, Message, SplitPanel,
-    BaseWidget, addEventListener, SplitLayout, LayoutItem, PanelLayout, addKeyListener, waitForRevealed, UnsafeWidgetUtilities, DockPanel, PINNED_CLASS
-} from './widgets';
-import { Event as CommonEvent, Emitter } from '../common/event';
-import { Disposable, DisposableCollection } from '../common/disposable';
-import { CommandRegistry } from '../common/command';
-import { MenuModelRegistry, MenuPath, MenuAction, SubmenuImpl, ActionMenuNode, Submenu } from '../common/menu';
-import { ApplicationShell, StatefulWidget, SplitPositionHandler, SplitPositionOptions, SIDE_PANEL_TOOLBAR_CONTEXT_MENU } from './shell';
-import { MAIN_AREA_ID, BOTTOM_AREA_ID } from './shell/theia-dock-panel';
-import { FrontendApplicationStateService } from './frontend-application-state';
-import { ContextMenuRenderer, Anchor } from './context-menu-renderer';
-import { parseCssMagnitude } from './browser';
-import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar, TabBarDelegator } from './shell/tab-bar-toolbar';
-import { isEmpty, isObject, nls } from '../common';
-import { WidgetManager } from './widget-manager';
-import { Key } from './keys';
-import { ProgressBarFactory } from './progress-bar-factory';
+    BaseWidget, addEventListener, SplitLayout, LayoutItem, PanelLayout, addKeyListener, UnsafeWidgetUtilities, DockPanel, PINNED_CLASS
+} from './widgets/index.js';
+import { Event as CommonEvent, Emitter } from '../common/event.js';
+import { Disposable, DisposableCollection } from '../common/disposable.js';
+import { CommandRegistry } from '../common/command.js';
+import { MenuModelRegistry, MenuPath, MenuAction, SubmenuImpl, ActionMenuNode, Submenu } from '../common/menu/index.js';
+import { ApplicationShell, StatefulWidget, SplitPositionHandler, SplitPositionOptions, SIDE_PANEL_TOOLBAR_CONTEXT_MENU } from './shell/index.js';
+import { MAIN_AREA_ID, BOTTOM_AREA_ID } from './shell/theia-dock-panel.js';
+import { FrontendApplicationStateService } from './frontend-application-state.js';
+import { ContextMenuRenderer, Anchor } from './context-menu-renderer.js';
+import { animationFrame, parseCssMagnitude } from './browser.js';
+import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar, TabBarDelegator } from './shell/tab-bar-toolbar/index.js';
+import { isEmpty, isObject, nls } from '../common/index.js';
+import { WidgetManager } from './widget-manager.js';
+import { Key } from './keys.js';
+import { ProgressBarFactory } from './progress-bar-factory.js';
 import { Drag } from '@lumino/dragdrop';
 import { MimeData } from '@lumino/coreutils';
 import { ElementExt } from '@lumino/domutils';
-import { TabBarDecoratorService } from './shell/tab-bar-decorator';
-import { ContextKeyService, ContextMatcher } from './context-key-service';
-import { KeybindingRegistry } from './keybinding';
-import { SubmenuAsToolbarItemWrapper } from './shell/tab-bar-toolbar/tab-bar-toolbar-menu-adapters';
-import { TheiaSplitPanel } from './shell/theia-split-panel';
+import { TabBarDecoratorService } from './shell/tab-bar-decorator.js';
+import { ContextKeyService, ContextMatcher } from './context-key-service.js';
+import { KeybindingRegistry } from './keybinding.js';
+import { SubmenuAsToolbarItemWrapper } from './shell/tab-bar-toolbar/tab-bar-toolbar-menu-adapters.js';
+import { TheiaSplitPanel } from './shell/theia-split-panel.js';
 
 export interface ViewContainerTitleOptions {
     label: string;
@@ -474,6 +474,26 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         return toRemoveWidget;
     }
 
+    /**
+     * Applies the pending part sizes one animation frame later: a container just shown has a provisional size until its
+     * first layout pass.
+     */
+    protected requestPendingPartSizes(): void {
+        if (this.pendingPartSizes && this.isVisible) {
+            this.pendingPartSizesFrame ??= animationFrame().then(() => {
+                this.pendingPartSizesFrame = undefined;
+                this.applyPendingPartSizes();
+            });
+        }
+    }
+
+    protected applyPendingPartSizes(): void {
+        if (this.pendingPartSizes && this.containerLayout.setPartSizes(this.pendingPartSizes())) {
+            this.pendingPartSizes = undefined;
+            this.updateSplitterVisibility();
+        }
+    }
+
     protected createPart(widget: Widget, partId: string, originalContainerId: string, originalContainerTitle?: ViewContainerTitleOptions,
         options?: ViewContainer.Factory.WidgetOptions): ViewContainerPart {
 
@@ -521,6 +541,12 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     }
 
     protected lastVisibleState: ViewContainer.State | undefined;
+    /**
+     * Sizes applied to the parts on the first reveal: the part weights, or the sizes of a restored layout. Parts added
+     * after it keep the sizes of the parts already shown.
+     */
+    protected pendingPartSizes: (() => (number | undefined)[]) | undefined = () => this.getParts().map(part => part.options.weight);
+    protected pendingPartSizesFrame: Promise<void> | undefined;
 
     storeState(): ViewContainer.State {
         if (!this.isVisible && this.lastVisibleState) {
@@ -588,10 +614,8 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         }
 
         // Restore part sizes
-        waitForRevealed(this).then(() => {
-            this.containerLayout.setPartSizes(partStates.map(partState => partState.relativeSize));
-            this.updateSplitterVisibility();
-        });
+        this.pendingPartSizes = () => partStates.map(partState => partState.relativeSize);
+        this.requestPendingPartSizes();
     }
 
     /**
@@ -725,6 +749,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             }
         }
         super.onAfterAttach(msg);
+        this.requestPendingPartSizes();
     }
 
     protected override onBeforeHide(msg: Message): void {
@@ -736,6 +761,12 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         super.onAfterShow(msg);
         this.updateTitle();
         this.lastVisibleState = undefined;
+        this.requestPendingPartSizes();
+    }
+
+    protected override onResize(msg: Widget.ResizeMessage): void {
+        super.onResize(msg);
+        this.requestPendingPartSizes();
     }
 
     protected override onBeforeAttach(msg: Message): void {
@@ -917,6 +948,7 @@ export namespace ViewContainer {
 
         export interface WidgetOptions {
             readonly order?: number;
+            /** Relative size of the part, applied when the container is first shown without a restored layout. */
             readonly weight?: number;
             readonly initiallyCollapsed?: boolean;
             readonly canHide?: boolean;
@@ -1426,10 +1458,15 @@ export class ViewContainerLayout extends SplitLayout {
      * Set the sizes of the view container parts according to the given weights
      * by moving the split handles. This is similar to `setRelativeSizes` defined
      * in `SplitLayout`, but here we properly consider the collapsed / expanded state.
+     *
+     * @returns `false` if the layout has no size yet, so nothing could be sized; `true` otherwise, even if no part has a weight.
      */
-    setPartSizes(weights: (number | undefined)[]): void {
+    setPartSizes(weights: (number | undefined)[]): boolean {
         const parts = this.widgets;
         const availableSize = this.getAvailableSize();
+        if (availableSize === 0) {
+            return false;
+        }
 
         // Sum up the weights of visible parts
         let totalWeight = 0;
@@ -1442,8 +1479,8 @@ export class ViewContainerLayout extends SplitLayout {
                 weightCount++;
             }
         }
-        if (weightCount === 0 || availableSize === 0) {
-            return;
+        if (weightCount === 0) {
+            return true;
         }
 
         // Add the average weight for visible parts without weight
@@ -1481,6 +1518,7 @@ export class ViewContainerLayout extends SplitLayout {
                 position += this.spacing;
             }
         }
+        return true;
     }
 
     /**

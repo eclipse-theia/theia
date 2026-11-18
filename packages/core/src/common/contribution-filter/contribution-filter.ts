@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { interfaces } from 'inversify';
-import { Filter } from './filter';
+import { Filter } from './filter.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ContributionType = interfaces.ServiceIdentifier<any>;

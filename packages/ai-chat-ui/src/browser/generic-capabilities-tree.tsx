@@ -19,7 +19,7 @@ import { nls } from '@theia/core';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { HoverService } from '@theia/core/lib/browser';
 import { GenericCapabilitySelections, ServerToolDescriptor } from '@theia/ai-core';
-import { AvailableGenericCapabilities, GenericCapabilityItem, GenericCapabilityGroup } from './generic-capabilities-service';
+import { AvailableGenericCapabilities, GenericCapabilityItem, GenericCapabilityGroup } from './generic-capabilities-service.js';
 
 /**
  * Optional "Server Tools" section for the current model's provider. When present, the tree shows a

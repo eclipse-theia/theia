@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as chai from 'chai';
-import { Endpoint } from './endpoint';
+import { Endpoint } from './endpoint.js';
 
 const expect = chai.expect;
 

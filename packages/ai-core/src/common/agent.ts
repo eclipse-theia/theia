@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRequirement } from './language-model';
-import { BasePromptFragment } from './prompt-service';
+import { LanguageModelRequirement } from './language-model.js';
+import { BasePromptFragment } from './prompt-service.js';
 
 export interface AgentSpecificVariables {
     name: string;

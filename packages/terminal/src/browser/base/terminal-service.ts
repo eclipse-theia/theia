@@ -15,7 +15,7 @@
 // *****************************************************************************
 import { Event } from '@theia/core/lib/common/event';
 import { WidgetOpenerOptions } from '@theia/core/lib/browser';
-import { TerminalWidgetOptions, TerminalWidget } from './terminal-widget';
+import { TerminalWidgetOptions, TerminalWidget } from './terminal-widget.js';
 
 /**
  * Service manipulating terminal widgets.

@@ -27,7 +27,7 @@ import { AIVariableResourceResolver } from '@theia/ai-core';
 import { InMemoryTaskContextStorage } from '@theia/ai-chat/lib/browser/task-context-storage-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { TaskContextFileStorageService } from './task-context-file-storage-service';
+import { TaskContextFileStorageService } from './task-context-file-storage-service.js';
 disableJSDOM();
 
 const workspaceRoot = new URI('file:///workspace');

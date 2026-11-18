@@ -18,7 +18,7 @@ import { expect } from 'chai';
 import { CompositeTreeNode } from '@theia/core/lib/browser/tree/tree';
 import { ExpandableTreeNode } from '@theia/core/lib/browser/tree/tree-expansion';
 import { AiConfigurationCategory, AiConfigurationTreeItem } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
-import { AiConfigurationCategoryNode, AiConfigurationItemNode, AiConfigurationSeparatorNode, AiConfigurationTree } from './ai-configuration-tree-nodes';
+import { AiConfigurationCategoryNode, AiConfigurationItemNode, AiConfigurationSeparatorNode, AiConfigurationTree } from './ai-configuration-tree-nodes.js';
 
 function category(id: string, kind: 'single-page' | 'collection', options?: {
     contributed?: boolean;

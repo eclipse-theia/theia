@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { generateUuid } from '../../common/uuid';
+import { generateUuid } from '../../common/uuid.js';
 
 export const FrontendIdProvider = Symbol('FrontendIdProvider');
 

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { bindEditorPreferences } from '../common/editor-preferences';
+import { bindEditorPreferences } from '../common/editor-preferences.js';
 
 export default new ContainerModule(bind => {
     bindEditorPreferences(bind);

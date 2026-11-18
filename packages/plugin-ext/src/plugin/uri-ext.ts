@@ -18,10 +18,10 @@ import * as theia from '@theia/plugin';
 import {
     UriExt,
     PLUGIN_RPC_CONTEXT, PluginInfo, UriMain
-} from '../common/plugin-api-rpc';
-import { RPCProtocol } from '../common/rpc-protocol';
-import { Disposable, URI } from './types-impl';
-import { UriComponents } from '../common/uri-components';
+} from '../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../common/rpc-protocol.js';
+import { Disposable, URI } from './types-impl.js';
+import { UriComponents } from '../common/uri-components.js';
 
 export class UriExtImpl implements UriExt {
 

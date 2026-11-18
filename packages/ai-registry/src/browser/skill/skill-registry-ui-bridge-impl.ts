@@ -22,9 +22,9 @@ import { SkillRegistryUiBridge } from '@theia/ai-core/lib/browser/skill-registry
 import { Skill, SKILL_FILE_NAME } from '@theia/ai-core/lib/common/skill';
 import { VSXExtensionsContribution } from '@theia/vsx-registry/lib/browser/vsx-extensions-contribution';
 import { VSXExtensionsSearchModel } from '@theia/vsx-registry/lib/browser/vsx-extensions-search-model';
-import { RegistryFetchService } from '../../common/registry-fetch-service';
-import { SkillInstallClientImpl } from './skill-install-client';
-import { SkillInstallService } from './skill-install-service';
+import { RegistryFetchService } from '../../common/registry-fetch-service.js';
+import { SkillInstallClientImpl } from './skill-install-client.js';
+import { SkillInstallService } from './skill-install-service.js';
 
 /**
  * Lets the AI configuration view label and reveal the skills this package manages, without

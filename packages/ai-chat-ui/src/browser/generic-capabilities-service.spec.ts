@@ -23,7 +23,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
-import { GenericCapabilitiesServiceImpl } from './generic-capabilities-service';
+import { GenericCapabilitiesServiceImpl } from './generic-capabilities-service.js';
 import { ToolRequest, PromptFragment, Skill, GenericCapabilitiesContribution, GenericCapabilityGroup } from '@theia/ai-core';
 import { ContributionProvider, Emitter } from '@theia/core';
 

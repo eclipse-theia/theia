@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { RPCProtocol } from '../../common/rpc-protocol';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
 import {
     LanguageModelToolsMain,
     LanguageModelToolsExt,
@@ -23,9 +23,9 @@ import {
     ToolResultPartDto,
     isToolInvocationError,
     base64ToUint8Array,
-} from '../../common/lm-tool-protocol';
+} from '../../common/lm-tool-protocol.js';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
+import { MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc.js';
 import { ToolInvocationRegistry } from '@theia/ai-core/lib/common';
 import { ToolRequest, ToolRequestParameters, ToolInvocationContext, ToolCallContent, ToolCallContentResult, createToolCallError } from '@theia/ai-core/lib/common/language-model';
 

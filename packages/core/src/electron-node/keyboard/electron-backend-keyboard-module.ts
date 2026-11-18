@@ -15,16 +15,17 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { ConnectionHandler, RpcConnectionHandler } from '../../common/messaging';
-import { KeyboardLayoutProvider, keyboardPath } from '../../common/keyboard/keyboard-layout-provider';
-import { ElectronKeyboardLayoutProvider } from './electron-keyboard-layout-provider';
+import { ConnectionHandler, RpcConnectionHandler } from '../../common/messaging/index.js';
+import { KeyboardLayoutProvider, keyboardPath } from '../../common/keyboard/keyboard-layout-provider.js';
+import { ElectronKeyboardLayoutProvider } from './electron-keyboard-layout-provider.js';
 
 export default new ContainerModule(bind => {
     bind(ElectronKeyboardLayoutProvider).toSelf().inSingletonScope();
     bind(KeyboardLayoutProvider).toService(ElectronKeyboardLayoutProvider);
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler(keyboardPath, () =>
-            ctx.container.get(KeyboardLayoutProvider)
+            ctx.container.get(KeyboardLayoutProvider),
+            { independentOfShellEnvironment: true }
         )
     ).inSingletonScope();
 });

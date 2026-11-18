@@ -20,8 +20,8 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import {
     ChatViewTreeWidget, isEditableRequestNode, isRequestNode,
     isResponseNode, RequestNode, ResponseNode, type EditableRequestNode
-} from './chat-tree-view/chat-view-tree-widget';
-import { AIChatInputWidget } from './chat-input-widget';
+} from './chat-tree-view/chat-view-tree-widget.js';
+import { AIChatInputWidget } from './chat-input-widget.js';
 import { AICommandHandlerFactory, ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
 
 export namespace ChatViewCommands {

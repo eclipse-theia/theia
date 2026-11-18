@@ -23,9 +23,9 @@ import 'reflect-metadata';
 import { expect } from 'chai';
 import { Container } from 'inversify';
 import { ILogger } from '@theia/core';
-import { CapabilityVariableContribution, CAPABILITY_VARIABLE } from './capability-variable-contribution';
-import { PromptService, PromptServiceImpl } from './prompt-service';
-import { DefaultAIVariableService, AIVariableService } from './variable-service';
+import { CapabilityVariableContribution, CAPABILITY_VARIABLE } from './capability-variable-contribution.js';
+import { PromptService, PromptServiceImpl } from './prompt-service.js';
+import { DefaultAIVariableService, AIVariableService } from './variable-service.js';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 disableJSDOM();

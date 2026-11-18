@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { interfaces, Container } from '@theia/core/shared/inversify';
-import { CustomTask, TaskFactory, TaskCustomOptions } from './custom-task';
-import { CustomTaskRunner } from './custom-task-runner';
-import { CustomTaskRunnerContribution } from './custom-task-runner-contribution';
-import { TaskRunnerContribution } from '../task-runner';
+import { CustomTask, TaskFactory, TaskCustomOptions } from './custom-task.js';
+import { CustomTaskRunner } from './custom-task-runner.js';
+import { CustomTaskRunnerContribution } from './custom-task-runner-contribution.js';
+import { TaskRunnerContribution } from '../task-runner.js';
 
 export function bindCustomTaskRunnerModule(bind: interfaces.Bind): void {
 

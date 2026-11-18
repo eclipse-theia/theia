@@ -18,9 +18,9 @@ import { PreferenceContribution } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { EXTERNAL_API_CONFIG_SERVICE_PATH, ExternalApiConfigService } from '../common/external-api-configuration';
-import { externalApiPreferenceSchema } from '../common/external-api-preferences';
-import { ExternalApiFrontendContribution } from './external-api-frontend-contribution';
+import { EXTERNAL_API_CONFIG_SERVICE_PATH, ExternalApiConfigService } from '../common/external-api-configuration.js';
+import { externalApiPreferenceSchema } from '../common/external-api-preferences.js';
+import { ExternalApiFrontendContribution } from './external-api-frontend-contribution.js';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: externalApiPreferenceSchema });

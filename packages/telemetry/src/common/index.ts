@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './telemetry-consent-provider';
-export * from './telemetry-preferences';
-export * from './telemetry-protocol';
-export * from './telemetry-service';
-export * from './telemetry-topic';
-export * from './telemetry-types';
+export * from './telemetry-consent-provider.js';
+export * from './telemetry-preferences.js';
+export * from './telemetry-protocol.js';
+export * from './telemetry-service.js';
+export * from './telemetry-topic.js';
+export * from './telemetry-types.js';

@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import { RemoteCliArgsContribution } from '@theia/core/lib/common/remote-cli-args-contribution';
-import { RemoteCliArgsCollector } from './remote-cli-args-collector';
+import { RemoteCliArgsCollector } from './remote-cli-args-collector.js';
 
 function collectorWith(contributions: RemoteCliArgsContribution[]): RemoteCliArgsCollector {
     const collector = new RemoteCliArgsCollector();

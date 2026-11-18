@@ -14,24 +14,24 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import debounce = require('p-debounce');
+import debounce from 'p-debounce';
 import { injectable, inject, postConstruct, interfaces, Container } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
-import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
-import { IDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
+import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor.js';
+import { IDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon.js';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection, MenuPath, isOSX } from '@theia/core';
 import { ContextMenuRenderer, isContextMenuEvent } from '@theia/core/lib/browser';
-import { BreakpointManager, SourceBreakpointsChangeEvent } from '../breakpoint/breakpoint-manager';
-import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint';
-import { DebugSessionManager } from '../debug-session-manager';
-import { SourceBreakpoint } from '../breakpoint/breakpoint-marker';
-import { DebugEditor } from './debug-editor';
-import { DebugHoverWidget, createDebugHoverWidgetContainer } from './debug-hover-widget';
-import { DebugBreakpointWidget } from './debug-breakpoint-widget';
-import { DebugExceptionWidget } from './debug-exception-widget';
+import { BreakpointManager, SourceBreakpointsChangeEvent } from '../breakpoint/breakpoint-manager.js';
+import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint.js';
+import { DebugSessionManager } from '../debug-session-manager.js';
+import { SourceBreakpoint } from '../breakpoint/breakpoint-marker.js';
+import { DebugEditor } from './debug-editor.js';
+import { DebugHoverWidget, createDebugHoverWidgetContainer } from './debug-hover-widget.js';
+import { DebugBreakpointWidget } from './debug-breakpoint-widget.js';
+import { DebugExceptionWidget } from './debug-exception-widget.js';
 import { DebugProtocol } from '@vscode/debugprotocol';
-import { DebugInlineValueDecorator, INLINE_VALUE_DECORATION_KEY } from './debug-inline-value-decorator';
+import { DebugInlineValueDecorator, INLINE_VALUE_DECORATION_KEY } from './debug-inline-value-decorator.js';
 
 export const DebugEditorModelFactory = Symbol('DebugEditorModelFactory');
 export type DebugEditorModelFactory = (editor: DebugEditor) => DebugEditorModel;

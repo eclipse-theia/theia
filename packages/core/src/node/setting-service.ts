@@ -16,9 +16,9 @@
 
 import { promises as fs } from 'fs';
 import { inject, injectable, postConstruct, named } from 'inversify';
-import { ILogger, URI } from '../common';
-import { EnvVariablesServer } from '../common/env-variables';
-import { Deferred } from '../common/promise-util';
+import { ILogger, URI } from '../common/index.js';
+import { EnvVariablesServer } from '../common/env-variables/index.js';
+import { Deferred } from '../common/promise-util.js';
 
 export const SettingService = Symbol('SettingService');
 

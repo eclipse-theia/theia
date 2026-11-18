@@ -20,13 +20,23 @@
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { IRawTheme } from 'vscode-textmate';
 import * as monaco from '@theia/monaco-editor-core';
-import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { StandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneThemeService';
-import { Color } from '@theia/monaco-editor-core/esm/vs/base/common/color';
-import { MixStandaloneTheme, MonacoThemeColor, TextmateRegistryFactory, ThemeMix } from './monaco-theme-types';
+import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme.js';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { StandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneThemeService.js';
+import { Color } from '@theia/monaco-editor-core/esm/vs/base/common/color.js';
+import { MixStandaloneTheme, MonacoThemeColor, TextmateRegistryFactory, ThemeMix } from './monaco-theme-types.js';
 import { ILogger } from '@theia/core';
 import { ThemeType } from '@theia/core/lib/common/theme';
+import darkPlusTheme from '../../../data/monaco-themes/vscode/dark_plus.json' with { type: 'json' };
+import darkTheiaTheme from '../../../data/monaco-themes/vscode/dark_theia.json' with { type: 'json' };
+import darkVsTheme from '../../../data/monaco-themes/vscode/dark_vs.json' with { type: 'json' };
+import hcBlackTheme from '../../../data/monaco-themes/vscode/hc_black.json' with { type: 'json' };
+import hcLightTheme from '../../../data/monaco-themes/vscode/hc_light.json' with { type: 'json' };
+import hcTheiaTheme from '../../../data/monaco-themes/vscode/hc_theia.json' with { type: 'json' };
+import hcTheiaLightTheme from '../../../data/monaco-themes/vscode/hc_theia_light.json' with { type: 'json' };
+import lightPlusTheme from '../../../data/monaco-themes/vscode/light_plus.json' with { type: 'json' };
+import lightTheiaTheme from '../../../data/monaco-themes/vscode/light_theia.json' with { type: 'json' };
+import lightVsTheme from '../../../data/monaco-themes/vscode/light_vs.json' with { type: 'json' };
 
 @injectable()
 export class MonacoThemeRegistry {
@@ -37,19 +47,19 @@ export class MonacoThemeRegistry {
     protected readonly logger: ILogger;
 
     initializeDefaultThemes(): void {
-        this.register(require('../../../data/monaco-themes/vscode/dark_theia.json'), {
-            './dark_vs.json': require('../../../data/monaco-themes/vscode/dark_vs.json'),
-            './dark_plus.json': require('../../../data/monaco-themes/vscode/dark_plus.json')
+        this.register(darkTheiaTheme, {
+            './dark_vs.json': darkVsTheme,
+            './dark_plus.json': darkPlusTheme
         }, 'dark-theia', 'vs-dark');
-        this.register(require('../../../data/monaco-themes/vscode/light_theia.json'), {
-            './light_vs.json': require('../../../data/monaco-themes/vscode/light_vs.json'),
-            './light_plus.json': require('../../../data/monaco-themes/vscode/light_plus.json'),
+        this.register(lightTheiaTheme, {
+            './light_vs.json': lightVsTheme,
+            './light_plus.json': lightPlusTheme,
         }, 'light-theia', 'vs');
-        this.register(require('../../../data/monaco-themes/vscode/hc_theia.json'), {
-            './hc_black.json': require('../../../data/monaco-themes/vscode/hc_black.json')
+        this.register(hcTheiaTheme, {
+            './hc_black.json': hcBlackTheme
         }, 'hc-theia', 'hc-black');
-        this.register(require('../../../data/monaco-themes/vscode/hc_theia_light.json'), {
-            './hc_light.json': require('../../../data/monaco-themes/vscode/hc_light.json')
+        this.register(hcTheiaLightTheme, {
+            './hc_light.json': hcLightTheme
         }, 'hc-theia-light', 'hc-light');
     }
 

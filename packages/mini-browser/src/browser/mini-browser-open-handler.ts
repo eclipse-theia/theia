@@ -28,9 +28,9 @@ import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { WidgetOpenerOptions } from '@theia/core/lib/browser/widget-open-handler';
-import { MiniBrowserService } from '../common/mini-browser-service';
-import { MiniBrowser, MiniBrowserProps } from './mini-browser';
-import { LocationMapperService } from './location-mapper-service';
+import { MiniBrowserService } from '../common/mini-browser-service.js';
+import { MiniBrowser, MiniBrowserProps } from './mini-browser.js';
+import { LocationMapperService } from './location-mapper-service.js';
 import { nls } from '@theia/core/lib/common/nls';
 
 export namespace MiniBrowserCommands {

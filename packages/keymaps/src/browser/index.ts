@@ -14,6 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './keymaps-frontend-module';
-export * from './keymaps-service';
-export * from './keymaps-frontend-contribution';
+export * from './keymaps-frontend-module.js';
+export * from './keymaps-service.js';
+export * from './keymaps-frontend-contribution.js';

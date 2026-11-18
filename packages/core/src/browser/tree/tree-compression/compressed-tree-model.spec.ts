@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { MockTreeModel } from '../test/mock-tree-model';
-import { createTreeTestContainer } from '../test/tree-test-container';
-import { TreeNode } from '../tree';
-import { ExpandableTreeNode } from '../tree-expansion';
-import { TreeModel } from '../tree-model';
-import { TopDownCompressedTreeIterator } from './compressed-tree-model';
-import { CompressionParent, TreeCompressionService } from './tree-compression-service';
+import { MockTreeModel } from '../test/mock-tree-model.js';
+import { createTreeTestContainer } from '../test/tree-test-container.js';
+import { TreeNode } from '../tree.js';
+import { ExpandableTreeNode } from '../tree-expansion.js';
+import { TreeModel } from '../tree-model.js';
+import { TopDownCompressedTreeIterator } from './compressed-tree-model.js';
+import { CompressionParent, TreeCompressionService } from './tree-compression-service.js';
 
 describe('TopDownCompressedTreeIterator', () => {
 

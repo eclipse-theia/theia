@@ -20,9 +20,9 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import * as strings from './strings';
-import * as paths from './paths';
-import { CharCode } from './char-code';
+import * as strings from './strings.js';
+import * as paths from './paths.js';
+import { CharCode } from './char-code.js';
 
 /* eslint-disable @typescript-eslint/no-shadow, no-null/no-null */
 export interface IExpression {

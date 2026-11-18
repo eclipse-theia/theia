@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './mcp-theia-server';
-export * from './mcp-theia-server-impl';
-export * from './mcp-backend-contribution-manager';
-export * from './mcp-frontend-contribution-manager';
+export * from './mcp-theia-server.js';
+export * from './mcp-theia-server-impl.js';
+export * from './mcp-backend-contribution-manager.js';
+export * from './mcp-frontend-contribution-manager.js';

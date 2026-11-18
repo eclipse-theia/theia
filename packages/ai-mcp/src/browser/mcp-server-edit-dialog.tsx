@@ -19,7 +19,7 @@ import { nls } from '@theia/core';
 import { DialogProps } from '@theia/core/lib/browser/dialogs';
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
 import { SelectComponent } from '@theia/core/lib/browser/widgets/select-component';
-import { isHttpOrHttpsUrl } from '../common/mcp-server-preference-validator';
+import { isHttpOrHttpsUrl } from '../common/mcp-server-preference-validator.js';
 
 /** Server type edited in the dialog: local stdio launch, remote URL with token authentication, or remote URL with OAuth. */
 export type MCPServerType = 'local' | 'remote' | 'remote-oauth';
@@ -244,7 +244,7 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                 </div>
 
                 <div className="mcp-form-field">
-                    <label>{nls.localize('theia/ai/mcpConfiguration/environmentVariables', 'Environment Variables')}:</label>
+                    <label>{nls.localizeByDefault('Environment Variables')}:</label>
                     <textarea
                         className="theia-input"
                         defaultValue={this.formData.env}
@@ -297,7 +297,7 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
         return (
             <>
                 <div className="mcp-form-field">
-                    <label>{nls.localize('theia/ai/mcpConfiguration/serverUrl', 'Server URL')}:</label>
+                    <label>{nls.localizeByDefault('Server URL')}:</label>
                     <input
                         type="text"
                         className="theia-input"

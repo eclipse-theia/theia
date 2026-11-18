@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { AIScanOSSPreferencesSchema } from '../common/ai-scanoss-preferences';
+import { AIScanOSSPreferencesSchema } from '../common/ai-scanoss-preferences.js';
 import { PreferenceContribution } from '@theia/core';
 
 export default new ContainerModule(bind => {

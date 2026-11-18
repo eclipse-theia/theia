@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { IconRegistry } from '@theia/core/lib/browser/icon-registry';
-import { getIconRegistry } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/iconRegistry';
+import { getIconRegistry } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/iconRegistry.js';
 import { IconDefinition, IconFontDefinition, ThemeIcon } from '@theia/core/lib/common/theme';
 
 @injectable()

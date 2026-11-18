@@ -22,7 +22,7 @@ import URI from '@theia/core/lib/common/uri';
 import { Location } from '@theia/editor/lib/browser/editor';
 import { TreeDecoration, DecoratedTreeNode } from '@theia/core/lib/browser/tree/tree-decorator';
 import { TreeImpl, TreeNode, CompositeTreeNode, ExpandableTreeNode, SelectableTreeNode } from '@theia/core/lib/browser/tree';
-import { TypeHierarchyProvider, TypeHierarchyDirection, ResolveTypeHierarchyItemParams, TypeHierarchyItem } from '../typehierarchy-provider';
+import { TypeHierarchyProvider, TypeHierarchyDirection, ResolveTypeHierarchyItemParams, TypeHierarchyItem } from '../typehierarchy-provider.js';
 
 @injectable()
 export class TypeHierarchyTree extends TreeImpl {

@@ -26,7 +26,7 @@ import {
     VSCODE_FRONTEND_INIT,
     THEIA_PLUGIN_START_METHOD,
     THEIA_PLUGIN_STOP_METHOD
-} from './constants';
+} from './constants.js';
 import {
     applyTrustExtraction,
     buildEntryPointForTheia,
@@ -40,9 +40,9 @@ import {
     pickEngineType,
     toPluginUri,
     toPluginUrl
-} from './plugin-model';
-import { getPluginRootFileUrl } from '../node/plugin-model';
-import { manifest } from './test-helpers';
+} from './plugin-model.js';
+import { getPluginRootFileUrl } from '../node/plugin-model.js';
+import { manifest } from './test-helpers.js';
 
 describe('plugin-model', () => {
 

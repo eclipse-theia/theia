@@ -18,8 +18,8 @@ import { MessageService, nls, Progress, ILogger } from '@theia/core';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
-import { MCP_OAUTH_CALLBACK_PATH, MCPOAuthFrontendDelegateClient } from '../common/mcp-oauth';
-import { MCPFrontendNotificationService } from '../common/mcp-server-manager';
+import { MCP_OAUTH_CALLBACK_PATH, MCPOAuthFrontendDelegateClient } from '../common/mcp-oauth.js';
+import { MCPFrontendNotificationService } from '../common/mcp-server-manager.js';
 
 @injectable()
 export class MCPOAuthFrontendDelegateClientImpl implements MCPOAuthFrontendDelegateClient {

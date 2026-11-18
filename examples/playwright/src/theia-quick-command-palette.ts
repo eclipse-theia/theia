@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ElementHandle } from '@playwright/test';
+import { ElementHandle, expect } from '@playwright/test';
 import { TheiaPageObject } from './theia-page-object';
 import { OSUtil, USER_KEY_TYPING_DELAY } from './util';
 
@@ -32,36 +32,57 @@ export class TheiaQuickCommandPalette extends TheiaPageObject {
         await this.page.waitForSelector(this.selector, { state: 'hidden' });
     }
 
-    async isOpen(): Promise<boolean> {
-        try {
-            await this.page.waitForSelector(this.selector, { timeout: 5000 });
-        } catch (err) {
-            return false;
-        }
-        return true;
+    async waitForVisible(): Promise<void> {
+        await this.page.waitForSelector(this.selector, { state: 'visible' });
     }
 
+    async isOpen(): Promise<boolean> {
+        return this.page.locator(this.selector).isVisible();
+    }
+
+    /**
+     * Triggers one or more commands sequentially.
+     * When passing multiple command names, subsequent commands expect the previous command
+     * to have opened a sub-quick-pick (e.g. `View: Open View...`).
+     *
+     * @param commandName The command name(s) to trigger.
+     */
     async trigger(...commandName: string[]): Promise<void> {
-        for (const command of commandName) {
-            await this.triggerSingleCommand(command);
+        for (let i = 0; i < commandName.length; i++) {
+            await this.triggerSingleCommand(commandName[i]);
+            if (i < commandName.length - 1) {
+                await this.page.waitForSelector(this.selector, { state: 'visible' });
+            }
         }
     }
 
     protected async triggerSingleCommand(commandName: string): Promise<void> {
         if (!await this.isOpen()) {
-            this.open();
+            await this.open();
         }
+        const input = this.page.locator(`${this.selector} .monaco-inputbox .input`);
+        const query = (await input.inputValue()).replace(/^(>|view\s+)/, '').trim();
+        const hasMatchingFilter = query.length > 0 && commandName.toLowerCase().includes(query.toLowerCase());
+
+        if (!hasMatchingFilter) {
+            await this.type(commandName);
+        }
+
         let selected = await this.selectedCommand();
-        while (!(await selected?.innerText() === commandName)) {
+        let attempts = 0;
+        while (selected && await selected.innerText() !== commandName && attempts < 10) {
             await this.page.keyboard.press('ArrowDown');
             selected = await this.selectedCommand();
+            attempts++;
         }
+
+        await expect(this.page.locator(`${this.selector} .monaco-list-row.focused .monaco-highlighted-label`).first()).toHaveText(commandName, { timeout: 5000 });
         await this.page.keyboard.press('Enter');
     }
 
     async type(value: string, confirm = false): Promise<void> {
         if (!await this.isOpen()) {
-            this.open();
+            await this.open();
         }
         const input = this.page.locator(`${this.selector} .monaco-inputbox .input`);
         await input.focus();

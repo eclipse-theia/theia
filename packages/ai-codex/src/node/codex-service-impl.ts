@@ -21,7 +21,7 @@ import {
     CodexBackendRequest,
     CodexClient,
     CodexService
-} from '../common/codex-service';
+} from '../common/codex-service.js';
 
 @injectable()
 export class CodexServiceImpl implements CodexService {

@@ -25,10 +25,10 @@ import 'reflect-metadata';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
-import { SkillsVariableContribution, SKILLS_VARIABLE, SKILL_VARIABLE, ResolvedSkillsVariable } from './skills-variable-contribution';
+import { SkillsVariableContribution, SKILLS_VARIABLE, SKILL_VARIABLE, ResolvedSkillsVariable } from './skills-variable-contribution.js';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { SkillService } from './skill-service';
-import { Skill } from '../common/skill';
+import { SkillService } from './skill-service.js';
+import { Skill } from '../common/skill.js';
 
 disableJSDOM();
 

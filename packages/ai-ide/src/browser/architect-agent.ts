@@ -20,13 +20,13 @@ import {
 import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { LanguageModelRequirement } from '@theia/ai-core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { architectSystemVariants, ARCHITECT_PLANNING_PROMPT_ID, ARCHITECT_SIMPLE_PROMPT_ID, ARCHITECT_PLANNING_NEXT_PROMPT_ID } from './architect-prompt-template';
+import { architectSystemVariants, ARCHITECT_PLANNING_PROMPT_ID, ARCHITECT_SIMPLE_PROMPT_ID, ARCHITECT_PLANNING_NEXT_PROMPT_ID } from './architect-prompt-template.js';
 import { ILogger, nls } from '@theia/core';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
-import { AI_EXECUTE_PLAN_WITH_CODER } from '../common/summarize-session-commands';
-import { AbstractModeAwareChatAgent } from './mode-aware-chat-agent';
-import { ArchitectAgentId } from '../common/agent-ids';
+import { AI_EXECUTE_PLAN_WITH_CODER } from '../common/summarize-session-commands.js';
+import { AbstractModeAwareChatAgent } from './mode-aware-chat-agent.js';
+import { ArchitectAgentId } from '../common/agent-ids.js';
 
 export { ArchitectAgentId };
 

@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { OpenAiModelDescription } from '../common';
-import { OpenAiLanguageModelsManagerImpl } from './openai-language-models-manager-impl';
-import { OPENAI_SERVER_TOOLS, OPENAI_WEB_SEARCH } from './openai-server-tools';
+import { OpenAiModelDescription } from '../common/index.js';
+import { OpenAiLanguageModelsManagerImpl } from './openai-language-models-manager-impl.js';
+import { OPENAI_SERVER_TOOLS, OPENAI_WEB_SEARCH } from './openai-server-tools.js';
 import { APIConnectionError } from 'openai';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { DiscoveredModel } from '@theia/ai-core';

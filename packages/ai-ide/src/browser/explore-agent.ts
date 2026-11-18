@@ -18,8 +18,8 @@ import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common/chat-a
 import { LanguageModelRequirement } from '@theia/ai-core/lib/common';
 import { ILogger, nls } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { exploreSystemPrompt, EXPLORE_SYSTEM_PROMPT_ID } from './explore-prompt-template';
-import { ExploreAgentId } from '../common/agent-ids';
+import { exploreSystemPrompt, EXPLORE_SYSTEM_PROMPT_ID } from './explore-prompt-template.js';
+import { ExploreAgentId } from '../common/agent-ids.js';
 
 export { ExploreAgentId };
 

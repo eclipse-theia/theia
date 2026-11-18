@@ -22,8 +22,8 @@
  * The only manual work required during a Monaco uplift is to run the command and then update any fields of the interface where the
  * schema type is `array` or `object`, since it is tricky to extract the type details for such fields automatically.
  */
-import { ConfigurationScope, Extensions, IConfigurationRegistry } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configurationRegistry';
-import { Registry } from '@theia/monaco-editor-core/esm/vs/platform/registry/common/platform';
+import { ConfigurationScope, Extensions, IConfigurationRegistry } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configurationRegistry.js';
+import { Registry } from '@theia/monaco-editor-core/esm/vs/platform/registry/common/platform.js';
 import { CommandContribution, CommandRegistry, MaybeArray, MessageService, nls, PreferenceScope, ILogger } from '@theia/core';
 import { inject, injectable, interfaces, named } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -31,7 +31,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { PreferenceValidationService } from '@theia/core/lib/browser';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import { JsonType } from '@theia/core/lib/common/json-schema';
-import { editorOptionsRegistry } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
+import { editorOptionsRegistry } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions.js';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { PreferenceDataProperty } from '@theia/core/lib/common/preferences/preference-schema';
 

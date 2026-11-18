@@ -18,8 +18,8 @@ import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
-import { ExtensionsSourceContribution } from './extensions-source-contribution';
-import { VSXExtensionsSearchModel, VSXSearchMode } from './vsx-extensions-search-model';
+import { ExtensionsSourceContribution } from './extensions-source-contribution.js';
+import { VSXExtensionsSearchModel, VSXSearchMode } from './vsx-extensions-search-model.js';
 
 class StubContribution implements ExtensionsSourceContribution {
     readonly onDidChange = new Emitter<void>().event;

@@ -23,8 +23,8 @@ import { Emitter } from '@theia/core';
 import { ChatAgentLocation, ChatService, ChatSession, ChatSessionMetadata, ChatSessionStatus } from '@theia/ai-chat';
 import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
 import { ApplicationShell, Widget } from '@theia/core/lib/browser';
-import { ChatSessionListService } from './chat-session-list-service';
-import { SectionedSessions, SessionRow, computeVisibleSessionSlots } from './chat-session-list-components';
+import { ChatSessionListService } from './chat-session-list-service.js';
+import { SectionedSessions, SessionRow, computeVisibleSessionSlots } from './chat-session-list-components.js';
 disableJSDOM();
 
 /**

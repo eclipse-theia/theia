@@ -23,14 +23,14 @@ import {
     VSCODE_EXTENSION_ACTIVATE,
     VSCODE_EXTENSION_DEACTIVATE,
     VSCODE_FRONTEND_INIT
-} from './constants';
+} from './constants.js';
 import type {
     PluginEntryPoint,
     PluginLifecycle,
     PluginModel,
     PluginManifest,
     PluginPackageCapabilities
-} from './manifest-types';
+} from './manifest-types.js';
 
 export interface PluginIdentifierSource {
     publisher?: string;

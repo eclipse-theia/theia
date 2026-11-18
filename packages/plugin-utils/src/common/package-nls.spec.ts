@@ -15,11 +15,12 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import * as fs from 'fs-extra';
+// A CommonJS module whose exports cannot be detected statically, so it is imported as a whole.
+import fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
-import { coerceLocalizations, localizePackage, localizeWithResolver } from './package-nls';
-import { loadPackageTranslations } from '../node/package-nls';
+import { coerceLocalizations, localizePackage, localizeWithResolver } from './package-nls.js';
+import { loadPackageTranslations } from '../node/package-nls.js';
 
 describe('package-nls', () => {
 

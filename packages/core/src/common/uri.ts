@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { URI as Uri } from 'vscode-uri';
-import { Path } from './path';
+import { Path } from './path.js';
 
 export class URI {
 

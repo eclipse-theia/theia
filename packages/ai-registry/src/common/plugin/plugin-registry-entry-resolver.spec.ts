@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { PluginRegistryEntryResolverImpl } from './plugin-registry-entry-resolver';
-import { RegistryPlugin, RegistryPluginApproval } from './plugin-registry-types';
+import { PluginRegistryEntryResolverImpl } from './plugin-registry-entry-resolver.js';
+import { RegistryPlugin, RegistryPluginApproval } from './plugin-registry-types.js';
 
 function approval(organizationId: string, date: string, installConfigs: RegistryPluginApproval['installConfigs'] = []): RegistryPluginApproval {
     return { organizationId, date, configHash: `hash-${organizationId}`, installConfigs };

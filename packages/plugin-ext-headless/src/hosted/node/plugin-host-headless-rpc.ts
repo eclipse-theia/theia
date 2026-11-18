@@ -19,11 +19,11 @@ import { ContainerModule, injectable, inject } from '@theia/core/shared/inversif
 import { EnvExtImpl } from '@theia/plugin-ext/lib/plugin/env';
 import { LocalizationExt } from '@theia/plugin-ext';
 import { LocalizationExtImpl } from '@theia/plugin-ext/lib/plugin/localization-ext';
-import { HEADLESSMAIN_RPC_CONTEXT } from '../../common/headless-plugin-rpc';
-import { HeadlessPluginManagerExtImpl } from '../../plugin/headless-plugin-manager';
+import { HEADLESSMAIN_RPC_CONTEXT } from '../../common/headless-plugin-rpc.js';
+import { HeadlessPluginManagerExtImpl } from '../../plugin/headless-plugin-manager.js';
 import { AbstractPluginHostRPC, ExtInterfaces } from '@theia/plugin-ext/lib/hosted/node/plugin-host-rpc';
 import { PluginModel } from '@theia/plugin-ext/lib/common/plugin-protocol';
-import { ExtPluginApi, ExtPluginApiHeadlessInitializationFn } from '../../common/plugin-ext-headless-api-contribution';
+import { ExtPluginApi, ExtPluginApiHeadlessInitializationFn } from '../../common/plugin-ext-headless-api-contribution.js';
 
 type HeadlessExtInterfaces = Pick<ExtInterfaces, 'envExt' | 'localizationExt'>;
 

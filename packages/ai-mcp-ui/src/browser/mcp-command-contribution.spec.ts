@@ -23,7 +23,7 @@ import { expect } from 'chai';
 import { Command, CommandHandler, CommandRegistry, ILogger, MessageService } from '@theia/core';
 import { QuickInputService } from '@theia/core/lib/browser';
 import { MCPFrontendService, MCPOAuthFrontendDelegate, MCPServerDescription, MCPServerStatus } from '@theia/ai-mcp';
-import { GetMCPOAuthRedirectUrl, MCPCommandContribution, SignInMCPServer, SignOutMCPServer, StartMCPServer, StopMCPServer } from './mcp-command-contribution';
+import { GetMCPOAuthRedirectUrl, MCPCommandContribution, SignInMCPServer, SignOutMCPServer, StartMCPServer, StopMCPServer } from './mcp-command-contribution.js';
 
 disableJSDOM();
 

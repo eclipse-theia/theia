@@ -22,7 +22,7 @@ import { ReactNode } from '@theia/core/shared/react';
 import * as React from '@theia/core/shared/react';
 import { codicon, ContextMenuRenderer, KeybindingRegistry, OpenerService } from '@theia/core/lib/browser';
 import { nls } from '@theia/core';
-import { TODO_WRITE_FUNCTION_ID, TodoItem, isValidTodoItem } from '../common/todo-tool';
+import { TODO_WRITE_FUNCTION_ID, TodoItem, isValidTodoItem } from '../common/todo-tool.js';
 import { ToolConfirmationKeybindingHints, withToolCallConfirmation } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/tool-confirmation';
 import {
     APPROVE_LATEST_TOOL_CONFIRMATION_COMMAND,

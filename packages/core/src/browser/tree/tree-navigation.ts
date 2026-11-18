@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { TreeNode } from './tree';
+import { TreeNode } from './tree.js';
 
 @injectable()
 export class TreeNavigationService {

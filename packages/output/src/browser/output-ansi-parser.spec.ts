@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { parseAnsi } from './output-ansi-parser';
+import { parseAnsi } from './output-ansi-parser.js';
 
 describe('Output ANSI Parser', () => {
 

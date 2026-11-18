@@ -16,10 +16,10 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import * as Docker from 'dockerode';
-import { ComposeContainer, DevContainerConfiguration } from '../devcontainer-file';
-import { ContainerOutputProvider } from '../../electron-common/container-output-provider';
+import { ComposeContainer, DevContainerConfiguration } from '../devcontainer-file.js';
+import { ContainerOutputProvider } from '../../electron-common/container-output-provider.js';
 import { spawn } from 'child_process';
-import path = require('path');
+import * as path from 'path';
 
 @injectable()
 export class DockerComposeService {

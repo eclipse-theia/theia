@@ -51,24 +51,24 @@ import {
     TaskOutputProcessedEvent,
     TaskServer,
     asVariableName
-} from '../common';
-import { TaskWatcher } from '../common/task-watcher';
-import { ProvidedTaskConfigurations } from './provided-task-configurations';
-import { TaskConfigurationClient, TaskConfigurations } from './task-configurations';
-import { TaskResolverRegistry } from './task-contribution';
-import { TaskDefinitionRegistry } from './task-definition-registry';
-import { TaskNameResolver } from './task-name-resolver';
-import { TaskSourceResolver } from './task-source-resolver';
-import { ProblemMatcherRegistry } from './task-problem-matcher-registry';
-import { TaskSchemaUpdater } from './task-schema-updater';
-import { TaskConfigurationManager } from './task-configuration-manager';
+} from '../common/index.js';
+import { TaskWatcher } from '../common/task-watcher.js';
+import { ProvidedTaskConfigurations } from './provided-task-configurations.js';
+import { TaskConfigurationClient, TaskConfigurations } from './task-configurations.js';
+import { TaskResolverRegistry } from './task-contribution.js';
+import { TaskDefinitionRegistry } from './task-definition-registry.js';
+import { TaskNameResolver } from './task-name-resolver.js';
+import { TaskSourceResolver } from './task-source-resolver.js';
+import { ProblemMatcherRegistry } from './task-problem-matcher-registry.js';
+import { TaskSchemaUpdater } from './task-schema-updater.js';
+import { TaskConfigurationManager } from './task-configuration-manager.js';
 import { PROBLEMS_WIDGET_ID, ProblemWidget } from '@theia/markers/lib/browser/problem/problem-widget';
-import { TaskNode } from './task-node';
+import { TaskNode } from './task-node.js';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
-import { TaskTerminalWidgetManager } from './task-terminal-widget-manager';
+import { TaskTerminalWidgetManager } from './task-terminal-widget-manager.js';
 import { ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-terminal-protocol';
 import { Mutex } from 'async-mutex';
-import { TaskContextKeyService } from './task-context-key-service';
+import { TaskContextKeyService } from './task-context-key-service.js';
 import { TerminalPreferences } from '@theia/terminal/lib/common/terminal-preferences';
 
 export interface QuickPickProblemMatcherItem {
@@ -798,7 +798,7 @@ export class TaskService implements TaskConfigurationClient {
                 }
                 const terminateTaskAction = nls.localizeByDefault('Terminate Task');
                 const restartTaskAction = nls.localizeByDefault('Restart Running Task');
-                const selectedAction = await this.messageService.info(nls.localizeByDefault('Task `{0}` is already running.', taskName), terminateTaskAction, restartTaskAction);
+                const selectedAction = await this.messageService.info(nls.localizeByDefault('Task \'{0}\' is already running.', taskName), terminateTaskAction, restartTaskAction);
                 if (selectedAction === terminateTaskAction) {
                     await this.terminateTask(matchedRunningTaskInfo);
                 } else if (selectedAction === restartTaskAction) {
@@ -1143,7 +1143,11 @@ export class TaskService implements TaskConfigurationClient {
         await this.taskConfigurations.configure(token, task);
     }
 
-    protected isEventForThisClient(context: string | undefined): boolean {
+    /**
+     * @param context the context of a task event, see {@link TaskInfo.ctx}
+     * @returns whether the event is for a task started by this client
+     */
+    isEventForThisClient(context: string | undefined): boolean {
         if (context === this.getContext()) {
             return true;
         }

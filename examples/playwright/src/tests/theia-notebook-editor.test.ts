@@ -23,11 +23,11 @@ import { TheiaNotebookEditor } from '../theia-notebook-editor';
 import { TheiaWorkspace } from '../theia-workspace';
 
 // See .github/workflows/playwright.yml for preferred python version
-const preferredKernel = process.env.CI ? 'Python 3.13' : 'Python 3';
+const preferredKernel = process.env.CI ? '3.13' : 'Python 3';
 
 async function ensureKernelSelected(editor: TheiaNotebookEditor): Promise<void> {
     const selectedKernel = await editor.selectedKernel();
-    if (selectedKernel?.match(new RegExp(`^${preferredKernel}`)) === null) {
+    if (!selectedKernel?.includes(preferredKernel)) {
         await editor.selectKernel(preferredKernel);
     }
 }
@@ -68,14 +68,14 @@ test.describe('Python Kernel Installed', () => {
         console.log(msg); // Print available kernels, useful when running in CI.
         expect(kernels.length, msg).toBeGreaterThan(0);
 
-        const py3kernel = kernels.filter(kernel => kernel.match(new RegExp(`^${preferredKernel}`)));
+        const py3kernel = kernels.filter(kernel => kernel.includes(preferredKernel));
         expect(py3kernel.length, msg).toBeGreaterThan(0);
     });
 
     test('should select a kernel', async () => {
         await editor.selectKernel(preferredKernel);
         const selectedKernel = await editor.selectedKernel();
-        expect(selectedKernel).toMatch(new RegExp(`^${preferredKernel}`));
+        expect(selectedKernel).toContain(preferredKernel);
     });
 });
 

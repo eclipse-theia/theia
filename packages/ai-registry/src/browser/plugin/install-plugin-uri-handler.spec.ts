@@ -22,11 +22,11 @@ const disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
 import { MessageService } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
-import { RegistryFetchService } from '../../common/registry-fetch-service';
-import { ResolvedPluginEntry } from '../../common/plugin/plugin-registry-types';
-import { PluginInstaller, PluginInstallOptions } from './plugin-installer';
-import { InstallPluginUriConfiguration } from './install-plugin-uri-configuration';
-import { InstallPluginUriHandler } from './install-plugin-uri-handler';
+import { RegistryFetchService } from '../../common/registry-fetch-service.js';
+import { ResolvedPluginEntry } from '../../common/plugin/plugin-registry-types.js';
+import { PluginInstaller, PluginInstallOptions } from './plugin-installer.js';
+import { InstallPluginUriConfiguration } from './install-plugin-uri-configuration.js';
+import { InstallPluginUriHandler } from './install-plugin-uri-handler.js';
 
 disableJSDOM();
 

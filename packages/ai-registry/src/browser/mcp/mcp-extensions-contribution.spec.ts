@@ -33,14 +33,14 @@ import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { MCPFrontendService } from '@theia/ai-mcp/lib/common/mcp-server-manager';
 import { MCPServerEditor, MCPServerEditorImpl, MCPServerEditDialogFactory } from '@theia/ai-mcp/lib/browser/mcp-server-editor';
 import { MCPServerInstallDialogFactory } from '@theia/ai-mcp/lib/browser/mcp-server-install-dialog';
-import { RegistryFetchService } from '../../common/registry-fetch-service';
-import { RegistrySearchFilter } from '../../common/registry-search-filter';
-import { ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
-import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from '../../common/mcp/mcp-registry-entry-resolver';
-import { RegistryAutoUpdatePolicy, RegistryAutoUpdatePolicyImpl } from '../auto-update/registry-auto-update-policy';
-import { MCPInstallService, MCPInstallServiceImpl } from './mcp-install-service';
-import { MCPExtensionsContribution } from './mcp-extensions-contribution';
-import { MCPInstalledEntry, MCPSearchResultEntry } from './mcp-entries';
+import { RegistryFetchService } from '../../common/registry-fetch-service.js';
+import { RegistrySearchFilter } from '../../common/registry-search-filter.js';
+import { ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types.js';
+import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from '../../common/mcp/mcp-registry-entry-resolver.js';
+import { RegistryAutoUpdatePolicy, RegistryAutoUpdatePolicyImpl } from '../auto-update/registry-auto-update-policy.js';
+import { MCPInstallService, MCPInstallServiceImpl } from './mcp-install-service.js';
+import { MCPExtensionsContribution } from './mcp-extensions-contribution.js';
+import { MCPInstalledEntry, MCPSearchResultEntry } from './mcp-entries.js';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 after(() => disableJSDOM());
@@ -48,8 +48,15 @@ after(() => disableJSDOM());
 class FakePreferenceService {
     private readonly store = new Map<string, unknown>();
     private readonly listeners: ((change: { preferenceName: string }) => void)[] = [];
-    get<T>(key: string, defaultValue?: T): T | undefined {
-        return (this.store.has(key) ? this.store.get(key) : defaultValue) as T | undefined;
+    get<T>(key: string, optionsOrFallback?: T | { fallback?: T }): T | undefined {
+        if (this.store.has(key)) {
+            return this.store.get(key) as T;
+        }
+        if (optionsOrFallback && typeof optionsOrFallback === 'object' && !Array.isArray(optionsOrFallback)
+            && 'fallback' in (optionsOrFallback as object)) {
+            return (optionsOrFallback as { fallback?: T }).fallback;
+        }
+        return optionsOrFallback as T | undefined;
     }
     async set(key: string, value: unknown): Promise<void> {
         this.store.set(key, value);

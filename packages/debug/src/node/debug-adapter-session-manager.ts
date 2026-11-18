@@ -18,10 +18,10 @@ import { UUID } from '@theia/core/shared/@lumino/coreutils';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 
-import { DebugAdapterPath, ForwardingDebugChannel } from '../common/debug-service';
-import { DebugConfiguration } from '../common/debug-configuration';
-import { DebugAdapterSession, DebugAdapterSessionFactory, DebugAdapterFactory } from '../common/debug-model';
-import { DebugAdapterContributionRegistry } from '../common/debug-adapter-contribution-registry';
+import { DebugAdapterPath, ForwardingDebugChannel } from '../common/debug-service.js';
+import { DebugConfiguration } from '../common/debug-configuration.js';
+import { DebugAdapterSession, DebugAdapterSessionFactory, DebugAdapterFactory } from '../common/debug-model.js';
+import { DebugAdapterContributionRegistry } from '../common/debug-adapter-contribution-registry.js';
 
 /**
  * Debug adapter session manager.

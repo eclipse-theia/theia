@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Tree, TreeNode } from './tree';
-import { DepthFirstTreeIterator } from './tree-iterator';
-import { TreeSelection, SelectableTreeNode } from './tree-selection';
+import { Tree, TreeNode } from './tree.js';
+import { DepthFirstTreeIterator } from './tree-iterator.js';
+import { TreeSelection, SelectableTreeNode } from './tree-selection.js';
 
 /**
  * A tree selection that might contain additional information about the tree node that has the focus.

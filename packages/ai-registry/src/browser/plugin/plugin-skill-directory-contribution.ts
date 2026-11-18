@@ -19,9 +19,9 @@ import { Path } from '@theia/core/lib/common/path';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { SkillDirectoryContribution } from '@theia/ai-core/lib/browser/skill-service';
 import { SkillDirectoryEntry } from '@theia/ai-core/lib/common/skill';
-import { InstalledPluginInfo } from '../../common/plugin/plugin-registry-types';
-import { PluginInstallClientImpl } from './plugin-install-client';
-import { PluginInstallService } from './plugin-install-service';
+import { InstalledPluginInfo } from '../../common/plugin/plugin-registry-types.js';
+import { PluginInstallClientImpl } from './plugin-install-client.js';
+import { PluginInstallService } from './plugin-install-service.js';
 
 /** Fixed component location of the specification; not configurable. */
 const PLUGIN_SKILLS_DIRECTORY = 'skills';

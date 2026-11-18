@@ -15,16 +15,16 @@
 // *****************************************************************************
 
 import { Container } from 'inversify';
-import { PreferenceValidationService } from './preference-validation-service';
+import { PreferenceValidationService } from './preference-validation-service.js';
 import assert from 'assert';
 import { JSONValue } from '@lumino/coreutils';
-import { IJSONSchema, JsonType } from '../../common/json-schema';
+import { IJSONSchema, JsonType } from '../../common/json-schema.js';
 import {
     DefaultsPreferenceProvider, Disposable, PreferenceDataProperty, PreferenceProvider,
     PreferenceSchemaService, PreferenceSchemaServiceImpl, PreferenceScope, ILogger
-} from '../../common';
-import { PreferenceLanguageOverrideService } from '../../common/preferences/preference-language-override-service';
-import { MockLogger } from '../../common/test/mock-logger';
+} from '../../common/index.js';
+import { PreferenceLanguageOverrideService } from '../../common/preferences/preference-language-override-service.js';
+import { MockLogger } from '../../common/test/mock-logger.js';
 
 /* eslint-disable no-null/no-null */
 

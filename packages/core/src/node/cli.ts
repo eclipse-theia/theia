@@ -14,10 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import yargs from 'yargs';
+import yargs from '../../shared/yargs/index.cjs';
 import { inject, named, injectable } from 'inversify';
-import { ContributionProvider } from '../common/contribution-provider';
-import { MaybePromise } from '../common/types';
+import { ContributionProvider } from '../common/contribution-provider.js';
+import { MaybePromise } from '../common/types.js';
+import packageJson from '../../package.json' with { type: 'json' };
 
 export const CliContribution = Symbol('CliContribution');
 
@@ -36,8 +37,7 @@ export class CliManager {
     protected readonly contributionsProvider: ContributionProvider<CliContribution>) { }
 
     async initializeCli<T>(argv: string[], postSetArguments: () => Promise<void>, defaultCommand: () => Promise<void>): Promise<void> {
-        const pack = require('../../package.json');
-        const version = pack.version;
+        const version = packageJson.version;
         const command = yargs(argv, process.cwd()).version(version);
         command.exitProcess(this.isExit());
         for (const contrib of this.contributionsProvider.getContributions()) {

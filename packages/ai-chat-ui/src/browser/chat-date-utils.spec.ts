@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { formatTimeAgo } from './chat-date-utils';
+import { formatTimeAgo } from './chat-date-utils.js';
 
 describe('formatTimeAgo', () => {
 

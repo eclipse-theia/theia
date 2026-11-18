@@ -17,8 +17,8 @@
 import { formatToolCallContentForModel, ImageContent, LanguageModelMessage } from '@theia/ai-core';
 import { injectable } from '@theia/core/shared/inversify';
 import { ChatCompletionAssistantMessageParam, ChatCompletionMessageParam } from 'openai/resources';
-import { DeveloperMessageSettings } from './openai-language-model';
-import { processSystemMessages } from './openai-response-api-utils';
+import { DeveloperMessageSettings } from './openai-language-model.js';
+import { processSystemMessages } from './openai-response-api-utils.js';
 
 /**
  * Utility class for processing messages for the OpenAI language model.

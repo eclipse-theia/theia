@@ -17,57 +17,57 @@
 import '../../src/browser/style/index.css';
 
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { DebugConfigurationManager } from './debug-configuration-manager';
-import { DebugWidget } from './view/debug-widget';
-import { DebugPath, DebugService } from '../common/debug-service';
+import { DebugConfigurationManager } from './debug-configuration-manager.js';
+import { DebugWidget } from './view/debug-widget.js';
+import { DebugPath, DebugService } from '../common/debug-service.js';
 import {
     WidgetFactory, WebSocketConnectionProvider, FrontendApplicationContribution,
     bindViewContribution,
     OpenHandler
 } from '@theia/core/lib/browser';
-import { DebugSessionManager } from './debug-session-manager';
-import { DebugResourceResolver } from './debug-resource';
+import { DebugSessionManager } from './debug-session-manager.js';
+import { DebugResourceResolver } from './debug-resource.js';
 import {
     DebugSessionContribution,
     DebugSessionFactory,
     DefaultDebugSessionFactory,
     DebugSessionContributionRegistry,
     DebugSessionContributionRegistryImpl
-} from './debug-session-contribution';
+} from './debug-session-contribution.js';
 import { bindRootContributionProvider, nls, ResourceResolver } from '@theia/core';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { DebugFrontendApplicationContribution } from './debug-frontend-application-contribution';
-import { DebugConsoleContribution } from './console/debug-console-contribution';
-import { BreakpointManager } from './breakpoint/breakpoint-manager';
-import { DebugEditorService } from './editor/debug-editor-service';
-import { DebugEditorModelFactory, DebugEditorModel } from './editor/debug-editor-model';
-import { bindDebugPreferences } from '../common/debug-preferences';
-import { DebugSchemaUpdater } from './debug-schema-updater';
-import { DebugCallStackItemTypeKey } from './debug-call-stack-item-type-key';
-import { bindLaunchPreferences } from '../common/launch-preferences';
-import { DebugPrefixConfiguration } from './debug-prefix-configuration';
+import { DebugFrontendApplicationContribution } from './debug-frontend-application-contribution.js';
+import { DebugConsoleContribution } from './console/debug-console-contribution.js';
+import { BreakpointManager } from './breakpoint/breakpoint-manager.js';
+import { DebugEditorService } from './editor/debug-editor-service.js';
+import { DebugEditorModelFactory, DebugEditorModel } from './editor/debug-editor-model.js';
+import { bindDebugPreferences } from '../common/debug-preferences.js';
+import { DebugSchemaUpdater } from './debug-schema-updater.js';
+import { DebugCallStackItemTypeKey } from './debug-call-stack-item-type-key.js';
+import { bindLaunchPreferences } from '../common/launch-preferences.js';
+import { DebugPrefixConfiguration } from './debug-prefix-configuration.js';
 import { CommandContribution } from '@theia/core/lib/common/command';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
-import { DebugWatchManager } from './debug-watch-manager';
-import { DebugExpressionProvider } from './editor/debug-expression-provider';
-import { DebugBreakpointWidget } from './editor/debug-breakpoint-widget';
-import { DebugInlineValueDecorator } from './editor/debug-inline-value-decorator';
+import { DebugWatchManager } from './debug-watch-manager.js';
+import { DebugExpressionProvider } from './editor/debug-expression-provider.js';
+import { DebugBreakpointWidget } from './editor/debug-breakpoint-widget.js';
+import { DebugInlineValueDecorator } from './editor/debug-inline-value-decorator.js';
 import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
 import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
-import { DebugTabBarDecorator } from './debug-tab-bar-decorator';
-import { DebugContribution } from './debug-contribution';
+import { DebugTabBarDecorator } from './debug-tab-bar-decorator.js';
+import { DebugContribution } from './debug-contribution.js';
 import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access';
-import { DebugViewModel } from './view/debug-view-model';
-import { DebugToolBar } from './view/debug-toolbar-widget';
-import { DebugSessionWidget } from './view/debug-session-widget';
-import { bindDisassemblyView } from './disassembly-view/disassembly-view-contribution';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
-import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider';
-import { AddOrEditDataBreakpointAddress } from './breakpoint/debug-data-breakpoint-actions';
+import { DebugViewModel } from './view/debug-view-model.js';
+import { DebugToolBar } from './view/debug-toolbar-widget.js';
+import { DebugSessionWidget } from './view/debug-session-widget.js';
+import { bindDisassemblyView } from './disassembly-view/disassembly-view-contribution.js';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService.js';
+import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider.js';
+import { AddOrEditDataBreakpointAddress } from './breakpoint/debug-data-breakpoint-actions.js';
 import { WorkspaceRestrictionContribution, WorkspaceRestriction } from '@theia/workspace/lib/browser/workspace-trust-service';
-import { DebugBreakpointOpener } from './model/debug-breakpoint-opener';
+import { DebugBreakpointOpener } from './model/debug-breakpoint-opener.js';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bindRootContributionProvider(bind, DebugContribution);

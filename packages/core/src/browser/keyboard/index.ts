@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './keys';
-export * from './keyboard-layout-service';
-export * from './browser-keyboard-layout-provider';
-export * from './browser-keyboard-frontend-contribution';
-export * from './keyboard-utils';
+export * from './keys.js';
+export * from './keyboard-layout-service.js';
+export * from './browser-keyboard-layout-provider.js';
+export * from './browser-keyboard-frontend-contribution.js';
+export * from './keyboard-utils.js';

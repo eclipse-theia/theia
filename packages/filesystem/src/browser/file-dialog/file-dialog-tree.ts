@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { DirNode, FileTree } from '../file-tree';
+import { DirNode, FileTree } from '../file-tree/index.js';
 import { TreeNode, CompositeTreeNode } from '@theia/core/lib/browser/tree/tree';
-import { FileStat } from '../../common/files';
+import { FileStat } from '../../common/files.js';
 
 @injectable()
 export class FileDialogTree extends FileTree {

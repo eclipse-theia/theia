@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { TestController, TestExecutionState, TestItem, TestRun, TestService } from '../test-service';
+import { TestController, TestExecutionState, TestItem, TestRun, TestService } from '../test-service.js';
 
 /**
  * This class manages the state of "internal" nodes in the test tree

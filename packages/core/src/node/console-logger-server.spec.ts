@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { Container, injectable, postConstruct } from 'inversify';
-import { ConsoleLoggerServer } from './console-logger-server';
-import { LogLevel } from '../common/logger-protocol';
-import { LoggerWatcher } from '../common/logger-watcher';
-import { LogLevelCliContribution } from './logger-cli-contribution';
+import { ConsoleLoggerServer } from './console-logger-server.js';
+import { LogLevel } from '../common/logger-protocol.js';
+import { LoggerWatcher } from '../common/logger-watcher.js';
+import { LogLevelCliContribution } from './logger-cli-contribution.js';
 import { expect } from 'chai';
 
 let server: ConsoleLoggerServer;

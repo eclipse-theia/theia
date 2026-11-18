@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { computeRevealScrollDelta } from './chat-input-scroll-util';
+import { computeRevealScrollDelta } from './chat-input-scroll-util.js';
 
 describe('computeRevealScrollDelta', () => {
     const viewportHeight = 240;

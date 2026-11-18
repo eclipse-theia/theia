@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import type { AddressInfo } from 'net';
-import type { ExtensionInfo } from '../common/application-protocol';
+import type { ExtensionInfo } from '../common/application-protocol.js';
 import { isPromise } from 'util/types';
 
 export interface BackendGlobal {

@@ -14,6 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './tab-bar-toolbar';
-export * from './tab-bar-toolbar-registry';
-export * from './tab-bar-toolbar-types';
+export * from './tab-bar-toolbar.js';
+export * from './tab-bar-toolbar-registry.js';
+export * from './tab-bar-toolbar-types.js';

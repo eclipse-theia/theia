@@ -17,7 +17,7 @@
 import { Emitter, Event } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { FileSystemPreferences } from '@theia/filesystem/lib/common';
-import { WorkspaceSearchFilterProvider } from './workspace-search-filter-service';
+import { WorkspaceSearchFilterProvider } from './workspace-search-filter-service.js';
 
 /**
  * A workspace search filter provider that contributes the user-configurable

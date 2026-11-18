@@ -18,11 +18,11 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { AIVariableContext, AIVariableOpener, AIVariableResolutionRequest, AIVariableResolver, ResolvedAIContextVariable } from '@theia/ai-core';
 import { AIVariableCompletionContext, FrontendVariableContribution, FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { MaybePromise, QuickInputService, QuickPickItem } from '@theia/core';
-import { ChatService } from '../common';
+import { ChatService } from '../common/index.js';
 import * as monaco from '@theia/monaco-editor-core';
-import { TaskContextService } from './task-context-service';
-import { TASK_CONTEXT_VARIABLE } from './task-context-variable';
-import { VARIABLE_ADD_CONTEXT_COMMAND } from './ai-chat-frontend-contribution';
+import { TaskContextService } from './task-context-service.js';
+import { TASK_CONTEXT_VARIABLE } from './task-context-variable.js';
+import { VARIABLE_ADD_CONTEXT_COMMAND } from './ai-chat-frontend-contribution.js';
 
 @injectable()
 export class TaskContextVariableContribution implements FrontendVariableContribution, AIVariableResolver, AIVariableOpener {

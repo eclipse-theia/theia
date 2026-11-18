@@ -16,9 +16,9 @@
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import * as DOMPurify from 'dompurify';
-import { codicon } from './widget';
-import { measureTextHeight, measureTextWidth } from '../browser';
+import * as DOMPurify from '../../../shared/dompurify/index.cjs';
+import { codicon } from './widget.js';
+import { measureTextHeight, measureTextWidth } from '../browser.js';
 
 import '../../../src/browser/style/select-component.css';
 

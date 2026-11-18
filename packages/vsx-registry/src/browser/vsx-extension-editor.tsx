@@ -17,8 +17,8 @@
 import * as React from '@theia/core/shared/react';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { ReactWidget, Message, Widget, codicon } from '@theia/core/lib/browser';
-import { VSXExtension, VSXExtensionEditorComponent } from './vsx-extension';
-import { VSXExtensionsModel } from './vsx-extensions-model';
+import { VSXExtension, VSXExtensionEditorComponent } from './vsx-extension.js';
+import { VSXExtensionsModel } from './vsx-extensions-model.js';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { nls } from '@theia/core/lib/common/nls';
 

@@ -19,14 +19,14 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as theia from '@theia/plugin';
-import * as model from '../common/plugin-api-rpc-model';
-import { CommandRegistryExt, PLUGIN_RPC_CONTEXT as Ext, CommandRegistryMain } from '../common/plugin-api-rpc';
-import { RPCProtocol } from '../common/rpc-protocol';
-import { Disposable, URI } from './types-impl';
+import * as model from '../common/plugin-api-rpc-model.js';
+import { CommandRegistryExt, PLUGIN_RPC_CONTEXT as Ext, CommandRegistryMain } from '../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../common/rpc-protocol.js';
+import { Disposable, URI } from './types-impl.js';
 import { DisposableCollection } from '@theia/core';
-import { KnownCommands } from './known-commands';
-import { ArgumentProcessor } from '../common/commands';
-import { isUriComponents } from './type-converters';
+import { KnownCommands } from './known-commands.js';
+import { ArgumentProcessor } from '../common/commands.js';
+import { isUriComponents } from './type-converters.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Handler = <T>(...args: any[]) => T | PromiseLike<T | undefined>;

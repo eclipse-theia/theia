@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { Emitter, Event } from '../common/event';
-import { Disposable } from '../common';
+import { Emitter, Event } from '../common/event.js';
+import { Disposable } from '../common/index.js';
 
 export type ContextKeyValue = null | undefined | boolean | number | string
     | Array<null | undefined | boolean | number | string>

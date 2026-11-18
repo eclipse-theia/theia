@@ -16,8 +16,8 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { ApplicationShell, FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { SetActualHeightForContentHoverWidgetParams } from './content-hover-widget-patcher';
-import { contentHoverWidgetPatcher } from './monaco-init';
+import { SetActualHeightForContentHoverWidgetParams } from './content-hover-widget-patcher.js';
+import { contentHoverWidgetPatcher } from './monaco-init.js';
 
 @injectable()
 export class DefaultContentHoverWidgetPatcher implements FrontendApplicationContribution {

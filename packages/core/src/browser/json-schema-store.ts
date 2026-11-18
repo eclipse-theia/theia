@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from 'inversify';
-import { ContributionProvider } from '../common/contribution-provider';
-import { FrontendApplicationContribution } from './frontend-application-contribution';
-import { Emitter, MaybePromise, URI } from '../common';
-import { timeout, Deferred } from '../common/promise-util';
-import { IJSONSchema } from '../common/json-schema';
-import { ILogger } from '../common/logger';
+import { ContributionProvider } from '../common/contribution-provider.js';
+import { FrontendApplicationContribution } from './frontend-application-contribution.js';
+import { Emitter, MaybePromise, URI } from '../common/index.js';
+import { timeout, Deferred } from '../common/promise-util.js';
+import { IJSONSchema } from '../common/json-schema.js';
+import { ILogger } from '../common/logger.js';
 
 export interface JsonSchemaConfiguration {
     fileMatch: string | string[];
@@ -137,7 +137,9 @@ export class DefaultJsonSchemaContribution implements JsonSchemaContribution {
     ];
 
     async registerSchemas(context: JsonSchemaRegisterContext): Promise<void> {
-        const catalog = require('./catalog.json') as { schemas: DefaultJsonSchemaContribution.SchemaData[] };
+        // `catalog.json` is downloaded into `lib` when the package is installed, so it is not known to the compiler.
+        // @ts-expect-error TS2307
+        const catalog: { schemas: DefaultJsonSchemaContribution.SchemaData[] } = (await import('./catalog.json', { with: { type: 'json' } })).default;
         for (const s of catalog.schemas) {
             if (s.fileMatch && this.shouldRegisterSchema(s)) {
                 context.registerSchema({

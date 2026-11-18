@@ -21,8 +21,8 @@ import { MCPRegistryUiBridge } from '@theia/ai-mcp/lib/browser/mcp-registry-ui-b
 import { MCPInstallEntry } from '@theia/ai-mcp/lib/browser/mcp-server-editor';
 import { VSXExtensionsContribution } from '@theia/vsx-registry/lib/browser/vsx-extensions-contribution';
 import { VSXExtensionsSearchModel } from '@theia/vsx-registry/lib/browser/vsx-extensions-search-model';
-import { ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
-import { RegistryFetchService } from '../../common/registry-fetch-service';
+import { ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types.js';
+import { RegistryFetchService } from '../../common/registry-fetch-service.js';
 
 @injectable()
 export class MCPRegistryUiBridgeImpl implements MCPRegistryUiBridge {

@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { LocalStorageService, StorageService } from '@theia/core/lib/browser/storage-service';
-import { WorkspaceService } from './workspace-service';
+import { WorkspaceService } from './workspace-service.js';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 
 /*

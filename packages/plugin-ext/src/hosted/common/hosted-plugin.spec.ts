@@ -16,8 +16,8 @@
 
 import { expect } from 'chai';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { DeployedPlugin, PluginIdentifiers } from '../../common/plugin-protocol';
-import { AbstractHostedPluginSupport, PluginContributions } from './hosted-plugin';
+import { DeployedPlugin, PluginIdentifiers } from '../../common/plugin-protocol.js';
+import { AbstractHostedPluginSupport, PluginContributions } from './hosted-plugin.js';
 import { Measurement } from '@theia/core/lib/common/performance/measurement';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 

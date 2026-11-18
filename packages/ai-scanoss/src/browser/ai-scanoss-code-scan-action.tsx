@@ -27,7 +27,7 @@ import { ResponseNode } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import * as React from '@theia/core/shared/react';
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
 import { SCAN_OSS_API_KEY_PREF } from '@theia/scanoss/lib/common/scanoss-preferences';
-import { SCANOSS_MODE_PREF } from '../common/ai-scanoss-preferences';
+import { SCANOSS_MODE_PREF } from '../common/ai-scanoss-preferences.js';
 import { nls, PreferenceService } from '@theia/core';
 
 // cached map of scanOSS results.

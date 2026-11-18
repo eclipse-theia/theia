@@ -26,7 +26,7 @@ import {
     AI_MODEL_READY_CONTEXT_KEY,
     AI_TOOL_CONFIRMATION_CONFIGURED_CONTEXT_KEY,
     AiWalkthroughContextKeys
-} from './ai-walkthrough-context-keys';
+} from './ai-walkthrough-context-keys.js';
 
 describe('AiWalkthroughContextKeys', () => {
 

@@ -20,9 +20,9 @@ import { DebugVariable } from '@theia/debug/lib/browser/console/debug-console-it
 import { DebugSession } from '@theia/debug/lib/browser/debug-session';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { DebugProtocol } from '@vscode/debugprotocol';
-import { Interfaces } from '../utils/memory-widget-utils';
-import { VariableRange } from '../utils/memory-widget-variable-utils';
-import { DefaultMemoryProvider, MemoryProvider } from './memory-provider';
+import { Interfaces } from '../utils/memory-widget-utils.js';
+import { VariableRange } from '../utils/memory-widget-variable-utils.js';
+import { DefaultMemoryProvider, MemoryProvider } from './memory-provider.js';
 import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()

@@ -20,9 +20,9 @@
  *--------------------------------------------------------------------------------------------*/
 // code copied and modified from https://github.com/microsoft/vscode/blob/1.55.2/src/vs/platform/native/electron-main/nativeHostMainService.ts#L679-L771
 
-import { KeyStoreService } from '../common/key-store';
+import { KeyStoreService } from '../common/key-store.js';
 import { injectable, inject, named } from 'inversify';
-import { isWindows, ILogger } from '../common';
+import { isWindows, ILogger } from '../common/index.js';
 
 @injectable()
 export class KeyStoreServiceImpl implements KeyStoreService {

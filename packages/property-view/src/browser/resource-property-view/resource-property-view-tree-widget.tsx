@@ -25,14 +25,14 @@ import {
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import { PropertyDataService } from '../property-data-service';
-import { PropertyViewContentWidget } from '../property-view-content-widget';
+import { PropertyDataService } from '../property-data-service.js';
+import { PropertyViewContentWidget } from '../property-view-content-widget.js';
 import {
     ResourcePropertiesCategoryNode,
     ResourcePropertiesItemNode,
     ResourcePropertiesRoot,
     ROOT_ID
-} from './resource-property-view-tree-items';
+} from './resource-property-view-tree-items.js';
 import { nls } from '@theia/core/lib/common/nls';
 
 /**

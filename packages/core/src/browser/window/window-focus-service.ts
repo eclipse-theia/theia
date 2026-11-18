@@ -22,7 +22,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { injectable, postConstruct } from 'inversify';
-import { Disposable, DisposableCollection, Emitter, Event } from '../../common';
+import { Disposable, DisposableCollection, Emitter, Event } from '../../common/index.js';
 
 export interface WindowFocusEvent {
     win: Window;
@@ -67,6 +67,9 @@ export class WindowFocusService implements Disposable {
     /** Per-window tracking state. */
     protected readonly windowStates = new Map<Window, WindowTrackingState>();
 
+    /** The most recently focused window, used to stabilize the `focusedWindow` getter. */
+    protected lastFocusedWindow: Window | undefined;
+
     @postConstruct()
     protected init(): void {
         this.registerWindow(window);
@@ -101,6 +104,9 @@ export class WindowFocusService implements Disposable {
         const cleanup = Disposable.create(() => {
             this.cancelPendingBlur(state);
             this.windowStates.delete(win);
+            if (this.lastFocusedWindow === win) {
+                this.lastFocusedWindow = undefined;
+            }
             win.removeEventListener('focus', onFocus);
             win.removeEventListener('blur', onBlur);
             try {
@@ -118,12 +124,23 @@ export class WindowFocusService implements Disposable {
      * Whether any registered window currently has focus.
      */
     get hasFocus(): boolean {
+        return this.focusedWindow !== undefined;
+    }
+
+    /**
+     * The registered window that currently has focus, if any.
+     */
+    get focusedWindow(): Window | undefined {
+        // Prefer the most recently focused window for stability
+        if (this.lastFocusedWindow && this.windowHasFocus(this.lastFocusedWindow)) {
+            return this.lastFocusedWindow;
+        }
         for (const win of this.windowStates.keys()) {
             if (this.windowHasFocus(win)) {
-                return true;
+                return win;
             }
         }
-        return false;
+        return undefined;
     }
 
     protected windowHasFocus(win: Window): boolean {
@@ -169,6 +186,9 @@ export class WindowFocusService implements Disposable {
         const focused = this.windowHasFocus(win);
         if (focused !== state.lastFocusState) {
             state.lastFocusState = focused;
+            if (focused) {
+                this.lastFocusedWindow = win;
+            }
             this.onDidWindowChangeFocusEmitter.fire({ win, hasFocus: focused });
         }
     }

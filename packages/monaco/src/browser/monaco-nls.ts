@@ -25,7 +25,7 @@
  */
 
 // Re-export the message store — imported via a path that is NOT aliased.
-export { getNLSLanguage, getNLSMessages } from '@theia/monaco-editor-core/esm/vs/nls.messages';
+export { getNLSLanguage, getNLSMessages } from '@theia/monaco-editor-core/esm/vs/nls.messages.js';
 
 import { nls } from '@theia/core/lib/common/nls';
 import { FormatType, Localization } from '@theia/core/lib/common/i18n/localization';

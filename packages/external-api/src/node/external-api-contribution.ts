@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ExternalApiRouter } from './external-api-router';
+import { ExternalApiRouter } from './external-api-router.js';
 
 /**
  * Documentation of an {@link ExternalApiContribution}, grouping its routes in the OpenAPI

@@ -28,7 +28,7 @@ import {
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
-import { GitHubRepoService } from '../common/github-repo-protocol';
+import { GitHubRepoService } from '../common/github-repo-protocol.js';
 
 export const GITHUB_REPO_NAME_VARIABLE: AIVariable = {
     id: 'github-repo-name-provider',

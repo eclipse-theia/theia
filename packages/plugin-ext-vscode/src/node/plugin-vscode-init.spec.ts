@@ -19,7 +19,7 @@
 import { expect } from 'chai';
 import * as path from 'path';
 import { Plugin } from '@theia/plugin-ext';
-import { findPlugin } from './plugin-vscode-init';
+import { findPlugin } from './plugin-vscode-init.js';
 
 const PLUGIN_A_FOLDER = path.join(path.sep, 'p', 'sample-namespace.plugin-esm');
 const PLUGIN_B_FOLDER = path.join(path.sep, 'p', 'sample-namespace.plugin-esm-mjs');

@@ -22,7 +22,7 @@
 import { injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Reference } from '@theia/core/lib/common/reference';
-import { CustomEditorModel } from './custom-editors-main';
+import { CustomEditorModel } from './custom-editors-main.js';
 
 @injectable()
 export class CustomEditorService {

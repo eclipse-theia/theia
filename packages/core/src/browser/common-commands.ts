@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command } from '../common/command';
-import { nls } from '../common/nls';
+import { Command } from '../common/command.js';
+import { nls } from '../common/nls.js';
 
 export namespace CommonCommands {
 
@@ -172,6 +172,21 @@ export namespace CommonCommands {
         category: VIEW_CATEGORY,
         label: 'Toggle Status Bar Visibility'
     });
+    export const HIDE_SIDE_PANEL_ITEM = Command.toLocalizedCommand({
+        id: 'core.sidePanel.hideItem',
+        category: VIEW_CATEGORY,
+        label: 'Hide from Side Bar'
+    }, 'theia/core/common/hideSidePanelItem', VIEW_CATEGORY_KEY);
+    export const KEEP_SIDE_PANEL_ITEM = Command.toLocalizedCommand({
+        id: 'core.sidePanel.keepItem',
+        category: VIEW_CATEGORY,
+        label: 'Keep in Side Bar'
+    }, 'theia/core/common/keepSidePanelItem', VIEW_CATEGORY_KEY);
+    export const RESET_HIDDEN_SIDE_PANEL_ITEMS = Command.toLocalizedCommand({
+        id: 'core.sidePanel.resetHiddenItems',
+        category: VIEW_CATEGORY,
+        label: 'Reset Hidden Side Bar Items'
+    }, 'theia/core/common/resetHiddenSidePanelItems', VIEW_CATEGORY_KEY);
     export const PIN_TAB = Command.toDefaultLocalizedCommand({
         id: 'workbench.action.pinEditor',
         category: VIEW_CATEGORY,

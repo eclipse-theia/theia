@@ -17,7 +17,7 @@
 import { Disposable, DisposableCollection, Emitter } from '@theia/core';
 import { DISABLED_CLASS, onDomEvent } from '@theia/core/lib/browser';
 import * as monaco from '@theia/monaco-editor-core';
-import { MonacoEditor } from './monaco-editor';
+import { MonacoEditor } from './monaco-editor.js';
 
 export class MonacoEditorOverlayButton implements Disposable {
 

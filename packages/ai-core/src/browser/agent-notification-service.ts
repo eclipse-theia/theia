@@ -19,11 +19,11 @@ import { MessageService } from '@theia/core/lib/common/message-service';
 import { nls } from '@theia/core/lib/common/nls';
 import {
     PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE,
-} from '../common/ai-core-preferences';
-import { AgentService } from '../common/agent-service';
-import { AISettingsService } from '../common/settings-service';
-import { OSNotificationService } from './os-notification-service';
-import { WindowBlinkService } from './window-blink-service';
+} from '../common/ai-core-preferences.js';
+import { AgentService } from '../common/agent-service.js';
+import { AISettingsService } from '../common/settings-service.js';
+import { OSNotificationService } from './os-notification-service.js';
+import { WindowBlinkService } from './window-blink-service.js';
 import {
     NotificationType,
     NOTIFICATION_TYPE_OFF,
@@ -32,7 +32,7 @@ import {
     NOTIFICATION_TYPE_BLINK,
     AgentNotificationKind,
     AGENT_NOTIFICATION_KIND_INPUT_NEEDED,
-} from '../common/notification-types';
+} from '../common/notification-types.js';
 import { PreferenceService, ILogger } from '@theia/core';
 
 /**

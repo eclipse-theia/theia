@@ -15,9 +15,10 @@
 // *****************************************************************************
 
 import * as chai from 'chai';
-import { ContentLines } from './content-lines';
+import { ContentLines } from './content-lines.js';
 import { expect } from 'chai';
-chai.use(require('chai-string'));
+import chaiString from 'chai-string';
+chai.use(chaiString);
 
 describe('content-lines', () => {
 

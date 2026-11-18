@@ -37,10 +37,10 @@ function ensureFrontendConfig(): void {
 // Some of the modules loaded below read the configuration while they are being loaded.
 ensureFrontendConfig();
 
-import { Walkthrough } from '../common/walkthrough-types';
-import { WalkthroughCommands } from '../common/walkthrough-commands';
-import { GettingStartedContribution } from './getting-started-contribution';
-import { GettingStartedWidget } from './getting-started-widget';
+import { Walkthrough } from '../common/walkthrough-types.js';
+import { WalkthroughCommands } from '../common/walkthrough-commands.js';
+import { GettingStartedContribution } from './getting-started-contribution.js';
+import { GettingStartedWidget } from './getting-started-widget.js';
 
 describe('GettingStartedContribution', () => {
 

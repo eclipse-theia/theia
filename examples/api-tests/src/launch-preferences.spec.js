@@ -590,15 +590,8 @@ describe('Launch Preferences', function () {
                 assert.deepStrictEqual(JSON.parse(JSON.stringify(config)), expectation);
             });
 
-            testIt('get from undefined', () => {
-                /** @type {any} */
-                const config = preferences.get('launch', undefined, undefined);
-                assert.deepStrictEqual(JSON.parse(JSON.stringify(config)), expectation);
-            });
-
             testIt('get from rootUri', () => {
-                /** @type {any} */
-                const config = preferences.get('launch', undefined, rootUri.toString());
+                const config = preferences.get('launch', { resource: rootUri.toString() });
                 assert.deepStrictEqual(JSON.parse(JSON.stringify(config)), expectation);
             });
 

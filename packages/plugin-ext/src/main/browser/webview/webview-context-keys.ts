@@ -17,9 +17,9 @@
 import { ApplicationShell, FocusTracker, Widget, WidgetContextKeyContribution } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { CustomEditorWidget } from '../custom-editors/custom-editor-widget';
-import { CodeEditorWidgetUtil } from '../menus/vscode-theia-menu-mappings';
-import { WebviewWidget } from './webview';
+import { CustomEditorWidget } from '../custom-editors/custom-editor-widget.js';
+import { CodeEditorWidgetUtil } from '../menus/vscode-theia-menu-mappings.js';
+import { WebviewWidget } from './webview.js';
 
 const ACTIVE_WEBVIEW_PANEL_ID = 'activeWebviewPanelId';
 const ACTIVE_CUSTOM_EDITOR_ID = 'activeCustomEditorId';

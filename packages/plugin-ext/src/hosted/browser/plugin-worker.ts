@@ -17,7 +17,7 @@
 import { BasicChannel } from '@theia/core/lib/common/message-rpc/channel';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '@theia/core/lib/common/message-rpc/uint8-array-message-buffer';
 import { injectable } from '@theia/core/shared/inversify';
-import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
+import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol.js';
 
 @injectable()
 export class PluginWorker {

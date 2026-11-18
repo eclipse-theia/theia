@@ -16,9 +16,9 @@
 
 import { expect } from 'chai';
 import { LanguageModelStreamResponsePart, ToolCallResponsePart, ToolRequest, UserRequest } from '@theia/ai-core';
-import type { CopilotClient, PermissionRequest, Tool } from './copilot-sdk-types';
+import type { CopilotClient, PermissionRequest, Tool } from './copilot-sdk-types.js';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { approveTheiaTools, CopilotSdkLanguageModel, CopilotStreamSink } from './copilot-sdk-language-model';
+import { approveTheiaTools, CopilotSdkLanguageModel, CopilotStreamSink } from './copilot-sdk-language-model.js';
 
 class TestableCopilotSdkLanguageModel extends CopilotSdkLanguageModel {
     constructor() {

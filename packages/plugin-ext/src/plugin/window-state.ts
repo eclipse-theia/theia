@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { URI } from './types-impl';
+import { URI } from './types-impl.js';
 import { WindowState } from '@theia/plugin';
-import { WindowStateExt, WindowMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
+import { WindowStateExt, WindowMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc.js';
 import { Event, Emitter } from '@theia/core/lib/common/event';
-import { RPCProtocol } from '../common/rpc-protocol';
+import { RPCProtocol } from '../common/rpc-protocol.js';
 
 export class WindowStateExtImpl implements WindowStateExt {
 

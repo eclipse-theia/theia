@@ -18,7 +18,7 @@ import { MaybePromise } from '@theia/core/lib/common';
 import { RequestService } from '@theia/core/shared/@theia/request';
 import type { interfaces } from '@theia/core/shared/inversify';
 import { OVSXClient, OVSXHttpClient } from '@theia/ovsx-client';
-import { VSXEnvironment } from './vsx-environment';
+import { VSXEnvironment } from './vsx-environment.js';
 
 export const OVSXUrlResolver = Symbol('OVSXUrlResolver') as symbol & interfaces.Abstract<OVSXUrlResolver>;
 export type OVSXUrlResolver = (value: string) => MaybePromise<string>;

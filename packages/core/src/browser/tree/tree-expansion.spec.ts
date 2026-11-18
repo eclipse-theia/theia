@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { expect, assert } from 'chai';
-import { MockTreeModel } from './test/mock-tree-model';
-import { TreeModel } from './tree-model';
-import { TreeNode, CompositeTreeNode, Tree, TreeImpl } from './tree';
-import { ExpandableTreeNode } from './tree-expansion';
-import { createTreeTestContainer } from './test/tree-test-container';
-import { timeout } from '../../common/promise-util';
+import { MockTreeModel } from './test/mock-tree-model.js';
+import { TreeModel } from './tree-model.js';
+import { TreeNode, CompositeTreeNode, Tree, TreeImpl } from './tree.js';
+import { ExpandableTreeNode } from './tree-expansion.js';
+import { createTreeTestContainer } from './test/tree-test-container.js';
+import { timeout } from '../../common/promise-util.js';
 
 describe('TreeExpansionService', () => {
     let model: TreeModel;

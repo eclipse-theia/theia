@@ -16,10 +16,10 @@
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { ContributionProvider, ILogger } from '@theia/core';
-import { DebugConfiguration } from './debug-configuration';
-import { DebuggerDescription, DebugError } from './debug-service';
+import { DebugConfiguration } from './debug-configuration.js';
+import { DebuggerDescription, DebugError } from './debug-service.js';
 
-import { DebugAdapterContribution, DebugAdapterExecutable, DebugAdapterSessionFactory } from './debug-model';
+import { DebugAdapterContribution, DebugAdapterExecutable, DebugAdapterSessionFactory } from './debug-model.js';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 
 /**

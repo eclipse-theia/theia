@@ -16,7 +16,7 @@
 import { AbstractStreamParsingChatAgent } from '@theia/ai-chat';
 import { LanguageModelRequirement } from '@theia/ai-core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { agentsMdSystemVariants, agentsMdTemplateVariants } from '../common/agents-md-prompt-template';
+import { agentsMdSystemVariants, agentsMdTemplateVariants } from '../common/agents-md-prompt-template.js';
 import { ILogger, nls } from '@theia/core';
 
 @injectable()

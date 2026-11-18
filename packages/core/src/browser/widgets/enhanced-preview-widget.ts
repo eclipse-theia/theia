@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { isFunction, isObject } from '../../common';
+import { isFunction, isObject } from '../../common/index.js';
 
 export interface EnhancedPreviewWidget {
     getEnhancedPreviewNode(): Node | undefined;

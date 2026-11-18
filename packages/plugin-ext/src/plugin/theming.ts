@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ColorTheme, ColorThemeKind } from './types-impl';
+import { ColorTheme, ColorThemeKind } from './types-impl.js';
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { ThemingExt } from '../common';
-import { RPCProtocol } from '../common/rpc-protocol';
+import { ThemingExt } from '../common/index.js';
+import { RPCProtocol } from '../common/rpc-protocol.js';
 import { ThemeType } from '@theia/core/lib/common/theme';
 
 /*---------------------------------------------------------------------------------------------

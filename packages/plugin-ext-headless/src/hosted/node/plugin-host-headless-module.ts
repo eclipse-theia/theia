@@ -18,8 +18,8 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import { RPCProtocol, RPCProtocolImpl } from '@theia/plugin-ext/lib/common/rpc-protocol';
 import { AbstractPluginHostRPC, PluginContainerModuleLoader } from '@theia/plugin-ext/lib/hosted/node/plugin-host-rpc';
 import { AbstractPluginManagerExtImpl, MinimalTerminalServiceExt } from '@theia/plugin-ext/lib/plugin/plugin-manager';
-import { HeadlessPluginHostRPC } from './plugin-host-headless-rpc';
-import { HeadlessPluginManagerExtImpl } from '../../plugin/headless-plugin-manager';
+import { HeadlessPluginHostRPC } from './plugin-host-headless-rpc.js';
+import { HeadlessPluginManagerExtImpl } from '../../plugin/headless-plugin-manager.js';
 import { IPCChannel } from '@theia/core/lib/node';
 import { InternalPluginContainerModule } from '@theia/plugin-ext/lib/plugin/node/plugin-container-module';
 

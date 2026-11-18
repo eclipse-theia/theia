@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './compressed-tree-expansion-service';
-export * from './compressed-tree-model';
-export * from './compressed-tree-widget';
-export * from './tree-compression-service';
+export * from './compressed-tree-expansion-service.js';
+export * from './compressed-tree-model.js';
+export * from './compressed-tree-widget.js';
+export * from './tree-compression-service.js';

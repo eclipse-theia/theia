@@ -18,9 +18,9 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { MaybeArray } from '@theia/core/lib/common/types';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { FileStat } from '../../common/files';
-import { FileAccess } from '../../common/filesystem';
-import { DefaultFileDialogService, OpenFileDialogProps, SaveFileDialogProps } from '../../browser/file-dialog';
+import { FileStat } from '../../common/files.js';
+import { FileAccess } from '../../common/filesystem.js';
+import { DefaultFileDialogService, OpenFileDialogProps, SaveFileDialogProps } from '../../browser/file-dialog/index.js';
 //
 // We are OK to use this here because the electron backend and frontend are on the same host.
 // If required, we can move this single service (and its module) to a dedicated Theia extension,
@@ -29,7 +29,7 @@ import { DefaultFileDialogService, OpenFileDialogProps, SaveFileDialogProps } fr
 //
 // eslint-disable-next-line @theia/runtime-import-check
 import { FileUri } from '@theia/core/lib/common/file-uri';
-import { OpenDialogOptions, SaveDialogOptions } from '../../electron-common/electron-api';
+import { OpenDialogOptions, SaveDialogOptions } from '../../electron-common/electron-api.js';
 
 import '@theia/core/lib/electron-common/electron-api';
 
@@ -118,7 +118,8 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
 
     protected toOpenDialogOptions(uri: URI, props: OpenFileDialogProps): OpenDialogOptions {
         const result: OpenDialogOptions = {
-            path: FileUri.fsPath(uri)
+            path: FileUri.fsPath(uri),
+            windowName: props.targetWindow?.name
         };
 
         result.title = props.title;
@@ -136,7 +137,7 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
                 result.filters.push({ name: label, extensions: extensions });
             }
 
-            if (props.canSelectFiles) {
+            if (props.canSelectFiles && !props.disableAllFilesFilter) {
                 if (filters.length > 0) {
                     result.filters.push({ name: 'All Files', extensions: ['*'] });
                 }
@@ -152,7 +153,8 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
         }
 
         const result: SaveDialogOptions = {
-            path: FileUri.fsPath(uri)
+            path: FileUri.fsPath(uri),
+            windowName: props.targetWindow?.name
         };
 
         result.title = props.title;

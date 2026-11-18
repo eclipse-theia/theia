@@ -16,7 +16,7 @@
 
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 import * as chai from 'chai';
-import { ResourceTextEdit } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
+import { ResourceTextEdit } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService.js';
 import { URI as Uri } from '@theia/core/shared/vscode-uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 
@@ -26,7 +26,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { Container } from '@theia/core/shared/inversify';
-import { BulkEditInfoNode, BulkEditTree } from './bulk-edit-tree';
+import { BulkEditInfoNode, BulkEditTree } from './bulk-edit-tree.js';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 const expect = chai.expect;

@@ -20,11 +20,11 @@ import { ObservableFromEvent, ObservableUtils } from '@theia/core/lib/common/obs
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { Context } from '@theia/core/lib/browser/context-key-service';
 import { EditorManager, EDITOR_CONTENT_MENU, EditorWidget } from '@theia/editor/lib/browser';
-import { ICodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
-import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
-import { MonacoContextKeyService } from './monaco-context-key-service';
-import { MonacoEditor } from './monaco-editor';
-import { MonacoEditorOverlayButton } from './monaco-editor-overlay-button';
+import { ICodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser.js';
+import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey.js';
+import { MonacoContextKeyService } from './monaco-context-key-service.js';
+import { MonacoEditor } from './monaco-editor.js';
+import { MonacoEditorOverlayButton } from './monaco-editor-overlay-button.js';
 
 /**
  * Implements {@link EDITOR_CONTENT_MENU} for {@link MonacoEditor}s.

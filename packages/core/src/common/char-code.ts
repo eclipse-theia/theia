@@ -24,10 +24,14 @@
 // Names from https://blog.codinghorror.com/ascii-pronunciation-rules-for-programmers/
 
 /**
- * An inlined enum containing useful character codes (to be used with String.charCodeAt).
- * Please leave the const keyword such that it gets inlined when compiled to JavaScript!
+ * Useful character codes (to be used with String.charCodeAt).
+ *
+ * Deliberately not a `const enum`, even though that would inline the values: a `const enum` is
+ * published as an ambient const enum in the `.d.ts`, which adopters compiled per file
+ * (`isolatedModules`, esbuild, swc) cannot use at all. Getting the inlining back would take
+ * `preserveConstEnums` plus a step that strips `const` from the emitted declarations.
  */
-export const enum CharCode {
+export enum CharCode {
     Null = 0,
     /**
      * The `\t` character.

@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { NotebookCellModel } from './notebook-cell-model';
+import { NotebookCellModel } from './notebook-cell-model.js';
 import { Disposable, Emitter } from '@theia/core';
-import { NotebookModel } from './notebook-model';
+import { NotebookModel } from './notebook-model.js';
 
 export interface SelectedCellChangeEvent {
     cell: NotebookCellModel | undefined;

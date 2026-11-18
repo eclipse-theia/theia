@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { MarkdownStringImpl } from './markdown-string';
+import { MarkdownStringImpl } from './markdown-string.js';
 
 describe('MarkdownStringImpl#appendCodeblock', () => {
 

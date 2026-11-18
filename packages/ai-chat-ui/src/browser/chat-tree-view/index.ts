@@ -14,5 +14,5 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './chat-view-tree-container';
-export * from './chat-view-tree-widget';
+export * from './chat-view-tree-container.js';
+export * from './chat-view-tree-widget.js';

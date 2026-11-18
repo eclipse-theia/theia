@@ -18,7 +18,7 @@ import { MonacoEditorModel, WillSaveMonacoModelEvent } from '@theia/monaco/lib/b
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
-import { Schemes } from '../../common/uri-components';
+import { Schemes } from '../../common/uri-components.js';
 import URI from '@theia/core/lib/common/uri';
 import { Reference } from '@theia/core/lib/common/reference';
 
@@ -49,11 +49,7 @@ export class EditorModelService {
         this.monacoModelService = monacoModelService;
         monacoModelService.models.forEach(model => this.modelCreated(model));
         monacoModelService.onDidCreate(this.modelCreated, this);
-        monacoWorkspace.onDidCloseTextDocument(model => {
-            setTimeout(() => {
-                this.onModelRemovedEmitter.fire(model);
-            }, 1);
-        });
+        monacoWorkspace.onDidCloseTextDocument(model => this.onModelRemovedEmitter.fire(model));
     }
 
     private modelCreated(model: MonacoEditorModel): void {

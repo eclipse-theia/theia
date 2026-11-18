@@ -1,11 +1,12 @@
 {
   "name": "@theia/workspace",
-  "version": "1.76.0",
+  "version": "1.77.0",
   "description": "Theia - Workspace Extension",
+  "type": "module",
   "dependencies": {
-    "@theia/core": "1.76.0",
-    "@theia/filesystem": "1.76.0",
-    "@theia/variable-resolver": "1.76.0",
+    "@theia/core": "1.77.0",
+    "@theia/filesystem": "1.77.0",
+    "@theia/variable-resolver": "1.77.0",
     "jsonc-parser": "^3.3.1",
     "tslib": "^2.8.1",
     "valid-filename": "^2.0.1"
@@ -50,10 +51,21 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.76.0"
+    "@theia/ext-scripts": "1.77.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "21358137e41342742707f660b8e222f940a27652",
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/browser": "./lib/browser/index.js",
+    "./lib/browser/metadata-storage": "./lib/browser/metadata-storage/index.js",
+    "./lib/common": "./lib/common/index.js",
+    "./lib/node": "./lib/node/index.js",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  }
 }

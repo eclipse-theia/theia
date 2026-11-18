@@ -23,8 +23,8 @@ import { injectable, inject, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import type { TodoListItem } from '@openai/codex-sdk';
-import { CodexToolCallChatResponseContent } from '../codex-tool-call-content';
-import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
+import { CodexToolCallChatResponseContent } from '../codex-tool-call-content.js';
+import { CollapsibleToolRenderer } from './collapsible-tool-renderer.js';
 
 @injectable()
 export class TodoListRenderer implements ChatResponsePartRenderer<CodexToolCallChatResponseContent> {

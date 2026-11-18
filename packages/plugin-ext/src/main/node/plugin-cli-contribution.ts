@@ -17,8 +17,8 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { Argv, Arguments } from '@theia/core/shared/yargs';
 import { CliContribution } from '@theia/core/lib/node/cli';
-import { LocalDirectoryPluginDeployerResolver } from './resolvers/local-directory-plugin-deployer-resolver';
-import { PluginPaths } from '../common/paths/const';
+import { LocalDirectoryPluginDeployerResolver } from './resolvers/local-directory-plugin-deployer-resolver.js';
+import { PluginPaths } from '../common/paths/const.js';
 
 @injectable()
 export class PluginCliContribution implements CliContribution {

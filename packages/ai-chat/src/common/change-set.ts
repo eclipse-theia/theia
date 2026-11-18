@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ArrayUtils, Disposable, Emitter, Event, nls, URI } from '@theia/core';
-import { SerializableChangeSetElement } from './chat-model-serialization';
+import { SerializableChangeSetElement } from './chat-model-serialization.js';
 
 export interface ChangeSetElement {
     readonly uri: URI;

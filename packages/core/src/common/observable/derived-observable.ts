@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // copied and modified from https://github.com/microsoft/vscode/blob/1.96.3/src/vs/base/common/observableInternal/derived.ts
 
-import { BaseObservable, Observable } from './observable-base';
+import { BaseObservable, Observable } from './observable-base.js';
 
 /**
  * An observable that is derived from other observables.
@@ -297,7 +297,7 @@ export namespace DerivedObservable {
         willHandleChange?: <U, UChange>(context: Observable.ChangeContext<U, UChange>, changeSummary: TChangeSummary | undefined) => boolean;
     }
 
-    export const enum State {
+    export enum State {
         /**
          * Initial state. No cached value.
          */

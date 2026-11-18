@@ -21,12 +21,12 @@
 // copied and modified from https://github.com/microsoft/vscode/blob/standalone/0.19.x/src/vs/workbench/api/common/extHostLanguageFeatures.ts#L1107-L1151
 
 import * as theia from '@theia/plugin';
-import { DocumentsExtImpl } from '../documents';
+import { DocumentsExtImpl } from '../documents.js';
 import { URI } from '@theia/core/shared/vscode-uri';
-import * as model from '../../common/plugin-api-rpc-model';
-import * as Converter from '../type-converters';
-import * as types from '../types-impl';
-import { Position } from '../../common/plugin-api-rpc';
+import * as model from '../../common/plugin-api-rpc-model.js';
+import * as Converter from '../type-converters.js';
+import * as types from '../types-impl.js';
+import { Position } from '../../common/plugin-api-rpc.js';
 
 export class SelectionRangeProviderAdapter {
 

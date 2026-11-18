@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { Disposable, Event } from '@theia/core';
-import { NotebookModel } from '../view-model/notebook-model';
-import { NotebookEditorWidget } from '../notebook-editor-widget';
-import { NotebookContentChangedEvent } from '../notebook-types';
-import { NotebookCellOutputModel } from '../view-model/notebook-cell-output-model';
-import { NotebookCellModel } from '../view-model/notebook-cell-model';
+import { NotebookModel } from '../view-model/notebook-model.js';
+import { NotebookEditorWidget } from '../notebook-editor-widget.js';
+import { NotebookContentChangedEvent } from '../notebook-types.js';
+import { NotebookCellOutputModel } from '../view-model/notebook-cell-output-model.js';
+import { NotebookCellModel } from '../view-model/notebook-cell-model.js';
 
 export const CellOutputWebviewFactory = Symbol('outputWebviewFactory');
 export const CellOutputWebview = Symbol('outputWebview');

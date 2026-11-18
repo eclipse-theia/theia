@@ -21,7 +21,7 @@ import { isOSX, isWindows } from '@theia/core';
 import { Readable, Writable } from 'stream';
 import { exec } from 'child_process';
 import * as fs from 'fs';
-import { IProcessStartEvent, IProcessExitEvent, ProcessErrorEvent, ProcessType, ManagedProcessManager, ManagedProcess } from '../common/process-manager-types';
+import { IProcessStartEvent, IProcessExitEvent, ProcessErrorEvent, ProcessType, ManagedProcessManager, ManagedProcess } from '../common/process-manager-types.js';
 export { IProcessStartEvent, IProcessExitEvent, ProcessErrorEvent, ProcessType };
 
 /**
@@ -92,7 +92,7 @@ export abstract class Process implements ManagedProcess {
         @unmanaged() protected readonly options: ProcessOptions | ForkOptions
     ) {
         this.id = this.processManager.register(this);
-        this.initialCwd = options && options.options && 'cwd' in options.options && options.options['cwd'].toString() || __dirname;
+        this.initialCwd = options && options.options && 'cwd' in options.options && options.options['cwd'].toString() || import.meta.dirname;
     }
 
     abstract kill(signal?: string): void;

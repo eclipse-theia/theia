@@ -15,19 +15,19 @@
 // *****************************************************************************
 
 import { DebuggerDescription, DebugPath, DebugService, DynamicDebugConfigurationProvider } from '@theia/debug/lib/common/debug-service';
-import debounce = require('@theia/core/shared/lodash.debounce');
+import debounce from '@theia/core/shared/lodash.debounce';
 import { deepClone, Emitter, Event, nls, ILogger } from '@theia/core';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
-import { PluginDebugAdapterContribution } from './plugin-debug-adapter-contribution';
-import { PluginDebugConfigurationProvider } from './plugin-debug-configuration-provider';
+import { PluginDebugAdapterContribution } from './plugin-debug-adapter-contribution.js';
+import { PluginDebugConfigurationProvider } from './plugin-debug-configuration-provider.js';
 import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { CommandIdVariables } from '@theia/variable-resolver/lib/common/variable-types';
-import { DebugConfigurationProviderTriggerKind } from '../../../common/plugin-api-rpc';
-import { DebuggerContribution } from '../../../common/plugin-protocol';
+import { DebugConfigurationProviderTriggerKind } from '../../../common/plugin-api-rpc.js';
+import { DebuggerContribution } from '../../../common/plugin-protocol.js';
 import { DebugRequestTypes } from '@theia/debug/lib/browser/debug-session-connection';
 import * as theia from '@theia/plugin';
 

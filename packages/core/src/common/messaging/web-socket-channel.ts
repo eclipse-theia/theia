@@ -16,9 +16,9 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { WriteBuffer } from '../message-rpc';
-import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../message-rpc/uint8-array-message-buffer';
-import { AbstractChannel } from '../message-rpc/channel';
+import { WriteBuffer } from '../message-rpc/index.js';
+import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../message-rpc/uint8-array-message-buffer.js';
+import { AbstractChannel } from '../message-rpc/channel.js';
 import { Socket as ClientSocket } from 'socket.io-client';
 import { Socket as ServerSocket } from 'socket.io';
 import { Emitter } from 'vscode-languageserver-protocol';

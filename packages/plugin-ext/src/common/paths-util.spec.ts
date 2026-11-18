@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { relative } from './paths-util';
+import { relative } from './paths-util.js';
 
 describe('paths-util', () => {
 

@@ -26,16 +26,16 @@ import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-tr
 import { VSCodeExtensionUri } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-uri';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
-import { VSXEnvironment } from '../common/vsx-environment';
-import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
-import { TypeBadge } from './type-badge';
-import { ExtensionCard, ExtensionCardTrust } from './extension-card';
+import { VSXEnvironment } from '../common/vsx-environment.js';
+import { VSXExtensionsSearchModel } from './vsx-extensions-search-model.js';
+import { TypeBadge } from './type-badge.js';
+import { ExtensionCard, ExtensionCardTrust } from './extension-card.js';
 import { CommandRegistry, MenuPath, nls } from '@theia/core/lib/common';
 import { codicon, ConfirmDialog, ContextMenuRenderer, HoverService, TreeWidget } from '@theia/core/lib/browser';
 import { VSXExtensionNamespaceAccess, VSXUser } from '@theia/ovsx-client/lib/ovsx-types';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
-import { VSXExtensionsModel } from './vsx-extensions-model';
+import { VSXExtensionsModel } from './vsx-extensions-model.js';
 
 export const EXTENSIONS_CONTEXT_MENU: MenuPath = ['extensions_context_menu'];
 
@@ -45,6 +45,7 @@ export namespace VSXExtensionsContextMenu {
     export const ENABLE = [...EXTENSIONS_CONTEXT_MENU, '2_enable'];
     export const COPY = [...EXTENSIONS_CONTEXT_MENU, '3_copy'];
     export const CONTRIBUTION = [...EXTENSIONS_CONTEXT_MENU, '4_contribution'];
+    export const RECOMMENDATIONS = [...EXTENSIONS_CONTEXT_MENU, '5_recommendations'];
 }
 
 @injectable()

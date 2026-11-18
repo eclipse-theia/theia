@@ -16,9 +16,9 @@
 
 import { Container } from '@theia/core/shared/inversify';
 import { expect } from 'chai';
-import { TelemetryService } from '../common/telemetry-service';
-import { BrowserOnlyTelemetryService } from './browser-only-telemetry-service';
-import telemetryFrontendOnlyModule from './telemetry-frontend-only-module';
+import { TelemetryService } from '../common/telemetry-service.js';
+import { BrowserOnlyTelemetryService } from './browser-only-telemetry-service.js';
+import telemetryFrontendOnlyModule from './telemetry-frontend-only-module.js';
 
 describe('browser-only telemetry service', () => {
     it('binds the no-op service when telemetry is not already bound', () => {

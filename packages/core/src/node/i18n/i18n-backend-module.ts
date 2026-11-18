@@ -15,19 +15,19 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { localizationPath } from '../../common/i18n/localization';
-import { LocalizationProvider } from './localization-provider';
-import { ConnectionHandler, RpcConnectionHandler, bindRootContributionProvider } from '../../common';
-import { LocalizationRegistry, LocalizationContribution } from './localization-contribution';
-import { LocalizationServerImpl } from './localization-server';
-import { TheiaLocalizationContribution } from './theia-localization-contribution';
-import { LocalizationServer, LocalizationServerPath } from '../../common/i18n/localization-server';
-import { BackendApplicationContribution } from '../backend-application';
+import { localizationPath } from '../../common/i18n/localization.js';
+import { LocalizationProvider } from './localization-provider.js';
+import { ConnectionHandler, RpcConnectionHandler, bindRootContributionProvider } from '../../common/index.js';
+import { LocalizationRegistry, LocalizationContribution } from './localization-contribution.js';
+import { LocalizationServerImpl } from './localization-server.js';
+import { TheiaLocalizationContribution } from './theia-localization-contribution.js';
+import { LocalizationServer, LocalizationServerPath } from '../../common/i18n/localization-server.js';
+import { BackendApplicationContribution } from '../backend-application.js';
 
 export default new ContainerModule(bind => {
     bind(LocalizationProvider).toSelf().inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new RpcConnectionHandler(localizationPath, () => ctx.container.get(LocalizationProvider))
+        new RpcConnectionHandler(localizationPath, () => ctx.container.get(LocalizationProvider), { independentOfShellEnvironment: true })
     ).inSingletonScope();
     bind(LocalizationRegistry).toSelf().inSingletonScope();
     bindRootContributionProvider(bind, LocalizationContribution);
@@ -35,7 +35,7 @@ export default new ContainerModule(bind => {
     bind(LocalizationServer).toService(LocalizationServerImpl);
     bind(BackendApplicationContribution).toService(LocalizationServerImpl);
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new RpcConnectionHandler(LocalizationServerPath, () => ctx.container.get(LocalizationServer))
+        new RpcConnectionHandler(LocalizationServerPath, () => ctx.container.get(LocalizationServer), { independentOfShellEnvironment: true })
     ).inSingletonScope();
     bind(TheiaLocalizationContribution).toSelf().inSingletonScope();
     bind(LocalizationContribution).toService(TheiaLocalizationContribution);

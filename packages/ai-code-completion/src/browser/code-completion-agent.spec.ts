@@ -22,8 +22,8 @@ FrontendApplicationConfigProvider.set({});
 import { UserRequest } from '@theia/ai-core/lib/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { CancellationTokenSource, editor, IRange, languages, Position, Uri } from '@theia/monaco-editor-core/esm/vs/editor/editor.api';
-import { CodeCompletionAgentImpl } from './code-completion-agent';
+import { CancellationTokenSource, editor, IRange, languages, Position, Uri } from '@theia/monaco-editor-core/esm/vs/editor/editor.api.js';
+import { CodeCompletionAgentImpl } from './code-completion-agent.js';
 
 disableJSDOM();
 

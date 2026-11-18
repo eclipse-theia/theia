@@ -26,8 +26,8 @@ import {
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { MCPServersPreference } from '@theia/ai-mcp/lib/common/mcp-server-preference-validator';
 import { MCPInstallOverrides, MCPServerEditor } from '@theia/ai-mcp/lib/browser/mcp-server-editor';
-import { ClassificationResult, ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
-import { RegistryAutoUpdatePolicy } from '../auto-update/registry-auto-update-policy';
+import { ClassificationResult, ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types.js';
+import { RegistryAutoUpdatePolicy } from '../auto-update/registry-auto-update-policy.js';
 
 export { MCPInstallOverrides };
 
@@ -206,7 +206,7 @@ export class MCPInstallServiceImpl implements MCPInstallService {
     }
 
     protected readServers(): StoredServers {
-        return this.preferenceService.get<StoredServers>(MCP_SERVERS_PREF, {}) ?? {};
+        return this.preferenceService.get<StoredServers>(MCP_SERVERS_PREF, {fallback: {}}) ?? {};
     }
 
     protected async writeServers(next: StoredServers): Promise<void> {

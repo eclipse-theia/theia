@@ -17,7 +17,7 @@
 import { nls, PreferenceSchema } from '@theia/core';
 import {
     NOTIFICATION_TYPES
-} from './notification-types';
+} from './notification-types.js';
 
 export const AGENT_SETTINGS_PREF = 'ai-features.agentSettings';
 
@@ -79,7 +79,7 @@ export const AgentSettingsPreferenceSchema: PreferenceSchema = {
                     completionNotification: {
                         type: 'string',
                         enum: [...NOTIFICATION_TYPES],
-                        title: nls.localize('theia/ai/agents/completionNotification/title', 'Notification'),
+                        title: nls.localizeByDefault('Notification'),
                         markdownDescription: nls.localize('theia/ai/agents/completionNotification/mdDescription',
                             'Notification behavior when this agent needs your attention, i.e. it completed a task or requests your input. \
                     If not set, the global default notification setting will be used.\n\

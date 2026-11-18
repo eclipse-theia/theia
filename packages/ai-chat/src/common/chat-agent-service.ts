@@ -21,10 +21,10 @@
 
 import { ContributionProvider, Emitter, Event, ILogger, PreferenceService } from '@theia/core';
 import { inject, injectable, named, optional, postConstruct } from '@theia/core/shared/inversify';
-import { ChatAgent } from './chat-agents';
+import { ChatAgent } from './chat-agents.js';
 import { AgentService, AISettingsService } from '@theia/ai-core';
-import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-request';
-import { DEFAULT_CHAT_AGENT_PREF } from './ai-chat-preferences';
+import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-request.js';
+import { DEFAULT_CHAT_AGENT_PREF } from './ai-chat-preferences.js';
 
 /**
  * The default chat agent to invoke

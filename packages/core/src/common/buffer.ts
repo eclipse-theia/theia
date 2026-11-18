@@ -21,9 +21,10 @@
 
 /* eslint-disable no-null/no-null */
 
-import { Buffer as SaferBuffer } from 'safer-buffer';
-import * as iconv from 'iconv-lite';
-import * as streams from './stream';
+// CommonJS modules whose exports cannot be detected statically, so they are imported as a whole.
+import saferBuffer from 'safer-buffer';
+import iconv from 'iconv-lite';
+import * as streams from './stream.js';
 
 const hasBuffer = (typeof Buffer !== 'undefined');
 const hasTextEncoder = (typeof TextEncoder !== 'undefined');
@@ -100,7 +101,7 @@ export class BinaryBuffer {
             }
             return textDecoder.decode(this.buffer);
         } else {
-            return iconv.decode(SaferBuffer.from(this.buffer), 'utf8');
+            return iconv.decode(saferBuffer.Buffer.from(this.buffer), 'utf8');
         }
     }
 

@@ -17,7 +17,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';
-import { DiffService } from './diff-service';
+import { DiffService } from './diff-service.js';
 
 @injectable()
 export class WorkspaceCompareHandler implements UriCommandHandler<URI[]> {

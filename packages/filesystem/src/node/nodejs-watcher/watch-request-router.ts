@@ -17,10 +17,10 @@
 import * as path from 'path';
 import { Minimatch } from 'minimatch';
 import { FileUri } from '@theia/core/lib/common/file-uri';
-import { FileChangeType, FileSystemWatcherServiceClient } from '../../common/filesystem-watcher-protocol';
-import { FileChangeCollection } from '../file-change-collection';
-import { WatchRequest } from '../filesystem-watcher';
-import { WatcherHost } from './watcher-host';
+import { FileChangeType, FileSystemWatcherServiceClient } from '../../common/filesystem-watcher-protocol.js';
+import { FileChangeCollection } from '../file-change-collection.js';
+import { WatchRequest } from '../filesystem-watcher.js';
+import { WatcherHost } from './watcher-host.js';
 
 /** A {@link WatchRequest} resolved against the file system. */
 export interface DirectoryWatchRequest extends WatchRequest {

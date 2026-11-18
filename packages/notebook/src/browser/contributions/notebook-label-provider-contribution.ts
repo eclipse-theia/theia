@@ -16,13 +16,13 @@
 
 import { codicon, LabelProvider, LabelProviderContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { CellKind, CellUri } from '../../common';
-import { NotebookService } from '../service/notebook-service';
-import { NotebookCellOutlineNode } from './notebook-outline-contribution';
-import type Token = require('markdown-it/lib/token');
-import markdownit = require('@theia/core/shared/markdown-it');
+import { CellKind, CellUri } from '../../common/index.js';
+import { NotebookService } from '../service/notebook-service.js';
+import { NotebookCellOutlineNode } from './notebook-outline-contribution.js';
+import type Token from 'markdown-it/lib/token.mjs';
+import markdownit from '@theia/core/shared/markdown-it';
 import * as markdownitemoji from '@theia/core/shared/markdown-it-emoji';
-import { NotebookCellModel } from '../view-model/notebook-cell-model';
+import { NotebookCellModel } from '../view-model/notebook-cell-model.js';
 import { URI } from '@theia/core';
 
 @injectable()

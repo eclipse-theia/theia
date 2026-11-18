@@ -18,9 +18,9 @@ import { MAIN_MENU_BAR, MenuAction, MenuContribution, MenuModelRegistry, MenuPat
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { EDITOR_CONTEXT_MENU, EditorMainMenu } from '@theia/editor/lib/browser';
-import { IMenuItem, MenuId, MenuRegistry, isIMenuItem } from '@theia/monaco-editor-core/esm/vs/platform/actions/common/actions';
-import { MonacoCommands } from './monaco-command';
-import { MonacoCommandRegistry } from './monaco-command-registry';
+import { IMenuItem, MenuId, MenuRegistry, isIMenuItem } from '@theia/monaco-editor-core/esm/vs/platform/actions/common/actions.js';
+import { MonacoCommands } from './monaco-command.js';
+import { MonacoCommandRegistry } from './monaco-command-registry.js';
 
 export interface MonacoActionGroup {
     id: string;

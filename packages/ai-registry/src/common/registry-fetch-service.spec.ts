@@ -17,11 +17,11 @@
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { BackendRequestService, RequestContext, RequestOptions, RequestService } from '@theia/core/shared/@theia/request';
-import { AIRegistryConfiguration } from './ai-registry-configuration';
-import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from './mcp/mcp-registry-entry-resolver';
-import { PluginRegistryEntryResolver, PluginRegistryEntryResolverImpl } from './plugin/plugin-registry-entry-resolver';
-import { SkillRegistryEntryResolver, SkillRegistryEntryResolverImpl } from './skill/skill-registry-entry-resolver';
-import { RegistryFetchService, RegistryFetchServiceImpl } from './registry-fetch-service';
+import { AIRegistryConfiguration } from './ai-registry-configuration.js';
+import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from './mcp/mcp-registry-entry-resolver.js';
+import { PluginRegistryEntryResolver, PluginRegistryEntryResolverImpl } from './plugin/plugin-registry-entry-resolver.js';
+import { SkillRegistryEntryResolver, SkillRegistryEntryResolverImpl } from './skill/skill-registry-entry-resolver.js';
+import { RegistryFetchService, RegistryFetchServiceImpl } from './registry-fetch-service.js';
 import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 

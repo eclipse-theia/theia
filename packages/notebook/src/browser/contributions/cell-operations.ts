@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CellEditType, CellKind } from '../../common';
-import { NotebookCellModel } from '../view-model/notebook-cell-model';
-import { NotebookModel } from '../view-model/notebook-model';
+import { CellEditType, CellKind } from '../../common/index.js';
+import { NotebookCellModel } from '../view-model/notebook-cell-model.js';
+import { NotebookModel } from '../view-model/notebook-model.js';
 
 /**
  * a collection of different reusable notbook cell operations

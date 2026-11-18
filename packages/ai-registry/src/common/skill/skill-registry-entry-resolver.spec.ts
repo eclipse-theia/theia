@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { SkillRegistryEntryResolver, SkillRegistryEntryResolverImpl } from './skill-registry-entry-resolver';
-import { RegistrySkill } from './skill-registry-types';
+import { SkillRegistryEntryResolver, SkillRegistryEntryResolverImpl } from './skill-registry-entry-resolver.js';
+import { RegistrySkill } from './skill-registry-types.js';
 
 function createResolver(): SkillRegistryEntryResolver {
     return new SkillRegistryEntryResolverImpl();

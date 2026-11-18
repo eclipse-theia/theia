@@ -26,11 +26,11 @@ try {
 
 import { expect } from 'chai';
 import { Emitter, ILogger, MessageService } from '@theia/core';
-import { InstalledPluginInfo, ResolvedPluginEntry } from '../../common/plugin/plugin-registry-types';
-import { PluginInstallService } from './plugin-install-service';
-import { PluginInstaller } from './plugin-installer';
-import { PluginMcpRegistrar } from './plugin-mcp-registrar';
-import { PluginExtensionsContribution } from './plugin-extensions-contribution';
+import { InstalledPluginInfo, ResolvedPluginEntry } from '../../common/plugin/plugin-registry-types.js';
+import { PluginInstallService } from './plugin-install-service.js';
+import { PluginInstaller } from './plugin-installer.js';
+import { PluginMcpRegistrar } from './plugin-mcp-registrar.js';
+import { PluginExtensionsContribution } from './plugin-extensions-contribution.js';
 
 after(() => disableJSDOM());
 

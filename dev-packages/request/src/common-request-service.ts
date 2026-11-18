@@ -119,6 +119,8 @@ export interface RequestConfiguration {
     proxyUrl?: string;
     proxyAuthorization?: string;
     strictSSL?: boolean;
+    /** Whether to trust the CA certificates of the operating system in addition to Node's default ones. */
+    systemCertificates?: boolean;
 }
 export interface RequestService {
     configure(config: RequestConfiguration): Promise<void>;

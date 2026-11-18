@@ -18,10 +18,10 @@ import { OS, Path, QuickInputService, ILogger } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { Position } from '@theia/editor/lib/browser';
-import { AbstractFileOpeningLinkProvider } from './terminal-file-opening-link-provider';
-import { TerminalWidget } from './base/terminal-widget';
-import { TerminalLink } from './terminal-link-provider';
-import { TerminalWidgetImpl } from './terminal-widget-impl';
+import { AbstractFileOpeningLinkProvider } from './terminal-file-opening-link-provider.js';
+import { TerminalWidget } from './base/terminal-widget.js';
+import { TerminalLink } from './terminal-link-provider.js';
+import { TerminalWidgetImpl } from './terminal-widget-impl.js';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 @injectable()

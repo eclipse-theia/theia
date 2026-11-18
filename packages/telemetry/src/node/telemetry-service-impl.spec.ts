@@ -18,13 +18,13 @@ import { expect } from 'chai';
 import { ContributionProvider, Emitter, ILogger } from '@theia/core/lib/common';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
-import { TelemetryConsentProvider } from '../common/telemetry-consent-provider';
-import { TELEMETRY_FILTERS, TELEMETRY_LEVEL, TelemetryPreferences } from '../common/telemetry-preferences';
-import { TelemetryEvent } from '../common/telemetry-protocol';
-import { RecordingLogger } from '../common/test/recording-logger';
-import { TelemetryServiceImpl } from './telemetry-service-impl';
-import { BACKEND_TELEMETRY_SESSION, TelemetryLevel } from '../common/telemetry-types';
-import { TelemetrySink } from './telemetry-sink';
+import { TelemetryConsentProvider } from '../common/telemetry-consent-provider.js';
+import { TELEMETRY_FILTERS, TELEMETRY_LEVEL, TelemetryPreferences } from '../common/telemetry-preferences.js';
+import { TelemetryEvent } from '../common/telemetry-protocol.js';
+import { RecordingLogger } from '../common/test/recording-logger.js';
+import { TelemetryServiceImpl } from './telemetry-service-impl.js';
+import { BACKEND_TELEMETRY_SESSION, TelemetryLevel } from '../common/telemetry-types.js';
+import { TelemetrySink } from './telemetry-sink.js';
 
 interface TestPreferences extends TelemetryPreferences {
     setFilters(filters: Record<string, string[]>): void;

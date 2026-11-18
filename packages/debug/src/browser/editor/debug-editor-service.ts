@@ -19,11 +19,11 @@ import * as monaco from '@theia/monaco-editor-core';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import { DebugSessionManager } from '../debug-session-manager';
-import { DebugEditorModel, DebugEditorModelFactory } from './debug-editor-model';
-import { BreakpointManager } from '../breakpoint/breakpoint-manager';
-import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint';
-import { DebugBreakpointWidget } from './debug-breakpoint-widget';
+import { DebugSessionManager } from '../debug-session-manager.js';
+import { DebugEditorModel, DebugEditorModelFactory } from './debug-editor-model.js';
+import { BreakpointManager } from '../breakpoint/breakpoint-manager.js';
+import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint.js';
+import { DebugBreakpointWidget } from './debug-breakpoint-widget.js';
 import URI from '@theia/core/lib/common/uri';
 
 @injectable()

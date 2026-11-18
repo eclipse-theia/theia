@@ -17,9 +17,9 @@
 import { codiconArray } from '@theia/core/lib/browser';
 import { injectable, interfaces } from '@theia/core/shared/inversify';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
-import { Preference } from '../../util/preference-types';
-import { PreferenceLeafNodeRenderer, PreferenceNodeRenderer } from './preference-node-renderer';
-import { PreferenceLeafNodeRendererContribution } from './preference-node-renderer-creator';
+import { Preference } from '../../util/preference-types.js';
+import { PreferenceLeafNodeRenderer, PreferenceNodeRenderer } from './preference-node-renderer.js';
+import { PreferenceLeafNodeRendererContribution } from './preference-node-renderer-creator.js';
 
 @injectable()
 export class PreferenceArrayInputRenderer extends PreferenceLeafNodeRenderer<string[], HTMLInputElement> {

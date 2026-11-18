@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { AIRegistryConfiguration } from '../ai-registry-configuration';
-import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from './mcp-registry-entry-resolver';
-import { RegistryMCPServer } from './mcp-registry-types';
+import { AIRegistryConfiguration } from '../ai-registry-configuration.js';
+import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from './mcp-registry-entry-resolver.js';
+import { RegistryMCPServer } from './mcp-registry-types.js';
 import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import * as sinon from 'sinon';
@@ -72,6 +72,46 @@ describe('MCPRegistryEntryResolver.resolve', () => {
             configHash: 'hash-v1',
             mcpRegistryVerified: true
         });
+    });
+
+    it('propagates the server latestVersion alongside an unpinned approval', () => {
+        const raw: RegistryMCPServer = {
+            serverId: 'io.github.example/latest-mcp',
+            name: 'Latest',
+            description: 'Unpinned MCP server',
+            mcpRegistryVerified: true,
+            latestVersion: '3.4.1',
+            approvals: [{
+                organizationId: 'theia',
+                date: '2026-04-01',
+                configHash: 'hash-v1',
+                installConfigs: [{ config: { servers: { latest: { command: 'npx', args: ['-y', 'latest-mcp'] } } } }]
+            }]
+        };
+
+        const resolved = resolver.resolve(raw);
+        expect(resolved?.version).to.equal(undefined);
+        expect(resolved?.latestVersion).to.equal('3.4.1');
+    });
+
+    it('keeps the approval version separate from the server latestVersion', () => {
+        const raw: RegistryMCPServer = {
+            serverId: 'io.github.example/pinned-mcp',
+            name: 'Pinned',
+            description: 'Pinned MCP server',
+            mcpRegistryVerified: true,
+            latestVersion: '2.0.0',
+            approvals: [{
+                organizationId: 'theia',
+                date: '2026-04-01',
+                version: '^1.0.0',
+                installConfigs: [{ config: { servers: { pinned: { command: 'npx', args: ['-y', 'pinned-mcp'] } } } }]
+            }]
+        };
+
+        const resolved = resolver.resolve(raw);
+        expect(resolved?.version).to.equal('^1.0.0');
+        expect(resolved?.latestVersion).to.equal('2.0.0');
     });
 
     it('omits configHash when the approval has none - supports payloads pre-dating the field', () => {

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import URI from '@theia/core/lib/common/uri';
-import { PluginPackage } from '../../../common';
+import { PluginPackage } from '../../../common/index.js';
 
 export const PluginUriFactory = Symbol('PluginUriFactory');
 /**

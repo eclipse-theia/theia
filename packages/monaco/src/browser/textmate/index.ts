@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './textmate-registry';
-export * from './textmate-contribution';
-export * from './monaco-textmate-service';
-export * from './monaco-textmate-frontend-bindings';
+export * from './textmate-registry.js';
+export * from './textmate-contribution.js';
+export * from './monaco-textmate-service.js';
+export * from './monaco-textmate-frontend-bindings.js';

@@ -23,7 +23,7 @@ import { VSCodeExtensionUri } from '@theia/plugin-ext-vscode/lib/common/plugin-v
 import { nls } from '@theia/core/lib/common/nls';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { ILogger } from '@theia/core';
-import { VSXRegistryService } from '../common/vsx-registry-service';
+import { VSXRegistryService } from '../common/vsx-registry-service.js';
 
 @injectable()
 export class VSXLanguageQuickPickService extends LanguageQuickPickService {

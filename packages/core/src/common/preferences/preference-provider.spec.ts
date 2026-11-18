@@ -14,9 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PreferenceUtils } from './preference-provider';
-
-const { expect } = require('chai');
+import { PreferenceUtils } from './preference-provider.js';
+import { expect } from 'chai';
 
 describe('PreferenceProviderImpl', () => {
     it('should preserve extra source fields on merge', () => {

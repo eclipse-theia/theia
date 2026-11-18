@@ -21,8 +21,8 @@ import { ExternalApiRouter, RestParamDocumentation } from '@theia/external-api/l
 import { RestResult } from '@theia/external-api/lib/node/rest-result';
 import {
     AI_SESSIONS_API_PATH, ExternalChatPrompt, ExternalChatSessionCreateRequest, ExternalChatSessionDetail, ExternalChatSessionSummary
-} from '../common/external-chat-session-provider';
-import { ExternalChatSessionRegistry } from './external-chat-session-registry';
+} from '../common/external-chat-session-provider.js';
+import { ExternalChatSessionRegistry } from './external-chat-session-registry.js';
 
 const SESSION_ID_PARAM: RestParamDocumentation = { description: 'The session id.' };
 

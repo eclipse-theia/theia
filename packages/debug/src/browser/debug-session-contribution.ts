@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { injectable, inject, named, postConstruct, interfaces } from '@theia/core/shared/inversify';
-import { DebugSession, DebugSessionData } from './debug-session';
-import { DebugConfigurationSessionOptions, DebugSessionOptions } from './debug-session-options';
+import { DebugSession, DebugSessionData } from './debug-session.js';
+import { DebugConfigurationSessionOptions, DebugSessionOptions } from './debug-session-options.js';
 import { OutputChannelManager, OutputChannel } from '@theia/output/lib/browser/output-channel';
-import { DebugPreferences } from '../common/debug-preferences';
-import { DebugSessionConnection } from './debug-session-connection';
-import { DebugChannel, DebugAdapterPath, ForwardingDebugChannel } from '../common/debug-service';
+import { DebugPreferences } from '../common/debug-preferences.js';
+import { DebugSessionConnection } from './debug-session-connection.js';
+import { DebugChannel, DebugAdapterPath, ForwardingDebugChannel } from '../common/debug-service.js';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 

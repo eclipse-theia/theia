@@ -15,18 +15,21 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import {
     CompactionMessage, isCompactionResponsePart, isServerToolCallResponsePart, isTextResponsePart, isThinkingResponsePart, isToolCallResponsePart,
     isUsageResponsePart, LanguageModelMessage, LanguageModelResponse, LanguageModelStreamResponsePart, ToolCallExecutor, ToolCallExecutorImpl, UserRequest
 } from '@theia/ai-core';
-import { ILogger } from '@theia/core';
+import { CancellationError, CancellationTokenSource, ILogger } from '@theia/core';
 import { Container } from '@theia/core/shared/inversify';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { OpenAiModelUtils } from './openai-model-utils';
+import { OpenAiModelUtils } from './openai-model-utils.js';
 import { OpenAI } from 'openai';
-import { OPENAI_FUNCTION_CALL_REASONING_DATA_KEY, OpenAiResponseApiUtils } from './openai-response-api-utils';
-import { OPENAI_WEB_SEARCH, OPENAI_WEB_SEARCH_REPLAY_DATA_KEY } from './openai-server-tools';
+import type { ResponseStreamEvent } from 'openai/resources/responses/responses';
+import { OPENAI_FUNCTION_CALL_REASONING_DATA_KEY, OpenAiResponseApiUtils } from './openai-response-api-utils.js';
+import { OPENAI_WEB_SEARCH, OPENAI_WEB_SEARCH_REPLAY_DATA_KEY } from './openai-server-tools.js';
+import { OpenAiStreamingRetry } from './openai-streaming-retry.js';
 
 async function* toStream(events: unknown[]): AsyncIterable<unknown> {
     for (const event of events) {
@@ -34,16 +37,20 @@ async function* toStream(events: unknown[]): AsyncIterable<unknown> {
     }
 }
 
-function functionCallItem(id: string, name: string, args: string): unknown {
-    return {
-        type: 'response.output_item.added',
-        item: { id, call_id: id, type: 'function_call', name, arguments: args }
-    };
+function outputItemEvents(item: Record<string, unknown>, outputIndex: number): unknown[] {
+    return [
+        { type: 'response.output_item.added', output_index: outputIndex, item: item.type === 'function_call' ? { ...item, arguments: '' } : item },
+        ...(item.type === 'function_call' ? [{
+            type: 'response.function_call_arguments.done', item_id: item.id, name: item.name, arguments: item.arguments
+        }] : []),
+        { type: 'response.output_item.done', output_index: outputIndex, item }
+    ];
 }
 
-function createTestUtils(): OpenAiResponseApiUtils {
+function createTestUtils(logger: ILogger = new MockLogger()): OpenAiResponseApiUtils {
     const container = new Container();
-    container.bind(ILogger).to(MockLogger);
+    container.bind(ILogger).toConstantValue(logger);
+    container.bind(OpenAiStreamingRetry).toSelf();
     container.bind(ToolCallExecutor).to(ToolCallExecutorImpl).inSingletonScope();
     container.bind(OpenAiResponseApiUtils).toSelf();
     return container.get(OpenAiResponseApiUtils);
@@ -143,15 +150,12 @@ describe('OpenAiResponseApiUtils', () => {
             };
             const openai = {
                 responses: {
-                    stream: (payload: Record<string, unknown>) => {
-                        recordRequest(payload);
-                        return toStream(payloads.length === 1
-                            ? functionCalls.map(item => ({ type: 'response.output_item.added', item }))
-                            : [{ type: 'response.output_text.delta', delta: 'done' }]);
-                    },
                     create: async (payload: Record<string, unknown>) => {
                         recordRequest(payload);
-                        return { output: payloads.length === 1 ? functionCalls : [], output_text: payloads.length === 1 ? '' : 'done' };
+                        return payload.stream ? toStream(payloads.length === 1
+                            ? functionCalls.flatMap((item, index) => outputItemEvents(item, index))
+                            : [{ type: 'response.output_text.delta', delta: 'done' }])
+                            : { output: payloads.length === 1 ? functionCalls : [], output_text: payloads.length === 1 ? '' : 'done' };
                     }
                 }
             };
@@ -181,6 +185,7 @@ describe('OpenAiResponseApiUtils', () => {
             expect(parts.filter(isTextResponsePart)).to.deep.equal([{ content: 'done' }]);
             expect(payloads).to.have.length(2);
             const input = payloads[1].input as { type?: string; call_id?: string; output?: string }[];
+            expect(input.filter(item => item.type === 'function_call')).to.deep.equal(functionCalls);
             expect(input.filter(item => item.type === 'function_call_output')).to.deep.equal([
                 { type: 'function_call_output', call_id: 'call-0', output: '' },
                 { type: 'function_call_output', call_id: 'call-1', output: '' },
@@ -195,16 +200,9 @@ describe('OpenAiResponseApiUtils', () => {
     it('emits per-iteration usage for Response API tool calls instead of accumulated usage', async () => {
         const streams = [
             [
-                {
-                    type: 'response.output_item.added',
-                    item: {
-                        id: 'item-1',
-                        call_id: 'call-1',
-                        type: 'function_call',
-                        name: 'lookup',
-                        arguments: '{"query":"test"}'
-                    }
-                },
+                ...outputItemEvents({
+                    id: 'item-1', call_id: 'call-1', type: 'function_call', name: 'lookup', arguments: '{"query":"test"}'
+                }, 0),
                 {
                     type: 'response.completed',
                     response: {
@@ -234,7 +232,7 @@ describe('OpenAiResponseApiUtils', () => {
         const streamRequests: Record<string, unknown>[] = [];
         const openai = {
             responses: {
-                stream: (responseRequest: Record<string, unknown>) => {
+                create: async (responseRequest: Record<string, unknown>) => {
                     streamRequests.push(responseRequest);
                     return toStream(streams.shift() ?? []);
                 }
@@ -290,19 +288,16 @@ describe('OpenAiResponseApiUtils', () => {
         };
         const streams = [
             [
-                { type: 'response.output_item.done', item: reasoningItem },
-                { type: 'response.output_item.done', item: searchCall },
-                {
-                    type: 'response.output_item.added',
-                    item: { id: 'item-1', call_id: 'call-1', type: 'function_call', name: 'lookup', arguments: '{"query":"test"}' }
-                }
+                ...outputItemEvents(reasoningItem, 0),
+                ...outputItemEvents(searchCall, 1),
+                ...outputItemEvents({ id: 'item-1', call_id: 'call-1', type: 'function_call', name: 'lookup', arguments: '{"query":"test"}' }, 2)
             ],
             [{ type: 'response.output_text.delta', delta: 'done' }]
         ];
         const streamRequests: Record<string, unknown>[] = [];
         const openai = {
             responses: {
-                stream: (responseRequest: Record<string, unknown>) => {
+                create: async (responseRequest: Record<string, unknown>) => {
                     streamRequests.push(responseRequest);
                     return toStream(streams.shift() ?? []);
                 }
@@ -345,10 +340,10 @@ describe('OpenAiResponseApiUtils', () => {
             const payloads: Record<string, unknown>[] = [];
             const openai = {
                 responses: {
-                    stream: (payload: Record<string, unknown>) => {
+                    create: async (payload: Record<string, unknown>) => {
                         payloads.push(payload);
                         return toStream(payloads.length === 1 ? [
-                            { type: 'response.output_item.done', item: { type: 'compaction', id: 'c1', encrypted_content: 'enc1' } },
+                            { type: 'response.output_item.done', output_index: 0, item: { type: 'compaction', id: 'c1', encrypted_content: 'enc1' } },
                             { type: 'response.completed', response: { usage: { input_tokens: 10, output_tokens: 5 } } }
                         ] : [{ type: 'response.output_text.delta', delta: 'Continued answer' }]);
                     }
@@ -403,21 +398,15 @@ describe('OpenAiResponseApiUtils', () => {
         });
     }
 
-    it('surfaces the deferred-tool search as a running then finished server tool call', async () => {
+    it('surfaces and replays the native deferred-tool search output', async () => {
+        const searchCall = { id: 'ts-item-1', call_id: 'ts-1', type: 'tool_search_call', execution: 'server', status: 'completed', arguments: { query: 'file' } };
+        const searchOutput = { id: 'ts-out-1', call_id: 'ts-1', type: 'tool_search_output', execution: 'server', status: 'completed', tools: [{}, {}] };
+        const functionCall = { id: 'item-1', call_id: 'call-1', type: 'function_call', name: 'lookup', arguments: '{"query":"test"}' };
         const streams = [
             [
-                {
-                    type: 'response.output_item.added',
-                    item: { id: 'ts-item-1', call_id: 'ts-1', type: 'tool_search_call', execution: 'server', status: 'in_progress', arguments: { query: 'file' } }
-                },
-                {
-                    type: 'response.output_item.done',
-                    item: { id: 'ts-out-1', call_id: 'ts-1', type: 'tool_search_output', execution: 'server', status: 'completed', tools: [{}, {}] }
-                },
-                {
-                    type: 'response.output_item.added',
-                    item: { id: 'item-1', call_id: 'call-1', type: 'function_call', name: 'lookup', arguments: '{"query":"test"}' }
-                },
+                ...outputItemEvents(searchCall, 0),
+                ...outputItemEvents(searchOutput, 1),
+                ...outputItemEvents(functionCall, 2),
                 { type: 'response.completed', response: { usage: { input_tokens: 100, output_tokens: 10 } } }
             ],
             [
@@ -425,9 +414,13 @@ describe('OpenAiResponseApiUtils', () => {
                 { type: 'response.completed', response: { usage: { input_tokens: 200, output_tokens: 20 } } }
             ]
         ];
+        const payloads: Record<string, unknown>[] = [];
         const openai = {
             responses: {
-                stream: () => toStream(streams.shift() ?? [])
+                create: async (payload: Record<string, unknown>) => {
+                    payloads.push(payload);
+                    return toStream(streams.shift() ?? []);
+                }
             }
         };
         const request: UserRequest = {
@@ -471,6 +464,10 @@ describe('OpenAiResponseApiUtils', () => {
         expect(finished!.id).to.equal('ts-1');
         expect(finished!.name).to.equal('tool_search');
         expect(finished!.result).to.deep.equal({ content: [{ type: 'text', text: 'Found 2 tools.' }] });
+        expect(payloads[1].input).to.deep.equal([
+            ...payloads[0].input as unknown[], searchCall, searchOutput, functionCall,
+            { type: 'function_call_output', call_id: 'call-1', output: 'result' }
+        ]);
     });
 
     it('surfaces web search as a running then finished server tool call', async () => {
@@ -488,10 +485,10 @@ describe('OpenAiResponseApiUtils', () => {
         };
         const openai = {
             responses: {
-                stream: () => toStream([
-                    { type: 'response.output_item.done', item: reasoningItem },
-                    { type: 'response.output_item.added', item: { ...searchCall, status: 'in_progress' } },
-                    { type: 'response.output_item.done', item: searchCall },
+                create: async () => toStream([
+                    { type: 'response.output_item.done', output_index: 0, item: reasoningItem },
+                    { type: 'response.output_item.added', output_index: 1, item: { ...searchCall, status: 'in_progress' } },
+                    { type: 'response.output_item.done', output_index: 1, item: searchCall },
                     { type: 'response.output_text.delta', delta: 'Latest news.' },
                     { type: 'response.completed', response: { usage: { input_tokens: 10, output_tokens: 5 } } }
                 ])
@@ -604,14 +601,14 @@ describe('OpenAiResponseApiUtils', () => {
         const requests: Record<string, unknown>[] = [];
         const streams = [
             [
-                { type: 'response.output_item.done', item: reasoningItem },
-                { type: 'response.output_item.added', item: functionCall }
+                ...outputItemEvents(reasoningItem, 0),
+                ...outputItemEvents(functionCall, 1)
             ],
             [{ type: 'response.output_text.delta', delta: 'done' }]
         ];
         const openai = {
             responses: {
-                stream: (responseRequest: Record<string, unknown>) => {
+                create: async (responseRequest: Record<string, unknown>) => {
                     requests.push(responseRequest);
                     return toStream(streams.shift() ?? []);
                 }
@@ -666,6 +663,158 @@ describe('OpenAiResponseApiUtils', () => {
         }]);
     });
 
+    describe('transient stream failures', () => {
+        let clock: sinon.SinonFakeTimers;
+        let logError: sinon.SinonSpy;
+        const busy = { type: 'response.failed', response: { error: { code: 'server_error', message: 'The server is too busy.' } } };
+        const request: UserRequest = { sessionId: 's', requestId: 'r', messages: [{ actor: 'user', type: 'text', text: 'hello' }] };
+
+        beforeEach(() => {
+            clock = sinon.useFakeTimers();
+            const logger = new MockLogger();
+            logError = sinon.spy(logger, 'error');
+            utils = createTestUtils(logger);
+        });
+        afterEach(() => sinon.restore());
+
+        for (const withTools of [false, true]) {
+            it(`retries quietly after lifecycle events ${withTools ? 'with tools' : 'without tools'}`, async () => {
+                const payloads: unknown[] = [];
+                const openai = {
+                    maxRetries: 1,
+                    responses: {
+                        create: async (payload: unknown) => {
+                            payloads.push(payload);
+                            return toStream(payloads.length === 1
+                                ? [{ type: 'response.created' }, { type: 'response.in_progress' }, busy]
+                                : [{ type: 'response.output_text.delta', delta: 'done' }]);
+                        }
+                    }
+                };
+                const response = await utils.handleRequest(openai as never, {
+                    ...request,
+                    tools: withTools ? [{ id: 'lookup', name: 'lookup', parameters: { type: 'object', properties: {} }, handler: async () => 'result' }] : undefined
+                }, {}, 'gpt-5', new OpenAiModelUtils(), 'developer', 'openai/gpt-5', true);
+                const parts: LanguageModelStreamResponsePart[] = [];
+                const consume = (async () => {
+                    if ('stream' in response) {
+                        for await (const part of response.stream) { parts.push(part); }
+                    }
+                })();
+                await clock.runAllAsync();
+                await consume;
+                expect(parts).to.deep.equal([{ content: 'done' }]);
+                expect(payloads).to.have.length(2);
+                expect(payloads[1]).to.deep.equal(payloads[0]);
+                expect(logError.called).to.equal(false);
+            });
+
+            for (const event of [busy, { type: 'error', code: 'server_error', message: 'Stream failed' }]) {
+                it(`logs the terminal ${event.type} once after exhausting retries ${withTools ? 'with tools' : 'without tools'}`, async () => {
+                    const create = sinon.stub().callsFake(async () => toStream([event]));
+                    const response = await utils.handleRequest({ maxRetries: 1, responses: { create } } as never, {
+                        ...request,
+                        tools: withTools ? [{ id: 'lookup', name: 'lookup', parameters: { type: 'object', properties: {} }, handler: async () => 'result' }] : undefined
+                    }, {}, 'gpt-5', new OpenAiModelUtils(), 'developer', 'openai/gpt-5', true);
+                    const consume = (async () => {
+                        if ('stream' in response) {
+                            for await (const part of response.stream) { expect.fail(`Unexpected output ${JSON.stringify(part)}`); }
+                        }
+                    })().then(() => undefined, caught => caught);
+                    await clock.runAllAsync();
+                    const error = await consume;
+                    expect(error).to.be.instanceOf(Error).with.property('code', 'server_error');
+                    expect(create.callCount).to.equal(2);
+                    expect(logError.calledOnceWithExactly('Response API error:', error)).to.equal(true);
+                });
+            }
+
+            it(`cancels during backoff ${withTools ? 'with tools' : 'without tools'}`, async () => {
+                const source = new CancellationTokenSource();
+                const create = sinon.stub().callsFake(async () => toStream([busy]));
+                const response = await utils.handleRequest({ maxRetries: 3, responses: { create } } as never, {
+                    ...request,
+                    tools: withTools ? [{ id: 'lookup', name: 'lookup', parameters: { type: 'object', properties: {} }, handler: async () => 'result' }] : undefined
+                }, {}, 'gpt-5', new OpenAiModelUtils(), 'developer', 'openai/gpt-5', true, source.token);
+                const consume = (async () => {
+                    try {
+                        if ('stream' in response) {
+                            for await (const part of response.stream) { expect.fail(`Unexpected output ${JSON.stringify(part)}`); }
+                        }
+                    } catch (error) {
+                        return error;
+                    }
+                    return undefined;
+                })();
+                await clock.tickAsync(0);
+                source.cancel();
+                expect(await consume).to.be.instanceOf(CancellationError);
+                await clock.runAllAsync();
+                expect(create.callCount).to.equal(1);
+                expect(create.firstCall.args[1].signal.aborted).to.equal(true);
+                expect(logError.called).to.equal(false);
+                source.dispose();
+            });
+        }
+
+        it('reports cancellation when a simple upstream stream ends normally on abort', async () => {
+            const source = new CancellationTokenSource();
+            const create = sinon.stub().callsFake(async (_payload: unknown, options: { signal: AbortSignal }) => (async function* (): AsyncIterable<unknown> {
+                yield { type: 'response.created' };
+                await new Promise<void>(resolve => options.signal.addEventListener('abort', () => resolve(), { once: true }));
+            })());
+            const response = await utils.handleRequest({ maxRetries: 3, responses: { create } } as never, request,
+                {}, 'gpt-5', new OpenAiModelUtils(), 'developer', 'openai/gpt-5', true, source.token);
+            const consume = (async () => {
+                try {
+                    if ('stream' in response) {
+                        for await (const part of response.stream) { expect.fail(`Unexpected output ${JSON.stringify(part)}`); }
+                    }
+                } catch (error) {
+                    return error;
+                }
+                return undefined;
+            })();
+            await clock.tickAsync(0);
+            source.cancel();
+            expect(await consume).to.be.instanceOf(CancellationError);
+            expect(create.callCount).to.equal(1);
+            source.dispose();
+        });
+
+        it('retries the next model turn without repeating completed tools', async () => {
+            const handler = sinon.stub().resolves('result');
+            const payloads: { input: unknown[] }[] = [];
+            const openai = {
+                maxRetries: 1,
+                responses: {
+                    create: async (payload: { input: unknown[] }) => {
+                        payloads.push(payload);
+                        return toStream(payloads.length === 1
+                            ? outputItemEvents({ id: 'call-1', call_id: 'call-1', type: 'function_call', name: 'lookup', arguments: '{}' }, 0)
+                            : payloads.length === 2 ? [busy] : [{ type: 'response.output_text.delta', delta: 'done' }]);
+                    }
+                }
+            };
+            const response = await utils.handleRequest(openai as never, {
+                ...request, tools: [{ id: 'lookup', name: 'lookup', parameters: { type: 'object', properties: {} }, handler }]
+            }, {}, 'gpt-5', new OpenAiModelUtils(), 'developer', 'openai/gpt-5', true);
+            const parts: LanguageModelStreamResponsePart[] = [];
+            const consume = (async () => {
+                if ('stream' in response) {
+                    for await (const part of response.stream) { parts.push(part); }
+                }
+            })();
+            await clock.runAllAsync();
+            await consume;
+            expect(handler.callCount).to.equal(1);
+            expect(parts.filter(isTextResponsePart)).to.deep.equal([{ content: 'done' }]);
+            expect(payloads).to.have.length(3);
+            expect(payloads[2]).to.deep.equal(payloads[1]);
+            expect(payloads[2].input).to.deep.include({ type: 'function_call_output', call_id: 'call-1', output: 'result' });
+        });
+    });
+
     describe('reasoning summaries', () => {
         // Two summary parts of one reasoning item, as the Responses API streams them with `reasoning.summary` set.
         const summaryEvents = [
@@ -693,7 +842,7 @@ describe('OpenAiResponseApiUtils', () => {
         it('streams reasoning summaries as thoughts, separating summary parts', async () => {
             const openai = {
                 responses: {
-                    stream: () => toStream([...summaryEvents, { type: 'response.output_text.delta', delta: 'Answer' }])
+                    create: async () => toStream([...summaryEvents, { type: 'response.output_text.delta', delta: 'Answer' }])
                 }
             };
             const request: UserRequest = {
@@ -716,15 +865,20 @@ describe('OpenAiResponseApiUtils', () => {
                 [
                     ...summaryEvents,
                     {
-                        type: 'response.output_item.added',
-                        item: { id: 'item-1', call_id: 'call-1', type: 'function_call', name: 'lookup', arguments: '{}' }
-                    }
+                        type: 'response.output_item.done', output_index: 0,
+                        item: {
+                            id: 'rs-1', type: 'reasoning', summary: [
+                                { type: 'summary_text', text: 'Weighing options' }, { type: 'summary_text', text: 'Deciding' }
+                            ], encrypted_content: 'encrypted-reasoning'
+                        }
+                    },
+                    ...outputItemEvents({ id: 'item-1', call_id: 'call-1', type: 'function_call', name: 'lookup', arguments: '{}' }, 1)
                 ],
                 [{ type: 'response.output_text.delta', delta: 'done' }]
             ];
             const openai = {
                 responses: {
-                    stream: () => toStream(streams.shift() ?? [])
+                    create: async () => toStream(streams.shift() ?? [])
                 }
             };
             const request: UserRequest = {
@@ -772,7 +926,7 @@ describe('OpenAiResponseApiUtils', () => {
                 const sent: { reasoning?: { effort?: string; summary?: string } }[] = [];
                 const openai = {
                     responses: {
-                        stream: (params: { reasoning?: { summary?: string } }) => {
+                        create: async (params: { reasoning?: { summary?: string } }) => {
                             sent.push(params);
                             return summaryOf(params)
                                 ? rejectingStream(badRequest('reasoning.summary'))
@@ -845,6 +999,111 @@ describe('OpenAiResponseApiUtils', () => {
                 expect(calls).to.equal(1);
             });
         });
+    });
+
+    describe('native output replay within a tool loop', () => {
+        const compaction = { type: 'compaction', id: 'cmp-latest', encrypted_content: 'encrypted' };
+        const reasoning = { type: 'reasoning', id: 'reasoning', summary: [], encrypted_content: 'reasoning-data' };
+        const search = { type: 'web_search_call', id: 'search', status: 'completed', action: { type: 'search', query: 'test' } };
+        const message = (text: string) => ({
+            type: 'message', id: `msg-${text}`, role: 'assistant', status: 'completed',
+            content: [{ type: 'output_text', text, annotations: [] }]
+        });
+        const call = (id: string) => ({ type: 'function_call', id: `item-${id}`, call_id: id, name: 'lookup', arguments: '{"query":"test"}' });
+        const callA = call('a');
+        const callB = call('b');
+        const suffix = [reasoning, search, message('after'), callB];
+        const cases = [
+            { name: 'without compaction', output: [callA, ...suffix], replay: [callA, ...suffix] },
+            { name: 'with compaction before calls', output: [message('before'), compaction, callA, ...suffix], replay: [compaction, callA, ...suffix] },
+            { name: 'with compaction between calls', output: [callA, message('before'), compaction, ...suffix], replay: [compaction, ...suffix] },
+            { name: 'with compaction after calls', output: [callA, ...suffix, compaction], replay: [compaction] },
+            {
+                name: 'with output requiring SDK conversion',
+                output: [{ ...callA, created_by: 'provider' }, { type: 'additional_tools', id: 'tools', role: 'assistant', tools: [] }, ...suffix],
+                replay: [callA, ...suffix]
+            },
+            {
+                name: 'with multiple compactions',
+                output: [{ ...compaction, id: 'cmp-old' }, callA, { ...reasoning, id: 'reasoning-before' },
+                { ...search, id: 'search-before' }, message('before'), compaction, ...suffix],
+                replay: [compaction, ...suffix]
+            }
+        ];
+
+        for (const isStreaming of [true, false]) {
+            for (const { name, output, replay } of cases) {
+                it(`replays input ${name} and paired tool results (${isStreaming ? 'streaming' : 'non-streaming'})`, async () => {
+                    const payloads: Record<string, unknown>[] = [];
+                    let executions = 0;
+                    const responses = [output, [call('c')], [message('done')]];
+                    const nextOutput = (payload: Record<string, unknown>) => {
+                        payloads.push(JSON.parse(JSON.stringify(payload)));
+                        return responses.shift() ?? [];
+                    };
+                    const openai = {
+                        responses: {
+                            create: async (payload: Record<string, unknown>) => {
+                                const items = nextOutput(payload);
+                                if (!payload.stream) {
+                                    return { output: items, output_text: '' };
+                                }
+                                return toStream([
+                                    ...items.flatMap((item, output_index) => [
+                                        { type: 'response.output_item.added', output_index, item },
+                                        ...(item.type === 'function_call' ? [{
+                                            type: 'response.function_call_arguments.done', item_id: item.id, name: 'lookup', arguments: '{"query":"test"}'
+                                        }] : [])
+                                    ]),
+                                    // Completion arrival order must not change replay order.
+                                    ...items.map((item, output_index) => ({ type: 'response.output_item.done', output_index, item })).reverse(),
+                                    { type: 'response.completed', response: { usage: { input_tokens: 10, output_tokens: 5 } } }
+                                ]);
+                            }
+                        }
+                    };
+                    const request: UserRequest = {
+                        sessionId: 'session', requestId: 'request',
+                        messages: [
+                            { actor: 'system', type: 'text', text: 'Instructions' },
+                            { actor: 'user', type: 'text', text: 'Old history' }
+                        ],
+                        tools: [{
+                            id: 'lookup', name: 'lookup', parameters: { type: 'object', properties: {} },
+                            handler: async () => { executions++; return executions === 2 ? undefined : 'result'; }
+                        }]
+                    };
+                    const response = await utils.handleRequest(
+                        openai as never, request, {}, 'gpt-5', new OpenAiModelUtils(), 'developer', 'openai/gpt-5', isStreaming
+                    );
+                    if (!('stream' in response)) {
+                        throw new Error('Expected the tool loop to return a stream');
+                    }
+                    const parts: LanguageModelStreamResponsePart[] = [];
+                    for await (const part of response.stream) {
+                        parts.push(part);
+                    }
+
+                    expect(executions).to.equal(3);
+                    expect(parts.filter(isCompactionResponsePart).map(part => part.compaction.data)).to.have.deep.members(
+                        output.filter(item => item.type === 'compaction').map(item => ({ id: item.id, encrypted_content: 'encrypted' }))
+                    );
+                    expect(payloads).to.have.lengthOf(3);
+                    expect(payloads[1].instructions).to.equal('Instructions');
+                    expect(payloads[1].input).to.deep.equal([
+                        ...(output.some(item => item.type === 'compaction') ? [] : payloads[0].input as unknown[]),
+                        ...replay,
+                        { type: 'function_call_output', call_id: 'a', output: 'result' },
+                        { type: 'function_call_output', call_id: 'b', output: '' }
+                    ]);
+                    expect(payloads[2].input).to.deep.equal([
+                        ...payloads[1].input as unknown[],
+                        call('c'),
+                        { type: 'function_call_output', call_id: 'c', output: 'result' }
+                    ]);
+                });
+            }
+        }
     });
 
     describe('processMessages server-side compaction replay', () => {
@@ -945,11 +1204,60 @@ describe('OpenAiResponseApiUtils', () => {
         });
     });
 
+    for (const nameSource of ['added', 'done', 'arguments'] as const) {
+        it(`preserves the streamed function name from the ${nameSource} event`, async () => {
+            const item = { id: 'item-1', call_id: 'call-1', type: 'function_call' as const, name: 'lookup', arguments: '{"query":"test"}' };
+            const argumentsDone = {
+                type: 'response.function_call_arguments.done', item_id: item.id,
+                arguments: item.arguments, output_index: 0, sequence_number: 1
+            } satisfies ResponseStreamEvent;
+            const payloads: Record<string, unknown>[] = [];
+            const streams = [
+                [
+                    ...(nameSource === 'added' ? [{ type: 'response.output_item.added', output_index: 0, item: { ...item, arguments: '' } }] : []),
+                    nameSource === 'arguments' ? { ...argumentsDone, name: item.name } : argumentsDone,
+                    { type: 'response.output_item.done', output_index: 0, item },
+                    { type: 'response.completed', response: {} }
+                ],
+                [{ type: 'response.completed', response: {} }]
+            ];
+            const openai = {
+                responses: {
+                    create: async (payload: Record<string, unknown>) => {
+                        payloads.push(payload);
+                        return toStream(streams.shift() ?? []);
+                    }
+                }
+            };
+            const handler = sinon.stub().resolves('found');
+            const request: UserRequest = {
+                sessionId: 'session-1', requestId: 'request-1',
+                messages: [{ actor: 'user', type: 'text', text: 'hello' }],
+                tools: [{ id: 'lookup', name: 'lookup', parameters: { type: 'object', properties: {} }, handler }]
+            };
+            const response = await utils.handleRequest(openai as never, request, {}, 'gpt-5', new OpenAiModelUtils(), 'developer', 'openai/gpt-5', true);
+            const parts: LanguageModelStreamResponsePart[] = [];
+            if ('stream' in response) {
+                for await (const part of response.stream) {
+                    parts.push(part);
+                }
+            }
+            sinon.assert.calledOnce(handler);
+            expect(handler.firstCall.args[0]).to.equal(item.arguments);
+            const finished = parts.filter(isToolCallResponsePart).flatMap(part => part.tool_calls).find(call => call.finished);
+            expect(finished?.function?.name).to.equal('lookup');
+            expect(finished?.result).to.equal('found');
+            expect(payloads).to.have.lengthOf(2);
+            expect(payloads[1].input).to.deep.include(item);
+            expect(payloads[1].input).to.deep.include({ type: 'function_call_output', call_id: item.call_id, output: 'found' });
+        });
+    }
+
     it('executes the tool calls of a single turn concurrently', async () => {
         const streams = [
             [
-                functionCallItem('call-a', 'a', '{}'),
-                functionCallItem('call-b', 'b', '{}'),
+                ...outputItemEvents({ id: 'call-a', call_id: 'call-a', type: 'function_call', name: 'a', arguments: '{}' }, 0),
+                ...outputItemEvents({ id: 'call-b', call_id: 'call-b', type: 'function_call', name: 'b', arguments: '{}' }, 1),
                 { type: 'response.completed', response: { usage: { input_tokens: 1, output_tokens: 1 } } }
             ],
             [
@@ -959,7 +1267,7 @@ describe('OpenAiResponseApiUtils', () => {
         ];
         const openai = {
             responses: {
-                stream: () => toStream(streams.shift() ?? [])
+                create: async () => toStream(streams.shift() ?? [])
             }
         };
         // `a` only resolves once `b` has started: a sequential implementation would deadlock here.

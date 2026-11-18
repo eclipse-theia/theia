@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { interfaces, Container } from '@theia/core/shared/inversify';
-import { MarkerOptions } from '../marker-tree';
-import { ProblemWidget } from './problem-widget';
-import { ProblemTreeModel, ProblemTree } from './problem-tree-model';
+import { MarkerOptions } from '../marker-tree.js';
+import { ProblemWidget } from './problem-widget.js';
+import { ProblemTreeModel, ProblemTree } from './problem-tree-model.js';
 import { TreeProps, defaultTreeProps, createTreeContainer } from '@theia/core/lib/browser';
-import { PROBLEM_KIND } from '../../common/problem-marker';
+import { PROBLEM_KIND } from '../../common/problem-marker.js';
 
 export const PROBLEM_TREE_PROPS = <TreeProps>{
     ...defaultTreeProps,

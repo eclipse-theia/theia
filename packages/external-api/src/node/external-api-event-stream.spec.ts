@@ -18,8 +18,8 @@ import express from '@theia/core/shared/express';
 import { expect } from 'chai';
 import * as http from 'http';
 import { AddressInfo } from 'net';
-import { ExternalApiEventStream, ExternalApiEventStreamOptions } from './external-api-event-stream';
-import { ExternalApiTestSupport } from './test/external-api-test-support';
+import { ExternalApiEventStream, ExternalApiEventStreamOptions } from './external-api-event-stream.js';
+import { ExternalApiTestSupport } from './test/external-api-test-support.js';
 
 describe('ExternalApiEventStream', () => {
 

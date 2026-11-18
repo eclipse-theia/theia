@@ -20,9 +20,9 @@ import * as os from 'os';
 import { join } from 'path';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { FileUri } from '@theia/core/lib/common/file-uri';
-import { CopilotCredentials } from './copilot-credential-store';
-import { CopilotSdkClientProvider } from './copilot-sdk-client-provider';
-import type { CopilotClient, CopilotClientOptions } from './copilot-sdk-types';
+import { CopilotCredentials } from './copilot-credential-store.js';
+import { CopilotSdkClientProvider } from './copilot-sdk-client-provider.js';
+import type { CopilotClient, CopilotClientOptions } from './copilot-sdk-types.js';
 
 interface SdkStub {
     api: {

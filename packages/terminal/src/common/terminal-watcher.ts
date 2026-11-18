@@ -20,7 +20,7 @@ import {
     IBaseTerminalClient,
     IBaseTerminalExitEvent,
     IBaseTerminalErrorEvent
-} from './base-terminal-protocol';
+} from './base-terminal-protocol.js';
 
 @injectable()
 export class TerminalWatcher {

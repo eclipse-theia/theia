@@ -16,11 +16,11 @@
 
 import { URI } from '@theia/core/shared/vscode-uri';
 import * as theia from '@theia/plugin';
-import { DocumentsExtImpl } from '../documents';
-import * as dto from '../../common/plugin-api-rpc-model';
-import * as rpc from '../../common/plugin-api-rpc';
-import * as types from '../types-impl';
-import { fromRange, SymbolKind } from '../type-converters';
+import { DocumentsExtImpl } from '../documents.js';
+import * as dto from '../../common/plugin-api-rpc-model.js';
+import * as rpc from '../../common/plugin-api-rpc.js';
+import * as types from '../types-impl.js';
+import { fromRange, SymbolKind } from '../type-converters.js';
 
 export class CallHierarchyAdapter {
 

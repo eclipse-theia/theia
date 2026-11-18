@@ -19,10 +19,10 @@ import { ILogger, MaybePromise, nls, URI } from '@theia/core';
 import {
     AIVariable, AIVariableContext, AIVariableContribution, AIVariableResolutionRequest,
     AIVariableResolver, AIVariableService, ResolvedAIVariable
-} from '../common/variable-service';
+} from '../common/variable-service.js';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { SkillService } from './skill-service';
-import { parseSkillFile, Skill } from '../common/skill';
+import { SkillService } from './skill-service.js';
+import { parseSkillFile, Skill } from '../common/skill.js';
 
 export const SKILLS_VARIABLE: AIVariable = {
     id: 'skills',

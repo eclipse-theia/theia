@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { MemoryTable } from '../memory-widget/memory-table-widget';
-import { VariableDecoration } from '../utils/memory-widget-variable-utils';
+import { MemoryTable } from '../memory-widget/memory-table-widget.js';
+import { VariableDecoration } from '../utils/memory-widget-variable-utils.js';
 
 export enum DiffLabels {
     Before = 'before',

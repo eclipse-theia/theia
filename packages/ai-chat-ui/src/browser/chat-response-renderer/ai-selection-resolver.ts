@@ -19,10 +19,10 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorOpenerOptions, EditorWidget, Range } from '@theia/editor/lib/browser';
 
 import { EditorSelectionResolver } from '@theia/editor/lib/browser/editor-manager';
-import { DocumentSymbol } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
-import { TextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model/textModel';
-import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { DocumentSymbol } from '@theia/monaco-editor-core/esm/vs/editor/common/languages.js';
+import { TextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model/textModel.js';
+import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures.js';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoToProtocolConverter } from '@theia/monaco/lib/browser/monaco-to-protocol-converter';
 

@@ -18,7 +18,7 @@ import * as React from '@theia/core/shared/react';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ContributionProvider } from '@theia/core';
 import { ReactWidget } from '@theia/core/lib/browser';
-import { ChatBannerProvider } from './chat-banner-provider';
+import { ChatBannerProvider } from './chat-banner-provider.js';
 
 /**
  * Host widget rendered above the chat content. Collects all {@link ChatBannerProvider}

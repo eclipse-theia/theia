@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { Emitter } from './event';
+import { Emitter } from './event.js';
 
 describe('Event Objects', () => {
 

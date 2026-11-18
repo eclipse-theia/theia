@@ -25,10 +25,10 @@ import { LabelProvider, LabelProviderContribution, open, OpenerService } from '@
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { IMAGE_CONTEXT_VARIABLE, ImageContextVariable, ImageContextVariableRequest, ResolvedImageContextVariable } from '../common/image-context-variable';
-import { ChatSessionContext } from '../common/chat-agents';
-import { PendingImageRegistry } from './pending-image-registry';
-import { fileToBase64, getMimeTypeFromExtension } from './image-file-utils';
+import { IMAGE_CONTEXT_VARIABLE, ImageContextVariable, ImageContextVariableRequest, ResolvedImageContextVariable } from '../common/image-context-variable.js';
+import { ChatSessionContext } from '../common/chat-agents.js';
+import { PendingImageRegistry } from './pending-image-registry.js';
+import { fileToBase64, getMimeTypeFromExtension } from './image-file-utils.js';
 
 @injectable()
 export class ImageContextVariableContribution implements AIVariableContribution, AIVariableResolver, AIVariableOpener, LabelProviderContribution {

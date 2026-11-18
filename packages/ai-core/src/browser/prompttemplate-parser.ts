@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { load } from 'js-yaml';
-import { CommandPromptFragmentMetadata, FRONT_MATTER_REGEX } from '../common';
+import { CommandPromptFragmentMetadata, FRONT_MATTER_REGEX } from '../common/index.js';
 
 /**
  * Result of parsing a template file that may contain YAML front matter

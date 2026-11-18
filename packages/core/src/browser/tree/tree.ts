@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from 'inversify';
-import { Event, Emitter, WaitUntilEvent } from '../../common/event';
-import { Disposable, DisposableCollection } from '../../common/disposable';
-import { CancellationToken, CancellationTokenSource } from '../../common/cancellation';
-import { timeout } from '../../common/promise-util';
-import { isObject, Mutable } from '../../common';
-import { AccessibilityInformation } from '../../common/accessibility';
-import { ILogger } from '../../common/logger';
+import { Event, Emitter, WaitUntilEvent } from '../../common/event.js';
+import { Disposable, DisposableCollection } from '../../common/disposable.js';
+import { CancellationToken, CancellationTokenSource } from '../../common/cancellation.js';
+import { timeout } from '../../common/promise-util.js';
+import { isObject, Mutable } from '../../common/index.js';
+import { AccessibilityInformation } from '../../common/accessibility.js';
+import { ILogger } from '../../common/logger.js';
 
 export const Tree = Symbol('Tree');
 

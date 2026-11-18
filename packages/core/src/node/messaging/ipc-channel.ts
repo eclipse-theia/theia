@@ -18,9 +18,9 @@
 import * as cp from 'child_process';
 import { Socket } from 'net';
 import { Duplex } from 'stream';
-import { AbstractChannel, Disposable, WriteBuffer } from '../../common';
-import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
-import { BinaryMessagePipe } from './binary-message-pipe';
+import { AbstractChannel, Disposable, WriteBuffer } from '../../common/index.js';
+import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer.js';
+import { BinaryMessagePipe } from './binary-message-pipe.js';
 
 /**
  * A {@link Channel} to send messages between two processes using a dedicated pipe/fd for binary messages.

@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { Disposable, DisposableCollection, disposableTimeout, isOSX, PreferenceService } from '../common';
-import { MarkdownString } from '../common/markdown-rendering/markdown-string';
-import { animationFrame } from './browser';
-import { wireMarkdownLinkHandler } from './markdown-rendering/markdown-link-handler';
-import { CoreMarkdownRenderer, MarkdownRenderer } from './markdown-rendering/markdown-renderer';
-import { OpenerService } from './opener-service';
+import { Disposable, DisposableCollection, disposableTimeout, isOSX, PreferenceService } from '../common/index.js';
+import { MarkdownString } from '../common/markdown-rendering/markdown-string.js';
+import { animationFrame } from './browser.js';
+import { wireMarkdownLinkHandler } from './markdown-rendering/markdown-link-handler.js';
+import { CoreMarkdownRenderer, MarkdownRenderer } from './markdown-rendering/markdown-renderer.js';
+import { OpenerService } from './opener-service.js';
 
 import '../../src/browser/style/hover-service.css';
 

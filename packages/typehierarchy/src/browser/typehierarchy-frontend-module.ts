@@ -17,11 +17,11 @@ import { bindRootContributionProvider } from '@theia/core/lib/common';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { bindViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
-import { TypeHierarchyRegistry } from './typehierarchy-provider';
-import { TypeHierarchyContribution } from './typehierarchy-contribution';
-import { TypeHierarchyTreeWidget } from './tree/typehierarchy-tree-widget';
-import { TypeHierarchyService, TypeHierarchyServiceProvider } from './typehierarchy-service';
-import { createHierarchyTreeWidget } from './tree/typehierarchy-tree-container';
+import { TypeHierarchyRegistry } from './typehierarchy-provider.js';
+import { TypeHierarchyContribution } from './typehierarchy-contribution.js';
+import { TypeHierarchyTreeWidget } from './tree/typehierarchy-tree-widget.js';
+import { TypeHierarchyService, TypeHierarchyServiceProvider } from './typehierarchy-service.js';
+import { createHierarchyTreeWidget } from './tree/typehierarchy-tree-container.js';
 
 import '../../src/browser/style/index.css';
 

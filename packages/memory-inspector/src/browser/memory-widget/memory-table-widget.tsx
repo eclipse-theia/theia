@@ -20,16 +20,16 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { ThemeChangeEvent } from '@theia/core/lib/common/theme';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import { hexStrToUnsignedLong } from '../../common/util';
-import { MemoryProviderService } from '../memory-provider/memory-provider-service';
-import { EasilyMappedObject, MemoryHoverRendererService } from '../utils/memory-hover-renderer';
-import { MWMoreMemorySelect } from '../utils/memory-widget-components';
+import { hexStrToUnsignedLong } from '../../common/util.js';
+import { MemoryProviderService } from '../memory-provider/memory-provider-service.js';
+import { EasilyMappedObject, MemoryHoverRendererService } from '../utils/memory-hover-renderer.js';
+import { MWMoreMemorySelect } from '../utils/memory-widget-components.js';
 import {
     Constants, Interfaces, Utils
-} from '../utils/memory-widget-utils';
-import { VariableDecoration, VariableFinder } from '../utils/memory-widget-variable-utils';
-import { MemoryOptionsWidget } from './memory-options-widget';
-import debounce = require('@theia/core/shared/lodash.debounce');
+} from '../utils/memory-widget-utils.js';
+import { VariableDecoration, VariableFinder } from '../utils/memory-widget-variable-utils.js';
+import { MemoryOptionsWidget } from './memory-options-widget.js';
+import debounce from '@theia/core/shared/lodash.debounce';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export namespace MemoryTable {

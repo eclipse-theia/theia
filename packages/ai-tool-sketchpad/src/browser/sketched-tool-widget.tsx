@@ -19,7 +19,7 @@ import { nls } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { generateUuid } from '@theia/core/lib/common/uuid';
-import { SketchedToolDefinition, SketchedToolParameterDefinition, SketchedToolParameterType, SketchedToolReturnMode, SketchedToolService } from '../common';
+import { SketchedToolDefinition, SketchedToolParameterDefinition, SketchedToolParameterType, SketchedToolReturnMode, SketchedToolService } from '../common/index.js';
 
 const PARAMETER_TYPES: SketchedToolParameterType[] = ['string', 'number', 'integer', 'boolean', 'object', 'array'];
 const ITEM_TYPES: Array<'string' | 'number' | 'integer' | 'boolean' | 'object'> = ['string', 'number', 'integer', 'boolean', 'object'];

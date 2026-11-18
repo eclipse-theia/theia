@@ -13,8 +13,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { LabelParser, LabelPart, LabelIcon } from './label-parser';
-import { CommandService } from './../common';
+import { LabelParser, LabelPart, LabelIcon } from './label-parser.js';
+import { CommandService } from './../common/index.js';
 import { Container } from 'inversify';
 import { expect } from 'chai';
 

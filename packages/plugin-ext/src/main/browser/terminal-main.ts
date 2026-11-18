@@ -20,18 +20,18 @@ import { TerminalEditorLocationOptions } from '@theia/plugin';
 import { TerminalLocation, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalProfileService } from '@theia/terminal/lib/browser/terminal-profile-service';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
-import { TerminalServiceMain, TerminalServiceExt, MAIN_RPC_CONTEXT, TerminalOptions } from '../../common/plugin-api-rpc';
-import { RPCProtocol } from '../../common/rpc-protocol';
+import { TerminalServiceMain, TerminalServiceExt, MAIN_RPC_CONTEXT, TerminalOptions } from '../../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { SerializableEnvironmentVariableCollection, ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-terminal-protocol';
 import { TerminalLink, TerminalLinkProvider } from '@theia/terminal/lib/browser/terminal-link-provider';
 import { URI } from '@theia/core/lib/common/uri';
-import { PluginTerminalRegistry } from './plugin-terminal-registry';
+import { PluginTerminalRegistry } from './plugin-terminal-registry.js';
 import { CancellationToken, isObject } from '@theia/core';
-import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
-import { PluginSharedStyle } from './plugin-shared-style';
+import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin.js';
+import { PluginSharedStyle } from './plugin-shared-style.js';
 import { ThemeIcon } from '@theia/core/lib/common/theme';
-import debounce = require('@theia/core/shared/lodash.debounce');
+import debounce from '@theia/core/shared/lodash.debounce';
 
 interface TerminalObserverData {
     nrOfLinesToMatch: number;

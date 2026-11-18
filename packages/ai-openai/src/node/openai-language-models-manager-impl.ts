@@ -20,11 +20,11 @@ import {
 import { getProxyUrl, ModelDiscoveryFetcher } from '@theia/ai-core/lib/node';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { APIConnectionError } from 'openai';
-import { createOpenAiClient, DeveloperMessageSettings, OpenAiLanguageModelFactory, OpenAiModel } from './openai-language-model';
-import { getOpenAiModelDefaults } from './openai-model-defaults';
-import { OpenAiLanguageModelsManager, OpenAiModelDescription } from '../common';
+import { createOpenAiClient, DeveloperMessageSettings, OpenAiLanguageModelFactory, OpenAiModel } from './openai-language-model.js';
+import { getOpenAiModelDefaults } from './openai-model-defaults.js';
+import { OpenAiLanguageModelsManager, OpenAiModelDescription } from '../common/index.js';
 import { ILogger } from '@theia/core';
-import { OPENAI_SERVER_TOOLS } from './openai-server-tools';
+import { OPENAI_SERVER_TOOLS } from './openai-server-tools.js';
 
 const OPENAI_SNAPSHOT_FILE = 'openai-models.json';
 

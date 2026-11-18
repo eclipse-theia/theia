@@ -20,9 +20,9 @@ import {
     TreeModel, DockPanel, codicon
 } from '@theia/core/lib/browser';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { ItemNode, CallerNode } from './callhierarchy-tree';
-import { CallHierarchyTreeModel } from './callhierarchy-tree-model';
-import { CALLHIERARCHY_ID, CallHierarchyItem, CallHierarchyIncomingCall, CALL_HIERARCHY_LABEL } from '../callhierarchy';
+import { ItemNode, CallerNode } from './callhierarchy-tree.js';
+import { CallHierarchyTreeModel } from './callhierarchy-tree-model.js';
+import { CALLHIERARCHY_ID, CallHierarchyItem, CallHierarchyIncomingCall, CALL_HIERARCHY_LABEL } from '../callhierarchy.js';
 import URI from '@theia/core/lib/common/uri';
 import { Location, Range, SymbolKind, DocumentUri, SymbolTag } from '@theia/core/shared/vscode-languageserver-protocol';
 import { EditorManager } from '@theia/editor/lib/browser';

@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { CommandHandler } from './command';
-import { SelectionService } from '../common/selection-service';
+import { CommandHandler } from './command.js';
+import { SelectionService } from '../common/selection-service.js';
 
 export class SelectionCommandHandler<S extends Object> implements CommandHandler {
 

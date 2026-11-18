@@ -16,8 +16,8 @@
 
 import * as yargs from '@theia/core/shared/yargs';
 import { RpcProxyFactory } from '@theia/core';
-import { FileSystemWatcherServiceClient } from '../../common/filesystem-watcher-protocol';
-import { FileSystemWatcherServiceImpl } from '../filesystem-watcher-service-impl';
+import { FileSystemWatcherServiceClient } from '../../common/filesystem-watcher-protocol.js';
+import { FileSystemWatcherServiceImpl } from '../filesystem-watcher-service-impl.js';
 import { IPCEntryPoint } from '@theia/core/lib/node/messaging/ipc-protocol';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

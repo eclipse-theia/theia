@@ -21,7 +21,7 @@ let disableJSDOM = enableJSDOM();
 import 'reflect-metadata';
 
 import { expect } from 'chai';
-import { ChatCapabilitiesServiceImpl } from './chat-capabilities-service';
+import { ChatCapabilitiesServiceImpl } from './chat-capabilities-service.js';
 
 disableJSDOM();
 

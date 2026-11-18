@@ -21,7 +21,7 @@ import {
     ToolCallResult,
     ToolInvocationContext,
     createToolCallError
-} from './language-model';
+} from './language-model.js';
 
 /**
  * A single tool call collected from one model response/turn, in a provider-neutral shape.

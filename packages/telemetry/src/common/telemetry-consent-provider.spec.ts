@@ -17,9 +17,9 @@
 import { expect } from 'chai';
 import { Emitter } from '@theia/core/lib/common';
 import { Container } from '@theia/core/shared/inversify';
-import { PreferenceTelemetryConsentProvider, TelemetryConsentProvider } from './telemetry-consent-provider';
-import { TELEMETRY_FILTERS, TELEMETRY_LEVEL, TelemetryPreferences } from './telemetry-preferences';
-import { TelemetryLevel } from './telemetry-types';
+import { PreferenceTelemetryConsentProvider, TelemetryConsentProvider } from './telemetry-consent-provider.js';
+import { TELEMETRY_FILTERS, TELEMETRY_LEVEL, TelemetryPreferences } from './telemetry-preferences.js';
+import { TelemetryLevel } from './telemetry-types.js';
 
 describe('telemetry consent provider', () => {
 

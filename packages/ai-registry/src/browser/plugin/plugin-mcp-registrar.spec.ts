@@ -17,14 +17,21 @@
 import { expect } from 'chai';
 import { PreferenceService } from '@theia/core';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
-import { InstalledPluginInfo } from '../../common/plugin/plugin-registry-types';
-import { PluginMcpRegistrarImpl } from './plugin-mcp-registrar';
+import { InstalledPluginInfo } from '../../common/plugin/plugin-registry-types.js';
+import { PluginMcpRegistrarImpl } from './plugin-mcp-registrar.js';
 
 /** Minimal preference double: the registrar only reads and writes the MCP servers preference. */
 class FakePreferenceService {
     constructor(public value: Record<string, unknown> = {}) { }
-    get<T>(key: string, defaultValue?: T): T | undefined {
-        return (key === MCP_SERVERS_PREF ? this.value : defaultValue) as T | undefined;
+    get<T>(key: string, optionsOrFallback?: T | { fallback?: T }): T | undefined {
+        if (key === MCP_SERVERS_PREF) {
+            return this.value as T;
+        }
+        if (optionsOrFallback && typeof optionsOrFallback === 'object' && !Array.isArray(optionsOrFallback)
+            && 'fallback' in (optionsOrFallback as object)) {
+            return (optionsOrFallback as { fallback?: T }).fallback;
+        }
+        return optionsOrFallback as T | undefined;
     }
     async set(key: string, value: unknown): Promise<void> {
         if (key === MCP_SERVERS_PREF) {

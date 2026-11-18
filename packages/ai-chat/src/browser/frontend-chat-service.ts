@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChatAgent, ChatAgentLocation, ChatChangeEvent, ChatServiceImpl, ChatSession, ParsedChatRequest, SessionOptions } from '../common';
+import { ChatAgent, ChatAgentLocation, ChatChangeEvent, ChatServiceImpl, ChatSession, ParsedChatRequest, SessionOptions } from '../common/index.js';
 import { PreferenceService } from '@theia/core/lib/common';
-import { DEFAULT_CHAT_AGENT_PREF, PIN_CHAT_AGENT_PREF } from '../common/ai-chat-preferences';
-import { ChangeSetFileService } from './change-set-file-service';
+import { DEFAULT_CHAT_AGENT_PREF, PIN_CHAT_AGENT_PREF } from '../common/ai-chat-preferences.js';
+import { ChangeSetFileService } from './change-set-file-service.js';
 
 /**
  * Customizes the ChatServiceImpl to consider preference based default chat agent

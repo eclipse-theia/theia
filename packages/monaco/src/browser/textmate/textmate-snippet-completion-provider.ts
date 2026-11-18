@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as monaco from '@theia/monaco-editor-core';
-import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser';
+import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser.js';
 
 /**
  * @deprecated use MonacoSnippetSuggestProvider instead

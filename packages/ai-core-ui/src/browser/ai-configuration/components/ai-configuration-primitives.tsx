@@ -17,8 +17,8 @@
 import { nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
-import { AiConfigurationItemStatus } from '../ai-configuration-category';
-import { AiConfigurationOrigin, AiConfigurationOriginBadges } from './ai-configuration-origin-badge';
+import { AiConfigurationItemStatus } from '../ai-configuration-category.js';
+import { AiConfigurationOrigin, AiConfigurationOriginBadges } from './ai-configuration-origin-badge.js';
 
 /**
  * Presentational, DI-free display primitives shared across the AI configuration pages: badges, the

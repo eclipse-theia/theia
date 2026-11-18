@@ -19,10 +19,10 @@ import URI from '@theia/core/lib/common/uri';
 import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 import { OpenHandler } from '@theia/core/lib/browser/opener-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { RegistryFetchService } from '../../common/registry-fetch-service';
-import { ResolvedSkillEntry } from '../../common/skill/skill-registry-types';
-import { SkillInstallService } from './skill-install-service';
-import { InstallSkillUriConfiguration } from './install-skill-uri-configuration';
+import { RegistryFetchService } from '../../common/registry-fetch-service.js';
+import { ResolvedSkillEntry } from '../../common/skill/skill-registry-types.js';
+import { SkillInstallService } from './skill-install-service.js';
+import { InstallSkillUriConfiguration } from './install-skill-uri-configuration.js';
 
 const ID_PARAM = 'id';
 

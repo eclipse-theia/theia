@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { SearchBoxDebounce, SearchBoxDebounceOptions } from '../tree/search-box-debounce';
-import { ReactWidget, codicon } from '../widgets';
-import { Emitter, Event } from '../../common/event';
-import { KeyCode, Key } from '../keyboard/keys';
-import { nls } from '../../common/nls';
+import { SearchBoxDebounce, SearchBoxDebounceOptions } from '../tree/search-box-debounce.js';
+import { ReactWidget, codicon } from '../widgets/index.js';
+import { Emitter, Event } from '../../common/event.js';
+import { KeyCode, Key } from '../keyboard/keys.js';
+import { nls } from '../../common/nls.js';
 import * as React from 'react';
 
 /**

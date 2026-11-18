@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ExternalApiContribution, ExternalApiContributionDocumentation } from './external-api-contribution';
-import { ExternalApiRouter } from './external-api-router';
-import { OpenApiDocumentBuilder } from './openapi-document-builder';
-import { RestResult } from './rest-result';
+import { ExternalApiContribution, ExternalApiContributionDocumentation } from './external-api-contribution.js';
+import { ExternalApiRouter } from './external-api-router.js';
+import { OpenApiDocumentBuilder } from './openapi-document-builder.js';
+import { RestResult } from './rest-result.js';
 
 /** Path under which the OpenAPI document of the external API is served. */
 export const OPENAPI_SPEC_PATH = '/api/openapi.json';

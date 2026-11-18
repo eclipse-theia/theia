@@ -26,7 +26,7 @@ import { FileChangesEvent, FileChangeType, FileOperationError, FileOperationResu
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { withWorkspaceServiceDefaults } from '@theia/workspace/lib/browser/test/with-workspace-service-defaults';
 import { expect } from 'chai';
-import { FileReadTrackerImpl } from './file-read-tracker-impl';
+import { FileReadTrackerImpl } from './file-read-tracker-impl.js';
 
 disableJSDOM();
 

@@ -20,7 +20,7 @@ import { createPreferenceProxy, PreferenceProxy } from '@theia/core/lib/common/p
 import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { interfaces } from '@theia/core/shared/inversify';
-import { TelemetryLevel } from './telemetry-types';
+import { TelemetryLevel } from './telemetry-types.js';
 
 /** @experimental */
 export const TELEMETRY_LEVEL = 'telemetry.telemetryLevel';

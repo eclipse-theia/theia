@@ -16,7 +16,7 @@
 
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { isWindows, isOSX } from '@theia/core/lib/common/os';
-import { ExternalTerminalService, ExternalTerminalConfiguration } from '../common/external-terminal';
+import { ExternalTerminalService, ExternalTerminalConfiguration } from '../common/external-terminal.js';
 import { nls } from '@theia/core/lib/common/nls';
 import { PreferenceProxy, PreferenceSchema, PreferenceProxyFactory, PreferenceSchemaService } from '@theia/core';
 

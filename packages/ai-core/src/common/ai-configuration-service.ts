@@ -16,7 +16,7 @@
 
 import { Event } from '@theia/core';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
-import { PreferenceInspection, PreferenceScope } from '@theia/core/lib/common/preferences';
+import { PreferenceInspection, PreferenceScope, PreferenceUtils } from '@theia/core/lib/common/preferences';
 
 export const AiConfigurationService = Symbol('AiConfigurationService');
 
@@ -25,13 +25,45 @@ export const AiConfigurationService = Symbol('AiConfigurationService');
  */
 export interface AiConfigurationInspection<T extends JSONValue = JSONValue> extends PreferenceInspection<T> {
     /**
-     * The narrowest scope (honoring workspace trust) in which a value is explicitly set, i.e. the
-     * scope that determines the effective {@link PreferenceInspection.value}. Walked in precedence
-     * order `Folder -> Workspace -> User`; `undefined` when only the default value applies. In an
-     * untrusted workspace the folder/workspace scopes are ignored, so `sourceScope` is either
-     * `User` or `undefined`.
+     * The highest-precedence scope (honoring workspace trust) in which a value is explicitly set, i.e. the
+     * scope whose value {@link PreferenceInspection.value} reports. Walked in precedence order
+     * `Session -> Folder -> Workspace -> User`; `undefined` when only the default value applies. In an
+     * untrusted workspace the folder/workspace scopes are ignored, so `sourceScope` is `Session`, `User` or
+     * `undefined`.
+     *
+     * `Session` holds values passed with `--session-preference`. It isn't tied to a resource, wins over
+     * `Folder`, and has no settings file behind it, so it can't be used to pick a file to edit. Writing the key
+     * to another scope through {@link AiConfigurationService.set} or {@link AiConfigurationService.update}
+     * clears the session value until the window reloads. A value read with {@link AiConfigurationService.get}
+     * includes the session value, so writing it back saves the session value to that scope's settings file. To
+     * change part of an object or a list, start from {@link AiConfigurationInspection.valueWithoutSession}.
+     *
+     * For object values, {@link PreferenceInspection.value} is the object set in `sourceScope` alone, while
+     * {@link AiConfigurationService.get} merges the object across all scopes.
      */
     sourceScope?: PreferenceScope;
+}
+
+export namespace AiConfigurationInspection {
+    /**
+     * Resolves the scopes of `inspection` other than `Session` as {@link AiConfigurationService.get} resolves them:
+     * object values merge across the scopes, and other values come from the highest scope that sets them.
+     * Workspace and folder values count only if `inspection` holds them, which an inspection from
+     * {@link AiConfigurationService.inspect} doesn't while the workspace is untrusted.
+     *
+     * This is the value to change and write back with {@link AiConfigurationService.update}, so that a value
+     * set with `--session-preference` isn't saved to a settings file. A write clears the session value, unless the
+     * written value equals it.
+     */
+    export function valueWithoutSession<T extends JSONValue>(inspection: PreferenceInspection<T> | undefined): T | undefined {
+        let value: JSONValue | undefined;
+        for (const scopeValue of [inspection?.defaultValue, inspection?.globalValue, inspection?.workspaceValue, inspection?.workspaceFolderValue]) {
+            if (scopeValue !== undefined) {
+                value = PreferenceUtils.merge(value, scopeValue);
+            }
+        }
+        return value as T | undefined;
+    }
 }
 
 /**
@@ -70,7 +102,8 @@ export interface AiConfigurationChange {
  *
  * Reads ({@link get}, {@link inspect}) are **workspace-trust-aware**: workspace and folder scope
  * values are suppressed while the workspace is untrusted (failing closed until the trust state
- * resolves), matching how AI features read preferences today. Writes ({@link set}, {@link update})
+ * resolves), matching how AI features read preferences today. Session values (set via
+ * `--session-preference`) apply regardless of trust. Writes ({@link set}, {@link update})
  * are never gated by trust.
  */
 export interface AiConfigurationService {
@@ -81,7 +114,8 @@ export interface AiConfigurationService {
     readonly ready: Promise<void>;
 
     /**
-     * Retrieves the effective, trust-aware value for the given preference.
+     * Retrieves the effective, trust-aware value for the given preference, including a session value. To change
+     * part of an object or a list and write it back, start from {@link AiConfigurationInspection.valueWithoutSession}.
      *
      * @param key the preference identifier.
      * @param defaultValue the value to return when no value is stored.
@@ -111,8 +145,8 @@ export interface AiConfigurationService {
 
     /**
      * Retrieves the per-scope values for the given preference, enriched with a derived,
-     * trust-aware {@link AiConfigurationInspection.sourceScope} and effective
-     * {@link PreferenceInspection.value}.
+     * trust-aware {@link AiConfigurationInspection.sourceScope} and that scope's value as
+     * {@link PreferenceInspection.value} (see {@link AiConfigurationInspection.sourceScope} for object values).
      *
      * @param key the preference identifier.
      * @param resourceUri the uri of the resource for which the preference is inspected.

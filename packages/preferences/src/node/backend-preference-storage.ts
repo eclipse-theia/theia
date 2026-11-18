@@ -16,12 +16,12 @@
 
 import { Listener, ListenerList, URI } from '@theia/core';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
-import { FileContentStatus, PreferenceStorage } from '../common/abstract-resource-preference-provider';
+import { FileContentStatus, PreferenceStorage } from '../common/abstract-resource-preference-provider.js';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import debounce = require('@theia/core/shared/lodash.debounce');
-import { JSONCEditor } from '../common/jsonc-editor';
+import debounce from '@theia/core/shared/lodash.debounce';
+import { JSONCEditor } from '../common/jsonc-editor.js';
 import { DiskFileSystemProvider } from '@theia/filesystem/lib/node/disk-file-system-provider';
 import { UTF8 } from '@theia/core/lib/common/encodings';
 

@@ -25,7 +25,7 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError } from '@theia/filesystem/lib/common/files';
 import * as monaco from '@theia/monaco-editor-core';
-import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser';
+import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser.js';
 import { isObject } from '@theia/core/lib/common';
 import { ILogger } from '@theia/core';
 

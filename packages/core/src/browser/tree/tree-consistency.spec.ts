@@ -16,15 +16,15 @@
 
 import * as assert from 'assert';
 import { injectable } from 'inversify';
-import { createTreeTestContainer } from './test/tree-test-container';
-import { TreeImpl, CompositeTreeNode, TreeNode } from './tree';
-import { TreeModel } from './tree-model';
-import { ExpandableTreeNode } from './tree-expansion';
-import { TreeLabelProvider } from './tree-label-provider';
-import { MockTreeModel } from './test/mock-tree-model';
-import { MockLogger } from '../../common/test/mock-logger';
-import { ILogger } from '../../common';
-import { Deferred, timeout } from '../../common/promise-util';
+import { createTreeTestContainer } from './test/tree-test-container.js';
+import { TreeImpl, CompositeTreeNode, TreeNode } from './tree.js';
+import { TreeModel } from './tree-model.js';
+import { ExpandableTreeNode } from './tree-expansion.js';
+import { TreeLabelProvider } from './tree-label-provider.js';
+import { MockTreeModel } from './test/mock-tree-model.js';
+import { MockLogger } from '../../common/test/mock-logger.js';
+import { ILogger } from '../../common/index.js';
+import { Deferred, timeout } from '../../common/promise-util.js';
 
 @injectable()
 class ConsistencyTestTree extends TreeImpl {

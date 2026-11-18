@@ -16,7 +16,7 @@
 
 import { interfaces } from '@theia/core/shared/inversify';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { MessageRegistryMain, MainMessageType, MainMessageOptions, MainMessageItem } from '../../common/plugin-api-rpc';
+import { MessageRegistryMain, MainMessageType, MainMessageOptions, MainMessageItem } from '../../common/plugin-api-rpc.js';
 
 /**
  * A basic implementation of the message registry that does not support the modal option

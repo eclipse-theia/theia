@@ -23,9 +23,9 @@ import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { ScmCommitWidget } from '@theia/scm/lib/browser/scm-commit-widget';
 import { ScmInput } from '@theia/scm/lib/browser/scm-input';
 import { ScmProvider } from '@theia/scm/lib/browser/scm-provider';
-import { COMMIT_MESSAGE_AGENT_ID } from './commit-message-agent';
-import { CommitMessageCommands } from './commit-message-commands';
-import { CommitMessageRunner } from './commit-message-runner';
+import { COMMIT_MESSAGE_AGENT_ID } from './commit-message-agent.js';
+import { CommitMessageCommands } from './commit-message-commands.js';
+import { CommitMessageRunner } from './commit-message-runner.js';
 
 /**
  * Source-control provider id of the VS Code / Theia git extension. The generator runs
@@ -72,14 +72,12 @@ export class AiAwareScmCommitWidget extends ScmCommitWidget {
 
     protected override renderInput(input: ScmInput): React.ReactNode {
         const baseInput = super.renderInput(input);
-        // The wrapper adds padding to make room for the button, so it must only be rendered when
-        // a button is actually rendered into it. Users with AI off keep the stock SCM input.
-        if (!this.shouldRenderAiButton(input)) {
-            return baseInput;
-        }
-        return <div className='theia-ai-commit-message-input-wrapper'>
+        const showAiButton = this.shouldRenderAiButton(input);
+        // Keep the input mounted when staged changes toggle the overlay, but only reserve
+        // space for the button when it is rendered.
+        return <div className={showAiButton ? 'theia-ai-commit-message-input-wrapper' : undefined}>
             {baseInput}
-            {this.renderAiOverlay(input)}
+            {showAiButton && this.renderAiOverlay(input)}
         </div>;
     }
 

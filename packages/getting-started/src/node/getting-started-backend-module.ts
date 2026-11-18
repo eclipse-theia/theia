@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { bindGettingStartedPreferences } from '../common/getting-started-preferences';
+import { bindGettingStartedPreferences } from '../common/getting-started-preferences.js';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bindGettingStartedPreferences(bind);

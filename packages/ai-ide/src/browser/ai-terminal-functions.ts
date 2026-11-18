@@ -17,7 +17,7 @@
 import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
-import { SUGGEST_TERMINAL_COMMAND_ID } from '../common/ai-terminal-functions';
+import { SUGGEST_TERMINAL_COMMAND_ID } from '../common/ai-terminal-functions.js';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { waitForEvent } from '@theia/core/lib/common/promise-util';

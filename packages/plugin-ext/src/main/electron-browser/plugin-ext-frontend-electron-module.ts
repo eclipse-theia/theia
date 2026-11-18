@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { WebviewWidgetFactory } from '../browser/webview/webview-widget-factory';
-import { CustomEditorWidgetFactory } from '../browser/custom-editors/custom-editor-widget-factory';
-import { ElectronCustomEditorWidgetFactory, ElectronWebviewWidgetFactory } from './webview/electron-webview-widget-factory';
+import { WebviewWidgetFactory } from '../browser/webview/webview-widget-factory.js';
+import { CustomEditorWidgetFactory } from '../browser/custom-editors/custom-editor-widget-factory.js';
+import { ElectronCustomEditorWidgetFactory, ElectronWebviewWidgetFactory } from './webview/electron-webview-widget-factory.js';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     rebind(WebviewWidgetFactory).toDynamicValue(ctx => new ElectronWebviewWidgetFactory(ctx.container)).inSingletonScope();

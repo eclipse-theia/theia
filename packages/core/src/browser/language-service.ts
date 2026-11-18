@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { Disposable, Emitter, Event } from '../common';
+import { Disposable, Emitter, Event } from '../common/index.js';
 
 export interface Language {
     readonly id: string;

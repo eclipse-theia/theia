@@ -16,8 +16,8 @@
 
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { VariableRegistry, Variable } from './variable';
-import { VariableResolverService } from './variable-resolver-service';
+import { VariableRegistry, Variable } from './variable.js';
+import { VariableResolverService } from './variable-resolver-service.js';
 import { QuickPickItem, QuickInputService } from '@theia/core/lib/browser';
 
 @injectable()

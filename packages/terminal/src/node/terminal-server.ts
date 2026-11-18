@@ -19,8 +19,8 @@ import { ILogger } from '@theia/core/lib/common/logger';
 import {
     ITerminalServer,
     ITerminalServerOptions
-} from '../common/terminal-protocol';
-import { BaseTerminalServer } from './base-terminal-server';
+} from '../common/terminal-protocol.js';
+import { BaseTerminalServer } from './base-terminal-server.js';
 import { TerminalProcessFactory, ProcessManager } from '@theia/process/lib/node';
 
 @injectable()

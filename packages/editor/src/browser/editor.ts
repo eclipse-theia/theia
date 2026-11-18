@@ -19,7 +19,7 @@ import * as lsp from '@theia/core/shared/vscode-languageserver-protocol';
 import URI from '@theia/core/lib/common/uri';
 import { Event, Disposable, TextDocumentContentChangeDelta, Reference, isObject } from '@theia/core/lib/common';
 import { Saveable, Navigatable, Widget } from '@theia/core/lib/browser';
-import { EditorDecoration } from './decorations/editor-decoration';
+import { EditorDecoration } from './decorations/editor-decoration.js';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
 export { Position, Range, Location };
@@ -157,7 +157,7 @@ export interface EditorMouseEvent {
     readonly target: MouseTarget;
 }
 
-export const enum EncodingMode {
+export enum EncodingMode {
 
     /**
      * Instructs the encoding support to encode the current input with the provided encoding

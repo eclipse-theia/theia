@@ -28,7 +28,7 @@ import {
 } from '@theia/core/lib/common';
 import { ElectronMainMenuFactory } from '@theia/core/lib/electron-browser/menu/electron-main-menu-factory';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
-import { SampleUpdater, UpdateStatus, SampleUpdaterClient } from '../../common/updater/sample-updater';
+import { SampleUpdater, UpdateStatus, SampleUpdaterClient } from '../../common/updater/sample-updater.js';
 
 export namespace SampleUpdaterCommands {
 

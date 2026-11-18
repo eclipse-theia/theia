@@ -14,14 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '../test/jsdom';
+import { enableJSDOM } from '../test/jsdom.js';
 const disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
-import { Widget } from '@theia/core/shared/@lumino/widgets';
+import { Widget } from '../../../shared/@lumino/widgets/index.cjs';
 import * as sinon from 'sinon';
-import { DisposableCollection } from '../../common/disposable';
-import { ApplicationShell } from './application-shell';
+import { DisposableCollection } from '../../common/disposable.js';
+import { ApplicationShell } from './application-shell.js';
 disableJSDOM();
 
 describe('ApplicationShell', () => {

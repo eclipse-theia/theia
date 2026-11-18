@@ -25,10 +25,10 @@ import { Event } from '@theia/core';
 import { createRoot } from '@theia/core/shared/react-dom/client';
 import { flushSync } from '@theia/core/shared/react-dom';
 import { AgentPluginUiBridge, InstalledAgentPluginInfo } from '@theia/ai-core/lib/browser/agent-plugin-ui-bridge';
-import { MCPServerDescription, MCPServerStatus } from '../common/mcp-server-manager';
+import { MCPServerDescription, MCPServerStatus } from '../common/mcp-server-manager.js';
 import { AiConfigurationCategoryId, AiConfigurationRenderContext } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
-import { McpServersConfigurationCategory } from './mcp-servers-configuration-category';
-import { MCPRegistryUiBridge } from './mcp-registry-ui-bridge';
+import { McpServersConfigurationCategory } from './mcp-servers-configuration-category.js';
+import { MCPRegistryUiBridge } from './mcp-registry-ui-bridge.js';
 
 disableJSDOM();
 

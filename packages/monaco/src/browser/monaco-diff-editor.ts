@@ -17,24 +17,24 @@
 import URI from '@theia/core/lib/common/uri';
 import { Disposable } from '@theia/core/lib/common';
 import { Dimension, DiffNavigator, DeltaDecorationParams } from '@theia/editor/lib/browser';
-import { MonacoEditorModel } from './monaco-editor-model';
-import { EditorServiceOverrides, MonacoEditor, MonacoEditorServices } from './monaco-editor';
-import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory';
+import { MonacoEditorModel } from './monaco-editor-model.js';
+import { EditorServiceOverrides, MonacoEditor, MonacoEditorServices } from './monaco-editor.js';
+import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory.js';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import * as monaco from '@theia/monaco-editor-core';
-import { ICodeEditor, IDiffEditorConstructionOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
+import { ICodeEditor, IDiffEditorConstructionOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser.js';
 import { IActionDescriptor, IStandaloneCodeEditor, IStandaloneDiffEditor, StandaloneCodeEditor, StandaloneDiffEditor2 }
-    from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
-import { IEditorConstructionOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/config/editorConfiguration';
-import { ICodeEditorWidgetOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/codeEditor/codeEditorWidget';
-import { EmbeddedDiffEditorWidget } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/diffEditor/embeddedDiffEditorWidget';
-import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
-import { ContextKeyValue, IContextKey } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
-import { IDisposable } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
-import { ICommandHandler } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
-import { EditorContextKeys } from '@theia/monaco-editor-core/esm/vs/editor/common/editorContextKeys';
-import { IEditorOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
-import { ILineChange } from '@theia/monaco-editor-core/esm/vs/editor/common/diff/legacyLinesDiffComputer';
+    from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor.js';
+import { IEditorConstructionOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/config/editorConfiguration.js';
+import { ICodeEditorWidgetOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/codeEditor/codeEditorWidget.js';
+import { EmbeddedDiffEditorWidget } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/diffEditor/embeddedDiffEditorWidget.js';
+import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation.js';
+import { ContextKeyValue, IContextKey } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey.js';
+import { IDisposable } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle.js';
+import { ICommandHandler } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands.js';
+import { EditorContextKeys } from '@theia/monaco-editor-core/esm/vs/editor/common/editorContextKeys.js';
+import { IEditorOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions.js';
+import { ILineChange } from '@theia/monaco-editor-core/esm/vs/editor/common/diff/legacyLinesDiffComputer.js';
 
 export namespace MonacoDiffEditor {
     export interface IOptions extends MonacoEditor.ICommonOptions, IDiffEditorConstructionOptions {

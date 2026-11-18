@@ -80,6 +80,10 @@ export function monacoNlsPlugin(): Plugin {
  * It is opt-in: add it to the `plugins` array in your `esbuild.mjs` to enable it.
  */
 export function exposeModulePlugin(): Plugin {
+    function isCommonJsSource(source: string): boolean {
+        return !/^\s*(import\s*[\w{*'"]|export\s)/m.test(source);
+    }
+
     function findPackage(resourcePath: string): { name: string, dir: string } | undefined {
         let dir = path.dirname(resourcePath);
         while (true) {
@@ -116,7 +120,11 @@ export function exposeModulePlugin(): Plugin {
                 if (path.sep !== '/') {
                     moduleName = moduleName.split(path.sep).join('/');
                 }
-                const exposure = `\n;(globalThis['theia'] = globalThis['theia'] || {})['${moduleName}'] = (typeof module === 'object' && module.exports) || this;\n`;
+                const exposure = isCommonJsSource(source)
+                    ? `\n;(globalThis['theia'] = globalThis['theia'] || {})['${moduleName}'] = (typeof module === 'object' && module.exports) || this;\n`
+                    // An ES module exposes its namespace, which it gets by importing itself.
+                    : `\nimport * as __theiaExposedModule from './${path.basename(args.path)}';\n`
+                    + `(globalThis['theia'] = globalThis['theia'] || {})['${moduleName}'] = __theiaExposedModule;\n`;
                 return { contents: source + exposure, loader: 'js' };
             });
         }

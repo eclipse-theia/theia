@@ -17,7 +17,7 @@
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import { RPCProtocol } from '@theia/plugin-ext/lib/common/rpc-protocol';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { GreetingKind, GreeterData, GreetingExt, GreetingMain, MAIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
+import { GreetingKind, GreeterData, GreetingExt, GreetingMain, MAIN_RPC_CONTEXT } from '../common/plugin-api-rpc.js';
 
 const GREETINGS = {
     [GreetingKind.DIRECT]: ['Hello, world!', "I'm here!", 'Good day!'],

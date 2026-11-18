@@ -70,6 +70,7 @@ test.describe('Theia Quick Command', () => {
 
     test('should trigger \'Quick Input: Test Positive Integer\' command by confirming via Enter', async () => {
         await quickCommand.type('Test Positive', true);
+        await quickCommand.waitForVisible();
         expect(await quickCommand.isOpen()).toBe(true);
         await quickCommand.type('6', true);
         const notificationIndicator = new TheiaNotificationIndicator(app);
@@ -81,6 +82,19 @@ test.describe('Theia Quick Command', () => {
         await quickCommand.type('close all tabs', false);
         const listItems = await Promise.all((await quickCommand.visibleItems()).map(async item => item.textContent()));
         expect(listItems).toContain('View: Close All Tabs in Main Area');
+        await quickCommand.hide();
+    });
+
+    test('should trigger command without preceding type', async () => {
+        await quickCommand.trigger('About Theia');
+        expect(await quickCommand.isOpen()).toBe(false);
+        const aboutDialog = new TheiaAboutDialog(app);
+        expect(await aboutDialog.isVisible()).toBe(true);
+        await aboutDialog.close();
+        expect(await aboutDialog.isVisible()).toBe(false);
+
+        await quickCommand.trigger('View: Toggle Explorer');
+        expect(await quickCommand.isOpen()).toBe(false);
     });
 
 });

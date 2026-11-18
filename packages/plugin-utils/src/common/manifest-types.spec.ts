@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { rawContributes } from './manifest-types';
+import { rawContributes } from './manifest-types.js';
 
 describe('manifest-types', () => {
 

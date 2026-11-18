@@ -17,8 +17,8 @@
 import { ReactNode } from '@theia/core/shared/react';
 import { OpenerService } from '@theia/core/lib/browser';
 import { isToolCallContent, ToolCallResult } from '@theia/ai-core';
-import { MarkdownRender } from './markdown-part-renderer';
-import { McpAppFrame } from './mcp-app-frame';
+import { MarkdownRender } from './markdown-part-renderer.js';
+import { McpAppFrame } from './mcp-app-frame.js';
 
 /** Parses a tool call result that may be a JSON string, returning the original value on failure. */
 export function tryParseToolCallResult(result: ToolCallResult): ToolCallResult {

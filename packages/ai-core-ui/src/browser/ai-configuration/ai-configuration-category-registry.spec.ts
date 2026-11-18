@@ -20,8 +20,8 @@ import { expect } from 'chai';
 import { Emitter } from '@theia/core';
 import { Container, ContainerModule, inject, injectable } from '@theia/core/shared/inversify';
 import { bindContributionProvider } from '@theia/core/lib/common';
-import { AiConfigurationCategory, AiConfigurationSearchItem } from './ai-configuration-category';
-import { AiConfigurationCategoryRegistry } from './ai-configuration-category-registry';
+import { AiConfigurationCategory, AiConfigurationSearchItem } from './ai-configuration-category.js';
+import { AiConfigurationCategoryRegistry } from './ai-configuration-category-registry.js';
 
 class DummyCategory implements AiConfigurationCategory {
     readonly renderer = {};

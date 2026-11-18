@@ -17,16 +17,16 @@
 // Parses the log config the loggers are built from, so no ILogger exists yet.
 /* eslint-disable @theia/named-logger-check */
 
-import * as yargs from 'yargs';
+import * as yargs from '../../shared/yargs/index.cjs';
 import { injectable } from 'inversify';
-import { LogLevel } from '../common/logger';
-import { CliContribution } from './cli';
-import * as fs from 'fs-extra';
-import { AsyncSubscription, subscribe } from '@parcel/watcher';
-import { Event, Emitter } from '../common/event';
+import { LogLevel } from '../common/logger.js';
+import { CliContribution } from './cli.js';
+import * as fs from '../../shared/fs-extra/index.cjs';
+import { AsyncSubscription, subscribe } from '../../shared/@parcel/watcher/index.cjs';
+import { Event, Emitter } from '../common/event.js';
 import * as path from 'path';
-import { Disposable, DisposableCollection } from '../common';
-import { escapeRegExpCharacters } from '../common/strings';
+import { Disposable, DisposableCollection } from '../common/index.js';
+import { escapeRegExpCharacters } from '../common/strings.js';
 
 /** Maps logger names to log levels.  */
 export interface LogLevels {

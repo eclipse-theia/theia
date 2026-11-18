@@ -21,7 +21,7 @@
 
 import { expect } from 'chai';
 import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
-import { DocumentRangeMap, RangeMapping } from './range-mapping';
+import { DocumentRangeMap, RangeMapping } from './range-mapping.js';
 
 describe('document-range-map', () => {
 

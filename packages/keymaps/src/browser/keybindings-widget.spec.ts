@@ -9,7 +9,7 @@
 // *****************************************************************************
 
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
-import React = require('@theia/core/shared/react');
+import * as React from '@theia/core/shared/react';
 import { renderToStaticMarkup } from '@theia/core/shared/react-dom/server';
 const disableJSDOM = enableJSDOM();
 if (typeof DragEvent === 'undefined') {
@@ -18,10 +18,10 @@ if (typeof DragEvent === 'undefined') {
 
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import * as os from '@theia/core/lib/common/os';
 import { Key, KeyCode } from '@theia/core/lib/browser/keyboard/keys';
+import { stubOS } from '@theia/core/lib/common/test/stub-os';
 import { KeybindingRegistry, ScopedKeybinding } from '@theia/core/lib/browser/keybinding';
-import { KeybindingItem, KeybindingWidget } from './keybindings-widget';
+import { KeybindingItem, KeybindingWidget } from './keybindings-widget.js';
 
 after(() => disableJSDOM());
 
@@ -34,7 +34,7 @@ describe('keybindings widget tooltip', () => {
     };
 
     it('shows a logical binding and its real physical realization', () => {
-        const platform = sinon.stub(os, 'isOSX').value(false);
+        const platform = stubOS('isOSX', false);
         const registry = Object.create(KeybindingRegistry.prototype) as KeybindingRegistry;
         const code = new KeyCode({
             key: Key.DIGIT8,
@@ -55,7 +55,7 @@ describe('keybindings widget tooltip', () => {
     });
 
     it('keeps inactive character-only bindings visible in logical labels', () => {
-        const platform = sinon.stub(os, 'isOSX').value(false);
+        const platform = stubOS('isOSX', false);
         const registry = Object.create(KeybindingRegistry.prototype) as KeybindingRegistry;
         const code = new KeyCode({ ctrl: true, character: '§', supportedByLayout: false });
         Object.defineProperty(registry, 'keyboardLayoutService', {

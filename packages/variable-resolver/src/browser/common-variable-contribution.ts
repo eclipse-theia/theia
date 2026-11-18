@@ -15,14 +15,15 @@
 // *****************************************************************************
 
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
-import { VariableContribution, VariableRegistry } from './variable';
+import { VariableContribution, VariableRegistry } from './variable.js';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { CommandService } from '@theia/core/lib/common/command';
 import { OS } from '@theia/core/lib/common/os';
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
+import { ShellEnvironmentServer } from '@theia/core/lib/common/shell-environment';
 import { ResourceContextKey } from '@theia/core/lib/browser/resource-context-key';
-import { VariableInput } from './variable-input';
+import { VariableInput } from './variable-input.js';
 import { QuickInputService, QuickPickValue } from '@theia/core/lib/browser';
 import { MaybeArray, RecursivePartial } from '@theia/core/lib/common/types';
 import { cancelled } from '@theia/core/lib/common/cancellation';
@@ -33,6 +34,10 @@ export class CommonVariableContribution implements VariableContribution {
 
     @inject(EnvVariablesServer)
     protected readonly env: EnvVariablesServer;
+
+    /** Bound in Electron frontends only, where the backend takes the `PATH` of the user's login shell after it started. */
+    @inject(ShellEnvironmentServer) @optional()
+    protected readonly shellEnvironment: ShellEnvironmentServer | undefined;
 
     @inject(CommandService)
     protected readonly commands: CommandService;
@@ -62,9 +67,14 @@ export class CommonVariableContribution implements VariableContribution {
         variables.registerVariable({
             name: 'env',
             resolve: async (_, envVariableName) => {
-                const envVariable = envVariableName && await this.env.getValue(envVariableName);
-                const envValue = envVariable && envVariable.value;
-                return envValue || '';
+                if (!envVariableName) {
+                    return '';
+                }
+                // The backend reports the environment of the GUI application until the login shell has answered,
+                // and a process started with that `PATH` would not find the user's tools.
+                await this.shellEnvironment?.whenResolved();
+                const envVariable = await this.env.getValue(envVariableName);
+                return envVariable?.value || '';
             }
         });
         variables.registerVariable({
@@ -73,7 +83,7 @@ export class CommonVariableContribution implements VariableContribution {
                 if (!preferenceName) {
                     return undefined;
                 }
-                return this.preferences.get(preferenceName, undefined, resourceUri && resourceUri.toString());
+                return this.preferences.get(preferenceName, { resource: resourceUri && resourceUri.toString() });
             }
         });
         variables.registerVariable({
@@ -98,7 +108,7 @@ export class CommonVariableContribution implements VariableContribution {
                 if (!variable || !section) {
                     return undefined;
                 }
-                const configuration = this.preferences.get<RecursivePartial<{ inputs: MaybeArray<VariableInput> }>>(section, undefined, resourceUri && resourceUri.toString());
+                const configuration = this.preferences.get<RecursivePartial<{ inputs: MaybeArray<VariableInput> }>>(section, { resource: resourceUri && resourceUri.toString() });
                 const inputs = !!configuration && 'inputs' in configuration ? configuration.inputs : undefined;
                 const input = Array.isArray(inputs) && inputs.find(item => !!item && item.id === variable);
                 if (!input) {

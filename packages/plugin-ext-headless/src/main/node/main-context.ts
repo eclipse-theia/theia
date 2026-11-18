@@ -19,7 +19,7 @@ import { EnvMainImpl } from '@theia/plugin-ext/lib/main/common/env-main';
 import { BasicMessageRegistryMainImpl } from '@theia/plugin-ext/lib/main/common/basic-message-registry-main';
 import { BasicNotificationMainImpl } from '@theia/plugin-ext/lib/main/common/basic-notification-main';
 
-import { HEADLESSMAIN_RPC_CONTEXT, HEADLESSPLUGIN_RPC_CONTEXT } from '../../common/headless-plugin-rpc';
+import { HEADLESSMAIN_RPC_CONTEXT, HEADLESSPLUGIN_RPC_CONTEXT } from '../../common/headless-plugin-rpc.js';
 
 // This sets up only the minimal plugin API required by the plugin manager to report
 // messages and notifications to the main side and to initialize plugins.

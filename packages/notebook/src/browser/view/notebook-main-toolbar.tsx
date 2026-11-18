@@ -16,12 +16,12 @@
 import { ArrayUtils, CommandMenu, CommandRegistry, DisposableCollection, Group, GroupImpl, MenuModelRegistry, MenuNode, MenuPath, nls } from '@theia/core';
 import * as React from '@theia/core/shared/react';
 import { codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
-import { NotebookCommands, NotebookMenus } from '../contributions/notebook-actions-contribution';
-import { NotebookModel } from '../view-model/notebook-model';
-import { NotebookKernelService } from '../service/notebook-kernel-service';
+import { NotebookCommands, NotebookMenus } from '../contributions/notebook-actions-contribution.js';
+import { NotebookModel } from '../view-model/notebook-model.js';
+import { NotebookKernelService } from '../service/notebook-kernel-service.js';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { NotebookContextManager } from '../service/notebook-context-manager';
+import { NotebookContextManager } from '../service/notebook-context-manager.js';
 
 export interface NotebookMainToolbarProps {
     notebookModel: NotebookModel

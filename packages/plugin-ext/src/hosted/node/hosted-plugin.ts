@@ -16,9 +16,9 @@
 
 import { injectable, inject, multiInject, postConstruct, optional, named } from '@theia/core/shared/inversify';
 import { ILogger, ConnectionErrorHandler } from '@theia/core/lib/common';
-import { HostedPluginClient, PluginModel, ServerPluginRunner } from '../../common/plugin-protocol';
-import { LogPart } from '../../common/types';
-import { HostedPluginProcess } from './hosted-plugin-process';
+import { HostedPluginClient, PluginModel, ServerPluginRunner } from '../../common/plugin-protocol.js';
+import { LogPart } from '../../common/types.js';
+import { HostedPluginProcess } from './hosted-plugin-process.js';
 
 export interface IPCConnectionOptions {
     readonly serverName: string;

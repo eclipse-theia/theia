@@ -15,8 +15,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { IDisposable } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
-import { StandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneThemeService';
+import { IDisposable } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle.js';
+import { StandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneThemeService.js';
 
 export class MonacoStandaloneThemeService extends StandaloneThemeService {
     protected get styleElements(): HTMLStyleElement[] {

@@ -16,11 +16,11 @@
 
 import { interfaces, Container } from '@theia/core/shared/inversify';
 import { Tree, TreeModel, TreeProps, defaultTreeProps } from '@theia/core/lib/browser';
-import { createFileTreeContainer, FileTreeModel, FileTreeWidget } from '../file-tree';
-import { OpenFileDialog, OpenFileDialogProps, SaveFileDialog, SaveFileDialogProps } from './file-dialog';
-import { FileDialogModel } from './file-dialog-model';
-import { FileDialogWidget } from './file-dialog-widget';
-import { FileDialogTree } from './file-dialog-tree';
+import { createFileTreeContainer, FileTreeModel, FileTreeWidget } from '../file-tree/index.js';
+import { OpenFileDialog, OpenFileDialogProps, SaveFileDialog, SaveFileDialogProps } from './file-dialog.js';
+import { FileDialogModel } from './file-dialog-model.js';
+import { FileDialogWidget } from './file-dialog-widget.js';
+import { FileDialogTree } from './file-dialog-tree.js';
 
 export function createFileDialogContainer(parent: interfaces.Container): Container {
     const child = createFileTreeContainer(parent);

@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './task-service';
-export * from './task-contribution';
-export * from './task-definition-registry';
-export * from './task-problem-matcher-registry';
-export * from './task-problem-pattern-registry';
-export * from './task-schema-updater';
+export * from './task-service.js';
+export * from './task-contribution.js';
+export * from './task-definition-registry.js';
+export * from './task-problem-matcher-registry.js';
+export * from './task-problem-pattern-registry.js';
+export * from './task-schema-updater.js';

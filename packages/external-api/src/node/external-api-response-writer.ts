@@ -16,7 +16,7 @@
 
 import * as express from '@theia/core/shared/express';
 import { injectable } from '@theia/core/shared/inversify';
-import { RestResult } from './rest-result';
+import { RestResult } from './rest-result.js';
 
 export const ExternalApiResponseWriter = Symbol('ExternalApiResponseWriter');
 /**

@@ -25,9 +25,9 @@ import URI from '@theia/core/lib/common/uri';
 import { isEmpty } from '@theia/core/lib/common/objects';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { FileUri } from '@theia/core/lib/common/file-uri';
-import { DirectoryArchiver } from './directory-archiver';
-import { FileDownloadData } from '../../common/download/file-download';
-import { FileDownloadCache, DownloadStorageItem } from './file-download-cache';
+import { DirectoryArchiver } from './directory-archiver.js';
+import { FileDownloadData } from '../../common/download/file-download.js';
+import { FileDownloadCache, DownloadStorageItem } from './file-download-cache.js';
 
 interface PrepareDownloadOptions {
     filePath: string;

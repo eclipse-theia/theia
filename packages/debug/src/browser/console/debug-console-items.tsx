@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
+import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol.js';
 import { codicon, SingleTextInputDialog } from '@theia/core/lib/browser';
 import { ConsoleItem, CompositeConsoleItem } from '@theia/console/lib/browser/console-session';
-import { DebugSession, formatMessage } from '../debug-session';
+import { DebugSession, formatMessage } from '../debug-session.js';
 import { Severity } from '@theia/core/lib/common/severity';
 import * as monaco from '@theia/monaco-editor-core';
 import { generateUuid, nls } from '@theia/core';

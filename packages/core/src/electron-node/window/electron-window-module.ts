@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { bindWindowPreferences } from '../../electron-common/electron-window-preferences';
+import { bindWindowPreferences } from '../../electron-common/electron-window-preferences.js';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindWindowPreferences(bind);

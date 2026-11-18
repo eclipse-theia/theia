@@ -16,17 +16,17 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
-import { CommentingRangeDecorator } from './comments-decorator';
+import { CommentingRangeDecorator } from './comments-decorator.js';
 import { EditorManager, EditorMouseEvent, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoDiffEditor } from '@theia/monaco/lib/browser/monaco-diff-editor';
-import { CommentThreadWidget } from './comment-thread-widget';
-import { CommentsService, CommentInfoMain } from './comments-service';
-import { CommentThread } from '../../../common/plugin-api-rpc-model';
+import { CommentThreadWidget } from './comment-thread-widget.js';
+import { CommentsService, CommentInfoMain } from './comments-service.js';
+import { CommentThread } from '../../../common/plugin-api-rpc-model.js';
 import { CommandRegistry, DisposableCollection, MenuModelRegistry } from '@theia/core/lib/common';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { Uri } from '@theia/plugin';
-import { CommentsContext } from './comments-context';
+import { CommentsContext } from './comments-context.js';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.

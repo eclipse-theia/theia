@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import * as assert from 'assert';
-import * as Converter from './type-converters';
+import * as Converter from './type-converters.js';
 import * as theia from '@theia/plugin';
-import * as types from './types-impl';
-import * as model from '../common/plugin-api-rpc-model';
-import { MarkdownString } from './markdown-string';
+import * as types from './types-impl.js';
+import * as model from '../common/plugin-api-rpc-model.js';
+import { MarkdownString } from './markdown-string.js';
 import { MarkdownString as MarkdownStringInterface } from '@theia/core/lib/common/markdown-rendering';
-import { TaskDto } from '../common/plugin-api-rpc';
+import { TaskDto } from '../common/plugin-api-rpc.js';
 
 describe('Type converters:', () => {
 
@@ -327,7 +327,7 @@ describe('Type converters:', () => {
 
         it('should convert from task dto', () => {
             // when
-            const result: theia.Task = Converter.toTask(shellTaskDto);
+            const result: theia.Task = Converter.toTask(shellTaskDto, () => undefined)!;
 
             assert.strictEqual(result.execution instanceof types.ShellExecution, true);
 
@@ -366,7 +366,7 @@ describe('Type converters:', () => {
 
         it('should convert task with custom type from dto', () => {
             // when
-            const result: theia.Task = Converter.toTask(customTaskDto);
+            const result: theia.Task = Converter.toTask(customTaskDto, () => undefined)!;
 
             assert.strictEqual(result.execution instanceof types.ShellExecution, true);
 
@@ -382,6 +382,17 @@ describe('Type converters:', () => {
 
             // then
             assert.deepStrictEqual(result, customPluginTask);
+        });
+
+        it('should use the workspace folder as the scope of a folder scoped task', () => {
+            const folder: theia.WorkspaceFolder = { uri: types.URI.parse('file:///projects/theia'), name: 'Theia', index: 1 };
+            const result = Converter.toTask({ ...shellTaskDto, scope: 'file:///projects/theia' }, uri => uri.toString() === folder.uri.toString() ? folder : undefined);
+            assert.strictEqual(result?.scope, folder);
+        });
+
+        it('should not convert a task scoped to a folder that is not in a workspace folder', () => {
+            const result = Converter.toTask({ ...shellTaskDto, scope: 'file:///projects/theia' }, () => undefined);
+            assert.strictEqual(result, undefined);
         });
 
         it('should convert to task dto from custom task with commandline', () => {

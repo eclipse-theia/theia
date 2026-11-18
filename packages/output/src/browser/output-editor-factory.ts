@@ -20,9 +20,9 @@ import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model
 import { MonacoEditorFactory } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { MonacoContextMenuService } from '@theia/monaco/lib/browser/monaco-context-menu';
 import { EditorServiceOverrides, MonacoEditor, MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
-import { OutputUri } from '../common/output-uri';
-import { OutputContextMenuService } from './output-context-menu';
-import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/contextview/browser/contextView';
+import { OutputUri } from '../common/output-uri.js';
+import { OutputContextMenuService } from './output-context-menu.js';
+import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/contextview/browser/contextView.js';
 
 @injectable()
 export class OutputEditorFactory implements MonacoEditorFactory {

@@ -18,9 +18,9 @@ import { CallHierarchyIncomingCall, CallHierarchyItem, CallHierarchyOutgoingCall
 import * as languageProtocol from '@theia/core/shared/vscode-languageserver-protocol';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { TypeHierarchyItem } from '@theia/typehierarchy/lib/browser';
-import * as rpc from '../../../common/plugin-api-rpc';
-import * as model from '../../../common/plugin-api-rpc-model';
-import { UriComponents } from '../../../common/uri-components';
+import * as rpc from '../../../common/plugin-api-rpc.js';
+import * as model from '../../../common/plugin-api-rpc-model.js';
+import { UriComponents } from '../../../common/uri-components.js';
 
 export function toUriComponents(uri: string): UriComponents {
     return URI.parse(uri);

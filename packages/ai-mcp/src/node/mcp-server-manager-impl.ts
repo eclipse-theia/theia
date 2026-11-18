@@ -14,13 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { isRemoteMCPServerDescription, MCPServerDescription, MCPServerManager, MCPFrontendNotificationService, RemoteMCPServerDescription } from '../common/mcp-server-manager';
-import { MCPServer } from './mcp-server';
+import { isRemoteMCPServerDescription, MCPServerDescription, MCPServerManager, MCPFrontendNotificationService, RemoteMCPServerDescription } from '../common/mcp-server-manager.js';
+import { MCPServer } from './mcp-server.js';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { CallToolResult, ListResourcesResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
-import { MCPOAuthClientProviderFactory } from './mcp-oauth-client-provider-factory';
-import { MCPOAuthCredentialStore } from './mcp-oauth-credential-store';
-import { deriveCredentialScope, normalizeOAuthUrl } from './mcp-oauth-keystore';
+import { MCPOAuthClientProviderFactory } from './mcp-oauth-client-provider-factory.js';
+import { MCPOAuthCredentialStore } from './mcp-oauth-credential-store.js';
+import { deriveCredentialScope, normalizeOAuthUrl } from './mcp-oauth-keystore.js';
 import { PreferenceUtils, ILogger } from '@theia/core';
 import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
 

@@ -16,12 +16,12 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { CommandRegistry, CommandContribution, Command } from '@theia/core/lib/common';
-import { OpenUriCommandHandler } from './commands';
+import { OpenUriCommandHandler } from './commands.js';
 import URI from '@theia/core/lib/common/uri';
-import { TreeViewWidget } from './view/tree-view-widget';
+import { TreeViewWidget } from './view/tree-view-widget.js';
 import { CompositeTreeNode, Widget, codicon } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { PluginViewWidget } from './view/plugin-view-widget';
+import { PluginViewWidget } from './view/plugin-view-widget.js';
 
 @injectable()
 export class PluginApiFrontendContribution implements CommandContribution, TabBarToolbarContribution {

@@ -22,9 +22,9 @@ import URI from '@theia/core/lib/common/uri';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { Mutex, MutexInterface } from 'async-mutex';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
-import { MonacoJSONCEditor } from './monaco-jsonc-editor';
+import { MonacoJSONCEditor } from './monaco-jsonc-editor.js';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
-import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
+import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle.js';
 
 @injectable()
 /**

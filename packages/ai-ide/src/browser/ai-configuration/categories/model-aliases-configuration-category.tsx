@@ -36,7 +36,7 @@ import {
 import { CollectionCategoryRenderer } from '@theia/ai-core-ui/lib/browser/ai-configuration/renderers/collection-category-renderer';
 import { AiConfigurationSection } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-primitives';
 import { AiEnumOption, AiEnumSelect } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-controls';
-import { AgentChips } from './agent-chips';
+import { AgentChips } from './agent-chips.js';
 
 /** Sentinel option value representing "use the alias' default priority list" (no explicit model). */
 const DEFAULT_LIST_VALUE = '';

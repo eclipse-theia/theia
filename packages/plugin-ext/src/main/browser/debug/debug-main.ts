@@ -17,15 +17,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { RPCProtocol } from '../../../common/rpc-protocol';
+import { RPCProtocol } from '../../../common/rpc-protocol.js';
 import {
     DebugConfigurationProviderDescriptor,
     DebugMain,
     DebugExt,
     MAIN_RPC_CONTEXT
-} from '../../../common/plugin-api-rpc';
+} from '../../../common/plugin-api-rpc.js';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
-import { Breakpoint, DebugStackFrameDTO, DebugThreadDTO, WorkspaceFolder } from '../../../common/plugin-api-rpc-model';
+import { Breakpoint, DebugStackFrameDTO, DebugThreadDTO, WorkspaceFolder } from '../../../common/plugin-api-rpc-model.js';
 import { BreakpointManager, BreakpointsChangeEvent } from '@theia/debug/lib/browser/breakpoint/breakpoint-manager';
 import { URI as Uri } from '@theia/core/shared/vscode-uri';
 import { SourceBreakpoint, FunctionBreakpoint, BaseBreakpoint } from '@theia/debug/lib/browser/breakpoint/breakpoint-marker';
@@ -33,16 +33,16 @@ import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
-import { PluginDebugAdapterContribution } from './plugin-debug-adapter-contribution';
-import { PluginDebugConfigurationProvider } from './plugin-debug-configuration-provider';
-import { PluginDebugSessionContributionRegistrator, PluginDebugSessionContributionRegistry } from './plugin-debug-session-contribution-registry';
+import { PluginDebugAdapterContribution } from './plugin-debug-adapter-contribution.js';
+import { PluginDebugConfigurationProvider } from './plugin-debug-configuration-provider.js';
+import { PluginDebugSessionContributionRegistrator, PluginDebugSessionContributionRegistry } from './plugin-debug-session-contribution-registry.js';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { PluginDebugSessionFactory } from './plugin-debug-session-factory';
-import { PluginDebugService } from './plugin-debug-service';
-import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
+import { PluginDebugSessionFactory } from './plugin-debug-session-factory.js';
+import { PluginDebugService } from './plugin-debug-service.js';
+import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin.js';
 import { ConsoleSessionManager } from '@theia/console/lib/browser/console-session-manager';
 import { DebugConsoleSession } from '@theia/debug/lib/browser/console/debug-console-session';
-import { ConnectionImpl } from '../../../common/connection';
+import { ConnectionImpl } from '../../../common/connection.js';
 import { DebugSessionOptions as TheiaDebugSessionOptions } from '@theia/debug/lib/browser/debug-session-options';
 import { DebugStackFrame } from '@theia/debug/lib/browser/model/debug-stack-frame';
 import { DebugThread } from '@theia/debug/lib/browser/model/debug-thread';

@@ -16,8 +16,8 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, SELECTED_CLASS, FOCUS_CLASS } from '@theia/core/lib/browser';
-import { FileTreeWidget, FileStatNode } from '../file-tree';
-import { FileDialogModel } from './file-dialog-model';
+import { FileTreeWidget, FileStatNode } from '../file-tree/index.js';
+import { FileDialogModel } from './file-dialog-model.js';
 
 export const FILE_DIALOG_CLASS = 'theia-FileDialog';
 export const NOT_SELECTABLE_CLASS = 'theia-mod-not-selectable';

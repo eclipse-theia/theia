@@ -22,9 +22,10 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 
 import { codicon, Widget } from '@theia/core/lib/browser';
 import { EditorWidget, ReplaceOperation } from '@theia/editor/lib/browser';
-import { PromptService, PromptText, ToolInvocationRegistry } from '../common';
-import { ProviderResult } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
-import { AIVariableService } from '../common/variable-service';
+import { PromptService, PromptText, ToolInvocationRegistry } from '../common/index.js';
+import { ProviderResult } from '@theia/monaco-editor-core/esm/vs/editor/common/languages.js';
+import { AIVariableService } from '../common/variable-service.js';
+import textmateGrammar from '../../data/prompttemplate.tmLanguage.json' with { type: 'json' };
 
 const PROMPT_TEMPLATE_LANGUAGE_ID = 'theia-ai-prompt-template';
 const PROMPT_TEMPLATE_TEXTMATE_SCOPE = 'source.prompttemplate';
@@ -103,7 +104,6 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
             provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> => this.provideVariableWithArgCompletions(model, position),
         });
 
-        const textmateGrammar = require('../../data/prompttemplate.tmLanguage.json');
         const grammarDefinitionProvider: GrammarDefinitionProvider = {
             getGrammarDefinition: function (): Promise<GrammarDefinition> {
                 return Promise.resolve({

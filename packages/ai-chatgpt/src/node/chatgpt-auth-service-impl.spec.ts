@@ -16,17 +16,18 @@
 
 import { expect } from 'chai';
 import http from 'http';
+import { syncBuiltinESMExports } from 'module';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { KeyStoreService } from '@theia/core/lib/common/key-store';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { ChatGptAuthState } from '../common';
-import { ChatGptAuthServiceImpl, createRemoteAuthService } from './chatgpt-auth-service-impl';
-import { CHATGPT_REDIRECT_URI } from './chatgpt-oauth';
-import { ChatGptAuthServiceConfig, ChatGptBackendAuthService, DEFAULT_CHATGPT_AUTH_SERVICE_CONFIG } from './chatgpt-auth-service';
-import { ChatGptModelCatalog } from './chatgpt-model-catalog';
+import { ChatGptAuthState } from '../common/index.js';
+import { ChatGptAuthServiceImpl, createRemoteAuthService } from './chatgpt-auth-service-impl.js';
+import { CHATGPT_REDIRECT_URI } from './chatgpt-oauth.js';
+import { ChatGptAuthServiceConfig, ChatGptBackendAuthService, DEFAULT_CHATGPT_AUTH_SERVICE_CONFIG } from './chatgpt-auth-service.js';
+import { ChatGptModelCatalog } from './chatgpt-model-catalog.js';
 
 /** Avoids binding the loopback callback port. The code hand over is exercised through {@link completeLogin} instead. */
 class TestAuthService extends ChatGptAuthServiceImpl {
@@ -142,6 +143,7 @@ describe('ChatGptAuthServiceImpl', () => {
         // Abandoned login attempts keep a timer alive.
         await authService.cancelLogin();
         sinon.restore();
+        syncBuiltinESMExports();
     });
 
     describe('custom backend configuration', () => {
@@ -201,7 +203,10 @@ describe('ChatGptAuthServiceImpl', () => {
                 close: sinon.stub(),
                 closeAllConnections: sinon.stub()
             };
+            // The named exports of ES modules cannot be stubbed, but those of built-in modules can be synchronized
+            // with changes of the module object, which is their default export.
             sinon.stub(http, 'createServer').returns(server as unknown as http.Server);
+            syncBuiltinESMExports();
             container.bind(ChatGptAuthServiceImpl).toSelf().inSingletonScope();
             const service = container.get(ChatGptAuthServiceImpl);
             try {

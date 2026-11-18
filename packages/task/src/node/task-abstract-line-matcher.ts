@@ -24,7 +24,7 @@ import { Diagnostic, DiagnosticSeverity, Range } from '@theia/core/shared/vscode
 import {
     FileLocationKind, ProblemMatcher, ProblemPattern,
     ProblemMatch, ProblemMatchData, ProblemLocationKind
-} from '../common/problem-matcher-protocol';
+} from '../common/problem-matcher-protocol.js';
 import URI from '@theia/core/lib/common/uri';
 import { Severity } from '@theia/core/lib/common/severity';
 import { MAX_SAFE_INTEGER } from '@theia/core/lib/common/numbers';

@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import URI from '../common/uri';
-import { WidgetOpenHandler, WidgetOpenerOptions } from './widget-open-handler';
-import { NavigatableWidget, NavigatableWidgetOptions } from './navigatable-types';
-export * from './navigatable-types';
+import URI from '../common/uri.js';
+import { WidgetOpenHandler, WidgetOpenerOptions } from './widget-open-handler.js';
+import { NavigatableWidget, NavigatableWidgetOptions } from './navigatable-types.js';
+export * from './navigatable-types.js';
 
 export abstract class NavigatableWidgetOpenHandler<W extends NavigatableWidget> extends WidgetOpenHandler<W> {
 

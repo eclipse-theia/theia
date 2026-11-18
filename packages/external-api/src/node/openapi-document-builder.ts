@@ -17,8 +17,8 @@
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ExternalApiContribution } from './external-api-contribution';
-import { RestEventStreamRegistration, RestParamDocumentation, RestRouteDocumentation, RestRouteRegistration } from './external-api-router';
+import { ExternalApiContribution } from './external-api-contribution.js';
+import { RestEventStreamRegistration, RestParamDocumentation, RestRouteDocumentation, RestRouteRegistration } from './external-api-router.js';
 
 /**
  * The routes of one {@link ExternalApiContribution}, as recorded by its router during the

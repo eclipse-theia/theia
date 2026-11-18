@@ -22,7 +22,7 @@
 import { ContributionProvider, Disposable, Emitter, ILogger, MaybePromise, Prioritizeable, Event } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
-import { PromptText } from './prompt-text';
+import { PromptText } from './prompt-text.js';
 
 /**
  * A variable is a short string that is used to reference a value that is resolved and replaced in the user prompt at request-time.

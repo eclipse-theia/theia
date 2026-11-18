@@ -16,9 +16,9 @@
 
 import { expect } from 'chai';
 import { Emitter } from '@theia/core/lib/common/event';
-import { ScmHistoryGraphModel, PAGE_SIZE } from './scm-history-graph-model';
-import { ScmHistoryItem, ScmHistoryItemRef, ScmHistoryItemRefsChangeEvent, ScmHistoryItemChange, ScmHistoryOptions, ScmHistoryProvider } from './scm-provider';
-import { ScmRepository } from './scm-repository';
+import { ScmHistoryGraphModel, PAGE_SIZE } from './scm-history-graph-model.js';
+import { ScmHistoryItem, ScmHistoryItemRef, ScmHistoryItemRefsChangeEvent, ScmHistoryItemChange, ScmHistoryOptions, ScmHistoryProvider } from './scm-provider.js';
+import { ScmRepository } from './scm-repository.js';
 
 class StubHistoryProvider implements ScmHistoryProvider {
     currentHistoryItemRef: ScmHistoryItemRef | undefined;

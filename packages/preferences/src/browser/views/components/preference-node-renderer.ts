@@ -18,17 +18,17 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import {
     ContextMenuRenderer, codicon, OpenerService, open
 } from '@theia/core/lib/browser';
-import { Preference, PreferenceMenus } from '../../util/preference-types';
-import { PreferenceTreeLabelProvider } from '../../util/preference-tree-label-provider';
-import { PreferencesScopeTabBar } from '../preference-scope-tabbar-widget';
+import { Preference, PreferenceMenus } from '../../util/preference-types.js';
+import { PreferenceTreeLabelProvider } from '../../util/preference-tree-label-provider.js';
+import { PreferencesScopeTabBar } from '../preference-scope-tabbar-widget.js';
 import { Disposable, nls, PreferenceDataProperty, PreferenceInspection, PreferenceScope, PreferenceService } from '@theia/core/lib/common';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
-import debounce = require('@theia/core/shared/lodash.debounce');
-import { PreferenceTreeModel } from '../../preference-tree-model';
-import { PreferencesSearchbarWidget } from '../preference-searchbar-widget';
+import debounce from '@theia/core/shared/lodash.debounce';
+import { PreferenceTreeModel } from '../../preference-tree-model.js';
+import { PreferencesSearchbarWidget } from '../preference-searchbar-widget.js';
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import URI from '@theia/core/lib/common/uri';
-import { PreferenceMarkdownRenderer } from './preference-markdown-renderer';
+import { PreferenceMarkdownRenderer } from './preference-markdown-renderer.js';
 
 export const PreferenceNodeRendererFactory = Symbol('PreferenceNodeRendererFactory');
 export type PreferenceNodeRendererFactory = (node: Preference.TreeNode) => PreferenceNodeRenderer;

@@ -23,8 +23,8 @@ import { TreeNode } from '@theia/core/lib/browser/tree/tree';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { ContextMenuRenderer } from '@theia/core/lib/browser/context-menu-renderer';
 import { TreeWidget, TreeProps } from '@theia/core/lib/browser/tree/tree-widget';
-import { TypeHierarchyTreeModel } from './typehierarchy-tree-model';
-import { TypeHierarchyTree } from './typehierarchy-tree';
+import { TypeHierarchyTreeModel } from './typehierarchy-tree-model.js';
+import { TypeHierarchyTree } from './typehierarchy-tree.js';
 import { codicon } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 

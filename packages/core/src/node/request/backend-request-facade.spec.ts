@@ -16,8 +16,8 @@
 
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { BackendRequestFacade, isUrlAllowed } from './backend-request-facade';
-import { BackendApplicationConfigProvider } from '../backend-application-config-provider';
+import { BackendRequestFacade, isUrlAllowed } from './backend-request-facade.js';
+import { BackendApplicationConfigProvider } from '../backend-application-config-provider.js';
 
 describe('isUrlAllowed', () => {
 

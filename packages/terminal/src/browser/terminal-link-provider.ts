@@ -18,10 +18,10 @@ import { CancellationToken, ContributionProvider, DisposableCollection, disposab
 import { PreferenceService } from '@theia/core/lib/common';
 import { inject, injectable, interfaces, named, postConstruct } from '@theia/core/shared/inversify';
 import { IBufferRange, ILink, ILinkDecorations } from 'xterm';
-import { TerminalWidget } from './base/terminal-widget';
-import { TerminalContribution } from './terminal-contribution';
-import { convertLinkRangeToBuffer, getLinkContext, LinkContext } from './terminal-link-helpers';
-import { TerminalWidgetImpl } from './terminal-widget-impl';
+import { TerminalWidget } from './base/terminal-widget.js';
+import { TerminalContribution } from './terminal-contribution.js';
+import { convertLinkRangeToBuffer, getLinkContext, LinkContext } from './terminal-link-helpers.js';
+import { TerminalWidgetImpl } from './terminal-widget-impl.js';
 
 export const TerminalLinkProvider = Symbol('TerminalLinkProvider');
 export interface TerminalLinkProvider {

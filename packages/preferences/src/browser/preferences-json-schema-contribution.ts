@@ -20,7 +20,7 @@ import { JsonSchemaRegisterContext, JsonSchemaContribution, JsonSchemaDataStore 
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { PreferenceSchemaService, PreferenceConfigurations, PreferenceScope } from '@theia/core';
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
-import debounce = require('@theia/core/shared/lodash.debounce');
+import debounce from '@theia/core/shared/lodash.debounce';
 
 const PREFERENCE_URI_PREFIX = 'vscode://schemas/settings/';
 const DEBOUNCED_UPDATE_DELAY = 200;

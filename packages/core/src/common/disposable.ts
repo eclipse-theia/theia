@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Event, Emitter } from './event';
-import { isFunction, isObject } from './types';
+import { Event, Emitter } from './event.js';
+import { isFunction, isObject } from './types.js';
 
 export interface Disposable {
     /**
@@ -123,7 +123,7 @@ export class DisposableCollection implements Disposable {
     push(disposable: Disposable): Disposable {
         const disposables = this.disposables;
         disposables.push(disposable);
-        const originalDispose = disposable.dispose.bind(disposable);
+        const originalDispose = disposable.dispose;
         const toRemove = Disposable.create(() => {
             const index = disposables.indexOf(disposable);
             if (index !== -1) {
@@ -134,7 +134,7 @@ export class DisposableCollection implements Disposable {
         disposable.dispose = () => {
             toRemove.dispose();
             disposable.dispose = originalDispose;
-            originalDispose();
+            originalDispose.call(disposable);
         };
         return toRemove;
     }

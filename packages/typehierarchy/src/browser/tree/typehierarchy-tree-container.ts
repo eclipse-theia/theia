@@ -16,9 +16,9 @@
 
 import { interfaces, Container } from '@theia/core/shared/inversify';
 import { createTreeContainer, } from '@theia/core/lib/browser/tree';
-import { TypeHierarchyTree } from './typehierarchy-tree';
-import { TypeHierarchyTreeModel } from './typehierarchy-tree-model';
-import { TypeHierarchyTreeWidget } from './typehierarchy-tree-widget';
+import { TypeHierarchyTree } from './typehierarchy-tree.js';
+import { TypeHierarchyTreeModel } from './typehierarchy-tree-model.js';
+import { TypeHierarchyTreeWidget } from './typehierarchy-tree-widget.js';
 
 function createHierarchyTreeContainer(parent: interfaces.Container): Container {
     const child = createTreeContainer(parent, {

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { ScanOSSResult, ScanOSSService } from '../common';
+import { ScanOSSResult, ScanOSSService } from '../common/index.js';
 import { ILogger } from '@theia/core';
 import { Scanner, ScannerCfg, ScannerComponent } from 'scanoss';
 

@@ -30,20 +30,20 @@
 
 import { Emitter, Event as EventNamespace, WaitUntilEvent, AsyncEmitter, WaitUntilData } from '@theia/core/lib/common/event';
 import { GLOB_SPLIT, GLOBSTAR, parse } from '@theia/core/lib/common/glob';
-import { UriComponents } from '../common/uri-components';
-import { Disposable, RelativePattern, URI, WorkspaceEdit } from './types-impl';
-import { EditorsAndDocumentsExtImpl as ExtHostDocumentsAndEditors } from './editors-and-documents';
-import { WorkspaceExtImpl as ExtHostWorkspace } from './workspace';
+import { UriComponents } from '../common/uri-components.js';
+import { Disposable, RelativePattern, URI, WorkspaceEdit } from './types-impl.js';
+import { EditorsAndDocumentsExtImpl as ExtHostDocumentsAndEditors } from './editors-and-documents.js';
+import { WorkspaceExtImpl as ExtHostWorkspace } from './workspace.js';
 import type * as vscode from '@theia/plugin';
-import * as typeConverter from './type-converters';
+import * as typeConverter from './type-converters.js';
 import { FileOperation } from '@theia/filesystem/lib/common/files';
-import { flatten } from '../common/arrays';
+import { flatten } from '../common/arrays.js';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import {
     Plugin, TextEditorsMain as MainThreadTextEditorsShape, PLUGIN_RPC_CONTEXT, FileSystemEvents, ExtHostFileSystemEventServiceShape,
     WorkspaceFileEditDto, WorkspaceTextEditDto
-} from '../common/plugin-api-rpc';
-import { RPCProtocol } from '../common/rpc-protocol';
+} from '../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../common/rpc-protocol.js';
 
 type Event<T> = vscode.Event<T>;
 type IExtensionDescription = Plugin;

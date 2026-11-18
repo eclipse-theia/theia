@@ -17,7 +17,7 @@
 import { CommandContribution, MenuContribution } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { KeybindingContribution } from '@theia/core/lib/browser';
-import { ElectronNavigatorMenuContribution } from './electron-navigator-menu-contribution';
+import { ElectronNavigatorMenuContribution } from './electron-navigator-menu-contribution.js';
 
 export default new ContainerModule(bind => {
     bind(MenuContribution).to(ElectronNavigatorMenuContribution).inSingletonScope();

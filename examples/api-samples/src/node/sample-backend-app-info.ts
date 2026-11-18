@@ -19,7 +19,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { BackendApplicationCliContribution, BackendApplicationContribution } from '@theia/core/lib/node';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as net from 'net';
-import { SampleAppInfo } from '../common/vsx/sample-app-info';
+import { SampleAppInfo } from '../common/vsx/sample-app-info.js';
 
 @injectable()
 export class SampleBackendAppInfo implements SampleAppInfo, BackendApplicationContribution {

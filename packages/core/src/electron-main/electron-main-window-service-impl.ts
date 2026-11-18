@@ -16,9 +16,9 @@
 
 import { shell } from '@theia/electron/shared/electron';
 import { injectable, inject } from 'inversify';
-import { ElectronMainWindowService } from '../electron-common/electron-main-window-service';
-import { ElectronMainApplication } from './electron-main-application';
-import { NewWindowOptions, WindowSearchParams } from '../common/window';
+import { ElectronMainWindowService } from '../electron-common/electron-main-window-service.js';
+import { ElectronMainApplication } from './electron-main-application.js';
+import { NewWindowOptions, WindowSearchParams } from '../common/window.js';
 
 @injectable()
 export class ElectronMainWindowServiceImpl implements ElectronMainWindowService {

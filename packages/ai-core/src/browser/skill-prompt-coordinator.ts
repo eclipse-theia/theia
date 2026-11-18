@@ -17,8 +17,8 @@
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { SkillService } from './skill-service';
-import { PromptService } from '../common/prompt-service';
+import { SkillService } from './skill-service.js';
+import { PromptService } from '../common/prompt-service.js';
 
 @injectable()
 export class SkillPromptCoordinator implements FrontendApplicationContribution {

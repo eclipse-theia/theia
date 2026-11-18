@@ -19,7 +19,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import { PluginScanner, PluginEngine, PluginPackage, PluginModel, PluginLifecycle, PluginIdentifiers, UIKind } from '@theia/plugin-ext';
 import { TheiaPluginScanner } from '@theia/plugin-ext/lib/hosted/node/scanners/scanner-theia';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
-import { VSCodeExtensionUri } from '../common/plugin-vscode-uri';
+import { VSCodeExtensionUri } from '../common/plugin-vscode-uri.js';
 import { buildLifecycle, buildModelForVsCode } from '@theia/plugin-utils/lib/common/plugin-model';
 
 const uiKind = environment.electron.is() ? UIKind.Desktop : UIKind.Web;
@@ -64,7 +64,7 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
     override getLifecycle(plugin: PluginPackage): PluginLifecycle {
         return {
             ...buildLifecycle(plugin, 'vscode'),
-            backendInitPath: path.join(__dirname, 'plugin-vscode-init'),
+            backendInitPath: path.join(import.meta.dirname, 'plugin-vscode-init'),
         };
     }
 

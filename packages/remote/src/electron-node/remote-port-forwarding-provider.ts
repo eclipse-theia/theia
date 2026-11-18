@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ForwardedPort, RemotePortForwardingProvider } from '../electron-common/remote-port-forwarding-provider';
+import { ForwardedPort, RemotePortForwardingProvider } from '../electron-common/remote-port-forwarding-provider.js';
 import { createServer, Server } from 'net';
-import { RemoteConnectionService } from './remote-connection-service';
-import { RemoteConnection } from './remote-types';
+import { RemoteConnectionService } from './remote-connection-service.js';
+import { RemoteConnection } from './remote-types.js';
 
 interface ForwardInfo {
     connection: RemoteConnection

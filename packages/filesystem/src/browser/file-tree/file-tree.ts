@@ -18,11 +18,11 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { isObject, Mutable } from '@theia/core/lib/common';
 import { TreeNode, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode, TreeImpl } from '@theia/core/lib/browser';
-import { FileStat, Stat, FileType, FileOperationError, FileOperationResult } from '../../common/files';
+import { FileStat, Stat, FileType, FileOperationError, FileOperationResult } from '../../common/files.js';
 import { UriSelection } from '@theia/core/lib/common/selection';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { FileSelection } from '../file-selection';
-import { FileService } from '../file-service';
+import { FileSelection } from '../file-selection.js';
+import { FileService } from '../file-service.js';
 
 @injectable()
 export class FileTree extends TreeImpl {

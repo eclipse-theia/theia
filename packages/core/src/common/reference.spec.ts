@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import * as assert from 'assert';
-import { ReferenceCollection } from './reference';
-import { Disposable } from './disposable';
+import { ReferenceCollection } from './reference.js';
+import { Disposable } from './disposable.js';
 
 describe('reference', () => {
 

@@ -39,9 +39,9 @@ import { TerminalWidget, TerminalWidgetOptions } from '@theia/terminal/lib/brows
 import { TerminalWidgetImpl, nextTerminalCreationToken } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
-import { TerminalManagerPreferences } from './terminal-manager-preferences';
-import { TerminalManagerTreeTypes } from './terminal-manager-types';
-import { TerminalManagerTreeWidget } from './terminal-manager-tree-widget';
+import { TerminalManagerPreferences } from './terminal-manager-preferences.js';
+import { TerminalManagerTreeTypes } from './terminal-manager-types.js';
+import { TerminalManagerTreeWidget } from './terminal-manager-tree-widget.js';
 import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 
 export namespace TerminalManagerWidgetState {
@@ -283,8 +283,6 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
 
     protected async confirmClose(): Promise<boolean> {
         const CLOSE = nls.localizeByDefault('Close');
-        // When the widget lives in a secondary window, open the dialog there so it is visible to the user.
-        const dialogOptions = this.secondaryWindow ? { node: this.secondaryWindow.document.createElement('div') } : undefined;
         const dialog = new ConfirmDialog({
             title: nls.localize('theia/terminal-manager/closeDialog/title', 'Do you want to close the terminal manager?'),
             msg: nls.localize(
@@ -293,7 +291,8 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
             ),
             ok: CLOSE,
             cancel: nls.localizeByDefault('Cancel'),
-        }, dialogOptions);
+            targetWindow: this.secondaryWindow ?? undefined,
+        });
         const confirmed = await dialog.open();
         return confirmed === true;
     }

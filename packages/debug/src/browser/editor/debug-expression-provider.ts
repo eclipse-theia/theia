@@ -21,10 +21,10 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { ArrayUtils } from '@theia/core';
 import * as monaco from '@theia/monaco-editor-core';
-import { CancellationToken } from '@theia/monaco-editor-core/esm/vs/base/common/cancellation';
-import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { DebugEditor } from './debug-editor';
+import { CancellationToken } from '@theia/monaco-editor-core/esm/vs/base/common/cancellation.js';
+import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures.js';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { DebugEditor } from './debug-editor.js';
 
 /**
  * TODO: introduce a new request to LSP to look up an expression range: https://github.com/Microsoft/language-server-protocol/issues/462

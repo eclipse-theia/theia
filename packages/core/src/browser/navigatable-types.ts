@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { URI, isObject, MaybeArray } from '../common';
-import { Widget, BaseWidget } from './widgets';
+import { URI, isObject, MaybeArray } from '../common/index.js';
+import { Widget, BaseWidget } from './widgets/index.js';
 
 /**
  * `Navigatable` provides an access to an URI of an underlying instance of `Resource`.

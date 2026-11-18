@@ -44,8 +44,8 @@ import {
     ProgressContentData,
     ErrorContentData,
     QuestionContentData
-} from './chat-model';
-import { SerializableChatResponseContentData } from './chat-model-serialization';
+} from './chat-model.js';
+import { SerializableChatResponseContentData } from './chat-model-serialization.js';
 import { createToolCallError } from '@theia/ai-core/lib/common/language-model';
 import { ContributionProvider, ILogger, MaybePromise } from '@theia/core';
 

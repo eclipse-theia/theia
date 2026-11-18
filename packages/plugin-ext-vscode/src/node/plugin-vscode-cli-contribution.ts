@@ -18,7 +18,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import { Argv, Arguments } from '@theia/core/shared/yargs';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { PluginHostEnvironmentVariable } from '@theia/plugin-ext/lib/common';
-import { VSCODE_DEFAULT_API_VERSION } from '../common/plugin-vscode-types';
+import { VSCODE_DEFAULT_API_VERSION } from '../common/plugin-vscode-types.js';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 
 /**

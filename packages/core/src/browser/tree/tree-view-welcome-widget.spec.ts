@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '../test/jsdom';
+import { enableJSDOM } from '../test/jsdom.js';
 
 // The widget module transitively imports `@lumino/widgets`, which touches `document` at load time.
 const disableJSDOM = enableJSDOM();
@@ -22,10 +22,10 @@ const disableJSDOM = enableJSDOM();
 import { Container } from 'inversify';
 import { expect } from 'chai';
 import { ReactElement, ReactNode } from 'react';
-import { CommandService } from '../../common';
-import { LabelParser } from '../label-parser';
-import { codicon } from '../widgets';
-import { TreeViewWelcomeWidget } from './tree-view-welcome-widget';
+import { CommandService } from '../../common/index.js';
+import { LabelParser } from '../label-parser.js';
+import { codicon } from '../widgets/index.js';
+import { TreeViewWelcomeWidget } from './tree-view-welcome-widget.js';
 
 disableJSDOM();
 

@@ -16,13 +16,13 @@
 
 import { Disposable } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { Range as EditorRange } from '@theia/monaco-editor-core/esm/vs/editor/common/core/range';
-import { IEditorDecorationsCollection } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
-import { IModelDecorationOptions, TrackedRangeStickiness } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
+import { Range as EditorRange } from '@theia/monaco-editor-core/esm/vs/editor/common/core/range.js';
+import { IEditorDecorationsCollection } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon.js';
+import { IModelDecorationOptions, TrackedRangeStickiness } from '@theia/monaco-editor-core/esm/vs/editor/common/model.js';
 import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
-import { CodeWrapperEditors } from '../chat-response-renderer/code-wrapper-editors';
-import { ChatFindMatch, ChatFindMatcher } from './chat-find-matcher';
-import { ChatFindText, ChatFindTextSegment } from './chat-find-text';
+import { CodeWrapperEditors } from '../chat-response-renderer/code-wrapper-editors.js';
+import { ChatFindMatch, ChatFindMatcher } from './chat-find-matcher.js';
+import { ChatFindText, ChatFindTextSegment } from './chat-find-text.js';
 
 /** Minimal abstraction over `CSS.highlights` so the highlighter can be tested and degrades when unsupported. */
 export interface ChatFindHighlightRegistry {
@@ -123,6 +123,11 @@ export class ChatFindHighlighter implements Disposable {
         if (this.regexp && this.root) {
             this.apply();
         }
+    }
+
+    /** Whether the current match is rendered, so that {@link scrollCurrentIntoView} can reveal it. */
+    get hasCurrentTarget(): boolean {
+        return this.currentTarget !== undefined;
     }
 
     /** The mounted row rendering the tree node `nodeId`, if any. */

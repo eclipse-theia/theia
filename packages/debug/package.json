@@ -1,22 +1,23 @@
 {
   "name": "@theia/debug",
-  "version": "1.76.0",
+  "version": "1.77.0",
   "description": "Theia - Debug Extension",
+  "type": "module",
   "dependencies": {
-    "@theia/console": "1.76.0",
-    "@theia/core": "1.76.0",
-    "@theia/editor": "1.76.0",
-    "@theia/filesystem": "1.76.0",
-    "@theia/markers": "1.76.0",
-    "@theia/monaco": "1.76.0",
+    "@theia/console": "1.77.0",
+    "@theia/core": "1.77.0",
+    "@theia/editor": "1.77.0",
+    "@theia/filesystem": "1.77.0",
+    "@theia/markers": "1.77.0",
+    "@theia/monaco": "1.77.0",
     "@theia/monaco-editor-core": "1.108.201",
-    "@theia/output": "1.76.0",
-    "@theia/process": "1.76.0",
-    "@theia/task": "1.76.0",
-    "@theia/terminal": "1.76.0",
-    "@theia/test": "1.76.0",
-    "@theia/variable-resolver": "1.76.0",
-    "@theia/workspace": "1.76.0",
+    "@theia/output": "1.77.0",
+    "@theia/process": "1.77.0",
+    "@theia/task": "1.77.0",
+    "@theia/terminal": "1.77.0",
+    "@theia/test": "1.77.0",
+    "@theia/variable-resolver": "1.77.0",
+    "@theia/workspace": "1.77.0",
     "@vscode/debugprotocol": "^1.68.0",
     "fast-deep-equal": "^3.1.3",
     "jsonc-parser": "^3.3.1",
@@ -59,10 +60,17 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.76.0"
+    "@theia/ext-scripts": "1.77.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "21358137e41342742707f660b8e222f940a27652",
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  }
 }

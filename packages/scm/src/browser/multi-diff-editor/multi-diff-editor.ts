@@ -24,7 +24,7 @@ import {
 import { EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoDiffEditor } from '@theia/monaco/lib/browser/monaco-diff-editor';
-import { MultiDiffEditorUri, MultiDiffEditorResourcePair, MultiDiffEditorUriData } from './multi-diff-editor-uri';
+import { MultiDiffEditorUri, MultiDiffEditorResourcePair, MultiDiffEditorUriData } from './multi-diff-editor-uri.js';
 
 export { MultiDiffEditorUri, MultiDiffEditorResourcePair, MultiDiffEditorUriData };
 

@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { RemoteStatus, RemoteStatusService } from '../electron-common/remote-status-service';
-import { RemoteConnectionService } from './remote-connection-service';
+import { RemoteStatus, RemoteStatusService } from '../electron-common/remote-status-service.js';
+import { RemoteConnectionService } from './remote-connection-service.js';
 
 @injectable()
 export class RemoteStatusServiceImpl implements RemoteStatusService {

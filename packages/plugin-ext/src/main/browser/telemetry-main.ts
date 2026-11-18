@@ -17,8 +17,8 @@
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { interfaces } from '@theia/core/shared/inversify';
 import { TelemetryConsentProvider } from '@theia/telemetry/lib/common/telemetry-consent-provider';
-import { MAIN_RPC_CONTEXT, TelemetryExt, TelemetryMain } from '../../common/plugin-api-rpc';
-import { RPCProtocol } from '../../common/rpc-protocol';
+import { MAIN_RPC_CONTEXT, TelemetryExt, TelemetryMain } from '../../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
 
 /**
  * Forwards the user's telemetry consent to the plugin host. The initial level is seeded through

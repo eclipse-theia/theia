@@ -27,12 +27,12 @@ import { Container } from '@theia/core/shared/inversify';
 import { Emitter, ILogger, PreferenceSchemaService, PreferenceScope, PreferenceService } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { CompositeTreeNode, createTreeContainer, LabelProvider } from '@theia/core/lib/browser';
-import { PreferenceTreeModel } from './preference-tree-model';
-import { PreferencesSearchbarWidget } from './views/preference-searchbar-widget';
-import { PreferenceTreeGenerator } from './util/preference-tree-generator';
-import { PreferencesScopeTabBar } from './views/preference-scope-tabbar-widget';
-import { Preference } from './util/preference-types';
-import { COMMONLY_USED_SECTION_PREFIX } from './util/preference-layout';
+import { PreferenceTreeModel } from './preference-tree-model.js';
+import { PreferencesSearchbarWidget } from './views/preference-searchbar-widget.js';
+import { PreferenceTreeGenerator } from './util/preference-tree-generator.js';
+import { PreferencesScopeTabBar } from './views/preference-scope-tabbar-widget.js';
+import { Preference } from './util/preference-types.js';
+import { COMMONLY_USED_SECTION_PREFIX } from './util/preference-layout.js';
 
 disableJSDOM();
 

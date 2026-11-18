@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { FileSystemWatcherServer, WatchOptions, FileSystemWatcherClient, FileSystemWatcherService } from '../common/filesystem-watcher-protocol';
-import { FileSystemWatcherServiceDispatcher } from './filesystem-watcher-dispatcher';
+import { FileSystemWatcherServer, WatchOptions, FileSystemWatcherClient, FileSystemWatcherService } from '../common/filesystem-watcher-protocol.js';
+import { FileSystemWatcherServiceDispatcher } from './filesystem-watcher-dispatcher.js';
 
 /**
  * Wraps the watcher singleton service for each frontend.

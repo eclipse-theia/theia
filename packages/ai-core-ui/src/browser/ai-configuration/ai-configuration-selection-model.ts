@@ -16,7 +16,7 @@
 
 import { Emitter, Event } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
-import { AiConfigurationSelection } from './ai-configuration-category';
+import { AiConfigurationSelection } from './ai-configuration-category.js';
 
 /**
  * Shared selection bus for the AI Configuration view. The tree, the detail host,

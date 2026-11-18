@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // based on https://github.com/microsoft/vscode/blob/04c36be045a94fee58e5f8992d3e3fd980294a84/src/vs/editor/common/core/characterClassifier.ts
 
-import { toUint8 } from './uint';
+import { toUint8 } from './uint.js';
 
 /**
  * A fast character classifier that uses a compact array for ASCII values.

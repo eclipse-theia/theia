@@ -18,7 +18,7 @@ import * as cp from 'child_process';
 import * as path from 'path';
 import { injectable } from '@theia/core/shared/inversify';
 import { FileUri } from '@theia/core/lib/common/file-uri';
-import { ExternalTerminalService, ExternalTerminalConfiguration } from '../common/external-terminal';
+import { ExternalTerminalService, ExternalTerminalConfiguration } from '../common/external-terminal.js';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.

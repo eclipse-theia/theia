@@ -23,8 +23,8 @@ import { ChatChangeEvent, ChatModel, ChatRequestModel, ChatResponseContent, Text
 import { Emitter } from '@theia/core';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { expect } from 'chai';
-import { ChatFindMatch, ChatFindMatcher } from './chat-find-matcher';
-import { ChatFindState, ChatFindWidget } from './chat-find-widget';
+import { ChatFindMatch, ChatFindMatcher } from './chat-find-matcher.js';
+import { ChatFindState, ChatFindWidget } from './chat-find-widget.js';
 disableJSDOM();
 
 interface FakeRequest {

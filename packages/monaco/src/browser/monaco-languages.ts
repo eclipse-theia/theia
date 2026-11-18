@@ -22,13 +22,13 @@ import { MaybePromise, Mutable } from '@theia/core/lib/common/types';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { Language, LanguageService } from '@theia/core/lib/browser/language-service';
-import { MonacoMarkerCollection } from './monaco-marker-collection';
-import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
+import { MonacoMarkerCollection } from './monaco-marker-collection.js';
+import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter.js';
 import * as monaco from '@theia/monaco-editor-core';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { FileStatNode } from '@theia/filesystem/lib/browser';
-import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language.js';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
 
 export interface WorkspaceSymbolProvider {
     provideWorkspaceSymbols(params: WorkspaceSymbolParams, token: CancellationToken): MaybePromise<SymbolInformation[] | undefined>;

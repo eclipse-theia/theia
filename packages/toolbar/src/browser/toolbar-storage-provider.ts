@@ -35,10 +35,10 @@ import {
     ToolbarAlignment,
     ToolbarItemPosition,
     LateInjector,
-} from './toolbar-interfaces';
-import { UserToolbarURI } from './toolbar-constants';
-import { isToolbarPreferences } from './toolbar-preference-schema';
-import { ToolbarDefaultsFactory } from './toolbar-defaults';
+} from './toolbar-interfaces.js';
+import { UserToolbarURI } from './toolbar-constants.js';
+import { isToolbarPreferences } from './toolbar-preference-schema.js';
+import { ToolbarDefaultsFactory } from './toolbar-defaults.js';
 
 export const TOOLBAR_BAD_JSON_ERROR_MESSAGE = 'There was an error reading your toolbar.json file. Please check if it is corrupt'
     + ' by right-clicking the toolbar and selecting "Customize Toolbar". You can also reset it to its defaults by selecting'

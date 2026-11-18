@@ -24,7 +24,7 @@ import {
 } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { FileUri } from '@theia/core/lib/node';
 import { VSCodeExtensionUri } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-uri';
-import { OVSXClientProvider } from '../common/ovsx-client-provider';
+import { OVSXClientProvider } from '../common/ovsx-client-provider.js';
 import { OVSXApiFilterProvider, VSXExtensionRaw, VSXTargetPlatform } from '@theia/ovsx-client';
 import { RequestService } from '@theia/core/shared/@theia/request';
 import { PluginVSCodeEnvironment } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-environment';

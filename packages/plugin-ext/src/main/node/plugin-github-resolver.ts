@@ -19,8 +19,8 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { PluginDeployerResolver, PluginDeployerResolverContext } from '../../common';
-import { getTempDirPathAsync } from './temp-dir-util';
+import { PluginDeployerResolver, PluginDeployerResolverContext } from '../../common/index.js';
+import { getTempDirPathAsync } from './temp-dir-util.js';
 
 /**
  * Resolver that handle the github: protocol

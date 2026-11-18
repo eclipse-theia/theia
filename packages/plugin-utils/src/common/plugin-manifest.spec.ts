@@ -15,11 +15,12 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { UNPUBLISHED, VSCODE_BUILTIN_NAME_PREFIX } from './constants';
-import { prepareLoadedManifest, stripVscodeBuiltinNamePrefix } from './plugin-manifest';
-import { loadManifest } from '../node/plugin-manifest';
-import type { PluginManifest } from './manifest-types';
-import * as fs from 'fs-extra';
+import { UNPUBLISHED, VSCODE_BUILTIN_NAME_PREFIX } from './constants.js';
+import { prepareLoadedManifest, stripVscodeBuiltinNamePrefix } from './plugin-manifest.js';
+import { loadManifest } from '../node/plugin-manifest.js';
+import type { PluginManifest } from './manifest-types.js';
+// A CommonJS module whose exports cannot be detected statically, so it is imported as a whole.
+import fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
 

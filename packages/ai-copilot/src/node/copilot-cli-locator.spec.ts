@@ -19,7 +19,7 @@ import { promises as fs } from 'fs';
 import * as os from 'os';
 import { join } from 'path';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { CopilotCliLocator, COPILOT_CLI_PATH_ENV } from './copilot-cli-locator';
+import { CopilotCliLocator, COPILOT_CLI_PATH_ENV } from './copilot-cli-locator.js';
 
 class TestableCopilotCliLocator extends CopilotCliLocator {
     constructor() {

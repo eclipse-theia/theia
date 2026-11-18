@@ -25,7 +25,7 @@ import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { SkillService } from '@theia/ai-core/lib/browser/skill-service';
 import { Skill } from '@theia/ai-core/lib/common/skill';
-import { ListSkills } from './skill-file-functions';
+import { ListSkills } from './skill-file-functions.js';
 
 disableJSDOM();
 

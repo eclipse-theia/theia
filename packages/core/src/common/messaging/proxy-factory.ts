@@ -16,15 +16,15 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ResponseError } from '../message-rpc/rpc-message-encoder';
-import { ApplicationError } from '../application-error';
-import { Disposable } from '../disposable';
-import { Emitter, Event } from '../event';
-import { Channel } from '../message-rpc/channel';
-import { RequestHandler, RpcProtocol } from '../message-rpc/rpc-protocol';
-import { ConnectionHandler } from './handler';
-import { Deferred } from '../promise-util';
-import { decorate, injectable, unmanaged } from '../../../shared/inversify';
+import { ResponseError } from '../message-rpc/rpc-message-encoder.js';
+import { ApplicationError } from '../application-error.js';
+import { Disposable } from '../disposable.js';
+import { Emitter, Event } from '../event.js';
+import { Channel } from '../message-rpc/channel.js';
+import { RequestHandler, RpcProtocol } from '../message-rpc/rpc-protocol.js';
+import { ConnectionHandler } from './handler.js';
+import { Deferred } from '../promise-util.js';
+import { decorate, injectable, unmanaged } from '../../../shared/inversify/index.js';
 
 export type RpcServer<Client> = Disposable & {
     /**
@@ -42,12 +42,26 @@ export interface RpcConnectionEventEmitter {
 }
 export type RpcProxy<T> = T & RpcConnectionEventEmitter;
 
+export interface RpcConnectionHandlerOptions<T extends object> {
+    /** See {@link ConnectionHandler.independentOfShellEnvironment}. The default is `false`. */
+    independentOfShellEnvironment?: boolean;
+    /** Creates the proxy factory of each connection. The default is {@link RpcProxyFactory}. */
+    factoryConstructor?: new () => RpcProxyFactory<T>;
+}
+
 export class RpcConnectionHandler<T extends object> implements ConnectionHandler {
+    readonly factoryConstructor: new () => RpcProxyFactory<T>;
+    readonly independentOfShellEnvironment: boolean;
+
     constructor(
         readonly path: string,
         readonly targetFactory: (proxy: RpcProxy<T>) => any,
-        readonly factoryConstructor: new () => RpcProxyFactory<T> = RpcProxyFactory
-    ) { }
+        options: RpcConnectionHandlerOptions<T> | (new () => RpcProxyFactory<T>) = {}
+    ) {
+        const { factoryConstructor, independentOfShellEnvironment } = typeof options === 'function' ? { factoryConstructor: options } : options;
+        this.factoryConstructor = factoryConstructor ?? RpcProxyFactory;
+        this.independentOfShellEnvironment = independentOfShellEnvironment ?? false;
+    }
 
     onConnection(connection: Channel): void {
         const factory = new this.factoryConstructor();

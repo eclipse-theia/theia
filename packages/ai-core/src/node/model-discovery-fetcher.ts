@@ -17,8 +17,8 @@
 import { ILogger } from '@theia/core';
 import { timeout } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { DiscoveredModel, ModelDiscoveryResult } from '../common/model-discovery-status';
-import { ModelSnapshotStore } from './model-snapshot-store';
+import { DiscoveredModel, ModelDiscoveryResult } from '../common/model-discovery-status.js';
+import { ModelSnapshotStore } from './model-snapshot-store.js';
 
 export const ModelDiscoveryFetcher = Symbol('ModelDiscoveryFetcher');
 

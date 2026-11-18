@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CallHierarchyContribution } from './callhierarchy-contribution';
+import { CallHierarchyContribution } from './callhierarchy-contribution.js';
 import { bindRootContributionProvider } from '@theia/core/lib/common';
-import { CallHierarchyService, CallHierarchyServiceProvider } from './callhierarchy-service';
+import { CallHierarchyService, CallHierarchyServiceProvider } from './callhierarchy-service.js';
 import { WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
-import { CALLHIERARCHY_ID } from './callhierarchy';
-import { createHierarchyTreeWidget } from './callhierarchy-tree';
+import { CALLHIERARCHY_ID } from './callhierarchy.js';
+import { createHierarchyTreeWidget } from './callhierarchy-tree/index.js';
 import { ContainerModule } from '@theia/core/shared/inversify';
 
 import '../../src/browser/style/index.css';

@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { ProcessTaskResolver } from './process-task-resolver';
-import { TaskContribution, TaskResolverRegistry } from '../task-contribution';
+import { ProcessTaskResolver } from './process-task-resolver.js';
+import { TaskContribution, TaskResolverRegistry } from '../task-contribution.js';
 
 @injectable()
 export class ProcessTaskContribution implements TaskContribution {

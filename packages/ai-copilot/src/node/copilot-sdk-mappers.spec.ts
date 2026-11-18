@@ -16,8 +16,8 @@
 
 import { expect } from 'chai';
 import { LanguageModelMessage } from '@theia/ai-core';
-import type { ModelInfo } from './copilot-sdk-types';
-import { selectSdkModelIds, buildSdkPrompt, buildSdkSystemMessage } from './copilot-sdk-mappers';
+import type { ModelInfo } from './copilot-sdk-types.js';
+import { selectSdkModelIds, buildSdkPrompt, buildSdkSystemMessage } from './copilot-sdk-mappers.js';
 
 // Minimal ModelInfo factory: selectSdkModelIds only reads `id` and `policy.state`.
 function model(id: string, state?: 'enabled' | 'disabled' | 'unconfigured'): ModelInfo {

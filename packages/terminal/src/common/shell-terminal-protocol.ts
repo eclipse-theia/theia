@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { RpcProxy } from '@theia/core';
-import { IBaseTerminalServer, IBaseTerminalServerOptions } from './base-terminal-protocol';
+import { IBaseTerminalServer, IBaseTerminalServerOptions } from './base-terminal-protocol.js';
 import { OS } from '@theia/core/lib/common/os';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 

@@ -39,15 +39,15 @@ import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
-import { TerminalService } from '../browser/base/terminal-service';
-import { TerminalFrontendContribution } from '../browser/terminal-frontend-contribution';
-import { TerminalWatcher } from '../common/terminal-watcher';
-import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
-import { TerminalPreferences } from '../common/terminal-preferences';
-import { TerminalCopyOnSelectionHandler } from '../browser/terminal-copy-on-selection-handler';
-import { TerminalCreationHandler } from '../browser/terminal-creation-handler';
-import { ContributedTerminalProfileStore, TerminalProfileService, UserTerminalProfileStore } from '../browser/terminal-profile-service';
-import { BrowserOnlyTerminalFrontendContribution } from './browser-only-terminal-frontend-contribution';
+import { TerminalService } from '../browser/base/terminal-service.js';
+import { TerminalFrontendContribution } from '../browser/terminal-frontend-contribution.js';
+import { TerminalWatcher } from '../common/terminal-watcher.js';
+import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol.js';
+import { TerminalPreferences } from '../common/terminal-preferences.js';
+import { TerminalCopyOnSelectionHandler } from '../browser/terminal-copy-on-selection-handler.js';
+import { TerminalCreationHandler } from '../browser/terminal-creation-handler.js';
+import { ContributedTerminalProfileStore, TerminalProfileService, UserTerminalProfileStore } from '../browser/terminal-profile-service.js';
+import { BrowserOnlyTerminalFrontendContribution } from './browser-only-terminal-frontend-contribution.js';
 
 disableJSDOM();
 

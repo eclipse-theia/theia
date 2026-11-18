@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { DevContainerCliContribution } from './dev-container-cli-contribution';
+import { DevContainerCliContribution } from './dev-container-cli-contribution.js';
 import { Arguments } from '@theia/core/shared/yargs';
 
 function createArgs(overrides: Record<string, unknown> = {}): Arguments {

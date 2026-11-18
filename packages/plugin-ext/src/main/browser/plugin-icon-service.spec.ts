@@ -23,7 +23,7 @@ let disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { PLUGINS_SCHEME } from '@theia/plugin-utils/lib/common/constants';
-import { PluginIconService } from './plugin-icon-service';
+import { PluginIconService } from './plugin-icon-service.js';
 
 disableJSDOM();
 

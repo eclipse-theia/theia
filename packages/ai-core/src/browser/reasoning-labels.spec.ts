@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { reasoningLevelDescription, reasoningLevelLabel } from './reasoning-labels';
+import { reasoningLevelDescription, reasoningLevelLabel } from './reasoning-labels.js';
 
 describe('Reasoning selector wording', () => {
     it('labels max and distinguishes provider-specific off behavior from explicit no reasoning', () => {

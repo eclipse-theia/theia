@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { LaunchArguments } from '../common/launch-arguments';
-import { LaunchArgvParser } from './launch-argv-parser';
+import { LaunchArguments } from '../common/launch-arguments.js';
+import { LaunchArgvParser } from './launch-argv-parser.js';
 
 describe('LaunchArgvParser', () => {
 

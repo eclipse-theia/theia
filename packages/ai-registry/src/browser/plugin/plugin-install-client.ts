@@ -16,7 +16,7 @@
 
 import { Emitter, Event } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
-import { PluginInstallClient } from '../../common/plugin/plugin-install-protocol';
+import { PluginInstallClient } from '../../common/plugin/plugin-install-protocol.js';
 
 /** Frontend endpoint for the backend's plugins-folder watcher. */
 @injectable()

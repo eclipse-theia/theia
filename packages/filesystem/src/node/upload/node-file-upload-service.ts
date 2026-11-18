@@ -14,14 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import multer = require('multer');
-import path = require('path');
-import os = require('os');
-import express = require('@theia/core/shared/express');
-import fs = require('@theia/core/shared/fs-extra');
+import multer from 'multer';
+import * as path from 'path';
+import * as os from 'os';
+import * as express from '@theia/core/shared/express';
+import * as fs from '@theia/core/shared/fs-extra';
 import { BackendApplicationContribution, FileUri, HttpConnectionValidator } from '@theia/core/lib/node';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { HTTP_FILE_UPLOAD_PATH } from '../../common/file-upload';
+import { HTTP_FILE_UPLOAD_PATH } from '../../common/file-upload.js';
 import { ILogger, URI } from '@theia/core';
 
 @injectable()

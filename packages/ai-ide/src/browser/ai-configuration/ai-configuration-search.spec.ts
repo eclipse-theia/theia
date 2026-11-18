@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import { AiConfigurationSearchItem } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
-import { AiConfigurationSearch } from './ai-configuration-search';
+import { AiConfigurationSearch } from './ai-configuration-search.js';
 
 function item(label: string, options?: Partial<AiConfigurationSearchItem>): AiConfigurationSearchItem {
     return {

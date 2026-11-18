@@ -18,11 +18,11 @@ import { nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
 import { isCustomizedPromptFragment, PromptService } from '@theia/ai-core/lib/common/prompt-service';
-import { AiConfigurationItemRow } from './ai-configuration-item-row';
-import { AiConfigurationIconButton } from './ai-configuration-primitives';
-import { AiEnumOption, AiEnumSelect } from './ai-configuration-controls';
-import { AiSettingsRowService } from './ai-settings-row-service';
-import { PromptCustomizationDialogs } from './prompt-customization-dialogs';
+import { AiConfigurationItemRow } from './ai-configuration-item-row.js';
+import { AiConfigurationIconButton } from './ai-configuration-primitives.js';
+import { AiEnumOption, AiEnumSelect } from './ai-configuration-controls.js';
+import { AiSettingsRowService } from './ai-settings-row-service.js';
+import { PromptCustomizationDialogs } from './prompt-customization-dialogs.js';
 
 export interface VariantSetCardProps {
     /** The agent that owns this prompt variant set; the selection is stored per agent. */

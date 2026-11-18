@@ -16,11 +16,11 @@
 
 import { AbstractViewContribution, Widget, codicon } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { TestRun, TestService } from '../test-service';
+import { TestRun, TestService } from '../test-service.js';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { TestRunTreeWidget } from './test-run-widget';
-import { TestOutputViewContribution } from './test-output-view-contribution';
-import { TEST_VIEW_CONTAINER_ID, TestViewCommands } from './test-view-contribution';
+import { TestRunTreeWidget } from './test-run-widget.js';
+import { TestOutputViewContribution } from './test-output-view-contribution.js';
+import { TEST_VIEW_CONTAINER_ID, TestViewCommands } from './test-view-contribution.js';
 import { Command, CommandRegistry, MenuModelRegistry, nls } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 

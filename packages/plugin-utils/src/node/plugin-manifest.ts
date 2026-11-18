@@ -15,9 +15,10 @@
 // *****************************************************************************
 
 import * as path from 'path';
-import * as fs from 'fs-extra';
-import type { PluginManifest } from '../common/manifest-types';
-import { prepareLoadedManifest, type PrepareLoadedManifestOptions } from '../common/plugin-manifest';
+// A CommonJS module whose exports cannot be detected statically, so it is imported as a whole.
+import fs from 'fs-extra';
+import type { PluginManifest } from '../common/manifest-types.js';
+import { prepareLoadedManifest, type PrepareLoadedManifestOptions } from '../common/plugin-manifest.js';
 
 type LoadedManifest = Pick<PluginManifest, 'name' | 'publisher' | 'contributes' | 'activationEvents'>;
 

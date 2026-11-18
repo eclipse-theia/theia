@@ -15,18 +15,18 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { FrontendApplicationContribution } from '../../browser/frontend-application-contribution';
-import { ElectronWebSocketConnectionSource } from './electron-ws-connection-source';
-import { ElectronIpcConnectionSource, ElectronMainConnectionProvider } from './electron-ipc-connection-source';
-import { ElectronLocalWebSocketConnectionSource, getLocalPort } from './electron-local-ws-connection-source';
-import { ElectronFrontendIdProvider } from './electron-frontend-id-provider';
-import { FrontendIdProvider } from '../../browser/messaging/frontend-id-provider';
-import { ConnectionSource } from '../../browser/messaging/connection-source';
-import { LocalConnectionProvider, RemoteConnectionProvider, ServiceConnectionProvider } from '../../browser/messaging/service-connection-provider';
-import { WebSocketConnectionProvider } from '../../browser/messaging/ws-connection-provider';
-import { ConnectionCloseService, connectionCloseServicePath } from '../../common/messaging/connection-management';
-import { WebSocketConnectionSource } from '../../browser/messaging/ws-connection-source';
-import { SocketWriteBuffer } from '../../common/messaging/socket-write-buffer';
+import { FrontendApplicationContribution } from '../../browser/frontend-application-contribution.js';
+import { ElectronWebSocketConnectionSource } from './electron-ws-connection-source.js';
+import { ElectronIpcConnectionSource, ElectronMainConnectionProvider } from './electron-ipc-connection-source.js';
+import { ElectronLocalWebSocketConnectionSource, getLocalPort } from './electron-local-ws-connection-source.js';
+import { ElectronFrontendIdProvider } from './electron-frontend-id-provider.js';
+import { FrontendIdProvider } from '../../browser/messaging/frontend-id-provider.js';
+import { ConnectionSource } from '../../browser/messaging/connection-source.js';
+import { LocalConnectionProvider, RemoteConnectionProvider, ServiceConnectionProvider } from '../../browser/messaging/service-connection-provider.js';
+import { WebSocketConnectionProvider } from '../../browser/messaging/ws-connection-provider.js';
+import { ConnectionCloseService, connectionCloseServicePath } from '../../common/messaging/connection-management.js';
+import { WebSocketConnectionSource } from '../../browser/messaging/ws-connection-source.js';
+import { SocketWriteBuffer } from '../../common/messaging/socket-write-buffer.js';
 
 const backendServiceProvider = Symbol('backendServiceProvider2');
 const localServiceProvider = Symbol('localServiceProvider');

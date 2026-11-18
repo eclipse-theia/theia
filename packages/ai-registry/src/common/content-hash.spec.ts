@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { computeContentHash, FileContent } from './content-hash';
+import { computeContentHash, FileContent } from './content-hash.js';
 
 function file(relativePath: string, content: string): FileContent {
     return { relativePath, content: new TextEncoder().encode(content) };

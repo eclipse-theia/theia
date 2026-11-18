@@ -26,8 +26,8 @@ FrontendApplicationConfigProvider.set({});
 import * as chai from 'chai';
 import { ILogger } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
-import { TerminalWidget } from './base/terminal-widget';
-import { FileLinkProvider } from './terminal-file-link-provider';
+import { TerminalWidget } from './base/terminal-widget.js';
+import { FileLinkProvider } from './terminal-file-link-provider.js';
 
 disableJSDOM();
 

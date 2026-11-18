@@ -27,7 +27,7 @@ import {
     ChatGptAuthState,
     ChatGptCredentials,
     ChatGptLoginSession
-} from '../common';
+} from '../common/index.js';
 import {
     buildAuthorizationUrl,
     createLoginState,
@@ -35,8 +35,8 @@ import {
     decodeChatGptIdentity,
     parseAuthorizationInput,
     CHATGPT_TOKEN_URL
-} from './chatgpt-oauth';
-import { ChatGptAuthServiceConfig, ChatGptBackendAuthService } from './chatgpt-auth-service';
+} from './chatgpt-oauth.js';
+import { ChatGptAuthServiceConfig, ChatGptBackendAuthService } from './chatgpt-auth-service.js';
 
 /** A login attempt is abandoned when the user does not complete it within this time. */
 const LOGIN_TIMEOUT_MS = 10 * 60 * 1000;

@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { PluginMetrics } from '../common/metrics-protocol';
-import { BrowserOnlyPluginMetrics } from './browser-only-plugin-metrics';
+import { PluginMetrics } from '../common/metrics-protocol.js';
+import { BrowserOnlyPluginMetrics } from './browser-only-plugin-metrics.js';
 
 // Loaded instead of the `frontend` module, so plugin API calls aren't wrapped to collect metrics.
 export default new ContainerModule((bind, _unbind, isBound, rebind) => {

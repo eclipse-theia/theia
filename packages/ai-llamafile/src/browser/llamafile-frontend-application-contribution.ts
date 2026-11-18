@@ -16,8 +16,8 @@
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { LlamafileManager, LlamafileModelDescription } from '../common/llamafile-manager';
-import { PREFERENCE_LLAMAFILE } from '../common/llamafile-preferences';
+import { LlamafileManager, LlamafileModelDescription } from '../common/llamafile-manager.js';
+import { PREFERENCE_LLAMAFILE } from '../common/llamafile-preferences.js';
 import { PreferenceService } from '@theia/core';
 
 @injectable()

@@ -17,7 +17,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { PreferenceService } from '@theia/core/lib/common/preferences';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import { PluginHostNavigatorState, SUPPORT_NODE_GLOBAL_NAVIGATOR_PREF } from '../common/plugin-host-environment-preferences';
+import { PluginHostNavigatorState, SUPPORT_NODE_GLOBAL_NAVIGATOR_PREF } from '../common/plugin-host-environment-preferences.js';
 
 /**
  * Keeps {@link PluginHostNavigatorState} in sync with the navigator preference.

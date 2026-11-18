@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './observable-base';
-export * from './settable-observable';
-export * from './derived-observable';
-export * from './observable-signal';
-export * from './observable-from-event';
-export * from './autorun';
-export * from './observable-utils';
+export * from './observable-base.js';
+export * from './settable-observable.js';
+export * from './derived-observable.js';
+export * from './observable-signal.js';
+export * from './observable-from-event.js';
+export * from './autorun.js';
+export * from './observable-utils.js';

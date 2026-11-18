@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { DefaultLoggerSanitizer, DefaultSanitizationRules } from './logger-sanitizer';
+import { DefaultLoggerSanitizer, DefaultSanitizationRules } from './logger-sanitizer.js';
 
 describe('DefaultLoggerSanitizer', () => {
     let sanitizer: DefaultLoggerSanitizer;

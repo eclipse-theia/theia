@@ -30,7 +30,7 @@ import {
     resolveCompactionTokenThresholdDefault,
     resolveCustomModelHeaders,
     resolveServerSideCompaction
-} from './language-model';
+} from './language-model.js';
 
 describe('isModelMatching', () => {
     it('returns false with one of two parameter mismatches', () => {

@@ -22,10 +22,10 @@ import {
     LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID,
     RUN_LAUNCH_CONFIGURATION_FUNCTION_ID,
     STOP_LAUNCH_CONFIGURATION_FUNCTION_ID
-} from './workspace-functions';
-import { TODO_WRITE_FUNCTION_ID } from './todo-tool';
-import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID } from './context-variables';
-import { UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions';
+} from './workspace-functions.js';
+import { TODO_WRITE_FUNCTION_ID } from './todo-tool.js';
+import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID } from './context-variables.js';
+import { UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions.js';
 import {
     SUGGEST_FILE_CONTENT_ID,
     WRITE_FILE_CONTENT_ID,
@@ -33,10 +33,10 @@ import {
     WRITE_FILE_REPLACEMENTS_ID,
     CLEAR_FILE_CHANGES_ID,
     GET_PROPOSED_CHANGES_ID
-} from './file-changeset-function-ids';
-import { GET_TASK_CONTEXT_FUNCTION_ID } from './task-context-function-ids';
-import { ArchitectAgentId, ExploreAgentId } from './agent-ids';
-import { OPEN_EDITORS_HINT_FRAGMENT_ID } from './open-editors-hint-fragment-id';
+} from './file-changeset-function-ids.js';
+import { GET_TASK_CONTEXT_FUNCTION_ID } from './task-context-function-ids.js';
+import { ArchitectAgentId, ExploreAgentId } from './agent-ids.js';
+import { OPEN_EDITORS_HINT_FRAGMENT_ID } from './open-editors-hint-fragment-id.js';
 
 export const CODER_SYSTEM_PROMPT_ID = 'coder-system';
 

@@ -16,8 +16,8 @@
 
 import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { ContributionProvider } from '@theia/core/lib/common';
-import { MetricsBackendApplicationContribution } from './metrics-backend-application-contribution';
-import { MetricsContribution } from './metrics-contribution';
+import { MetricsBackendApplicationContribution } from './metrics-backend-application-contribution.js';
+import { MetricsContribution } from './metrics-contribution.js';
 import * as assert from 'assert';
 
 describe('MetricsBackendApplicationContribution:', () => {

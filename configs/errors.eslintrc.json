@@ -145,6 +145,13 @@
       "./",
       "..",
       "../"
+    ],
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "ExportNamedDeclaration > TSEnumDeclaration[const=true]",
+        "message": "Do not export `const enum`s: they are emitted as ambient const enums into the published .d.ts files, which consumers compiled with `isolatedModules` or a per-file transpiler cannot use. Declare a regular `enum` instead."
+      }
     ]
   },
   "overrides": [

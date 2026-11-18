@@ -18,8 +18,8 @@ import { expect } from 'chai';
 import { LaunchArguments } from '@theia/core/lib/common/launch-arguments';
 
 const launchArgs = (values: Record<string, string[]>): LaunchArguments => ({ values, negated: [] });
-import { CliPreferenceEntry } from '../common/cli-preferences';
-import { SessionPreferenceRemoteCliContribution } from './session-preference-remote-cli-contribution';
+import { CliPreferenceEntry } from '../common/cli-preferences.js';
+import { SessionPreferenceRemoteCliContribution } from './session-preference-remote-cli-contribution.js';
 
 class TestContribution extends SessionPreferenceRemoteCliContribution {
     set forwardedArgs(args: LaunchArguments | undefined) {
@@ -54,6 +54,6 @@ describe('SessionPreferenceRemoteCliContribution#getRemoteCliArgs', () => {
         expect(args).to.have.lengthOf(1);
         // The produced arg must parse back to the original entry on the remote.
         const value = args[0].substring('--session-preference='.length);
-        expect(CliPreferenceEntry.parse(value)).to.deep.equal(['editor.fontSize', 20]);
+        expect(CliPreferenceEntry.parse(value)).to.deep.equal({ preferenceName: 'editor.fontSize', value: 20 });
     });
 });

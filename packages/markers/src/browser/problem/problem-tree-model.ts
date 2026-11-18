@@ -14,17 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ProblemMarker } from '../../common/problem-marker';
-import { ProblemManager } from './problem-manager';
-import { ProblemCompositeTreeNode } from './problem-composite-tree-node';
-import { MarkerNode, MarkerTree, MarkerOptions, MarkerInfoNode, MarkerRootNode } from '../marker-tree';
-import { MarkerTreeModel } from '../marker-tree-model';
+import { ProblemMarker } from '../../common/problem-marker.js';
+import { ProblemManager } from './problem-manager.js';
+import { ProblemCompositeTreeNode } from './problem-composite-tree-node.js';
+import { MarkerNode, MarkerTree, MarkerOptions, MarkerInfoNode, MarkerRootNode } from '../marker-tree.js';
+import { MarkerTreeModel } from '../marker-tree-model.js';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { OpenerOptions, TreeNode } from '@theia/core/lib/browser';
-import { Marker } from '../../common/marker';
+import { Marker } from '../../common/marker.js';
 import { Diagnostic } from '@theia/core/shared/vscode-languageserver-protocol';
-import { ProblemUtils } from './problem-utils';
-import debounce = require('@theia/core/shared/lodash.debounce');
+import { ProblemUtils } from './problem-utils.js';
+import debounce from '@theia/core/shared/lodash.debounce';
 
 @injectable()
 export class ProblemTree extends MarkerTree<Diagnostic> {

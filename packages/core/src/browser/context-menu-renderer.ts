@@ -17,9 +17,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, inject } from 'inversify';
-import { CompoundMenuNode, GroupImpl, MenuModelRegistry, MenuPath } from '../common/menu';
-import { Disposable, DisposableCollection } from '../common/disposable';
-import { ContextKeyService, ContextMatcher } from './context-key-service';
+import { CompoundMenuNode, GroupImpl, MenuModelRegistry, MenuPath } from '../common/menu/index.js';
+import { Disposable, DisposableCollection } from '../common/disposable.js';
+import { ContextKeyService, ContextMatcher } from './context-key-service.js';
 
 export interface Coordinate { x: number; y: number; }
 export const Coordinate = Symbol('Coordinate');

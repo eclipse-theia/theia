@@ -13,8 +13,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { RPCProtocol } from './rpc-protocol';
-import { PluginManager, Plugin } from './plugin-api-rpc';
+import { RPCProtocol } from './rpc-protocol.js';
+import { PluginManager, Plugin } from './plugin-api-rpc.js';
 import { interfaces } from '@theia/core/shared/inversify';
 
 export const ExtPluginApiProvider = 'extPluginApi';

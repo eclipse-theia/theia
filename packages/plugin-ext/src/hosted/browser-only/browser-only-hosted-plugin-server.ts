@@ -16,7 +16,7 @@
 
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { LIST_JSON, PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
-import { DeployedPlugin, ExtPluginApi, HostedPluginClient, HostedPluginServer, PluginIdentifiers } from '../../common';
+import { DeployedPlugin, ExtPluginApi, HostedPluginClient, HostedPluginServer, PluginIdentifiers } from '../../common/index.js';
 import { Event, RpcConnectionEventEmitter } from '@theia/core';
 import { Endpoint } from '@theia/core/lib/browser';
 

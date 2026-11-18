@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '../test/jsdom';
+import { enableJSDOM } from '../test/jsdom.js';
 const disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
@@ -23,8 +23,8 @@ import {
     ShellLayoutRestorer,
     PersistedPerspectiveData,
     PERSPECTIVE_LAYOUTS_STORAGE_KEY
-} from './shell-layout-restorer';
-import { ApplicationShell } from './application-shell';
+} from './shell-layout-restorer.js';
+import { ApplicationShell } from './application-shell.js';
 disableJSDOM();
 
 describe('ShellLayoutRestorer - Perspective Support', () => {
@@ -51,6 +51,8 @@ describe('ShellLayoutRestorer - Perspective Support', () => {
     let mockMigrations: { getContributions: sinon.SinonStub };
     let mockWindowService: { isSafeToShutDown: sinon.SinonStub; reload: sinon.SinonStub };
     let mockThemeService: { reset: sinon.SinonStub };
+    let mockSidePanelItemVisibility: { reset: sinon.SinonStub };
+    let mockSecondaryWindowHandler: { getLayoutData: sinon.SinonStub; setLayoutData: sinon.SinonStub };
     let toTearDown: () => void;
 
     beforeEach(() => {
@@ -96,6 +98,10 @@ describe('ShellLayoutRestorer - Perspective Support', () => {
         mockThemeService = {
             reset: sinon.stub()
         };
+        mockSecondaryWindowHandler = {
+            getLayoutData: sinon.stub().returns([]),
+            setLayoutData: sinon.stub().resolves()
+        };
 
         restorer = new ShellLayoutRestorer(
             mockWidgetManager as never,
@@ -108,6 +114,9 @@ describe('ShellLayoutRestorer - Perspective Support', () => {
         (restorer as unknown as Record<string, unknown>)['migrations'] = mockMigrations;
         (restorer as unknown as Record<string, unknown>)['windowService'] = mockWindowService;
         (restorer as unknown as Record<string, unknown>)['themeService'] = mockThemeService;
+        mockSidePanelItemVisibility = { reset: sinon.stub() };
+        (restorer as unknown as Record<string, unknown>)['sidePanelItemVisibility'] = mockSidePanelItemVisibility;
+        (restorer as unknown as Record<string, unknown>)['secondaryWindowHandler'] = mockSecondaryWindowHandler;
     });
 
     afterEach(() => {
@@ -402,6 +411,42 @@ describe('ShellLayoutRestorer - Perspective Support', () => {
         });
     });
 
+    describe('secondary windows', () => {
+        const secondaryWindow = { bounds: { x: 1, y: 2, width: 3, height: 4 }, config: {} };
+
+        it('should store the secondary windows with the active perspective layout', () => {
+            mockSecondaryWindowHandler.getLayoutData.returns([secondaryWindow]);
+
+            restorer.storeLayout(mockApp as never);
+
+            const [key, data] = mockStorageService.setData.firstCall.args as [string, string];
+            expect(key).to.equal('layout');
+            expect(JSON.parse(data).secondaryWindows).to.deep.equal([secondaryWindow]);
+        });
+
+        it('should not store secondary windows when there are none', () => {
+            restorer.storeLayout(mockApp as never);
+
+            const [, data] = mockStorageService.setData.firstCall.args as [string, string];
+            expect(JSON.parse(data)).to.not.have.property('secondaryWindows');
+        });
+
+        it('should restore the secondary windows once, not with the perspective layout', async () => {
+            const layout = JSON.stringify({ version: 999, mainPanel: {}, bottomPanel: {}, secondaryWindows: [secondaryWindow] });
+            mockStorageService.getData.withArgs(PERSPECTIVE_LAYOUTS_STORAGE_KEY).resolves(undefined);
+            mockStorageService.getData.withArgs('layout').resolves(layout);
+            mockProvider.getSavedLayout.callsFake((id: string) => mockProvider.setSavedLayout.getCalls().find(
+                (c: sinon.SinonSpyCall) => c.args[0] === id
+            )?.args[1]);
+
+            await restorer.restoreLayout(mockApp as never);
+
+            expect(mockSecondaryWindowHandler.setLayoutData.calledOnceWith([secondaryWindow])).to.be.true;
+            // switching to the perspective later on must not open the windows again
+            expect(mockProvider.getSavedLayout('default')).to.not.have.property('secondaryWindows');
+        });
+    });
+
     describe('legacy migration', () => {
         it('should fall back to legacy key when perspective-layouts is absent', async () => {
 
@@ -669,6 +714,13 @@ describe('ShellLayoutRestorer - Perspective Support', () => {
             await (restorer as unknown as Record<string, () => Promise<void>>)['resetLayout']();
 
             expect(mockWindowService.reload.calledOnce).to.be.true;
+        });
+
+        it('should reset hidden side panel items', async () => {
+
+            await (restorer as unknown as Record<string, () => Promise<void>>)['resetLayout']();
+
+            expect(mockSidePanelItemVisibility.reset.calledOnce).to.be.true;
         });
     });
 

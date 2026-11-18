@@ -21,9 +21,9 @@ import { OpenerService } from '@theia/core/lib/browser/opener-service';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { codicon } from '@theia/core/lib/browser/widgets/widget';
 import { nls } from '@theia/core/lib/common/nls';
-import { ScmHistoryItem, ScmHistoryItemRef, ScmHistoryProvider } from './scm-provider';
-import { HistoryGraphEntry } from './scm-history-graph-model';
-import { laneColor, getRefBadgeClass, getRefBadgePresentation, deduplicateRefs, isTagRef, isRemoteRef } from './scm-history-graph-helpers';
+import { ScmHistoryItem, ScmHistoryItemRef, ScmHistoryProvider } from './scm-provider.js';
+import { HistoryGraphEntry } from './scm-history-graph-model.js';
+import { laneColor, getRefBadgeClass, getRefBadgePresentation, deduplicateRefs, isTagRef, isRemoteRef } from './scm-history-graph-helpers.js';
 
 export function formatRelativeTime(ms: number): string {
     const now = Date.now();

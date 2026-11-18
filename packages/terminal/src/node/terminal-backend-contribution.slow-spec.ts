@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { createTerminalTestContainer } from './test/terminal-test-container';
+import { createTerminalTestContainer } from './test/terminal-test-container.js';
 import { BackendApplication } from '@theia/core/lib/node/backend-application';
-import { IShellTerminalServer } from '../common/shell-terminal-protocol';
+import { IShellTerminalServer } from '../common/shell-terminal-protocol.js';
 import * as http from 'http';
 import * as https from 'https';
-import { terminalsPath } from '../common/terminal-protocol';
+import { terminalsPath } from '../common/terminal-protocol.js';
 import { TestWebSocketChannelSetup } from '@theia/core/lib/node/messaging/test/test-web-socket-channel';
 
 describe('Terminal Backend Contribution', function (): void {

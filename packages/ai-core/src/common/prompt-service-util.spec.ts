@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { matchFunctionsRegEx, parseFunctionReference } from './prompt-service-util';
+import { matchFunctionsRegEx, parseFunctionReference } from './prompt-service-util.js';
 
 describe('prompt-service-util', () => {
 

@@ -1,30 +1,31 @@
 {
   "private": true,
   "name": "@theia/api-samples",
-  "version": "1.76.0",
+  "version": "1.77.0",
   "description": "Theia - Example code to demonstrate Theia API",
+  "type": "module",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
-    "@theia/ai-chat": "1.76.0",
-    "@theia/ai-chat-ui": "1.76.0",
-    "@theia/ai-code-completion": "1.76.0",
-    "@theia/ai-core": "1.76.0",
-    "@theia/ai-core-ui": "1.76.0",
-    "@theia/ai-mcp": "1.76.0",
-    "@theia/ai-mcp-server": "1.76.0",
-    "@theia/core": "1.76.0",
-    "@theia/file-search": "1.76.0",
-    "@theia/filesystem": "1.76.0",
-    "@theia/monaco": "1.76.0",
+    "@theia/ai-chat": "1.77.0",
+    "@theia/ai-chat-ui": "1.77.0",
+    "@theia/ai-code-completion": "1.77.0",
+    "@theia/ai-core": "1.77.0",
+    "@theia/ai-core-ui": "1.77.0",
+    "@theia/ai-mcp": "1.77.0",
+    "@theia/ai-mcp-server": "1.77.0",
+    "@theia/core": "1.77.0",
+    "@theia/file-search": "1.77.0",
+    "@theia/filesystem": "1.77.0",
+    "@theia/monaco": "1.77.0",
     "@theia/monaco-editor-core": "1.108.201",
-    "@theia/output": "1.76.0",
-    "@theia/ovsx-client": "1.76.0",
-    "@theia/search-in-workspace": "1.76.0",
-    "@theia/telemetry": "1.76.0",
-    "@theia/test": "1.76.0",
-    "@theia/toolbar": "1.76.0",
-    "@theia/vsx-registry": "1.76.0",
-    "@theia/workspace": "1.76.0",
+    "@theia/output": "1.77.0",
+    "@theia/ovsx-client": "1.77.0",
+    "@theia/search-in-workspace": "1.77.0",
+    "@theia/telemetry": "1.77.0",
+    "@theia/test": "1.77.0",
+    "@theia/toolbar": "1.77.0",
+    "@theia/vsx-registry": "1.77.0",
+    "@theia/workspace": "1.77.0",
     "zod": "^4.4.3"
   },
   "theiaExtensions": [
@@ -66,6 +67,13 @@
     "clean": "theiaext clean"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.76.0"
+    "@theia/ext-scripts": "1.77.0"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
   }
 }

@@ -17,7 +17,7 @@
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { SelectionCommandHandler } from '@theia/core/lib/common/selection-command-handler';
 import { isObject } from '@theia/core/lib/common';
-import { FileStat } from '../common/files';
+import { FileStat } from '../common/files.js';
 
 export interface FileSelection {
     fileStat: FileStat

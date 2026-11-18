@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import path = require('path');
+import * as path from 'path';
 import * as fs from 'fs';
-import { GeneralShellType, guessShellTypeFromExecutable } from '../common/shell-type';
-import { ShellProcess, ShellProcessOptions } from './shell-process';
+import { GeneralShellType, guessShellTypeFromExecutable } from '../common/shell-type.js';
+import { ShellProcess, ShellProcessOptions } from './shell-process.js';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { ILogger, MaybePromise } from '@theia/core';
 import { BackendApplicationContribution, BundledResourceProvider } from '@theia/core/lib/node';
@@ -95,7 +95,7 @@ export class ShellIntegrationInjector implements BackendApplicationContribution 
      */
     protected resolveIntegrationRoot(): Promise<void> {
         return this.resolvingIntegrationRoot ??= (async () => {
-            const bundledPath = path.join(__dirname, this.INTEGRATION_ROOT_DIR);
+            const bundledPath = path.join(import.meta.dirname, this.INTEGRATION_ROOT_DIR);
             try {
                 this.integrationRootPath = await this.bundledResourceProvider.resolveExternalPath(bundledPath);
             } catch (error) {

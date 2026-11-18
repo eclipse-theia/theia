@@ -14,14 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as DOMPurify from 'dompurify';
+import * as DOMPurify from '../../../shared/dompurify/index.cjs';
 import { injectable, inject, postConstruct } from 'inversify';
-import markdownit from 'markdown-it';
-import * as markdownitemoji from 'markdown-it-emoji';
-import { MarkdownString } from '../../common/markdown-rendering/markdown-string';
-import { Disposable, DisposableGroup } from '../../common';
-import { LabelParser } from '../label-parser';
-import { codicon } from '../widgets';
+import markdownit from '../../../shared/markdown-it/index.cjs';
+import * as markdownitemoji from '../../../shared/markdown-it-emoji/index.cjs';
+import { MarkdownString } from '../../common/markdown-rendering/markdown-string.js';
+import { Disposable, DisposableGroup } from '../../common/index.js';
+import { LabelParser } from '../label-parser.js';
+import { codicon } from '../widgets/index.js';
 
 // #region Copied from Copied from https://github.com/microsoft/vscode/blob/7d9b1c37f8e5ae3772782ba3b09d827eb3fdd833/src/vs/base/browser/formattedTextRenderer.ts
 export interface ContentActionHandler {

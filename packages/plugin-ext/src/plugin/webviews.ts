@@ -16,15 +16,17 @@
 
 import { generateUuid, hashValue } from '@theia/core/lib/common/uuid';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { Plugin, WebviewsExt, WebviewPanelViewState, WebviewsMain, PLUGIN_RPC_CONTEXT, WebviewInitData, /* WebviewsMain, PLUGIN_RPC_CONTEXT  */ } from '../common/plugin-api-rpc';
+import {
+    Plugin, WebviewsExt, WebviewPanelViewState, WebviewsMain, PLUGIN_RPC_CONTEXT, WebviewInitData, /* WebviewsMain, PLUGIN_RPC_CONTEXT  */
+} from '../common/plugin-api-rpc.js';
 import * as theia from '@theia/plugin';
-import { RPCProtocol } from '../common/rpc-protocol';
+import { RPCProtocol } from '../common/rpc-protocol.js';
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { fromViewColumn, toViewColumn, toWebviewPanelShowOptions } from './type-converters';
-import { Disposable, WebviewPanelTargetArea, URI, ThemeIcon } from './types-impl';
-import { WorkspaceExtImpl } from './workspace';
-import { PluginIconPath } from './plugin-icon-path';
-import { PluginModel, PluginPackage } from '../common';
+import { fromViewColumn, toViewColumn, toWebviewPanelShowOptions } from './type-converters.js';
+import { Disposable, WebviewPanelTargetArea, URI, ThemeIcon } from './types-impl.js';
+import { WorkspaceExtImpl } from './workspace.js';
+import { PluginIconPath } from './plugin-icon-path.js';
+import { PluginModel, PluginPackage } from '../common/index.js';
 
 @injectable()
 export class WebviewsExtImpl implements WebviewsExt {

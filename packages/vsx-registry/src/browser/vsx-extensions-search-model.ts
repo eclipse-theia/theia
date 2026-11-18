@@ -17,7 +17,7 @@
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
-import { ExtensionsSourceContribution } from './extensions-source-contribution';
+import { ExtensionsSourceContribution } from './extensions-source-contribution.js';
 
 export enum VSXSearchMode {
     Initial,

@@ -18,11 +18,11 @@ import express from '@theia/core/shared/express';
 import { expect } from 'chai';
 import * as http from 'http';
 import { AddressInfo } from 'net';
-import { RestBodySchema } from '../common/rest-body-schema';
-import { ExternalApiContribution } from './external-api-contribution';
-import { ExternalApiRouter } from './external-api-router';
-import { RestResult } from './rest-result';
-import { ExternalApiTestSupport } from './test/external-api-test-support';
+import { RestBodySchema } from '../common/rest-body-schema.js';
+import { ExternalApiContribution } from './external-api-contribution.js';
+import { ExternalApiRouter } from './external-api-router.js';
+import { RestResult } from './rest-result.js';
+import { ExternalApiTestSupport } from './test/external-api-test-support.js';
 
 describe('ExternalApiRouter', () => {
 

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { OS } from '../../common/os';
+import { OS } from '../../common/os.js';
 
 @injectable()
 export class ContextMenuContext {

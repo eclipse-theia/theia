@@ -15,7 +15,7 @@
 // *****************************************************************************
 import * as React from '@theia/core/shared/react';
 import { ACTION_ITEM } from '@theia/core/lib/browser';
-import { NotebookCellToolbarItem } from './notebook-cell-toolbar-factory';
+import { NotebookCellToolbarItem } from './notebook-cell-toolbar-factory.js';
 import { DisposableCollection, Event } from '@theia/core';
 
 export interface NotebookCellToolbarProps {

@@ -21,7 +21,7 @@ import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shel
 import { EXPLORER_VIEW_CONTAINER_ID } from '@theia/navigator/lib/browser';
 import { SCM_VIEW_CONTAINER_ID } from '@theia/scm/lib/browser/scm-contribution';
 import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
-import { AISessionsWidget } from './ai-sessions-widget';
+import { AISessionsWidget } from './ai-sessions-widget.js';
 
 export const AI_FIRST_PERSPECTIVE_ID = 'ai-first';
 

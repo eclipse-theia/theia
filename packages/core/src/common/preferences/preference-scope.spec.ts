@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { PreferenceScope } from './preference-scope';
+import { PreferenceScope } from './preference-scope.js';
 
 describe('PreferenceScope', () => {
 

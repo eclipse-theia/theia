@@ -23,17 +23,17 @@ import URI from '@theia/core/lib/common/uri';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { MonacoEditorZoneWidget } from '@theia/monaco/lib/browser/monaco-editor-zone-widget';
 import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
-import { DebugEditor } from './debug-editor';
-import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint';
+import { DebugEditor } from './debug-editor.js';
+import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint.js';
 import { Dimension } from '@theia/editor/lib/browser';
 import * as monaco from '@theia/monaco-editor-core';
-import { LanguageSelector } from '@theia/monaco-editor-core/esm/vs/editor/common/languageSelector';
-import { provideSuggestionItems, CompletionOptions } from '@theia/monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggest';
-import { IDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
-import { CompletionItemKind, CompletionContext } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
-import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { TextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model/textModel';
+import { LanguageSelector } from '@theia/monaco-editor-core/esm/vs/editor/common/languageSelector.js';
+import { provideSuggestionItems, CompletionOptions } from '@theia/monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggest.js';
+import { IDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon.js';
+import { CompletionItemKind, CompletionContext } from '@theia/monaco-editor-core/esm/vs/editor/common/languages.js';
+import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures.js';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { TextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model/textModel.js';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 
 export type ShowDebugBreakpointOptions = DebugSourceBreakpoint | {

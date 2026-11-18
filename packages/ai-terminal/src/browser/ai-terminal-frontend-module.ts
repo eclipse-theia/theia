@@ -20,15 +20,15 @@ import { bindToolProvider } from '@theia/ai-core/lib/common/tool-invocation-regi
 import { CommandContribution, MenuContribution, PreferenceContribution } from '@theia/core';
 import { KeybindingContribution, WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { AiTerminalAgent } from './ai-terminal-agent';
-import { AiTerminalCommandContribution } from './ai-terminal-contribution';
-import { ShellExecutionTool } from './shell-execution-tool';
-import { ShellExecutionToolRenderer } from './shell-execution-tool-renderer';
-import { ShellExecutionServer, shellExecutionPath } from '../common/shell-execution-server';
-import { ShellCommandPermissionService } from './shell-command-permission-service';
-import { shellCommandPreferences } from '../common/shell-command-preferences';
-import { DefaultShellCommandAnalyzer, ShellCommandAnalyzer } from '../common/shell-command-analyzer';
-import { AiTerminalCommandBlockVariableContribution } from './ai-terminal-command-block-variable';
+import { AiTerminalAgent } from './ai-terminal-agent.js';
+import { AiTerminalCommandContribution } from './ai-terminal-contribution.js';
+import { ShellExecutionTool } from './shell-execution-tool.js';
+import { ShellExecutionToolRenderer } from './shell-execution-tool-renderer.js';
+import { ShellExecutionServer, shellExecutionPath } from '../common/shell-execution-server.js';
+import { ShellCommandPermissionService } from './shell-command-permission-service.js';
+import { shellCommandPreferences } from '../common/shell-command-preferences.js';
+import { DefaultShellCommandAnalyzer, ShellCommandAnalyzer } from '../common/shell-command-analyzer.js';
+import { AiTerminalCommandBlockVariableContribution } from './ai-terminal-command-block-variable.js';
 
 import '../../src/browser/style/ai-terminal.css';
 import '../../src/browser/style/shell-execution-tool.css';

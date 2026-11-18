@@ -19,10 +19,10 @@ import { OAuthClientInformationMixed, OAuthClientMetadata, OAuthTokens } from '@
 import { checkResourceAllowed } from '@modelcontextprotocol/sdk/shared/auth-utils.js';
 import { KeyStoreService } from '@theia/core/lib/common/key-store';
 import { nls } from '@theia/core/lib/common/nls';
-import { MCPOAuthConfig, MCPOAuthFrontendDelegate } from '../common/mcp-oauth';
-import { MCPOAuthCallbackService } from './mcp-oauth-callback-service';
-import { MCPOAuthAuthorizationRequiredError, MCPOAuthAuthorizationServerError } from './mcp-oauth-errors';
-import { MCP_OAUTH_KEYSTORE_SERVICE, mcpOAuthAccountPrefix, normalizeOAuthUrl, StoredOAuthTokens, StoredOAuthValue } from './mcp-oauth-keystore';
+import { MCPOAuthConfig, MCPOAuthFrontendDelegate } from '../common/mcp-oauth.js';
+import { MCPOAuthCallbackService } from './mcp-oauth-callback-service.js';
+import { MCPOAuthAuthorizationRequiredError, MCPOAuthAuthorizationServerError } from './mcp-oauth-errors.js';
+import { MCP_OAUTH_KEYSTORE_SERVICE, mcpOAuthAccountPrefix, normalizeOAuthUrl, StoredOAuthTokens, StoredOAuthValue } from './mcp-oauth-keystore.js';
 
 /**
  * Constructor options for {@link MCPOAuthClientProvider}. Using an options object prevents silent

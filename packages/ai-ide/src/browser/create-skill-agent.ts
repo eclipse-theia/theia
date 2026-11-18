@@ -21,8 +21,8 @@ import {
     CREATE_SKILL_SYSTEM_PROMPT_TEMPLATE_ID,
     CREATE_SKILL_SYSTEM_DEFAULT_TEMPLATE_ID,
     CREATE_SKILL_SYSTEM_AGENT_MODE_TEMPLATE_ID,
-} from '../common/create-skill-prompt-template';
-import { AbstractModeAwareChatAgent } from './mode-aware-chat-agent';
+} from '../common/create-skill-prompt-template.js';
+import { AbstractModeAwareChatAgent } from './mode-aware-chat-agent.js';
 import { ILogger, nls } from '@theia/core';
 
 @injectable()

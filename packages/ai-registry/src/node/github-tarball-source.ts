@@ -22,7 +22,7 @@ import { extract, ExtractOptions, Headers } from 'tar-fs';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ILogger, nls, PreferenceService } from '@theia/core';
 import { Headers as RequestHeaders, RequestContext, RequestService } from '@theia/core/shared/@theia/request';
-import { GITHUB_TOKEN_PREF } from '../common/skill/skill-registry-preferences';
+import { GITHUB_TOKEN_PREF } from '../common/skill/skill-registry-preferences.js';
 
 const USER_AGENT = 'Theia-AI-Registry';
 /** Name given to a mapped entry that must not be written; {@link GitHubTarballSourceImpl} skips it. */

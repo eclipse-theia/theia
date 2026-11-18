@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { ContainerModule, Container } from 'inversify';
-import { ILoggerServer, ILoggerClient, LogLevel, ConsoleLogger } from '../common/logger-protocol';
-import { ILogger, Logger, LoggerFactory, LoggerName } from '../common/logger';
+import { ILoggerServer, ILoggerClient, LogLevel, ConsoleLogger } from '../common/logger-protocol.js';
+import { ILogger, Logger, LoggerFactory, LoggerName } from '../common/logger.js';
 
 // is loaded directly after the regular logger frontend module
 export const loggerFrontendOnlyModule = new ContainerModule((bind, unbind, isBound, rebind) => {

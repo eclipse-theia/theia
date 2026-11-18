@@ -20,17 +20,17 @@ import { CancellationTokenSource, CancellationToken, checkCancelled, isCancelled
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { Progress } from '@theia/core/lib/common/message-service-protocol';
-import throttle = require('@theia/core/shared/lodash.throttle');
+import throttle from '@theia/core/shared/lodash.throttle';
 import { Semaphore } from 'async-mutex';
-import { FileService } from '../../browser/file-service';
+import { FileService } from '../../browser/file-service.js';
 import { ConfirmDialog, Dialog } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { FileSystemPreferences } from '../../common/filesystem-preferences';
+import { FileSystemPreferences } from '../../common/filesystem-preferences.js';
 import { fileToStream } from '@theia/core/lib/common/stream';
 import { minimatch } from 'minimatch';
 
-import type { FileUploadService } from '../../common/upload/file-upload';
+import type { FileUploadService } from '../../common/upload/file-upload.js';
 
 interface UploadState {
     uploaded?: boolean;

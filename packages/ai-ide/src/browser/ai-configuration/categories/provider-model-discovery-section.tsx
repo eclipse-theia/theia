@@ -332,7 +332,7 @@ function genericStatusBadge(status: ModelDiscoveryStatus): AiConfigurationItemSt
                 kind: 'on',
                 label: status.lastFetch
                     ? nls.localize('theia/ai/ide/modelsConfiguration/updated', 'Updated {0}', formatTimeAgo(status.lastFetch))
-                    : nls.localize('theia/ai/ide/modelsConfiguration/ready', 'Ready'),
+                    : nls.localizeByDefault('Ready'),
                 tooltip: status.message
             };
         default:

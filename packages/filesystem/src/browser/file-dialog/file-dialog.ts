@@ -18,15 +18,15 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { Message } from '@theia/core/shared/@lumino/messaging';
 import { Disposable, MaybeArray, nls } from '@theia/core/lib/common';
 import { AbstractDialog, DialogProps, setEnabled, createIconButton, Widget, codiconArray, Key, LabelProvider } from '@theia/core/lib/browser';
-import { FileStatNode } from '../file-tree';
-import { LocationListRenderer, LocationListRendererFactory } from '../location';
-import { FileDialogModel } from './file-dialog-model';
-import { FileDialogWidget } from './file-dialog-widget';
-import { FileDialogTreeFiltersRenderer, FileDialogTreeFilters, FileDialogTreeFiltersRendererFactory } from './file-dialog-tree-filters-renderer';
+import { FileStatNode } from '../file-tree/index.js';
+import { LocationListRenderer, LocationListRendererFactory } from '../location/index.js';
+import { FileDialogModel } from './file-dialog-model.js';
+import { FileDialogWidget } from './file-dialog-widget.js';
+import { FileDialogTreeFiltersRenderer, FileDialogTreeFilters, FileDialogTreeFiltersRendererFactory } from './file-dialog-tree-filters-renderer.js';
 import URI from '@theia/core/lib/common/uri';
 import { Panel } from '@theia/core/shared/@lumino/widgets';
 import * as DOMPurify from '@theia/core/shared/dompurify';
-import { FileDialogHiddenFilesToggleRenderer, HiddenFilesToggleRendererFactory } from './file-dialog-hidden-files-renderer';
+import { FileDialogHiddenFilesToggleRenderer, HiddenFilesToggleRendererFactory } from './file-dialog-hidden-files-renderer.js';
 
 export const OpenFileDialogFactory = Symbol('OpenFileDialogFactory');
 export interface OpenFileDialogFactory {
@@ -75,6 +75,12 @@ export class FileDialogProps extends DialogProps {
      * ```
      */
     filters?: FileDialogTreeFilters;
+
+    /**
+     * Whether to omit the `All Files` filter that is otherwise offered next to the given `filters`.
+     * Defaults to `false`.
+     */
+    disableAllFilesFilter?: boolean;
 
     /**
      * Determines if the dialog window should be modal.
@@ -165,7 +171,8 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
         this.toDispose.push(this.model.onDidOpenFile(() => this.accept()));
         this.toDispose.push(this.model.onSelectionChanged(() => this.update()));
 
-        const navigationPanel = document.createElement('div');
+        const doc = this.node.ownerDocument;
+        const navigationPanel = doc.createElement('div');
         navigationPanel.classList.add(NAVIGATION_PANEL_CLASS);
         this.contentNode.appendChild(navigationPanel);
 
@@ -185,7 +192,7 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
         this.up.classList.add(NAVIGATION_UP_CLASS);
         this.up.title = nls.localize('theia/filesystem/dialog/navigateUp', 'Navigate Up One Directory');
 
-        const locationListRendererHost = document.createElement('div');
+        const locationListRendererHost = doc.createElement('div');
         this.locationListRenderer = this.locationListFactory({ model: this.model, host: locationListRendererHost });
         this.toDispose.push(this.locationListRenderer);
         this.locationListRenderer.host.classList.add(NAVIGATION_LOCATION_LIST_PANEL_CLASS);
@@ -204,7 +211,11 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
         });
 
         if (this.props.filters) {
-            this.treeFiltersRenderer = this.treeFiltersFactory({ suppliedFilters: this.props.filters, fileDialogTree: this.widget.model.tree });
+            this.treeFiltersRenderer = this.treeFiltersFactory({
+                suppliedFilters: this.props.filters,
+                fileDialogTree: this.widget.model.tree,
+                disableAllFilesFilter: this.props.disableAllFilesFilter
+            });
             const filters = Object.keys(this.props.filters);
             if (filters.length) {
                 this.widget.model.tree.setFilter(this.props.filters[filters[0]]);
@@ -257,11 +268,12 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
 
     protected appendFiltersPanel(): void {
         if (this.treeFiltersRenderer) {
-            const filtersPanel = document.createElement('div');
+            const doc = this.node.ownerDocument;
+            const filtersPanel = doc.createElement('div');
             filtersPanel.classList.add(FILTERS_PANEL_CLASS);
             this.contentNode.appendChild(filtersPanel);
 
-            const titlePanel = document.createElement('div');
+            const titlePanel = doc.createElement('div');
             titlePanel.innerHTML = DOMPurify.sanitize(nls.localize('theia/filesystem/format', 'Format:'));
             titlePanel.classList.add(FILTERS_LABEL_CLASS);
             filtersPanel.appendChild(titlePanel);
@@ -435,16 +447,17 @@ export class SaveFileDialog extends FileDialog<URI | undefined> {
     protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
 
-        const fileNamePanel = document.createElement('div');
+        const doc = this.node.ownerDocument;
+        const fileNamePanel = doc.createElement('div');
         fileNamePanel.classList.add(FILENAME_PANEL_CLASS);
         this.contentNode.appendChild(fileNamePanel);
 
-        const titlePanel = document.createElement('div');
+        const titlePanel = doc.createElement('div');
         titlePanel.innerHTML = DOMPurify.sanitize(nls.localizeByDefault('Name:'));
         titlePanel.classList.add(FILENAME_LABEL_CLASS);
         fileNamePanel.appendChild(titlePanel);
 
-        this.fileNameField = document.createElement('input');
+        this.fileNameField = doc.createElement('input');
         this.fileNameField.type = 'text';
         this.fileNameField.spellcheck = false;
         this.fileNameField.classList.add('theia-input', FILENAME_TEXTFIELD_CLASS);

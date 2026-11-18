@@ -18,8 +18,8 @@ import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core';
 import { HoverService } from '@theia/core/lib/browser';
 import { GenericCapabilitySelections } from '@theia/ai-core';
-import { AvailableGenericCapabilities } from './generic-capabilities-service';
-import { GenericCapabilitiesTree, ServerToolsSection } from './generic-capabilities-tree';
+import { AvailableGenericCapabilities } from './generic-capabilities-service.js';
+import { GenericCapabilitiesTree, ServerToolsSection } from './generic-capabilities-tree.js';
 
 export interface GenericCapabilitiesSectionProps {
     /** Current generic capability selections */

@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { append, $, addStandardDisposableListener } from '@theia/monaco-editor-core/esm/vs/base/browser/dom';
-import { ITableRenderer } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/table/table';
-import { dispose } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
-import { BreakpointManager } from '../breakpoint/breakpoint-manager';
-import { BreakpointColumnTemplateData, DisassembledInstructionEntry, DisassemblyViewRendererReference } from './disassembly-view-utilities';
+import { append, $, addStandardDisposableListener } from '@theia/monaco-editor-core/esm/vs/base/browser/dom.js';
+import { ITableRenderer } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/table/table.js';
+import { dispose } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle.js';
+import { BreakpointManager } from '../breakpoint/breakpoint-manager.js';
+import { BreakpointColumnTemplateData, DisassembledInstructionEntry, DisassemblyViewRendererReference } from './disassembly-view-utilities.js';
 
 // This file is adapted from https://github.com/microsoft/vscode/blob/c061ce5c24fc480342fbc5f23244289d633c56eb/src/vs/workbench/contrib/debug/browser/disassemblyView.ts
 

@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { RemoteCliContext, RemoteCliContribution } from '@theia/core/lib/node/remote/remote-cli-contribution';
-import { ContainerCreationContribution } from '../docker-container-service';
+import { ContainerCreationContribution } from '../docker-container-service.js';
 import * as Docker from 'dockerode';
-import { DevContainerConfiguration, } from '../devcontainer-file';
+import { DevContainerConfiguration, } from '../devcontainer-file.js';
 import { injectable, interfaces } from '@theia/core/shared/inversify';
 
 export function registerTheiaStartOptionsContributions(bind: interfaces.Bind): void {

@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { INITIAL, IGrammar, StateStack } from 'vscode-textmate';
+// A CommonJS module whose exports cannot be detected statically, so it is imported as a whole.
+import vscodeTextmate, { type IGrammar, type StateStack } from 'vscode-textmate';
 import * as monaco from '@theia/monaco-editor-core';
 
 export class TokenizerState implements monaco.languages.IState {
@@ -55,7 +56,7 @@ export function createTextmateTokenizer(grammar: IGrammar, options: TokenizerOpt
         throw new Error(`The 'lineLimit' must be a positive integer. It was ${options.lineLimit}.`);
     }
     return {
-        getInitialState: () => new TokenizerState(INITIAL),
+        getInitialState: () => new TokenizerState(vscodeTextmate.INITIAL),
         tokenizeEncoded(line: string, state: TokenizerState): monaco.languages.IEncodedLineTokens {
             if (options.lineLimit !== undefined && line.length > options.lineLimit) {
                 // Skip tokenizing the line if it exceeds the line limit. The state must be

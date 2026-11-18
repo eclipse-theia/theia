@@ -16,7 +16,7 @@
 
 import { AbstractViewContribution } from '@theia/core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
-import { TestResultWidget } from './test-result-widget';
+import { TestResultWidget } from './test-result-widget.js';
 import { nls } from '@theia/core';
 
 @injectable()

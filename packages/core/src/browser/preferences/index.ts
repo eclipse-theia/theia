@@ -14,5 +14,5 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './preference-contribution';
-export * from './preference-validation-service';
+export * from './preference-contribution.js';
+export * from './preference-validation-service.js';

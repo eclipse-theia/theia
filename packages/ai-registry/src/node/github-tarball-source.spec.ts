@@ -21,7 +21,7 @@ import * as path from 'path';
 import { gzipSync } from 'zlib';
 import { ILogger, PreferenceService } from '@theia/core';
 import { RequestContext, RequestOptions, RequestService } from '@theia/core/shared/@theia/request';
-import { GitHubTarballSourceImpl } from './github-tarball-source';
+import { GitHubTarballSourceImpl } from './github-tarball-source.js';
 
 const TARBALL_URL = 'https://api.github.com/repos/example/plugins/tarball';
 const ARCHIVE_ROOT = 'example-plugins-9f3c2a1b';

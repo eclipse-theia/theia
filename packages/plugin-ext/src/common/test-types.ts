@@ -24,8 +24,8 @@
 /* eslint-disable import/no-extraneous-dependencies */
 
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
-import { UriComponents } from './uri-components';
-import { Location, Range } from './plugin-api-rpc-model';
+import { UriComponents } from './uri-components.js';
+import { Location, Range } from './plugin-api-rpc-model.js';
 import { isObject } from '@theia/core';
 import * as languageProtocol from '@theia/core/shared/vscode-languageserver-protocol';
 

@@ -20,17 +20,17 @@
 /**
  * based on https://github.com/Microsoft/vscode/blob/bf9a27ec01f2ef82fc45f69e0c946c7d74a57d3e/src/vs/workbench/api/node/extHostDocumentSaveParticipant.ts
  */
-import { DocumentsExt, ModelChangedEvent, PLUGIN_RPC_CONTEXT, DocumentsMain, SingleEditOperation } from '../common/plugin-api-rpc';
-import { TextEdit, URI } from './types-impl';
-import { UriComponents } from '../common/uri-components';
-import { RPCProtocol } from '../common/rpc-protocol';
+import { DocumentsExt, ModelChangedEvent, PLUGIN_RPC_CONTEXT, DocumentsMain, SingleEditOperation } from '../common/plugin-api-rpc.js';
+import { TextEdit, URI } from './types-impl.js';
+import { UriComponents } from '../common/uri-components.js';
+import { RPCProtocol } from '../common/rpc-protocol.js';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import * as theia from '@theia/plugin';
-import { DocumentDataExt, setWordDefinitionFor } from './document-data';
-import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
-import * as Converter from './type-converters';
+import { DocumentDataExt, setWordDefinitionFor } from './document-data.js';
+import { EditorsAndDocumentsExtImpl } from './editors-and-documents.js';
+import * as Converter from './type-converters.js';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
-import { Range, TextDocumentShowOptions } from '../common/plugin-api-rpc-model';
+import { Range, TextDocumentShowOptions } from '../common/plugin-api-rpc-model.js';
 
 export class DocumentsExtImpl implements DocumentsExt {
     private toDispose = new DisposableCollection();

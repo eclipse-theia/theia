@@ -15,18 +15,18 @@
 // *****************************************************************************
 import * as Docker from 'dockerode';
 import { inject, injectable, interfaces, named } from '@theia/core/shared/inversify';
-import { ContainerCreationContribution } from '../docker-container-service';
-import { DevContainerConfiguration, DockerfileContainer, ImageContainer, NonComposeContainerBase } from '../devcontainer-file';
+import { ContainerCreationContribution } from '../docker-container-service.js';
+import { DevContainerConfiguration, DockerfileContainer, ImageContainer, NonComposeContainerBase } from '../devcontainer-file.js';
 import { ILogger, Path } from '@theia/core';
-import { ContainerOutputProvider } from '../../electron-common/container-output-provider';
+import { ContainerOutputProvider } from '../../electron-common/container-output-provider.js';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as os from 'os';
 import * as path from 'path';
 import * as cp from 'child_process';
 import { ForwardedPort, RemotePortForwardingProvider } from '@theia/remote/lib/electron-common/remote-port-forwarding-provider';
-import { RemoteDockerContainerConnection } from '../remote-docker-container-connection';
-import { WorkspaceCreationContribution } from './workspace-creation-contribution';
-import { parseWorkspaceMount } from '../dockerode-utils';
+import { RemoteDockerContainerConnection } from '../remote-docker-container-connection.js';
+import { WorkspaceCreationContribution } from './workspace-creation-contribution.js';
+import { parseWorkspaceMount } from '../dockerode-utils.js';
 
 export function registerContainerCreationContributions(bind: interfaces.Bind): void {
     bind(ContainerCreationContribution).to(ImageFileContribution).inSingletonScope();

@@ -24,7 +24,7 @@ import * as sinon from 'sinon';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoDiffEditor } from '@theia/monaco/lib/browser/monaco-diff-editor';
-import { MultiDiffEditorWidgetFactory } from './multi-diff-editor-widget-factory';
+import { MultiDiffEditorWidgetFactory } from './multi-diff-editor-widget-factory.js';
 import { Emitter, URI } from '@theia/core';
 import { LabelProvider, MessageLoop, Widget } from '@theia/core/lib/browser';
 import { Container } from '@theia/core/shared/inversify';
@@ -39,8 +39,8 @@ import {
     MultiDiffEditorData,
     MultiDiffEditorLabelProvider,
     MultiDiffEditorOpenHandler
-} from './multi-diff-editor';
-import { MultiDiffEditorResourcePair, MultiDiffEditorUri } from './multi-diff-editor-uri';
+} from './multi-diff-editor.js';
+import { MultiDiffEditorResourcePair, MultiDiffEditorUri } from './multi-diff-editor-uri.js';
 
 disableJSDOM();
 

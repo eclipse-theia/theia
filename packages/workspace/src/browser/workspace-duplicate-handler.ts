@@ -16,8 +16,8 @@
 
 import URI from '@theia/core/lib/common/uri';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { WorkspaceUtils } from './workspace-utils';
-import { WorkspaceService } from './workspace-service';
+import { WorkspaceUtils } from './workspace-utils.js';
+import { WorkspaceService } from './workspace-service.js';
 import { UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { FileSystemUtils } from '@theia/filesystem/lib/common/filesystem-utils';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { ShellCommandBuilder } from './shell-command-builder';
+import { ShellCommandBuilder } from './shell-command-builder.js';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(ShellCommandBuilder).toSelf().inSingletonScope();

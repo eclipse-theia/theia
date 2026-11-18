@@ -27,10 +27,10 @@ import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar
 import { CommandContribution } from '@theia/core/lib/common/command';
 import { MenuContribution } from '@theia/core/lib/common/menu';
 import { NavigatableWidgetOptions } from '@theia/core/lib/browser/navigatable';
-import { MiniBrowserOpenHandler } from './mini-browser-open-handler';
-import { MiniBrowserService, MiniBrowserServicePath } from '../common/mini-browser-service';
-import { MiniBrowser, MiniBrowserOptions } from './mini-browser';
-import { MiniBrowserProps, MiniBrowserContentFactory, MiniBrowserContent } from './mini-browser-content';
+import { MiniBrowserOpenHandler } from './mini-browser-open-handler.js';
+import { MiniBrowserService, MiniBrowserServicePath } from '../common/mini-browser-service.js';
+import { MiniBrowser, MiniBrowserOptions } from './mini-browser.js';
+import { MiniBrowserProps, MiniBrowserContentFactory, MiniBrowserContent } from './mini-browser-content.js';
 import {
     LocationMapperService,
     FileLocationMapper,
@@ -38,8 +38,8 @@ import {
     HttpsLocationMapper,
     LocationMapper,
     LocationWithoutSchemeMapper,
-} from './location-mapper-service';
-import { MiniBrowserFrontendSecurityWarnings } from './mini-browser-frontend-security-warnings';
+} from './location-mapper-service.js';
+import { MiniBrowserFrontendSecurityWarnings } from './mini-browser-frontend-security-warnings.js';
 
 export default new ContainerModule(bind => {
     bind(MiniBrowserContent).toSelf();

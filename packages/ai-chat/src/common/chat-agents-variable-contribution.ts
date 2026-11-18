@@ -24,7 +24,7 @@ import {
     AIVariableService,
     ResolvedAIVariable
 } from '@theia/ai-core';
-import { ChatAgentService } from './chat-agent-service';
+import { ChatAgentService } from './chat-agent-service.js';
 
 export const CHAT_AGENTS_VARIABLE: AIVariable = {
     id: 'chatAgents',

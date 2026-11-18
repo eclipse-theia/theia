@@ -16,17 +16,17 @@
 
 import * as React from 'react';
 import { injectable, inject } from 'inversify';
-import debounce = require('lodash.debounce');
-import { CancellationTokenSource, CommandService, nls } from '../../common';
-import { ReactWidget } from '../widgets/react-widget';
-import { FrontendApplicationStateService } from '../frontend-application-state';
-import { LabelParser, LabelIcon } from '../label-parser';
-import { StatusBar, StatusBarEntry, StatusBarAlignment, StatusBarViewEntry } from './status-bar-types';
-import { StatusBarViewModel } from './status-bar-view-model';
-import { HoverService } from '../hover-service';
-import { codicon } from '../widgets';
-import { PreferenceService } from '../../common/preferences';
-import { MarkdownString } from '../../common/markdown-rendering';
+import debounce from '../../../shared/lodash.debounce/index.cjs';
+import { CancellationTokenSource, CommandService, nls } from '../../common/index.js';
+import { ReactWidget } from '../widgets/react-widget.js';
+import { FrontendApplicationStateService } from '../frontend-application-state.js';
+import { LabelParser, LabelIcon } from '../label-parser.js';
+import { StatusBar, StatusBarEntry, StatusBarAlignment, StatusBarViewEntry } from './status-bar-types.js';
+import { StatusBarViewModel } from './status-bar-view-model.js';
+import { HoverService } from '../hover-service.js';
+import { codicon } from '../widgets/index.js';
+import { PreferenceService } from '../../common/preferences/index.js';
+import { MarkdownString } from '../../common/markdown-rendering/index.js';
 export { StatusBar, StatusBarAlignment, StatusBarEntry };
 
 @injectable()

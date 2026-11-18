@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { AbstractPluginManagerExtImpl } from '@theia/plugin-ext/lib/plugin/plugin-manager';
-import { HeadlessPluginManagerExt, HeadlessPluginManagerInitializeParams } from '../common/headless-plugin-rpc';
+import { HeadlessPluginManagerExt, HeadlessPluginManagerInitializeParams } from '../common/headless-plugin-rpc.js';
 import { Plugin } from '@theia/plugin-ext';
 
 @injectable()

@@ -22,8 +22,8 @@ import {
     Progress,
     ProgressUpdate,
     ProgressMessage
-} from './message-service-protocol';
-import { CancellationTokenSource } from './cancellation';
+} from './message-service-protocol.js';
+import { CancellationTokenSource } from './cancellation.js';
 
 /**
  * Service to log and categorize messages, show progress information and offer actions.

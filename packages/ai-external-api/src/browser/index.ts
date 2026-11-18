@@ -14,5 +14,5 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './ai-external-api-frontend-contribution';
-export * from './frontend-external-chat-session-provider';
+export * from './ai-external-api-frontend-contribution.js';
+export * from './frontend-external-chat-session-provider.js';

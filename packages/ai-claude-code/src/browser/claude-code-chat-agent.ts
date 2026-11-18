@@ -44,12 +44,12 @@ import {
     ToolApprovalResponseMessage,
     Usage,
     WriteInput
-} from '../common/claude-code-service';
-import { ClaudeCodeEditToolService, ToolUseBlock } from './claude-code-edit-tool-service';
-import { FileEditBackupService } from './claude-code-file-edit-backup-service';
-import { ClaudeCodeFrontendService } from './claude-code-frontend-service';
-import { ClaudeCodeToolCallChatResponseContent } from './claude-code-tool-call-content';
-import { OPEN_CLAUDE_CODE_CONFIG, OPEN_CLAUDE_CODE_MEMORY } from './claude-code-command-contribution';
+} from '../common/claude-code-service.js';
+import { ClaudeCodeEditToolService, ToolUseBlock } from './claude-code-edit-tool-service.js';
+import { FileEditBackupService } from './claude-code-file-edit-backup-service.js';
+import { ClaudeCodeFrontendService } from './claude-code-frontend-service.js';
+import { ClaudeCodeToolCallChatResponseContent } from './claude-code-tool-call-content.js';
+import { OPEN_CLAUDE_CODE_CONFIG, OPEN_CLAUDE_CODE_MEMORY } from './claude-code-command-contribution.js';
 
 export const CLAUDE_SESSION_ID_KEY = 'claudeSessionId';
 export const CLAUDE_EDIT_TOOL_USES_KEY = 'claudeEditToolUses';

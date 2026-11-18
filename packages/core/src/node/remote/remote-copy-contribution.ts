@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MaybePromise } from '../../common/types';
+import { MaybePromise } from '../../common/types.js';
 
 export const RemoteCopyContribution = Symbol('RemoteCopyContribution');
 

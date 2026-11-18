@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FormatType, Localization } from './i18n/localization';
+import { FormatType, Localization } from './i18n/localization.js';
+import nlsMetadata from './i18n/nls.metadata.json' with { type: 'json' };
 
 export namespace nls {
 
@@ -127,7 +128,7 @@ class LocalizationKeyProvider {
      * This allows us to skip the key in the localization process and map the original english default values to their translations in different languages.
      */
     private buildData(): Map<string, string> {
-        const bundles = require('../../src/common/i18n/nls.metadata.json');
+        const bundles = nlsMetadata;
         const keys: NlsKeys = bundles.keys;
         const messages: Record<string, string[]> = bundles.messages;
         const data = new Map<string, string>();

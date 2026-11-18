@@ -16,8 +16,8 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { ToolInvocationContext, ToolRequest, ToolRequestParameters } from '@theia/ai-core';
-import { AbstractShellExecutionTool } from './abstract-shell-execution-tool';
-import { OutputTruncationOptions, ShellExecutionCanceledResult, ShellExecutionToolResult } from '../common/shell-execution-server';
+import { AbstractShellExecutionTool } from './abstract-shell-execution-tool.js';
+import { OutputTruncationOptions, ShellExecutionCanceledResult, ShellExecutionToolResult } from '../common/shell-execution-server.js';
 
 /** `providerName` reported by tools that derive from {@link PredefinedShellTool}. */
 export const PREDEFINED_SHELL_TOOL_PROVIDER = 'ai-predefined-shell';

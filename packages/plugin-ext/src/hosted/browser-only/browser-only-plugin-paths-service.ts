@@ -22,8 +22,8 @@ import { compare } from '@theia/core/lib/common/strings';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { UntitledWorkspaceService } from '@theia/workspace/lib/common';
-import { PluginPathsService } from '../../main/common/plugin-paths-protocol';
-import { PluginPaths } from '../../main/common/paths/const';
+import { PluginPathsService } from '../../main/common/plugin-paths-protocol.js';
+import { PluginPaths } from '../../main/common/paths/const.js';
 
 /** Session folder name, e.g. `20181205T093828`, same format as the backend uses. */
 const SESSION_TIMESTAMP_PATTERN = /^\d{8}T\d{6}$/;

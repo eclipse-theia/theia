@@ -20,13 +20,13 @@
 
 import { Disposable, DisposableCollection, Emitter, URI, generateUuid } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { NotebookService } from './notebook-service';
+import { NotebookService } from './notebook-service.js';
 import {
     CellEditType, CellExecuteOutputEdit, CellExecuteOutputItemEdit, CellExecutionUpdateType,
     CellUri, NotebookCellExecutionState, NotebookCellInternalMetadata
-} from '../../common';
-import { CellPartialInternalMetadataEditByHandle, CellEditOperation } from '../notebook-types';
-import { NotebookModel } from '../view-model/notebook-model';
+} from '../../common/index.js';
+import { CellPartialInternalMetadataEditByHandle, CellEditOperation } from '../notebook-types.js';
+import { NotebookModel } from '../view-model/notebook-model.js';
 
 export type CellExecuteUpdate = CellExecuteOutputEdit | CellExecuteOutputItemEdit | CellExecutionStateUpdate;
 

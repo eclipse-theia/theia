@@ -16,8 +16,8 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { LabelProviderContribution, TreeNode } from '@theia/core/lib/browser';
-import { Preference } from './preference-types';
-import { PreferenceLayoutProvider } from './preference-layout';
+import { Preference } from './preference-types.js';
+import { PreferenceLayoutProvider } from './preference-layout.js';
 
 @injectable()
 export class PreferenceTreeLabelProvider implements LabelProviderContribution {

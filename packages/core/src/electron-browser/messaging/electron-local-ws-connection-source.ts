@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { Endpoint } from '../../browser/endpoint';
-import { WebSocketConnectionSource } from '../../browser/messaging/ws-connection-source';
-import { ElectronBackendPort } from '../electron-backend-port';
+import { Endpoint } from '../../browser/endpoint.js';
+import { WebSocketConnectionSource } from '../../browser/messaging/ws-connection-source.js';
+import { ElectronBackendPort } from '../electron-backend-port.js';
 
 export const LOCAL_PORT_PARAM = 'localPort';
 export function getLocalPort(): string | undefined {

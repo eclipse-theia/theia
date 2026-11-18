@@ -17,13 +17,16 @@
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { Mutex } from 'async-mutex';
 import { ILogger, nls } from '@theia/core';
-import { LocalStorageService, StorageService } from '@theia/core/lib/browser/storage-service';
-import { PluginDeployOptions, PluginIdentifiers, PluginServer, PluginStorageKind, PluginType } from '../../common';
-import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
-import { PluginPathsService } from '../../main/common/plugin-paths-protocol';
+import URI from '@theia/core/lib/common/uri';
+import { BinaryBuffer } from '@theia/core/lib/common/buffer';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
+import { PluginDeployOptions, PluginIdentifiers, PluginServer, PluginStorageKind, PluginType } from '../../common/index.js';
+import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types.js';
+import { PluginPaths } from '../../main/common/paths/const.js';
+import { PluginPathsService } from '../../main/common/plugin-paths-protocol.js';
 
-const GLOBAL_STORAGE_KEY = 'plugin-storage:global';
-const WORKSPACE_STORAGE_KEY_PREFIX = 'plugin-storage:workspace:';
 const LOCK_NAME_PREFIX = 'theia:plugin-storage:';
 
 /**
@@ -32,7 +35,8 @@ const LOCK_NAME_PREFIX = 'theia:plugin-storage:';
  * of failing, so callers like the plugin view still have something to render.
  *
  * The plugin key-value storage backing `ExtensionContext.globalState` and
- * `ExtensionContext.workspaceState` lives in the browser's local storage.
+ * `ExtensionContext.workspaceState` lives in JSON files under the config directory on the
+ * browser-local file system, laid out like the backend does.
  */
 @injectable()
 export class BrowserOnlyPluginServer implements PluginServer {
@@ -40,12 +44,11 @@ export class BrowserOnlyPluginServer implements PluginServer {
     @inject(ILogger) @named('plugin-ext:BrowserOnlyPluginServer')
     protected readonly logger: ILogger;
 
-    // `@theia/workspace` rebinds `StorageService` to `WorkspaceStorageService`, which prefixes every
-    // key with the current workspace URI. That would scope `GLOBAL_STORAGE_KEY` per workspace too,
-    // so `LocalStorageService` is injected directly instead - the workspace store key already
-    // encodes the workspace via `PluginPathsService.getHostStoragePath`.
-    @inject(LocalStorageService)
-    protected readonly storageService: StorageService;
+    @inject(FileService)
+    protected readonly fileService: FileService;
+
+    @inject(EnvVariablesServer)
+    protected readonly envServer: EnvVariablesServer;
 
     @inject(PluginPathsService)
     protected readonly pluginPathsService: PluginPathsService;
@@ -83,22 +86,25 @@ export class BrowserOnlyPluginServer implements PluginServer {
     }
 
     async setStorageValue(key: string, value: KeysToAnyValues, kind: PluginStorageKind): Promise<boolean> {
-        const storeKey = await this.getStoreKey(kind);
-        if (!storeKey) {
+        const store = await this.getStore(kind);
+        if (!store) {
             this.logger.warn('Cannot save plugin data: no opened workspace.');
             return false;
         }
-        // the browser storage is shared with this application's other tabs, each running its own
-        // plugin host, so the read and write below need to be atomic - otherwise a concurrent
-        // update from another tab could land in between and get overwritten by this one
-        await this.withStoreLock(storeKey, async () => {
-            const store = await this.getStore(storeKey);
+        // the file is shared with this application's other tabs, each running its own plugin
+        // host, so the read and write below need to be atomic - otherwise a concurrent update
+        // from another tab could land in between and get overwritten by this one
+        await this.withStoreLock(store, async () => {
+            const values = await this.readStore(store);
+            const previousContent = JSON.stringify(values);
             if (value === undefined || Object.keys(value).length === 0) {
-                delete store[key];
+                delete values[key];
             } else {
-                store[key] = value;
+                values[key] = value;
             }
-            await this.storageService.setData(storeKey, store);
+            // a failed write rejects, so the plugin's `Memento.update` does too instead of
+            // resolving for a value that was never saved
+            await this.writeStore(store, values, previousContent);
         });
         return true;
     }
@@ -108,25 +114,74 @@ export class BrowserOnlyPluginServer implements PluginServer {
     }
 
     async getAllStorageValues(kind: PluginStorageKind): Promise<KeysToKeysToAnyValue> {
-        const storeKey = await this.getStoreKey(kind);
-        return storeKey ? this.getStore(storeKey) : {};
-    }
-
-    protected getStore(storeKey: string): Promise<KeysToKeysToAnyValue> {
-        return this.storageService.getData<KeysToKeysToAnyValue>(storeKey, {});
+        const store = await this.getStore(kind);
+        if (!store) {
+            return {};
+        }
+        try {
+            // locked as well, so a read never sees a file another tab is halfway through writing
+            return await this.withStoreLock(store, () => this.readStore(store));
+        } catch (error) {
+            // the plugin host loads all state on startup, so throwing here would stop every plugin
+            // from loading. Writes still fail, so the file isn't overwritten with the empty state.
+            this.logger.error(`Failed to read plugin data from ${store.toString()}:`, error);
+            return {};
+        }
     }
 
     /**
-     * Runs `task` while holding the cross-tab lock for `storeKey`, via the Web Locks API, so a
-     * concurrent {@link setStorageValue} on this or another tab can't interleave with it.
+     * Reads the values of `store`. Not cached: other tabs write the same file. Must be called
+     * while holding the lock for `store`, see {@link withStoreLock}.
      */
-    protected withStoreLock<T>(storeKey: string, task: () => Promise<T>): Promise<T> {
+    protected async readStore(store: URI): Promise<KeysToKeysToAnyValue> {
+        let content: string;
+        try {
+            content = (await this.fileService.readFile(store)).value.toString();
+        } catch (error) {
+            if (error instanceof FileOperationError && error.fileOperationResult === FileOperationResult.FILE_NOT_FOUND) {
+                return {};
+            }
+            throw error;
+        }
+        try {
+            return JSON.parse(content);
+        } catch (error) {
+            // same as the backend: start over rather than fail every later read and write
+            this.logger.error(`Failed to parse plugin data from ${store.toString()}:`, error);
+            return {};
+        }
+    }
+
+    /**
+     * Writes `values` to `store`, putting `previousContent` back if that fails. Must be called
+     * while holding the lock for `store`, see {@link withStoreLock}.
+     */
+    protected async writeStore(store: URI, values: KeysToKeysToAnyValue, previousContent: string): Promise<void> {
+        try {
+            await this.fileService.writeFile(store, BinaryBuffer.fromString(JSON.stringify(values)));
+        } catch (error) {
+            // OPFS truncates the file before writing, so a failed write (e.g. quota exceeded)
+            // would leave it empty and wipe the state of every plugin
+            try {
+                await this.fileService.writeFile(store, BinaryBuffer.fromString(previousContent));
+            } catch (restoreError) {
+                this.logger.error(`Failed to restore plugin data in ${store.toString()}:`, restoreError);
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * Runs `task` while holding the cross-tab lock for `store`, via the Web Locks API, so a
+     * concurrent read or update of the same store on this or another tab can't interleave with it.
+     */
+    protected withStoreLock<T>(store: URI, task: () => Promise<T>): Promise<T> {
         const locks = this.getWebLocks();
         if (locks) {
-            return this.requestLock(locks, `${LOCK_NAME_PREFIX}${storeKey}`, task);
+            return this.requestLock(locks, `${LOCK_NAME_PREFIX}${store.toString()}`, task);
         }
-        // no Web Locks API (insecure context, older browser): fall back to serializing writes
-        // within this tab. A write from another tab can still race and get lost.
+        // no Web Locks API (insecure context, older browser): fall back to serializing store
+        // access within this tab. A write from another tab can still race and get lost.
         if (!this.missingLocksWarned) {
             this.missingLocksWarned = true;
             this.logger.warn('Web Locks API unavailable: plugin storage updates from different tabs may race.');
@@ -151,15 +206,17 @@ export class BrowserOnlyPluginServer implements PluginServer {
     }
 
     /**
-     * The browser storage key holding the given kind of values, or `undefined` if there's
-     * nowhere to keep them - e.g. workspace state while no workspace is open.
+     * Where the given kind of values is kept, or `undefined` if there's nowhere to keep them -
+     * e.g. workspace state while no workspace is open.
      */
-    protected async getStoreKey(kind: PluginStorageKind): Promise<string | undefined> {
+    protected async getStore(kind: PluginStorageKind): Promise<URI | undefined> {
+        const configDirUri = new URI(await this.envServer.getConfigDirUri());
         if (!kind) {
-            return GLOBAL_STORAGE_KEY;
+            return configDirUri.resolve(PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR).resolve(PluginPaths.PLUGINS_GLOBAL_STATE_FILE);
         }
-        // derived from the storage path so workspace state follows `ExtensionContext.storageUri`
+        // kept next to `ExtensionContext.storageUri`. The storage path lives on the same file
+        // system as the config dir, so we can take the scheme from there
         const storagePath = await this.pluginPathsService.getHostStoragePath(kind.workspace, kind.roots);
-        return storagePath && `${WORKSPACE_STORAGE_KEY_PREFIX}${storagePath}`;
+        return storagePath ? configDirUri.withPath(storagePath).resolve(PluginPaths.PLUGINS_WORKSPACE_STATE_FILE) : undefined;
     }
 }

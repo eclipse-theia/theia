@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '../test/jsdom';
+import { enableJSDOM } from '../test/jsdom.js';
 
 // The widget module transitively imports `@lumino/widgets`, which touches `document` at load time.
 let disableJSDOM = enableJSDOM();
@@ -22,12 +22,12 @@ let disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
 import { flushSync } from 'react-dom';
 import { createRoot, Root } from 'react-dom/client';
-import { CompositeTreeNode, TreeNode } from './tree';
-import { ExpandableTreeNode } from './tree-expansion';
-import { TreeFocusService } from './tree-focus-service';
-import { TreeModel } from './tree-model';
-import { defaultTreeProps, TreeWidget } from './tree-widget';
-import { ContextMenuRenderer } from '../context-menu-renderer';
+import { CompositeTreeNode, TreeNode } from './tree.js';
+import { ExpandableTreeNode } from './tree-expansion.js';
+import { TreeFocusService } from './tree-focus-service.js';
+import { TreeModel } from './tree-model.js';
+import { defaultTreeProps, TreeWidget } from './tree-widget.js';
+import { ContextMenuRenderer } from '../context-menu-renderer.js';
 
 disableJSDOM();
 

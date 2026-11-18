@@ -21,10 +21,10 @@ import { AsyncSubscription, subscribe } from '@theia/core/shared/@parcel/watcher
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { Disposable, ILogger, PreferenceService } from '@theia/core';
 import { Headers, RequestContext, RequestService } from '@theia/core/shared/@theia/request';
-import { SkillInstallBackendService, SkillInstallClient } from '../common/skill/skill-install-protocol';
-import { InstalledSkillInfo, ResolvedSkillEntry } from '../common/skill/skill-registry-types';
-import { computeContentHash, FileContent } from '../common/content-hash';
-import { GITHUB_TOKEN_PREF } from '../common/skill/skill-registry-preferences';
+import { SkillInstallBackendService, SkillInstallClient } from '../common/skill/skill-install-protocol.js';
+import { InstalledSkillInfo, ResolvedSkillEntry } from '../common/skill/skill-registry-types.js';
+import { computeContentHash, FileContent } from '../common/content-hash.js';
+import { GITHUB_TOKEN_PREF } from '../common/skill/skill-registry-preferences.js';
 
 /** File name of the per-skill registry metadata. Dot-prefixed so it is excluded from the content hash. */
 const REGISTRY_METADATA_FILE = '.registry.json';

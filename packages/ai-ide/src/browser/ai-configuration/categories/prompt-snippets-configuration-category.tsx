@@ -40,7 +40,7 @@ import {
 } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/collapsible-list';
 import { PromptCustomizationDialogs } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/prompt-customization-dialogs';
 import { AiConfigurationCallout } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-primitives';
-import { AgentChips } from './agent-chips';
+import { AgentChips } from './agent-chips.js';
 
 /**
  * Fragments generated per running MCP server, named after `McpFrontendService.getPromptTemplateId`.

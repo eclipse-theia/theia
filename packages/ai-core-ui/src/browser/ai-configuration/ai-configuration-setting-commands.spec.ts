@@ -20,7 +20,7 @@ import {
     AiConfigurationSettingCommandArgs,
     AiConfigurationSettingCommandContribution,
     AiConfigurationSettingCommands
-} from './ai-configuration-setting-commands';
+} from './ai-configuration-setting-commands.js';
 
 interface Handler { execute(args: unknown): unknown; isVisible?(args: unknown): boolean; isEnabled?(args: unknown): boolean }
 

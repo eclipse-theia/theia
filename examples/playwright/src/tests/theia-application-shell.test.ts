@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import * as path from 'path';
 import { TheiaApp } from '../theia-app';
 import { TheiaAppLoader } from '../theia-app-loader';
@@ -44,6 +44,31 @@ test.describe('Theia Application Shell', () => {
 
     test.afterAll(async () => {
         await app.page.close();
+    });
+
+    test('should hide a side panel item and still open its view', async () => {
+        const searchTab = '#shell-tab-search-view-container';
+        const explorer = await app.openView(TheiaExplorerView);
+
+        await (await explorer.openContextMenuOnTab()).clickMenuItem('Hide');
+        await app.page.waitForSelector(explorer.tabSelector, { state: 'hidden' });
+        expect(await explorer.isDisplayed()).toBe(false);
+
+        await explorer.open();
+        expect(await explorer.isActive()).toBe(true);
+
+        await app.page.click(searchTab);
+        await app.page.waitForSelector(explorer.tabSelector, { state: 'hidden' });
+
+        await app.page.reload();
+        await app.waitForShellAndInitialized();
+        await app.page.waitForSelector(searchTab, { state: 'visible' });
+        await app.page.waitForSelector(explorer.tabSelector, { state: 'hidden' });
+
+        await explorer.open();
+        await (await explorer.openContextMenuOnTab()).clickMenuItem('Keep');
+        await app.page.click(searchTab);
+        await app.page.waitForSelector(explorer.tabSelector, { state: 'visible' });
     });
 
     /**

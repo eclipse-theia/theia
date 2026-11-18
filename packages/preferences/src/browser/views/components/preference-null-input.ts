@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { injectable, interfaces } from '@theia/core/shared/inversify';
-import { PreferenceLeafNodeRenderer, PreferenceNodeRenderer } from './preference-node-renderer';
-import { Preference } from '../../util/preference-types';
-import { PreferenceLeafNodeRendererContribution } from './preference-node-renderer-creator';
+import { PreferenceLeafNodeRenderer, PreferenceNodeRenderer } from './preference-node-renderer.js';
+import { Preference } from '../../util/preference-types.js';
+import { PreferenceLeafNodeRendererContribution } from './preference-node-renderer-creator.js';
 
 @injectable()
 /** For rendering preference items for which the only interesting feature is the description */

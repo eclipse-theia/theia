@@ -16,7 +16,7 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { BackendRequestAllowedContribution } from '@theia/core/lib/node';
-import { AIRegistryConfiguration } from '../common/ai-registry-configuration';
+import { AIRegistryConfiguration } from '../common/ai-registry-configuration.js';
 
 @injectable()
 export class AIRegistryRequestAllowedContribution implements BackendRequestAllowedContribution {

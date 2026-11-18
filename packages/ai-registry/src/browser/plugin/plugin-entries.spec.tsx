@@ -31,8 +31,8 @@ import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/mar
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { flushSync } from '@theia/core/shared/react-dom';
-import { InstalledPluginInfo, PluginClassificationResult } from '../../common/plugin/plugin-registry-types';
-import { PluginEntryHandlers, PluginInstalledEntry } from './plugin-entries';
+import { InstalledPluginInfo, PluginClassificationResult } from '../../common/plugin/plugin-registry-types.js';
+import { PluginEntryHandlers, PluginInstalledEntry } from './plugin-entries.js';
 
 disableJSDOM();
 

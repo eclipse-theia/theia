@@ -54,11 +54,11 @@ import { CollectionCategoryRenderer, AiConfigurationAddDescriptor } from '@theia
 import { AiConfigurationSection } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-primitives';
 import { AiSettingsRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row';
 import { AiSettingsRowService } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row-service';
-import { PREFERENCE_NAME_AGENT_MODE_ENABLED, PREFERENCE_NAME_ORCHESTRATOR_EXCLUSION_LIST } from '../../../common/ai-ide-preferences';
-import { AgentDetailView } from './agent-detail-view';
-import { PromptSnippetsConfiguration } from './prompt-snippets-configuration-category';
-import { AgentDetailServices } from './agent-detail-model';
-import { getAgentIconClass } from '../agent-icon';
+import { PREFERENCE_NAME_AGENT_MODE_ENABLED, PREFERENCE_NAME_ORCHESTRATOR_EXCLUSION_LIST } from '../../../common/ai-ide-preferences.js';
+import { AgentDetailView } from './agent-detail-view.js';
+import { PromptSnippetsConfiguration } from './prompt-snippets-configuration-category.js';
+import { AgentDetailServices } from './agent-detail-model.js';
+import { getAgentIconClass } from '../agent-icon.js';
 
 /** A candidate location for creating a new custom agent: its scope directory and `agents/` folder. */
 interface CustomAgentScopeOption {

@@ -33,9 +33,9 @@ import {
     SCM_HISTORY_TITLE_MENU, SCM_HISTORY_ITEM_CONTEXT_MENU, SCM_HISTORY_ITEM_REF_CONTEXT_MENU
 } from '@theia/scm/lib/browser/scm-history-graph-widget';
 import { TIMELINE_ITEM_CONTEXT_MENU } from '@theia/timeline/lib/browser/timeline-tree-widget';
-import { COMMENT_CONTEXT, COMMENT_THREAD_CONTEXT, COMMENT_TITLE } from '../comments/comment-thread-widget';
-import { VIEW_ITEM_CONTEXT_MENU } from '../view/tree-view-widget';
-import { WEBVIEW_CONTEXT_MENU, WebviewWidget } from '../webview/webview';
+import { COMMENT_CONTEXT, COMMENT_THREAD_CONTEXT, COMMENT_TITLE } from '../comments/comment-thread-widget.js';
+import { VIEW_ITEM_CONTEXT_MENU } from '../view/tree-view-widget.js';
+import { WEBVIEW_CONTEXT_MENU, WebviewWidget } from '../webview/webview.js';
 import { EDITOR_LINENUMBER_CONTEXT_MENU } from '@theia/editor/lib/browser/editor-linenumber-contribution';
 import { PLUGIN_TEST_VIEW_TITLE_MENU, TEST_VIEW_CONTEXT_MENU } from '@theia/test/lib/browser/view/test-view-contribution';
 import { TEST_RUNS_CONTEXT_MENU } from '@theia/test/lib/browser/view/test-run-view-contribution';

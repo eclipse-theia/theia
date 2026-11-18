@@ -17,28 +17,28 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
-import { NotebookRendererRegistry } from '../notebook-renderer-registry';
-import { NotebookCellModel } from '../view-model/notebook-cell-model';
-import { NotebookModel } from '../view-model/notebook-model';
-import { CellEditor } from './notebook-cell-editor';
-import { CellRenderer, observeCellHeight } from './notebook-cell-list-view';
-import { NotebookCellToolbarFactory } from './notebook-cell-toolbar-factory';
-import { NotebookCellActionContribution, NotebookCellCommands } from '../contributions/notebook-cell-actions-contribution';
-import { CellExecution, NotebookExecutionStateService } from '../service/notebook-execution-state-service';
+import { NotebookRendererRegistry } from '../notebook-renderer-registry.js';
+import { NotebookCellModel } from '../view-model/notebook-cell-model.js';
+import { NotebookModel } from '../view-model/notebook-model.js';
+import { CellEditor } from './notebook-cell-editor.js';
+import { CellRenderer, observeCellHeight } from './notebook-cell-list-view.js';
+import { NotebookCellToolbarFactory } from './notebook-cell-toolbar-factory.js';
+import { NotebookCellActionContribution, NotebookCellCommands } from '../contributions/notebook-cell-actions-contribution.js';
+import { CellExecution, NotebookExecutionStateService } from '../service/notebook-execution-state-service.js';
 import { codicon } from '@theia/core/lib/browser';
-import { NotebookCellExecutionState } from '../../common';
+import { NotebookCellExecutionState } from '../../common/index.js';
 import { CancellationToken, CommandRegistry, DisposableCollection, nls } from '@theia/core';
-import { NotebookContextManager } from '../service/notebook-context-manager';
-import { NotebookViewportService } from './notebook-viewport-service';
+import { NotebookContextManager } from '../service/notebook-context-manager.js';
+import { NotebookViewportService } from './notebook-viewport-service.js';
 import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
-import { NotebookOptionsService } from '../service/notebook-options';
+import { NotebookOptionsService } from '../service/notebook-options.js';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MarkdownStringImpl as MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
-import { NotebookCellEditorService } from '../service/notebook-cell-editor-service';
-import { CellOutputWebview } from '../renderers/cell-output-webview';
-import { NotebookCellStatusBarItem, NotebookCellStatusBarItemList, NotebookCellStatusBarService } from '../service/notebook-cell-status-bar-service';
+import { NotebookCellEditorService } from '../service/notebook-cell-editor-service.js';
+import { CellOutputWebview } from '../renderers/cell-output-webview.js';
+import { NotebookCellStatusBarItem, NotebookCellStatusBarItemList, NotebookCellStatusBarService } from '../service/notebook-cell-status-bar-service.js';
 import { LabelParser } from '@theia/core/lib/browser/label-parser';
-import { NotebookViewModel } from '../view-model/notebook-view-model';
+import { NotebookViewModel } from '../view-model/notebook-view-model.js';
 
 @injectable()
 export class NotebookCodeCellRenderer implements CellRenderer {

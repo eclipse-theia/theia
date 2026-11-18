@@ -16,8 +16,8 @@
 
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { TernarySearchTree, KeySequenceIterator } from './ternary-search-tree';
-import { KeyCode, KeySequence, Key, KeyModifier } from './keys';
+import { TernarySearchTree, KeySequenceIterator } from './ternary-search-tree.js';
+import { KeyCode, KeySequence, Key, KeyModifier } from './keys.js';
 
 describe('KeySequenceIterator', () => {
     let iterator: KeySequenceIterator;

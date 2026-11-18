@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MAIN_MENU_BAR, MANAGE_MENU } from '../common/menu';
+import { MAIN_MENU_BAR, MANAGE_MENU } from '../common/menu/index.js';
 
 export namespace CommonMenus {
 

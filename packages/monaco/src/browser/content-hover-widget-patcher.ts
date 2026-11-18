@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { IPosition } from '@theia/monaco-editor-core/esm/vs/editor/common/core/position';
-import { ContentHoverWidget } from '@theia/monaco-editor-core/esm/vs/editor/contrib/hover/browser/contentHoverWidget';
+import { IPosition } from '@theia/monaco-editor-core/esm/vs/editor/common/core/position.js';
+import { ContentHoverWidget } from '@theia/monaco-editor-core/esm/vs/editor/contrib/hover/browser/contentHoverWidget.js';
 
 // https://github.com/microsoft/vscode/blob/1430e1845cbf5ec29a2fc265f12c7fb5c3d685c3/src/vs/editor/contrib/hover/browser/resizableContentWidget.ts#L13-L14
 const VSCODE_TOP_HEIGHT = 30;

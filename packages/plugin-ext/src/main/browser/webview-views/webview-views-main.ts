@@ -20,16 +20,16 @@
 // some code copied and modified from https://github.com/microsoft/vscode/blob/e1f0f8f51390dea5df9096718fb6b647ed5a9534/src/vs/workbench/api/browser/mainThreadWebviewViews.ts
 
 import { inject, interfaces, named } from '@theia/core/shared/inversify';
-import { WebviewViewsMain, MAIN_RPC_CONTEXT, WebviewViewsExt } from '../../../common/plugin-api-rpc';
-import { RPCProtocol } from '../../../common/rpc-protocol';
+import { WebviewViewsMain, MAIN_RPC_CONTEXT, WebviewViewsExt } from '../../../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../../../common/rpc-protocol.js';
 import { Disposable, DisposableCollection, ILogger } from '@theia/core';
-import { WebviewView } from './webview-views';
+import { WebviewView } from './webview-views.js';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
-import { WebviewsMainImpl } from '../webviews-main';
+import { WebviewsMainImpl } from '../webviews-main.js';
 import { BadgeService, Widget, WidgetManager } from '@theia/core/lib/browser';
-import { PluginViewRegistry } from '../view/plugin-view-registry';
+import { PluginViewRegistry } from '../view/plugin-view-registry.js';
 import { ViewBadge } from '@theia/plugin';
-import { PluginViewWidget } from '../view/plugin-view-widget';
+import { PluginViewWidget } from '../view/plugin-view-widget.js';
 
 export class WebviewViewsMainImpl implements WebviewViewsMain, Disposable {
 

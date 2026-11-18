@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LabelServiceMain } from '../../common/plugin-api-rpc';
+import { LabelServiceMain } from '../../common/plugin-api-rpc.js';
 import { interfaces } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { DefaultUriLabelProviderContribution, LabelProviderContribution } from '@theia/core/lib/browser';

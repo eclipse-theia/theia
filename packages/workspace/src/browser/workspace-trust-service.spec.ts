@@ -17,14 +17,14 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { PreferenceChange, PreferenceScope } from '@theia/core/lib/common/preferences';
-import { WorkspaceTrustService } from './workspace-trust-service';
+import { WorkspaceTrustService } from './workspace-trust-service.js';
 import {
     WORKSPACE_TRUST_EMPTY_WINDOW,
     WORKSPACE_TRUST_ENABLED,
     WORKSPACE_TRUST_STARTUP_PROMPT,
     WORKSPACE_TRUST_TRUSTED_FOLDERS,
     WorkspaceTrustPrompt
-} from '../common/workspace-trust-preferences';
+} from '../common/workspace-trust-preferences.js';
 import URI from '@theia/core/lib/common/uri';
 
 class TestableWorkspaceTrustService extends WorkspaceTrustService {
@@ -336,6 +336,7 @@ describe('WorkspaceTrustService', () => {
                 preferenceName: WORKSPACE_TRUST_TRUSTED_FOLDERS,
                 scope: PreferenceScope.User,
                 domain: [],
+                affectedOverrides: [],
                 affects: () => true
             };
 
@@ -352,6 +353,7 @@ describe('WorkspaceTrustService', () => {
                 preferenceName: WORKSPACE_TRUST_TRUSTED_FOLDERS,
                 scope: PreferenceScope.User,
                 domain: [],
+                affectedOverrides: [],
                 affects: () => true
             };
 
@@ -368,6 +370,7 @@ describe('WorkspaceTrustService', () => {
                 preferenceName: WORKSPACE_TRUST_TRUSTED_FOLDERS,
                 scope: PreferenceScope.User,
                 domain: [],
+                affectedOverrides: [],
                 affects: () => true
             };
 
@@ -390,6 +393,7 @@ describe('WorkspaceTrustService', () => {
                     preferenceName: WORKSPACE_TRUST_EMPTY_WINDOW,
                     scope: PreferenceScope.User,
                     domain: [],
+                    affectedOverrides: [],
                     affects: () => true
                 };
 
@@ -405,6 +409,7 @@ describe('WorkspaceTrustService', () => {
                     preferenceName: WORKSPACE_TRUST_EMPTY_WINDOW,
                     scope: PreferenceScope.User,
                     domain: [],
+                    affectedOverrides: [],
                     affects: () => true
                 };
 
@@ -421,6 +426,7 @@ describe('WorkspaceTrustService', () => {
                     preferenceName: WORKSPACE_TRUST_EMPTY_WINDOW,
                     scope: PreferenceScope.User,
                     domain: [],
+                    affectedOverrides: [],
                     affects: () => true
                 };
 
@@ -437,6 +443,7 @@ describe('WorkspaceTrustService', () => {
                     preferenceName: WORKSPACE_TRUST_EMPTY_WINDOW,
                     scope: PreferenceScope.User,
                     domain: [],
+                    affectedOverrides: [],
                     affects: () => true
                 };
 
@@ -476,6 +483,7 @@ describe('WorkspaceTrustService', () => {
                     preferenceName: WORKSPACE_TRUST_ENABLED,
                     scope: PreferenceScope.User,
                     domain: [],
+                    affectedOverrides: [],
                     affects: () => true
                 };
 
@@ -492,6 +500,7 @@ describe('WorkspaceTrustService', () => {
                     preferenceName: WORKSPACE_TRUST_ENABLED,
                     scope: PreferenceScope.User,
                     domain: [],
+                    affectedOverrides: [],
                     affects: () => true
                 };
 
@@ -511,6 +520,7 @@ describe('WorkspaceTrustService', () => {
                     preferenceName: WORKSPACE_TRUST_ENABLED,
                     scope: PreferenceScope.User,
                     domain: [],
+                    affectedOverrides: [],
                     affects: () => true
                 };
 
@@ -531,7 +541,8 @@ describe('WorkspaceTrustService', () => {
                     preferenceName: WORKSPACE_TRUST_TRUSTED_FOLDERS,
                     scope: PreferenceScope.User,
                     domain: [],
-                    affects: () => true
+                    affectedOverrides: [],
+                    affects: () => true,
                 };
 
                 await service.testHandlePreferenceChange(change);
@@ -554,6 +565,7 @@ describe('WorkspaceTrustService', () => {
                     preferenceName: WORKSPACE_TRUST_TRUSTED_FOLDERS,
                     scope: PreferenceScope.User,
                     domain: [],
+                    affectedOverrides: [],
                     affects: () => true
                 };
 

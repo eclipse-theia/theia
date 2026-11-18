@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { DebugProtocol } from '@vscode/debugprotocol';
-import { DebugSessionConnection } from './debug-session-connection';
+import { DebugSessionConnection } from './debug-session-connection.js';
 
 export const DebugContribution = Symbol('DebugContribution');
 

@@ -19,8 +19,8 @@
  *--------------------------------------------------------------------------------------------*/
 // copied and modified from https://github.com/microsoft/vscode/blob/1.96.3/src/vs/base/common/observableInternal/autorun.ts
 
-import { Disposable } from '../disposable';
-import { Observable } from './observable-base';
+import { Disposable } from '../disposable.js';
+import { Observable } from './observable-base.js';
 
 export class Autorun<TChangeSummary = unknown> implements Disposable {
 
@@ -227,7 +227,7 @@ export namespace Autorun {
         willHandleChange?: <T, TChange>(context: Observable.ChangeContext<T, TChange>, changeSummary: TChangeSummary | undefined) => boolean;
     }
 
-    export const enum State {
+    export enum State {
         /**
          * Dependencies might have changed. Need to check if at least one dependency has actually changed.
          */

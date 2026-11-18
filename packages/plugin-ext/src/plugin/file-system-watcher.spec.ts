@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import * as assert from 'assert';
-import { FileSystemWatcher } from './file-system-event-service-ext-impl';
+import { FileSystemWatcher } from './file-system-event-service-ext-impl.js';
 import { DisposableCollection, Emitter } from '@theia/core';
-import { FileSystemEvents } from '../common';
-import { URI } from './types-impl';
+import { FileSystemEvents } from '../common/index.js';
+import { URI } from './types-impl.js';
 
 const eventSource = new Emitter<FileSystemEvents>();
 let disposables = new DisposableCollection();

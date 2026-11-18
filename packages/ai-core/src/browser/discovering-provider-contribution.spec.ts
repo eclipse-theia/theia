@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { ApiKeySource, DiscoveredModel, ModelDiscoveryResult } from '../common/model-discovery-status';
-import { DiscoveringLanguageModelsManager, DiscoveringProviderContribution, ModelDiscoveryMessages } from './discovering-provider-contribution';
-import { ModelDiscoveryStatusService } from './model-discovery-status-service';
+import { ApiKeySource, DiscoveredModel, ModelDiscoveryResult } from '../common/model-discovery-status.js';
+import { DiscoveringLanguageModelsManager, DiscoveringProviderContribution, ModelDiscoveryMessages } from './discovering-provider-contribution.js';
+import { ModelDiscoveryStatusService } from './model-discovery-status-service.js';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 interface TestModelDescription {

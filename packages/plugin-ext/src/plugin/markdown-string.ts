@@ -17,8 +17,8 @@
 import { Mutable } from '@theia/core';
 import { MarkdownStringImpl as BaseMarkdownString, MarkdownString as MarkdownStringInterface, MarkdownStringTrustedOptions } from '@theia/core/lib/common/markdown-rendering';
 import * as pluginAPI from '@theia/plugin';
-import { es5ClassCompat } from '../common/types';
-import { URI } from './types-impl';
+import { es5ClassCompat } from '../common/types.js';
+import { URI } from './types-impl.js';
 
 // Copied from https://github.com/microsoft/vscode/blob/7d9b1c37f8e5ae3772782ba3b09d827eb3fdd833/src/vs/workbench/api/common/extHostTypes.ts
 

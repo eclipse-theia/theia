@@ -17,17 +17,17 @@
 import { injectable, inject, postConstruct, interfaces, Container } from '@theia/core/shared/inversify';
 import { MenuPath, Disposable, CommandRegistry, MenuModelRegistry, DisposableCollection, Command } from '@theia/core/lib/common';
 import { SourceTreeWidget, TreeElementNode } from '@theia/core/lib/browser/source-tree';
-import { DebugVariablesSource } from './debug-variables-source';
-import { DebugViewModel } from './debug-view-model';
+import { DebugVariablesSource } from './debug-variables-source.js';
+import { DebugViewModel } from './debug-view-model.js';
 import { nls } from '@theia/core/lib/common/nls';
 import { MouseEvent } from '@theia/core/shared/react';
 import { SelectableTreeNode, TreeNode, TreeSelection } from '@theia/core/lib/browser';
-import { DebugVariable } from '../console/debug-console-items';
-import { BreakpointManager } from '../breakpoint/breakpoint-manager';
-import { DataBreakpoint, DataBreakpointSource, DataBreakpointSourceType } from '../breakpoint/breakpoint-marker';
-import { DebugSessionManager } from '../debug-session-manager';
-import { DebugSession } from '../debug-session';
-import { DebugStackFrame } from '../model/debug-stack-frame';
+import { DebugVariable } from '../console/debug-console-items.js';
+import { BreakpointManager } from '../breakpoint/breakpoint-manager.js';
+import { DataBreakpoint, DataBreakpointSource, DataBreakpointSourceType } from '../breakpoint/breakpoint-marker.js';
+import { DebugSessionManager } from '../debug-session-manager.js';
+import { DebugSession } from '../debug-session.js';
+import { DebugStackFrame } from '../model/debug-stack-frame.js';
 
 @injectable()
 export class DebugVariablesWidget extends SourceTreeWidget {

@@ -24,12 +24,12 @@ import { FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
 import { PreferenceService } from '@theia/core/lib/common';
 import { BYPASS_MODEL_REQUIREMENT_PREF, DEFAULT_CHAT_AGENT_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { WalkthroughService } from '@theia/getting-started/lib/browser/walkthrough-service';
-import { OPEN_AI_CONFIG_VIEW } from './ai-configuration/ai-configuration-view-contribution';
+import { OPEN_AI_CONFIG_VIEW } from './ai-configuration/ai-configuration-view-contribution.js';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
-import { AI_OPEN_GETTING_STARTED_WALKTHROUGH } from './ai-getting-started-commands';
-import { AI_GETTING_STARTED_WALKTHROUGH_ID } from './ai-getting-started-walkthrough';
+import { AI_OPEN_GETTING_STARTED_WALKTHROUGH } from './ai-getting-started-commands.js';
+import { AI_GETTING_STARTED_WALKTHROUGH_ID } from './ai-getting-started-walkthrough.js';
 
 const TheiaIdeAiLogo = ({ width = 120, height = 120, className = '' }) =>
     <svg

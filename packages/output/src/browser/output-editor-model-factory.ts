@@ -17,7 +17,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Resource } from '@theia/core/lib/common/resource';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
-import { OutputUri } from '../common/output-uri';
+import { OutputUri } from '../common/output-uri.js';
 import { MonacoEditorModelFactory } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoToProtocolConverter } from '@theia/monaco/lib/browser/monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from '@theia/monaco/lib/browser/protocol-to-monaco-converter';

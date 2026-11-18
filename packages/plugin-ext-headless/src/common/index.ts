@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './headless-plugin-container';
+export * from './headless-plugin-container.js';
 export {
     ExtPluginApi, ExtPluginHeadlessApi, ExtPluginApiProvider,
     ExtPluginHeadlessApiProvider
-} from './plugin-ext-headless-api-contribution';
-export { PluginPackage, SupportedHeadlessActivationEvents } from './headless-plugin-protocol';
-export * from './headless-plugin-rpc';
+} from './plugin-ext-headless-api-contribution.js';
+export { PluginPackage, SupportedHeadlessActivationEvents } from './headless-plugin-protocol.js';
+export * from './headless-plugin-rpc.js';

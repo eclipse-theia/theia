@@ -16,9 +16,9 @@
 
 import { nls, isBoolean, isNumber } from '@theia/core';
 import { injectable, interfaces } from '@theia/core/shared/inversify';
-import { Preference } from '../../util/preference-types';
-import { PreferenceLeafNodeRenderer, PreferenceNodeRenderer } from './preference-node-renderer';
-import { PreferenceLeafNodeRendererContribution } from './preference-node-renderer-creator';
+import { Preference } from '../../util/preference-types.js';
+import { PreferenceLeafNodeRenderer, PreferenceNodeRenderer } from './preference-node-renderer.js';
+import { PreferenceLeafNodeRendererContribution } from './preference-node-renderer-creator.js';
 
 interface PreferenceNumberInputValidation {
     /**

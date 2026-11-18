@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import URI from '@theia/core/lib/common/uri';
-import { Position, Range, TextDocumentContentChangeDelta } from '../editor';
+import { Position, Range, TextDocumentContentChangeDelta } from '../editor.js';
 export { Position, Range };
 
 export namespace NavigationLocation {

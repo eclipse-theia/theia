@@ -19,7 +19,7 @@ import { ILogger } from '@theia/core/lib/common/logger';
 import { McpServer, RegisteredTool, RegisteredPrompt, RegisteredResource } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { AnySchema } from '@modelcontextprotocol/sdk/server/zod-compat.js';
 import type { ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
-import { MCPToolFrontendDelegate } from '../common/mcp-tool-delegate';
+import { MCPToolFrontendDelegate } from '../common/mcp-tool-delegate.js';
 import { z } from 'zod';
 
 /**

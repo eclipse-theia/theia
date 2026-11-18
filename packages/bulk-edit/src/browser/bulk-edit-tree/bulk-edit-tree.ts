@@ -17,12 +17,12 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { TreeNode, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode, TreeImpl } from '@theia/core/lib/browser';
 import { UriSelection } from '@theia/core/lib/common/selection';
-import { BulkEditNodeSelection } from './bulk-edit-node-selection';
+import { BulkEditNodeSelection } from './bulk-edit-node-selection.js';
 import URI from '@theia/core/lib/common/uri';
 import { ResourceFileEdit, ResourceTextEdit } from '@theia/monaco/lib/browser/monaco-workspace';
 import {
     ResourceEdit, ResourceFileEdit as MonacoResourceFileEdit, ResourceTextEdit as MonacoResourceTextEdit
-} from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
+} from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService.js';
 
 @injectable()
 export class BulkEditTree extends TreeImpl {

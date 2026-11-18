@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { IBaseTerminalServer, IBaseTerminalServerOptions } from './base-terminal-protocol';
+import { IBaseTerminalServer, IBaseTerminalServerOptions } from './base-terminal-protocol.js';
 
 export const ITerminalServer = Symbol('ITerminalServer');
 

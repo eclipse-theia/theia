@@ -19,8 +19,8 @@ const disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { TerminalManagerTreeModel } from './terminal-manager-tree-model';
-import { TerminalManagerTreeTypes } from './terminal-manager-types';
+import { TerminalManagerTreeModel } from './terminal-manager-tree-model.js';
+import { TerminalManagerTreeTypes } from './terminal-manager-types.js';
 import { TreeImpl, Tree } from '@theia/core/lib/browser/tree/tree';
 import { TreeSelectionServiceImpl } from '@theia/core/lib/browser/tree/tree-selection-impl';
 import { TreeSelectionService } from '@theia/core/lib/browser/tree/tree-selection';

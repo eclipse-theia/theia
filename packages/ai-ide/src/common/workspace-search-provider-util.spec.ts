@@ -17,7 +17,7 @@
 import { expect } from 'chai';
 import { OS, URI } from '@theia/core';
 import { SearchInWorkspaceResult } from '@theia/search-in-workspace/lib/common/search-in-workspace-interface';
-import { optimizeSearchResults, WorkspacePathResolver } from './workspace-search-provider-util';
+import { optimizeSearchResults, WorkspacePathResolver } from './workspace-search-provider-util.js';
 
 const result = (fileUri: string): SearchInWorkspaceResult => ({
     root: 'file:///workspace',

@@ -20,8 +20,8 @@ import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
-import { CommitMessageAgent } from './commit-message-agent';
-import { GetGitChangesTool } from './git-changes-tool';
+import { CommitMessageAgent } from './commit-message-agent.js';
+import { GetGitChangesTool } from './git-changes-tool.js';
 
 /**
  * Drives the {@link CommitMessageAgent}: reads the staged git diff of the selected repository,

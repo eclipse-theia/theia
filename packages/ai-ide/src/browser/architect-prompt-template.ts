@@ -17,18 +17,18 @@
 import { AGENTS_MD_PROMPT_FRAGMENT_ID, PromptVariantSet } from '@theia/ai-core/lib/common';
 import {
   GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, SEARCH_IN_WORKSPACE_FUNCTION_ID, FIND_FILES_BY_PATTERN_FUNCTION_ID
-} from '../common/workspace-functions';
-import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID } from '../common/context-variables';
-import { OPEN_EDITORS_HINT_FRAGMENT_ID } from '../common/open-editors-hint-fragment-id';
+} from '../common/workspace-functions.js';
+import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID } from '../common/context-variables.js';
+import { OPEN_EDITORS_HINT_FRAGMENT_ID } from '../common/open-editors-hint-fragment-id.js';
 import {
   CREATE_TASK_CONTEXT_FUNCTION_ID,
   GET_TASK_CONTEXT_FUNCTION_ID,
   EDIT_TASK_CONTEXT_FUNCTION_ID,
   LIST_TASK_CONTEXTS_FUNCTION_ID,
   REWRITE_TASK_CONTEXT_FUNCTION_ID
-} from '../common/task-context-function-ids';
-import { CoderAgentId } from './coder-agent';
-import { ExploreAgentId } from './explore-agent';
+} from '../common/task-context-function-ids.js';
+import { CoderAgentId } from './coder-agent.js';
+import { ExploreAgentId } from './explore-agent.js';
 
 export const ARCHITECT_PLANNING_PROMPT_ID = 'architect-system-plan';
 export const ARCHITECT_SIMPLE_PROMPT_ID = 'architect-system-simple';

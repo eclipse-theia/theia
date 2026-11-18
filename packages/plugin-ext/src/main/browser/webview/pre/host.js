@@ -72,7 +72,7 @@
             return resolveWorkerReady();
         }
 
-        const expectedWorkerVersion = 1;
+        const expectedWorkerVersion = 2;
 
         navigator.serviceWorker.register('service-worker.js').then(async registration => {
             await navigator.serviceWorker.ready;

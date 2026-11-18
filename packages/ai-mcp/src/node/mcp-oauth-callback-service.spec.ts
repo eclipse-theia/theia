@@ -20,7 +20,7 @@ import {
     MCP_OAUTH_AUTHORIZATION_CANCELLED,
     MCP_OAUTH_REJECTED_CALLBACK_LIMIT,
     MCPOAuthCallbackService
-} from './mcp-oauth-callback-service';
+} from './mcp-oauth-callback-service.js';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 /**

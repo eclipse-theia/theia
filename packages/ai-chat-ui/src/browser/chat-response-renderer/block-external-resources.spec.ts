@@ -19,7 +19,7 @@ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
-import { blockExternalResources, BLOCKED_RESOURCE_CLASS, restoreBlockedResource, setAllowedResourceUrls } from './block-external-resources';
+import { blockExternalResources, BLOCKED_RESOURCE_CLASS, restoreBlockedResource, setAllowedResourceUrls } from './block-external-resources.js';
 
 disableJSDOM();
 

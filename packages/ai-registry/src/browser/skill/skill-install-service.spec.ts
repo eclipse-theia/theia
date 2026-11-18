@@ -17,11 +17,11 @@
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { PreferenceService } from '@theia/core';
-import { AUTO_UPDATE_OVERRIDES_PREF } from '../../common/ai-registry-preferences';
-import { SkillInstallBackendService } from '../../common/skill/skill-install-protocol';
-import { InstalledSkillInfo, ResolvedSkillEntry } from '../../common/skill/skill-registry-types';
-import { RegistryAutoUpdatePolicy, RegistryAutoUpdatePolicyImpl } from '../auto-update/registry-auto-update-policy';
-import { SkillInstallService, SkillInstallServiceImpl } from './skill-install-service';
+import { AUTO_UPDATE_OVERRIDES_PREF } from '../../common/ai-registry-preferences.js';
+import { SkillInstallBackendService } from '../../common/skill/skill-install-protocol.js';
+import { InstalledSkillInfo, ResolvedSkillEntry } from '../../common/skill/skill-registry-types.js';
+import { RegistryAutoUpdatePolicy, RegistryAutoUpdatePolicyImpl } from '../auto-update/registry-auto-update-policy.js';
+import { SkillInstallService, SkillInstallServiceImpl } from './skill-install-service.js';
 
 const entry: ResolvedSkillEntry = {
     skillId: 'io.github.example/example-skill',
@@ -118,8 +118,15 @@ describe('SkillInstallService override cleanup', () => {
 
     class FakePreferenceService {
         private readonly store = new Map<string, unknown>();
-        get<T>(key: string, defaultValue?: T): T | undefined {
-            return (this.store.has(key) ? this.store.get(key) : defaultValue) as T | undefined;
+        get<T>(key: string, optionsOrFallback?: T | { fallback?: T }): T | undefined {
+            if (this.store.has(key)) {
+                return this.store.get(key) as T;
+            }
+            if (optionsOrFallback && typeof optionsOrFallback === 'object' && !Array.isArray(optionsOrFallback)
+                && 'fallback' in (optionsOrFallback as object)) {
+                return (optionsOrFallback as { fallback?: T }).fallback;
+            }
+            return optionsOrFallback as T | undefined;
         }
         async set(key: string, value: unknown): Promise<void> {
             this.store.set(key, value);

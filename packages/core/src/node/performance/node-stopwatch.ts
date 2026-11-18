@@ -16,7 +16,7 @@
 
 import { injectable } from 'inversify';
 import { performance } from 'perf_hooks';
-import { Measurement, MeasurementOptions, Stopwatch } from '../../common';
+import { Measurement, MeasurementOptions, Stopwatch } from '../../common/index.js';
 
 @injectable()
 export class NodeStopwatch extends Stopwatch {

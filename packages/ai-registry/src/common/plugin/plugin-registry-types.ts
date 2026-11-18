@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ResolvedPluginServer, SkippedPluginComponent } from './agent-plugin-manifest';
+import { ResolvedPluginServer, SkippedPluginComponent } from './agent-plugin-manifest.js';
 
 /** The registry points at a plugin; it does not host it. `path` omitted means the repository root. */
 export interface RegistryPluginSource {

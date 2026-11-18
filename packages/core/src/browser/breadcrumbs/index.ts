@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './breadcrumb-popup-container';
-export * from './breadcrumb-renderer';
-export * from './breadcrumbs-renderer';
-export * from './breadcrumbs-service';
-export * from './breadcrumbs-constants';
+export * from './breadcrumb-popup-container.js';
+export * from './breadcrumb-renderer.js';
+export * from './breadcrumbs-renderer.js';
+export * from './breadcrumbs-service.js';
+export * from './breadcrumbs-constants.js';

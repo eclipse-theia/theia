@@ -26,10 +26,10 @@ import { Container, interfaces } from '@theia/core/shared/inversify';
 import { PreferenceService } from '@theia/core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { URI } from '@theia/core/lib/common/uri';
-import { CODEX_API_KEY_PREF, CodexService, CodexBackendRequest } from '../common';
+import { CODEX_API_KEY_PREF, CodexService, CodexBackendRequest } from '../common/index.js';
 import { API_KEY_PREF } from '@theia/ai-openai/lib/common/openai-preferences';
 
-import type { CodexFrontendService, CodexClientImpl } from './codex-frontend-service';
+import type { CodexFrontendService, CodexClientImpl } from './codex-frontend-service.js';
 
 disableJSDOM();
 
@@ -43,7 +43,7 @@ describe('CodexFrontendService', () => {
     before(async () => {
         disableJSDOM = enableJSDOM();
 
-        const serviceModule = await import('./codex-frontend-service');
+        const serviceModule = await import('./codex-frontend-service.js');
         CodexFrontendServiceConstructor = serviceModule.CodexFrontendService;
         CodexClientImplConstructor = serviceModule.CodexClientImpl;
     });

@@ -16,10 +16,11 @@
 
 import * as chai from 'chai';
 import { expect } from 'chai';
-chai.use(require('chai-string'));
+chai.use(chaiString);
 
-import { DiffComputer, DirtyDiff } from './diff-computer';
-import { ContentLines } from './content-lines';
+import { DiffComputer, DirtyDiff } from './diff-computer.js';
+import { ContentLines } from './content-lines.js';
+import chaiString from 'chai-string';
 
 let diffComputer: DiffComputer;
 

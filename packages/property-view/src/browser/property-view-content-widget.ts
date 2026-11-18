@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Widget } from '@theia/core/lib/browser/widgets/widget';
-import { PropertyDataService } from './property-data-service';
+import { PropertyDataService } from './property-data-service.js';
 
 /**
  * A widget that fetches the property data via the given {@link PropertyDataService} and the given selection

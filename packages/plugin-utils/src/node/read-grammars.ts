@@ -15,15 +15,16 @@
 // *****************************************************************************
 
 import * as path from 'path';
-import * as fs from 'fs-extra';
-import { isObject } from '../common/utils';
+// A CommonJS module whose exports cannot be detected statically, so it is imported as a whole.
+import fs from 'fs-extra';
+import { isObject } from '../common/utils.js';
 import type {
     GrammarsContribution,
     NormalizeContributionsContext,
     PluginPackageGrammarsContribution,
-} from '../common/contribution-types';
+} from '../common/contribution-types.js';
 
-export type { GrammarsContribution } from '../common/contribution-types';
+export type { GrammarsContribution } from '../common/contribution-types.js';
 
 /**
  * Returns a validation error message, or `undefined` if the contribution is valid.

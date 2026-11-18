@@ -21,8 +21,8 @@ import * as chai from 'chai';
 import URI from '@theia/core/lib/common/uri';
 import { PreferenceService } from '@theia/core';
 import { EditorOpenerOptions } from '@theia/editor/lib/browser';
-import { CustomEditorOpener } from './custom-editor-opener';
-import { CustomEditor, CustomEditorPriority } from '../../../common';
+import { CustomEditorOpener } from './custom-editor-opener.js';
+import { CustomEditor, CustomEditorPriority } from '../../../common/index.js';
 
 disableJSDOM();
 

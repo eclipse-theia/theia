@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { LanguageModelToolsExtImpl } from './lm-tool-ext';
-import { ToolResultPartDto, uint8ArrayToBase64 } from '../common/lm-tool-protocol';
+import { LanguageModelToolsExtImpl } from './lm-tool-ext.js';
+import { ToolResultPartDto, uint8ArrayToBase64 } from '../common/lm-tool-protocol.js';
 
 // Access private methods for testing
 interface LmToolExtInternals {

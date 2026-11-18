@@ -17,8 +17,8 @@
 import { MaybePromise, nls } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { AIVariable, ResolvedAIVariable, AIVariableContribution, AIVariableResolver, AIVariableService, AIVariableResolutionRequest, AIVariableContext } from '@theia/ai-core';
-import { dataToJsonCodeBlock } from './chat-string-utils';
-import { ChatSessionContext } from './chat-agents';
+import { dataToJsonCodeBlock } from './chat-string-utils.js';
+import { ChatSessionContext } from './chat-agents.js';
 
 export const CONTEXT_SUMMARY_VARIABLE: AIVariable = {
     id: 'contextSummary',

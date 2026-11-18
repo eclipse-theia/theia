@@ -22,10 +22,10 @@ import { Command, CommandRegistry } from '@theia/core/lib/common/command';
 import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser/editor-menu';
 import { EditorAccess, EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { AbstractViewContribution, OpenViewArguments } from '@theia/core/lib/browser/shell/view-contribution';
-import { TypeHierarchyTree } from './tree/typehierarchy-tree';
-import { TypeHierarchyTreeWidget } from './tree/typehierarchy-tree-widget';
-import { TypeHierarchyDirection } from './typehierarchy-provider';
-import { TypeHierarchyServiceProvider } from './typehierarchy-service';
+import { TypeHierarchyTree } from './tree/typehierarchy-tree.js';
+import { TypeHierarchyTreeWidget } from './tree/typehierarchy-tree-widget.js';
+import { TypeHierarchyDirection } from './typehierarchy-provider.js';
+import { TypeHierarchyServiceProvider } from './typehierarchy-service.js';
 import URI from '@theia/core/lib/common/uri';
 
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';

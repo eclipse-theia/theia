@@ -17,8 +17,9 @@ import * as chai from 'chai';
 import * as os from 'os';
 import * as path from 'path';
 import { FileUri } from '@theia/core/lib/common/file-uri';
-import { createTerminalTestContainer } from './test/terminal-test-container';
-import { IShellTerminalServer, IShellTerminalServerOptions } from '../common/shell-terminal-protocol';
+import { createTerminalTestContainer } from './test/terminal-test-container.js';
+import { IShellTerminalServer, IShellTerminalServerOptions } from '../common/shell-terminal-protocol.js';
+import * as fs from 'fs';
 
 /**
  * Globals
@@ -103,12 +104,12 @@ describe('ShellServer', function (): void {
 
         it('should reset rootURI pointing to a file instead of directory', () => {
             const filePath = path.join(os.tmpdir(), 'theia-test-' + Date.now());
-            require('fs').writeFileSync(filePath, 'test');
+            fs.writeFileSync(filePath, 'test');
             try {
                 const options = validate({ rootURI: FileUri.create(filePath).toString() });
                 expect(options.rootURI).to.be.undefined;
             } finally {
-                require('fs').unlinkSync(filePath);
+                fs.unlinkSync(filePath);
             }
         });
 

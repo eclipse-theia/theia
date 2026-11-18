@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '../../../shared/inversify';
-import { Command, CommandRegistry, Disposable, MenuModelRegistry, MenuPath, nls } from '../../common';
-import { Title, Widget, codicon } from '../widgets';
-import { SidebarMenuWidget } from './sidebar-menu-widget';
-import { SideTabBar } from './tab-bars';
+import { inject, injectable } from '../../../shared/inversify/index.js';
+import { Command, CommandRegistry, Disposable, MenuModelRegistry, MenuPath, nls } from '../../common/index.js';
+import { Title, Widget, codicon } from '../widgets/index.js';
+import { SidebarMenuWidget } from './sidebar-menu-widget.js';
+import { SideTabBar } from './tab-bars.js';
 
 export const AdditionalViewsMenuWidgetFactory = Symbol('AdditionalViewsMenuWidgetFactory');
 export type AdditionalViewsMenuWidgetFactory = (side: 'left' | 'right') => AdditionalViewsMenuWidget;

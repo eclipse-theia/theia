@@ -17,13 +17,13 @@
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection, Emitter, Event, isWindows } from '@theia/core';
 import { ILogger } from '@theia/core/lib/common';
-import { Process, ProcessType, ProcessOptions, /* ProcessErrorEvent */ } from './process';
-import { ProcessManager } from './process-manager';
+import { Process, ProcessType, ProcessOptions, /* ProcessErrorEvent */ } from './process.js';
+import { ProcessManager } from './process-manager.js';
 import { IPty, spawn } from 'node-pty';
-import { MultiRingBuffer, MultiRingBufferReadableStream } from './multi-ring-buffer';
-import { DevNullStream } from './dev-null-stream';
-import { signame } from './utils';
-import { PseudoPty } from './pseudo-pty';
+import { MultiRingBuffer, MultiRingBufferReadableStream } from './multi-ring-buffer.js';
+import { DevNullStream } from './dev-null-stream.js';
+import { signame } from './utils.js';
+import { PseudoPty } from './pseudo-pty.js';
 import { Writable } from 'stream';
 
 export const TerminalProcessOptions = Symbol('TerminalProcessOptions');

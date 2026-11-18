@@ -17,7 +17,7 @@
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ILogger, Emitter, Event, Disposable, DisposableCollection, URI } from '@theia/core/lib/common';
-import { WorkspaceService } from '../workspace-service';
+import { WorkspaceService } from '../workspace-service.js';
 
 /**
  * Represents a metadata store for a specific key within a workspace.

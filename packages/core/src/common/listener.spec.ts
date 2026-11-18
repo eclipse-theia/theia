@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from 'chai';
-import { ListenerList } from './listener';
+import { ListenerList } from './listener.js';
 
 describe('ListenerList<T, U>', () => {
     let listenerList: ListenerList<any, any>;

@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as fuzzy from 'fuzzy';
-import { Event } from './event';
-import { KeySequence } from './keys';
-import { CancellationToken } from './cancellation';
-import { Severity } from './severity';
-import { findSubstringIndex, matchRank } from './fuzzy-match-utils';
+import * as fuzzy from '../../shared/fuzzy/index.cjs';
+import { Event } from './event.js';
+import { KeySequence } from './keys.js';
+import { CancellationToken } from './cancellation.js';
+import { Severity } from './severity.js';
+import { findSubstringIndex, matchRank } from './fuzzy-match-utils.js';
 
 export const quickPickServicePath = '/services/quickPick';
 export const QuickPickService = Symbol('QuickPickService');

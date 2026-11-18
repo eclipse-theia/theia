@@ -67,6 +67,11 @@ export interface RegistryMCPServer {
     description: string;
     mcpRegistryVerified: boolean;
     approvals: RegistryApproval[];
+    /**
+     * Current version of the server in the Anthropic MCP registry. Not what an install runs -
+     * the install config pins that - so it is shown only when no approval pins a version.
+     */
+    latestVersion?: string;
 }
 
 /**
@@ -85,6 +90,8 @@ export interface ResolvedRegistryEntry {
     config: MCPInstallEntryConfig;
     /** Registry-published version. Stored alongside installed entries for display only - update detection uses {@link configHash}. */
     version?: string;
+    /** The server's current version in the Anthropic MCP registry - see {@link RegistryMCPServer.latestVersion}. Display only, never stored locally. */
+    latestVersion?: string;
     /**
      * Content hash of the chosen approval - compared against the local
      * `registryMetadata.configHash` to decide whether an Update is available. Optional

@@ -17,8 +17,8 @@
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { SelectionCommandHandler } from '@theia/core/lib/common/selection-command-handler';
 import { isObject } from '@theia/core/lib/common';
-import { Marker } from '../../common/marker';
-import { ProblemMarker } from '../../common/problem-marker';
+import { Marker } from '../../common/marker.js';
+import { ProblemMarker } from '../../common/problem-marker.js';
 
 export interface ProblemSelection {
     marker: Marker<object>;

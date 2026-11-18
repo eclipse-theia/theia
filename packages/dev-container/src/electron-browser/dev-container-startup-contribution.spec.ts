@@ -22,9 +22,9 @@ import { expect } from 'chai';
 import { LaunchArguments } from '@theia/core/lib/common/launch-arguments';
 
 const launchArgs = (values: Record<string, string[]>): LaunchArguments => ({ values, negated: [] });
-import { AttachContainerArgs, ContainerConnectionResult, RunningContainerInfo } from '../electron-common/remote-container-connection-provider';
-import { DevContainerStartupContribution } from './dev-container-startup-contribution';
-import type { AttachScreenErrorActions } from './dev-container-attach-screen';
+import { AttachContainerArgs, ContainerConnectionResult, RunningContainerInfo } from '../electron-common/remote-container-connection-provider.js';
+import { DevContainerStartupContribution } from './dev-container-startup-contribution.js';
+import type { AttachScreenErrorActions } from './dev-container-attach-screen.js';
 
 disableJSDOM();
 

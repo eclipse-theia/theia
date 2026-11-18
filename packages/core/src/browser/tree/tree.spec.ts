@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import * as assert from 'assert';
-import { TreeNode, CompositeTreeNode } from './tree';
-import { TreeModel } from './tree-model';
-import { MockTreeModel } from './test/mock-tree-model';
+import { TreeNode, CompositeTreeNode } from './tree.js';
+import { TreeModel } from './tree-model.js';
+import { MockTreeModel } from './test/mock-tree-model.js';
 import { expect } from 'chai';
-import { createTreeTestContainer } from './test/tree-test-container';
+import { createTreeTestContainer } from './test/tree-test-container.js';
 
 describe('Tree', () => {
 

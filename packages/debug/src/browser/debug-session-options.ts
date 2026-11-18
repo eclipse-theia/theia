@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { Emitter } from '@theia/core';
-import { DebugConfiguration } from '../common/debug-common';
-import { DebugCompound } from '../common/debug-compound';
+import { DebugConfiguration } from '../common/debug-common.js';
+import { DebugCompound } from '../common/debug-compound.js';
 
 export class DebugCompoundRoot {
     private stopped = false;
@@ -87,7 +87,13 @@ export namespace DebugSessionOptions {
  */
 export type DebugSessionOptionsData = DebugSessionOptionsBase & (DebugConfiguration | DebugCompound);
 
-export type InternalDebugSessionOptions = DebugSessionOptions & { id: number };
+export type InternalDebugSessionOptions = DebugSessionOptions & {
+    id: number;
+    /** The configuration before resolution. */
+    unresolvedConfiguration?: DebugConfiguration;
+    /** The launch configuration the session started from, used to tell whether it changed. */
+    launchConfiguration?: DebugConfiguration;
+};
 
 export namespace InternalDebugSessionOptions {
 

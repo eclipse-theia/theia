@@ -17,7 +17,7 @@
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { MaybePromise, ILogger } from '@theia/core';
 import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { MCPToolFrontendDelegate } from '../common/mcp-tool-delegate';
+import { MCPToolFrontendDelegate } from '../common/mcp-tool-delegate.js';
 
 /**
  * Bootstraps MCP frontend components during application startup.

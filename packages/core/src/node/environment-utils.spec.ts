@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as chai from 'chai';
-import { EnvironmentUtils } from './environment-utils';
+import { EnvironmentUtils } from './environment-utils.js';
 
 const expect = chai.expect;
 

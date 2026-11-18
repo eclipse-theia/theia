@@ -17,9 +17,9 @@
 import { Command, CommandContribution, CommandRegistry } from '@theia/core';
 import { ApplicationShell, CommonCommands, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChatInputFocusService } from '../chat-input-focus-service';
-import { ChatCommands } from '../chat-view-commands';
-import { ChatViewWidget } from '../chat-view-widget';
+import { ChatInputFocusService } from '../chat-input-focus-service.js';
+import { ChatCommands } from '../chat-view-commands.js';
+import { ChatViewWidget } from '../chat-view-widget.js';
 
 export const CHAT_FIND_COMMAND = Command.toLocalizedCommand({
     id: 'ai-chat.find',

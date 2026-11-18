@@ -19,11 +19,11 @@ import { MenuPath } from '@theia/core';
 import { TreeNode, NodeProps, SelectableTreeNode, CompositeTreeNode } from '@theia/core/lib/browser';
 import { SourceTreeWidget, TreeElementNode } from '@theia/core/lib/browser/source-tree';
 import { ExpandableTreeNode } from '@theia/core/lib/browser/tree/tree-expansion';
-import { DebugThreadsSource } from './debug-threads-source';
-import { DebugSession } from '../debug-session';
-import { DebugThread } from '../model/debug-thread';
-import { DebugViewModel } from '../view/debug-view-model';
-import { DebugCallStackItemTypeKey } from '../debug-call-stack-item-type-key';
+import { DebugThreadsSource } from './debug-threads-source.js';
+import { DebugSession } from '../debug-session.js';
+import { DebugThread } from '../model/debug-thread.js';
+import { DebugViewModel } from '../view/debug-view-model.js';
+import { DebugCallStackItemTypeKey } from '../debug-call-stack-item-type-key.js';
 import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()

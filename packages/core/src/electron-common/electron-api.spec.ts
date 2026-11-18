@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { electronMenuAccelerator, electronMenuAcceleratorMetadata, isElectronAcceleratorRepresentable } from './electron-api';
+import { electronMenuAccelerator, electronMenuAcceleratorMetadata, isElectronAcceleratorRepresentable } from './electron-api.js';
 
 describe('Electron menu accelerators', () => {
     it('accepts only ASCII accelerators without AltGr', () => {

@@ -18,10 +18,10 @@ import * as React from '@theia/core/shared/react';
 import { CommandMenu, CommandRegistry, CompoundMenuNode, DisposableCollection, Emitter, Event, MenuModelRegistry, MenuPath, RenderedMenuNode } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { NotebookCellSidebar, NotebookCellToolbar } from './notebook-cell-toolbar';
+import { NotebookCellSidebar, NotebookCellToolbar } from './notebook-cell-toolbar.js';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
-import { NotebookCellModel } from '../view-model/notebook-cell-model';
-import { NotebookContextManager } from '../service/notebook-context-manager';
+import { NotebookCellModel } from '../view-model/notebook-cell-model.js';
+import { NotebookContextManager } from '../service/notebook-context-manager.js';
 
 export interface NotebookCellToolbarItem {
     id: string;

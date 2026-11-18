@@ -33,7 +33,7 @@ import {
     ILogger
 } from '@theia/core';
 
-import { commandTemplate } from './command-prompt-template';
+import { commandTemplate } from './command-prompt-template.js';
 
 interface ParsedCommand {
     type: 'theia-command' | 'custom-handler' | 'no-command'

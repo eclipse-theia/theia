@@ -16,8 +16,8 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { ApplicationShellLayoutMigration, WidgetDescription, ApplicationShellLayoutMigrationContext } from '@theia/core/lib/browser/shell/shell-layout-restorer';
-import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
-import { SEARCH_VIEW_CONTAINER_ID, SEARCH_VIEW_CONTAINER_TITLE_OPTIONS } from './search-in-workspace-factory';
+import { SearchInWorkspaceWidget } from './search-in-workspace-widget.js';
+import { SEARCH_VIEW_CONTAINER_ID, SEARCH_VIEW_CONTAINER_TITLE_OPTIONS } from './search-in-workspace-factory.js';
 
 @injectable()
 export class SearchLayoutVersion3Migration implements ApplicationShellLayoutMigration {

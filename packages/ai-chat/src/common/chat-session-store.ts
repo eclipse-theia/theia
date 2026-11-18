@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ChatModel } from './chat-model';
-import { SerializedChatData } from './chat-model-serialization';
-import { ChatAgentLocation } from './chat-agents';
+import { ChatModel } from './chat-model.js';
+import { SerializedChatData } from './chat-model-serialization.js';
+import { ChatAgentLocation } from './chat-agents.js';
 
 export const ChatSessionStore = Symbol('ChatSessionStore');
 

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { UriComponents } from './uri-components';
+import { UriComponents } from './uri-components.js';
 
 /**
  * Protocol interfaces for MCP server definition providers.

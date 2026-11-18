@@ -20,9 +20,9 @@ const disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
 import { ContextKey, ContextKeyServiceDummyImpl, ContextKeyValue } from '@theia/core/lib/browser/context-key-service';
 import { Emitter } from '@theia/core/lib/common/event';
-import { ScmContextKeyService } from './scm-context-key-service';
-import { ScmContribution } from './scm-contribution';
-import { ScmRepository } from './scm-repository';
+import { ScmContextKeyService } from './scm-context-key-service.js';
+import { ScmContribution } from './scm-contribution.js';
+import { ScmRepository } from './scm-repository.js';
 
 disableJSDOM();
 

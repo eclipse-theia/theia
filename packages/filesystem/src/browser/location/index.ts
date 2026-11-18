@@ -14,5 +14,5 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './location-service';
-export * from './location-renderer';
+export * from './location-service.js';
+export * from './location-renderer.js';

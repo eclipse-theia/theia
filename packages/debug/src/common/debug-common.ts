@@ -16,4 +16,4 @@
 
 // FIXME: refactor extensions to get rid of this file and remove it
 
-export * from './debug-configuration';
+export * from './debug-configuration.js';

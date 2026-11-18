@@ -21,7 +21,7 @@
 
 import { ArrayUtils } from '@theia/core';
 import { Range, uinteger } from '@theia/core/shared/vscode-languageserver-protocol';
-import { LineRange } from './line-range';
+import { LineRange } from './line-range.js';
 import * as monaco from '@theia/monaco-editor-core';
 
 /**

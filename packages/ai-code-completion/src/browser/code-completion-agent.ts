@@ -25,10 +25,10 @@ import { generateUuid, ILogger, nls, ProgressService } from '@theia/core';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
-import { codeCompletionPrompts } from './code-completion-prompt-template';
-import { CodeCompletionPostProcessor } from './code-completion-postprocessor';
-import { CodeCompletionVariableContext } from './code-completion-variable-context';
-import { FILE, LANGUAGE, PREFIX, SUFFIX } from './code-completion-variables';
+import { codeCompletionPrompts } from './code-completion-prompt-template.js';
+import { CodeCompletionPostProcessor } from './code-completion-postprocessor.js';
+import { CodeCompletionVariableContext } from './code-completion-variable-context.js';
+import { FILE, LANGUAGE, PREFIX, SUFFIX } from './code-completion-variables.js';
 
 export const CodeCompletionAgent = Symbol('CodeCompletionAgent');
 export interface CodeCompletionAgent extends Agent {

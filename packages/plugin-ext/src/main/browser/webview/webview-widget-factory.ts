@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { WebviewWidget, WebviewWidgetIdentifier, WebviewWidgetExternalEndpoint } from './webview';
-import { WebviewEnvironment } from './webview-environment';
+import { WebviewWidget, WebviewWidgetIdentifier, WebviewWidgetExternalEndpoint } from './webview.js';
+import { WebviewEnvironment } from './webview-environment.js';
 import { hashValue } from '@theia/core/lib/common/uuid';
 
 export class WebviewWidgetFactory {

@@ -19,6 +19,6 @@
 // skill-flavoured names working for existing importers.
 
 /** @deprecated since 1.75.0 - use `computeContentHash` from `../content-hash` instead. */
-export { computeContentHash as computeSkillContentHash } from '../content-hash';
+export { computeContentHash as computeSkillContentHash } from '../content-hash.js';
 /** @deprecated since 1.75.0 - use `FileContent` from `../content-hash` instead. */
-export type { FileContent as SkillFileContent } from '../content-hash';
+export type { FileContent as SkillFileContent } from '../content-hash.js';

@@ -18,7 +18,7 @@ import * as React from '@theia/core/shared/react';
 import { CommandService, Emitter } from '@theia/core';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { ContextMenuRenderer, KeybindingRegistry } from '@theia/core/lib/browser';
-import { DeflatedContributedToolbarItem, ToolbarContribution } from './toolbar-interfaces';
+import { DeflatedContributedToolbarItem, ToolbarContribution } from './toolbar-interfaces.js';
 
 @injectable()
 export abstract class AbstractToolbarContribution implements ToolbarContribution {

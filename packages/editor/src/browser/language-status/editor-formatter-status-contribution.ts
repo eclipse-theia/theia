@@ -18,9 +18,9 @@ import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { QuickInputService, QuickPickItem, StatusBarEntry, StatusBarAlignment } from '@theia/core/lib/browser';
 import { nls, PreferenceScope } from '@theia/core';
 import { Severity } from '@theia/core/lib/common/severity';
-import { TextEditor } from '../editor';
-import { FormatterService, FormatterSettingScope, FormatterStatus, FormatterInfo } from '../editor-formatter-service';
-import { LanguageStatus } from './editor-language-status-service';
+import { TextEditor } from '../editor.js';
+import { FormatterService, FormatterSettingScope, FormatterStatus, FormatterInfo } from '../editor-formatter-service.js';
+import { LanguageStatus } from './editor-language-status-service.js';
 
 interface ScopeDisplayInfo {
     icon: string;
@@ -60,7 +60,7 @@ function getScopeDisplayInfo(scope: FormatterSettingScope): ScopeDisplayInfo {
  * - error: invalid configuration with no fallback
  * - warning: invalid config with fallback available (single formatter case)
  */
-const enum FormatterIcon {
+export enum FormatterIcon {
     Info = '$(info)',
     Error = '$(error)',
     Warning = '$(warning)'
@@ -69,7 +69,7 @@ const enum FormatterIcon {
 /**
  * Display information for a formatter status.
  */
-interface FormatterDisplayInfo {
+export interface FormatterDisplayInfo {
     /** Icon to display (check, error, warning) */
     icon: FormatterIcon;
     /** Label text (formatter name or status) */

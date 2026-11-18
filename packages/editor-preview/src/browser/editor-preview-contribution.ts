@@ -18,7 +18,7 @@ import { ApplicationShell, CommonCommands, KeybindingContribution, KeybindingReg
 import { nls } from '@theia/core/lib/common/nls';
 import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { EditorPreviewWidget } from './editor-preview-widget';
+import { EditorPreviewWidget } from './editor-preview-widget.js';
 import { CurrentWidgetCommandAdapter } from '@theia/core/lib/browser/shell/current-widget-command-adapter';
 
 export namespace EditorPreviewCommands {

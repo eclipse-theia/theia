@@ -21,13 +21,13 @@ import { DisposableCollection, Disposable } from '@theia/core';
 import { OutlineViewService } from '@theia/outline-view/lib/browser/outline-view-service';
 import { OutlineSymbolInformationNode } from '@theia/outline-view/lib/browser/outline-view-widget';
 import URI from '@theia/core/lib/common/uri';
-import { MonacoEditor } from './monaco-editor';
-import debounce = require('@theia/core/shared/lodash.debounce');
+import { MonacoEditor } from './monaco-editor.js';
+import debounce from '@theia/core/shared/lodash.debounce';
 import * as monaco from '@theia/monaco-editor-core';
-import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
-import { DocumentSymbol } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
+import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures.js';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model.js';
+import { DocumentSymbol } from '@theia/monaco-editor-core/esm/vs/editor/common/languages.js';
 
 @injectable()
 export class MonacoOutlineContribution implements FrontendApplicationContribution {

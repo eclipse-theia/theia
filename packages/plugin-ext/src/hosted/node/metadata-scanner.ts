@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { inject, injectable, multiInject } from '@theia/core/shared/inversify';
-import { PluginPackage, PluginScanner, PluginMetadata, PLUGIN_HOST_BACKEND, PluginIdentifiers } from '../../common/plugin-protocol';
-import { PluginUninstallationManager } from '../../main/node/plugin-uninstallation-manager';
+import { PluginPackage, PluginScanner, PluginMetadata, PLUGIN_HOST_BACKEND, PluginIdentifiers } from '../../common/plugin-protocol.js';
+import { PluginUninstallationManager } from '../../main/node/plugin-uninstallation-manager.js';
 @injectable()
 export class MetadataScanner {
     private scanners: Map<string, PluginScanner> = new Map();

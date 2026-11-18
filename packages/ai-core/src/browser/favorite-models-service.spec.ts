@@ -16,10 +16,10 @@
 
 import { expect } from 'chai';
 import { PreferenceService } from '@theia/core';
-import { PREFERENCE_NAME_FAVORITE_MODELS, PREFERENCE_NAME_HIDDEN_MODELS } from '../common/ai-core-preferences';
-import { DiscoveredModel, ModelDiscoveryStatus } from '../common/model-discovery-status';
-import { FavoriteModelsService } from './favorite-models-service';
-import { ModelDiscoveryStatusService } from './model-discovery-status-service';
+import { PREFERENCE_NAME_FAVORITE_MODELS, PREFERENCE_NAME_HIDDEN_MODELS } from '../common/ai-core-preferences.js';
+import { DiscoveredModel, ModelDiscoveryStatus } from '../common/model-discovery-status.js';
+import { FavoriteModelsService } from './favorite-models-service.js';
+import { ModelDiscoveryStatusService } from './model-discovery-status-service.js';
 
 function dated(id: string, released: string): DiscoveredModel {
     return { id, released: Date.parse(released) };

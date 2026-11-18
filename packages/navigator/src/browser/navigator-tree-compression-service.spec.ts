@@ -22,8 +22,8 @@ import { CompositeTreeNode } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { DirNode } from '@theia/filesystem/lib/browser';
 import { FileStat } from '@theia/filesystem/lib/common/files';
-import { WorkspaceNode } from './navigator-tree';
-import { FileNavigatorTreeCompressionService } from './navigator-tree-compression-service';
+import { WorkspaceNode } from './navigator-tree.js';
+import { FileNavigatorTreeCompressionService } from './navigator-tree-compression-service.js';
 
 disableJSDOM();
 

@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { Disposable } from '@theia/core';
-import { ChatGptAuthService, ChatGptAuthServiceClient, ChatGptCredentials } from '../common';
-import { CHATGPT_CALLBACK_HOST, CHATGPT_CALLBACK_PATH, CHATGPT_CALLBACK_PORT, CHATGPT_CLIENT_ID } from './chatgpt-oauth';
+import { ChatGptAuthService, ChatGptAuthServiceClient, ChatGptCredentials } from '../common/index.js';
+import { CHATGPT_CALLBACK_HOST, CHATGPT_CALLBACK_PATH, CHATGPT_CALLBACK_PORT, CHATGPT_CLIENT_ID } from './chatgpt-oauth.js';
 
 export const ChatGptBackendAuthService = Symbol('ChatGptBackendAuthService');
 

@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import * as theia from '@theia/plugin';
-import { PLUGIN_RPC_CONTEXT as Ext, OutputChannelRegistryExt, OutputChannelRegistryMain, PluginInfo } from '../common/plugin-api-rpc';
-import { RPCProtocol } from '../common/rpc-protocol';
-import { isObject } from '../common/types';
-import { LogOutputChannelImpl } from './output-channel/log-output-channel';
-import { OutputChannelImpl } from './output-channel/output-channel-item';
+import { PLUGIN_RPC_CONTEXT as Ext, OutputChannelRegistryExt, OutputChannelRegistryMain, PluginInfo } from '../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../common/rpc-protocol.js';
+import { isObject } from '../common/types.js';
+import { LogOutputChannelImpl } from './output-channel/log-output-channel.js';
+import { OutputChannelImpl } from './output-channel/output-channel-item.js';
 
 export class OutputChannelRegistryExtImpl implements OutputChannelRegistryExt {
 

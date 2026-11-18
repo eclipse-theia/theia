@@ -19,7 +19,7 @@ import { ConfirmDialog, Dialog, QuickInputService } from '@theia/core/lib/browse
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { CHATGPT_ENABLED_PREF, ChatGptAuthService, ChatGptAuthState } from '../common';
+import { CHATGPT_ENABLED_PREF, ChatGptAuthService, ChatGptAuthState } from '../common/index.js';
 
 export namespace ChatGptCommands {
     export const SIGN_IN: Command = Command.toLocalizedCommand(

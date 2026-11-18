@@ -19,7 +19,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as fs from '@theia/core/shared/fs-extra';
 import { FileUri } from '@theia/core/lib/common/file-uri';
-import { NodeFileUploadService } from './node-file-upload-service';
+import { NodeFileUploadService } from './node-file-upload-service.js';
 
 /** Captures what the upload handler wrote to the Express response. */
 interface CapturedResponse {

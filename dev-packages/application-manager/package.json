@@ -1,6 +1,6 @@
 {
   "name": "@theia/application-manager",
-  "version": "1.76.0",
+  "version": "1.77.0",
   "description": "Theia application manager API.",
   "publishConfig": {
     "access": "public"
@@ -20,6 +20,15 @@
   ],
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json",
+    "./lib/generator": "./lib/generator/index.js",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "scripts": {
     "build": "theiaext build",
     "clean": "theiaext clean",
@@ -30,10 +39,10 @@
   },
   "dependencies": {
     "@electron/rebuild": "^4.2.1",
-    "@theia/application-package": "1.76.0",
-    "@theia/bundle-plugin": "1.76.0",
-    "@theia/ffmpeg": "1.76.0",
-    "@theia/plugin-utils": "1.76.0",
+    "@theia/application-package": "1.77.0",
+    "@theia/bundle-plugin": "1.77.0",
+    "@theia/ffmpeg": "1.77.0",
+    "@theia/plugin-utils": "1.77.0",
     "@types/fs-extra": "^4.0.15",
     "@types/semver": "^7.8.0",
     "esbuild": "^0.28.2",
@@ -54,7 +63,7 @@
     }
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.76.0"
+    "@theia/ext-scripts": "1.77.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

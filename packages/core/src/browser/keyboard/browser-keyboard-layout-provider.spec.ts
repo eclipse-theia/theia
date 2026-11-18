@@ -14,28 +14,27 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '../test/jsdom';
+import { enableJSDOM } from '../test/jsdom.js';
 
 let disableJSDOM = enableJSDOM();
 
 import { Container, injectable } from 'inversify';
 import type { IMacKeyboardLayoutInfo } from 'native-keymap';
 import * as chai from 'chai';
-import * as sinon from 'sinon';
-import * as os from '../../common/os';
-import { ILogger, Loggable } from '../../common/logger';
-import { LocalStorageService } from '../storage-service';
-import { MessageService } from '../../common/message-service';
-import { WindowService } from '../window/window-service';
-import { BrowserKeyboardLayoutProvider, KeyboardLayoutData, KeyboardLayoutSource, KeyboardTester } from './browser-keyboard-layout-provider';
-import { Key } from './keys';
+import { ILogger, Loggable } from '../../common/logger.js';
+import { LocalStorageService } from '../storage-service.js';
+import { MessageService } from '../../common/message-service.js';
+import { WindowService } from '../window/window-service.js';
+import { BrowserKeyboardLayoutProvider, KeyboardLayoutData, KeyboardLayoutSource, KeyboardTester } from './browser-keyboard-layout-provider.js';
+import { Key } from './keys.js';
+import { OSStub, stubOS } from '../../common/test/stub-os.js';
 
 disableJSDOM();
 
 describe('browser keyboard layout provider', function (): void {
 
-    let stubOSX: sinon.SinonStub;
-    let stubWindows: sinon.SinonStub;
+    let stubOSX: OSStub;
+    let stubWindows: OSStub;
 
     before(() => disableJSDOM = enableJSDOM());
     after(() => disableJSDOM());
@@ -43,16 +42,16 @@ describe('browser keyboard layout provider', function (): void {
     const setup = (system: 'mac' | 'win' | 'linux') => {
         switch (system) {
             case 'mac':
-                stubOSX = sinon.stub(os, 'isOSX').value(true);
-                stubWindows = sinon.stub(os, 'isWindows').value(false);
+                stubOSX = stubOS('isOSX', true);
+                stubWindows = stubOS('isWindows', false);
                 break;
             case 'win':
-                stubOSX = sinon.stub(os, 'isOSX').value(false);
-                stubWindows = sinon.stub(os, 'isWindows').value(true);
+                stubOSX = stubOS('isOSX', false);
+                stubWindows = stubOS('isWindows', true);
                 break;
             default:
-                stubOSX = sinon.stub(os, 'isOSX').value(false);
-                stubWindows = sinon.stub(os, 'isWindows').value(false);
+                stubOSX = stubOS('isOSX', false);
+                stubWindows = stubOS('isWindows', false);
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const container = new Container();

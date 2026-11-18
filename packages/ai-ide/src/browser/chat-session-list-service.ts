@@ -20,8 +20,8 @@ import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
 import { DisposableCollection, Emitter, Event, ILogger, PreferenceService } from '@theia/core';
 import { ApplicationShell } from '@theia/core/lib/browser';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
-import { UnreadStateProvider } from './chat-session-item';
-import { SectionedSessions, SessionRow, parentIdOf } from './chat-session-list-components';
+import { UnreadStateProvider } from './chat-session-item.js';
+import { SectionedSessions, SessionRow, parentIdOf } from './chat-session-list-components.js';
 
 @injectable()
 export class ChatSessionListService implements UnreadStateProvider {

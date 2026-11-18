@@ -18,7 +18,7 @@ import { injectable, inject, named } from '@theia/core/shared/inversify';
 import {
     FileSystemWatcherClient, FileSystemWatcherServiceClient,
     DidFilesChangedParams, FileSystemWatcherErrorParams
-} from '../common/filesystem-watcher-protocol';
+} from '../common/filesystem-watcher-protocol.js';
 import { ILogger } from '@theia/core';
 /**
  * This component routes watch events to the right clients.

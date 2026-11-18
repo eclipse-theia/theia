@@ -15,9 +15,9 @@
 *******************************************************************************/
 
 import { interfaces } from 'inversify';
-import { BackendStopwatch, Stopwatch, stopwatchPath } from '../../common';
-import { WebSocketConnectionProvider } from '../messaging';
-import { FrontendStopwatch } from './frontend-stopwatch';
+import { BackendStopwatch, Stopwatch, stopwatchPath } from '../../common/index.js';
+import { WebSocketConnectionProvider } from '../messaging/index.js';
+import { FrontendStopwatch } from './frontend-stopwatch.js';
 
 export function bindFrontendStopwatch(bind: interfaces.Bind): interfaces.BindingWhenOnSyntax<Stopwatch> {
     return bind(Stopwatch).to(FrontendStopwatch).inSingletonScope();

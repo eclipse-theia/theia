@@ -11,7 +11,7 @@
 
 import { BasePromptFragment } from '@theia/ai-core/lib/common';
 import { CHAT_CONTEXT_DETAILS_VARIABLE_ID } from '@theia/ai-chat';
-import { OPEN_EDITORS_HINT_FRAGMENT_ID } from './open-editors-hint-fragment-id';
+import { OPEN_EDITORS_HINT_FRAGMENT_ID } from './open-editors-hint-fragment-id.js';
 
 export const universalTemplate: BasePromptFragment = {
    id: 'universal-system-default',

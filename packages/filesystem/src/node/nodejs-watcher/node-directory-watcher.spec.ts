@@ -23,11 +23,11 @@ import { FSWatcher } from 'fs';
 import { Deferred, wait } from '@theia/core/lib/common/promise-util';
 import { isWindows } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node';
-import { DidFilesChangedParams, FileSystemWatcherServiceClient } from '../../common/filesystem-watcher-protocol';
-import { NO_LOGGING, TempDir, WATCHER_TIMINGS as TIMINGS } from '../test/watcher-test-helper';
-import { DirectoryWatcherProvider, NodeDirectoryWatcher } from './node-directory-watcher';
-import { DirectoryWatchRequest } from './watch-request-router';
-import { DirectoryIdentity, WatcherHost, WatchEventListener } from './watcher-host';
+import { DidFilesChangedParams, FileSystemWatcherServiceClient } from '../../common/filesystem-watcher-protocol.js';
+import { NO_LOGGING, TempDir, WATCHER_TIMINGS as TIMINGS } from '../test/watcher-test-helper.js';
+import { DirectoryWatcherProvider, NodeDirectoryWatcher } from './node-directory-watcher.js';
+import { DirectoryWatchRequest } from './watch-request-router.js';
+import { DirectoryIdentity, WatcherHost, WatchEventListener } from './watcher-host.js';
 
 const track = temp.track();
 

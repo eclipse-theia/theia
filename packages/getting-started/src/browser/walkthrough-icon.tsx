@@ -17,7 +17,7 @@
 import { codicon } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
 import { PluginSharedStyle } from '@theia/plugin-ext/lib/main/browser/plugin-shared-style';
-import { Walkthrough } from '../common/walkthrough-types';
+import { Walkthrough } from '../common/walkthrough-types.js';
 
 /**
  * Renders the icon of a walkthrough: the codicon it contributes itself if there is one, otherwise the icon

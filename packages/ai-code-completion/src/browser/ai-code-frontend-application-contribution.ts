@@ -20,16 +20,16 @@ import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { Disposable, PreferenceService, ILogger } from '@theia/core';
 import { FrontendApplicationContribution, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { InlineCompletionTriggerKind } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
+import { InlineCompletionTriggerKind } from '@theia/monaco-editor-core/esm/vs/editor/common/languages.js';
 import {
     PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE,
     PREF_AI_INLINE_COMPLETION_DEBOUNCE_DELAY,
     PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS,
     PREF_AI_INLINE_COMPLETION_CACHE_CAPACITY
-} from '../common/ai-code-completion-preference';
-import { AICodeInlineCompletionsProvider } from './ai-code-inline-completion-provider';
-import { InlineCompletionDebouncer } from './code-completion-debouncer';
-import { CodeCompletionCache } from './code-completion-cache';
+} from '../common/ai-code-completion-preference.js';
+import { AICodeInlineCompletionsProvider } from './ai-code-inline-completion-provider.js';
+import { InlineCompletionDebouncer } from './code-completion-debouncer.js';
+import { CodeCompletionCache } from './code-completion-cache.js';
 
 @injectable()
 export class AIFrontendApplicationContribution implements FrontendApplicationContribution, KeybindingContribution {

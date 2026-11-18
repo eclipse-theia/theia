@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // copied and modified from https://github.com/microsoft/vscode/blob/1.96.3/src/vs/base/common/observableInternal/base.ts
 
-import { BaseObservable, Observable } from './observable-base';
+import { BaseObservable, Observable } from './observable-base.js';
 
 export class SettableObservable<T, TChange = void> extends BaseObservable<T, TChange> implements Observable.Settable<T, TChange> {
 

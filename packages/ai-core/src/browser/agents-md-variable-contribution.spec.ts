@@ -28,10 +28,10 @@ try {
 
 import { expect } from 'chai';
 import { URI } from '@theia/core';
-import { AgentsMdFile, AgentsMdService } from './agents-md-service';
-import { AGENTS_MD_AUTO_LOADED_VARIABLE, AGENTS_MD_CONTENT_VARIABLE, AGENTS_MD_VARIABLE, AgentsMdVariableContribution } from './agents-md-variable-contribution';
-import { AIVariableContext } from '../common/variable-service';
-import { matchFunctionsRegEx } from '../common/prompt-service-util';
+import { AgentsMdFile, AgentsMdService } from './agents-md-service.js';
+import { AGENTS_MD_AUTO_LOADED_VARIABLE, AGENTS_MD_CONTENT_VARIABLE, AGENTS_MD_VARIABLE, AgentsMdVariableContribution } from './agents-md-variable-contribution.js';
+import { AIVariableContext } from '../common/variable-service.js';
+import { matchFunctionsRegEx } from '../common/prompt-service-util.js';
 
 disableJSDOM();
 

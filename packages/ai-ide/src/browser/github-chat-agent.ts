@@ -25,7 +25,7 @@ import { PreferenceScope, PreferenceService } from '@theia/core/lib/common';
 import { PreferencesCommands } from '@theia/preferences/lib/browser/util/preference-types';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { githubTemplate, REQUIRED_GITHUB_MCP_SERVERS } from './github-prompt-template';
+import { githubTemplate, REQUIRED_GITHUB_MCP_SERVERS } from './github-prompt-template.js';
 
 export const GitHubChatAgentId = 'GitHub';
 
@@ -166,7 +166,7 @@ export class GitHubChatAgent extends AbstractStreamParsingChatAgent {
     }
 
     protected async offerConfiguration(): Promise<void> {
-        const currentServers = this.preferenceService.get<Record<string, MCPServerDescription>>(MCP_SERVERS_PREF, {});
+        const currentServers = this.preferenceService.get<Record<string, MCPServerDescription>>(MCP_SERVERS_PREF, {fallback: {}});
         const githubServer = REQUIRED_GITHUB_MCP_SERVERS[0];
 
         const { name, ...serverWithoutName } = githubServer;
@@ -234,7 +234,7 @@ export class GitHubChatAgent extends AbstractStreamParsingChatAgent {
     async ensureServerStarted(server: MCPServerDescription): Promise<void> {
         try {
             if (!(await this.mcpService.hasServer(server.name))) {
-                const currentServers = this.preferenceService.get<Record<string, MCPServerDescription>>(MCP_SERVERS_PREF, {});
+                const currentServers = this.preferenceService.get<Record<string, MCPServerDescription>>(MCP_SERVERS_PREF, {fallback: {}});
                 const { name, ...serverWithoutName } = server;
                 await this.preferenceService.set(MCP_SERVERS_PREF, { ...currentServers, [name]: serverWithoutName }, PreferenceScope.User);
                 await this.mcpService.addOrUpdateServer(server);

@@ -18,9 +18,9 @@ import * as cp from 'child_process';
 import { inject, injectable, named } from 'inversify';
 import * as path from 'path';
 import { createInterface } from 'readline';
-import { Channel, ConnectionErrorHandler, Disposable, DisposableCollection, ILogger } from '../../common';
-import { IPCChannel } from './ipc-channel';
-import { createIpcEnv } from './ipc-protocol';
+import { Channel, ConnectionErrorHandler, Disposable, DisposableCollection, ILogger } from '../../common/index.js';
+import { IPCChannel } from './ipc-channel.js';
+import { createIpcEnv } from './ipc-protocol.js';
 
 export interface ResolvedIPCConnectionOptions {
     readonly serverName: string
@@ -93,7 +93,7 @@ export class IPCConnectionProvider {
             forkOptions.execArgv = ['--nolazy', `--inspect${inspectArg.substring(inspectArgPrefix.length)}`];
         }
 
-        const childProcess = cp.fork(path.join(__dirname, 'ipc-bootstrap'), options.args, forkOptions);
+        const childProcess = cp.fork(path.join(import.meta.dirname, 'ipc-bootstrap'), options.args, forkOptions);
 
         createInterface(childProcess.stdout!).on('line', line => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${line}`));
         createInterface(childProcess.stderr!).on('line', line => this.logger.error(`[${options.serverName}: ${childProcess.pid}] ${line}`));

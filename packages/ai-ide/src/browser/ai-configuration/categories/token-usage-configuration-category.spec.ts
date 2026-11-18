@@ -23,7 +23,7 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import { ModelTokenUsageData } from '@theia/ai-core/lib/browser/token-usage-frontend-service';
 import { AiConfigurationCategoryId } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
-import { TokenUsageConfigurationCategory } from './token-usage-configuration-category';
+import { TokenUsageConfigurationCategory } from './token-usage-configuration-category.js';
 
 disableJSDOM();
 

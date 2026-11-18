@@ -17,8 +17,8 @@
 import { URI, MaybePromise, ILogger } from '@theia/core';
 import { OpenHandler, OpenerOptions } from '@theia/core/lib/browser';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { NotebookEditorWidgetService } from './service/notebook-editor-widget-service';
-import { CellUri } from '../common';
+import { NotebookEditorWidgetService } from './service/notebook-editor-widget-service.js';
+import { CellUri } from '../common/index.js';
 
 @injectable()
 export class NotebookCellOpenHandler implements OpenHandler {

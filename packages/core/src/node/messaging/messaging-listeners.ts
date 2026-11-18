@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, MaybePromise } from '../../common';
+import { ContributionProvider, MaybePromise } from '../../common/index.js';
 import { Socket } from 'socket.io';
 
 import * as http from 'http';

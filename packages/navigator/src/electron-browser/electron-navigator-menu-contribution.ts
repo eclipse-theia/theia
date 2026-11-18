@@ -25,8 +25,8 @@ import '@theia/core/lib/electron-common/electron-api';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileStatNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from '../browser';
-import { NavigatorContextMenu, SHELL_TABBAR_CONTEXT_REVEAL } from '../browser/navigator-contribution';
+import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from '../browser/index.js';
+import { NavigatorContextMenu, SHELL_TABBAR_CONTEXT_REVEAL } from '../browser/navigator-contribution.js';
 
 export const OPEN_CONTAINING_FOLDER = Command.toDefaultLocalizedCommand({
     id: 'revealFileInOS',

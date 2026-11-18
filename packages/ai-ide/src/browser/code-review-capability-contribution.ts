@@ -18,7 +18,7 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { PromptService } from '@theia/ai-core';
 import { nls } from '@theia/core';
-import { CodeReviewerAgentId } from './code-reviewer-agent';
+import { CodeReviewerAgentId } from './code-reviewer-agent.js';
 
 @injectable()
 export class CodeReviewCapabilityContribution implements FrontendApplicationContribution {

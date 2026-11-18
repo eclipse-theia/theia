@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { nls } from '@theia/core';
-import { ToolCallChatResponseContent } from './chat-model';
+import { ToolCallChatResponseContent } from './chat-model.js';
 
 /**
  * Races a tool confirmation against an optional timeout.
@@ -30,6 +30,7 @@ export async function raceConfirmationWithTimeout(
     timeoutSeconds: number
 ): Promise<boolean> {
     if (timeoutSeconds > 0) {
+        content.confirmationDeadline = Date.now() + timeoutSeconds * 1000;
         let timeoutId: ReturnType<typeof setTimeout> | undefined;
         try {
             const timeoutPromise = new Promise<boolean>(resolve => {
@@ -46,6 +47,7 @@ export async function raceConfirmationWithTimeout(
             });
             return await Promise.race([content.confirmed, timeoutPromise]);
         } finally {
+            content.confirmationDeadline = undefined;
             if (timeoutId !== undefined) {
                 clearTimeout(timeoutId);
             }

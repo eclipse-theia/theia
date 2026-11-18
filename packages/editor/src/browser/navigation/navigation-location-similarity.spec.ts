@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { NavigationLocation } from './navigation-location';
-import { NavigationLocationSimilarity } from './navigation-location-similarity';
+import { NavigationLocation } from './navigation-location.js';
+import { NavigationLocationSimilarity } from './navigation-location-similarity.js';
 
 describe('navigation-location-similarity', () => {
 

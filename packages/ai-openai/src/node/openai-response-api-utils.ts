@@ -26,9 +26,10 @@ import {
     ToolRequest,
     UserRequest
 } from '@theia/ai-core';
-import { CancellationToken, isObject, nls, unreachable, ILogger } from '@theia/core';
+import { CancellationError, CancellationToken, CancellationTokenSource, isObject, nls, unreachable, ILogger } from '@theia/core';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
+import { toResponseInputItems } from 'openai/lib/responses/ResponseInputItems';
 import type {
     FunctionTool,
     Tool,
@@ -37,15 +38,18 @@ import type {
     ResponseFunctionToolCall,
     ResponseFunctionWebSearch,
     ResponseInputItem,
+    ResponseCreateParamsStreaming,
+    ResponseOutputItem,
     ResponseStreamEvent,
     ResponseToolSearchCall,
     ResponseToolSearchOutputItem
 } from 'openai/resources/responses/responses';
 import type { ResponsesModel } from 'openai/resources/shared';
-import { DeveloperMessageSettings } from './openai-language-model';
-import type { OpenAiModelUtils } from './openai-model-utils';
-import { OPENAI_WEB_SEARCH, OPENAI_WEB_SEARCH_REPLAY_DATA_KEY } from './openai-server-tools';
-import { AbstractStreamingResponseIterator } from './streaming-response-iterator';
+import { DeveloperMessageSettings } from './openai-language-model.js';
+import type { OpenAiModelUtils } from './openai-model-utils.js';
+import { OPENAI_WEB_SEARCH, OPENAI_WEB_SEARCH_REPLAY_DATA_KEY } from './openai-server-tools.js';
+import { AbstractStreamingResponseIterator } from './streaming-response-iterator.js';
+import { OpenAiStreamingRetry } from './openai-streaming-retry.js';
 
 export const OPENAI_FUNCTION_CALL_REASONING_DATA_KEY = 'openAiFunctionCallReasoning';
 
@@ -87,6 +91,9 @@ export class OpenAiResponseApiUtils {
     @inject(ToolCallExecutor)
     protected readonly toolCallExecutor: ToolCallExecutor;
 
+    @inject(OpenAiStreamingRetry)
+    protected readonly streamingRetry: OpenAiStreamingRetry;
+
     @inject(ILogger) @named('ai-openai:OpenAiResponseApiUtils')
     protected readonly logger: ILogger;
 
@@ -121,12 +128,13 @@ export class OpenAiResponseApiUtils {
         // If no tools are provided, use simple response handling
         if (!tools || tools.length === 0) {
             if (isStreaming) {
-                const stream = this.streamWithReasoningSummaryFallback(effectiveSettings, modelId, sentSettings => openai.responses.stream({
+                const stream = this.streamWithReasoningSummaryFallback(effectiveSettings, modelId, sentSettings => this.streamResponse(openai, {
                     model: model as ResponsesModel,
                     instructions,
                     input,
-                    ...sentSettings
-                }));
+                    ...sentSettings,
+                    stream: true
+                }, cancellationToken));
                 return { stream: this.createSimpleResponseApiStreamIterator(stream, cancellationToken) };
             } else {
                 const response = await this.sendWithReasoningSummaryFallback(effectiveSettings, modelId, sentSettings => openai.responses.create({
@@ -280,6 +288,15 @@ export class OpenAiResponseApiUtils {
         }
     }
 
+    streamResponse(openai: OpenAI, parameters: ResponseCreateParamsStreaming, cancellationToken?: CancellationToken): AsyncIterable<ResponseStreamEvent> {
+        return this.streamingRetry.retry(
+            async signal => openai.responses.create(parameters, { signal }),
+            openai.maxRetries ?? 3,
+            event => ['response.created', 'response.queued', 'response.in_progress', 'response.metadata'].includes(event.type),
+            cancellationToken
+        );
+    }
+
     protected createSimpleResponseApiStreamIterator(
         stream: AsyncIterable<ResponseStreamEvent>,
         cancellationToken?: CancellationToken
@@ -296,7 +313,7 @@ export class OpenAiResponseApiUtils {
                 try {
                     for await (const event of stream) {
                         if (cancellationToken?.isCancellationRequested) {
-                            break;
+                            throw new CancellationError();
                         }
 
                         if (event.type === 'response.output_text.delta') {
@@ -332,11 +349,13 @@ export class OpenAiResponseApiUtils {
                                     output_tokens: responseEvent.response.usage.output_tokens,
                                 };
                             }
-                        } else if (event.type === 'error') {
-                            logger.error('Response API error:', event.message);
-                            throw new Error(`Response API error: ${event.message}`);
                         }
                     }
+                } catch (error) {
+                    if (!cancellationToken?.isCancellationRequested && !(error instanceof CancellationError)) {
+                        logger.error('Response API error:', error);
+                    }
+                    throw error;
                 } finally {
                     // Yield partial usage data when stream is aborted before response.completed
                     if (!usageYielded && lastUsage && (lastUsage.input_tokens > 0 || lastUsage.output_tokens > 0)) {
@@ -499,9 +518,9 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
     protected iteration = 0;
     protected readonly tools: Tool[] | undefined;
     protected readonly instructions?: string;
-    protected currentResponseText = '';
     protected pendingReasoningItems: ResponseInputItem[] = [];
-    protected currentWebSearchReplayItems: ResponseInputItem[] = [];
+    protected currentOutput: ResponseOutputItem[] = [];
+    protected readonly streamCancellation = new CancellationTokenSource();
 
     constructor(
         protected readonly openai: OpenAI,
@@ -523,6 +542,13 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
         this.currentInput = input;
         this.tools = utils.convertToolsForResponseApi(request.tools, request.deferredToolIds, request.serverTools);
 
+        this.toDispose.push(this.streamCancellation);
+        if (cancellationToken) {
+            this.toDispose.push(cancellationToken.onCancellationRequested(() => {
+                this.terminalError = new CancellationError();
+                this.dispose();
+            }));
+        }
         // Start the first iteration
         this.startIteration();
     }
@@ -533,6 +559,10 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
                 this.logger.debug(`Starting Response API iteration ${this.iteration} with ${this.currentInput.length} input messages`);
 
                 await this.processStream();
+                if (this.done || this.cancellationToken?.isCancellationRequested) {
+                    this.dispose();
+                    return;
+                }
 
                 // Check if we have tool calls that need execution
                 if (this.currentToolCalls.size === 0) {
@@ -552,26 +582,31 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
             // Cancelled, or abandoned by the consumer.
             this.dispose();
         } catch (error) {
-            this.terminalError = error instanceof Error ? error : new Error(String(error));
-            this.dispose();
+            if (!this.done) {
+                if (!this.cancellationToken?.isCancellationRequested && !(error instanceof CancellationError)) {
+                    this.logger.error('Response API error:', error);
+                }
+                this.terminalError = error instanceof Error ? error : new Error(String(error));
+                this.dispose();
+            }
         }
     }
 
     protected async processStream(): Promise<void> {
         this.currentToolCalls.clear();
-        this.currentResponseText = '';
         this.pendingReasoningItems = [];
-        this.currentWebSearchReplayItems = [];
+        this.currentOutput = [];
 
         if (this.isStreaming) {
             // Use streaming API
-            const stream = this.utils.streamWithReasoningSummaryFallback(this.settings, this.modelId, settings => this.openai.responses.stream({
+            const stream = this.utils.streamWithReasoningSummaryFallback(this.settings, this.modelId, settings => this.utils.streamResponse(this.openai, {
                 model: this.model as ResponsesModel,
                 instructions: this.instructions,
                 input: this.currentInput,
                 tools: this.tools,
-                ...settings
-            }));
+                ...settings,
+                stream: true
+            }, this.streamCancellation.token));
 
             for await (const event of stream) {
                 if (this.done || this.cancellationToken?.isCancellationRequested) {
@@ -603,14 +638,21 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
         }
 
         // First, yield any text content from the response
-        this.currentResponseText = response.output_text || '';
-        if (this.currentResponseText) {
-            this.handleIncoming({ content: this.currentResponseText });
+        if (response.output_text) {
+            this.handleIncoming({ content: response.output_text });
         }
 
+        this.currentOutput = response.output ?? [];
         const pendingReasoningItems: ResponseInputItem[] = [];
-        for (const item of response.output ?? []) {
-            if (item.type === 'reasoning') {
+        for (const item of this.currentOutput) {
+            if (item.type === 'compaction') {
+                this.handleIncoming({
+                    compaction: {
+                        provider: this.utils.compactionProvider,
+                        data: { id: item.id, encrypted_content: item.encrypted_content }
+                    }
+                });
+            } else if (item.type === 'reasoning') {
                 pendingReasoningItems.push(item);
             } else if (item.type === 'web_search_call') {
                 this.handleWebSearchCall(item, true, [...pendingReasoningItems, item]);
@@ -642,7 +684,6 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
     protected async handleStreamEvent(event: ResponseStreamEvent): Promise<void> {
         switch (event.type) {
             case 'response.output_text.delta':
-                this.currentResponseText += event.delta;
                 this.handleIncoming({ content: event.delta });
                 break;
 
@@ -665,6 +706,7 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
                 break;
 
             case 'response.output_item.done':
+                this.currentOutput[event.output_index] = event.item;
                 if (event.item?.type === 'function_call') {
                     this.handleFunctionCallDone(event.item);
                 } else if (event.item?.type === 'compaction') {
@@ -701,10 +743,6 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
                     });
                 }
                 break;
-
-            case 'error':
-                this.logger.error('Response API error:', event.message);
-                throw new Error(`Response API error: ${event.message}`);
         }
     }
 
@@ -766,12 +804,13 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
     }
 
     protected async handleFunctionCallArgsDone(event: ResponseFunctionCallArgumentsDoneEvent): Promise<void> {
+        const name = 'name' in event && typeof event.name === 'string' ? event.name : '';
         let toolCall = this.currentToolCalls.get(event.item_id);
         if (!toolCall) {
             // Create if we didn't see the added event
             toolCall = {
                 id: event.item_id,
-                name: event.name || '',
+                name,
                 arguments: event.arguments || '',
                 executed: false,
                 reasoningItems: this.pendingReasoningItems.splice(0)
@@ -783,22 +822,19 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
                     id: event.item_id,
                     finished: false,
                     function: {
-                        name: event.name || '',
+                        name,
                         arguments: event.arguments || ''
                     }
                 }]
             });
         } else {
             // Update with final values
-            toolCall.name = event.name || toolCall.name;
+            toolCall.name = name || toolCall.name;
             toolCall.arguments = event.arguments || toolCall.arguments;
         }
     }
 
     protected handleWebSearchCall(item: ResponseFunctionWebSearch, finished: boolean, replayItems?: ResponseInputItem[]): void {
-        if (finished && replayItems) {
-            this.currentWebSearchReplayItems.push(...replayItems);
-        }
         const action = JSON.stringify(item.action);
         this.handleIncoming({
             server_tool_calls: [{
@@ -854,8 +890,12 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
     protected handleFunctionCallDone(functionCall: ResponseFunctionToolCall): void {
         if (!functionCall.id) { this.logger.warn('Unexpected absence of ID for call ID', functionCall.call_id); return; }
         const toolCall = this.currentToolCalls.get(functionCall.id);
-        if (toolCall && !toolCall.call_id && functionCall.call_id) {
-            toolCall.call_id = functionCall.call_id;
+        if (toolCall) {
+            toolCall.name = functionCall.name || toolCall.name;
+            toolCall.arguments = functionCall.arguments || toolCall.arguments;
+            if (!toolCall.call_id && functionCall.call_id) {
+                toolCall.call_id = functionCall.call_id;
+            }
         }
     }
 
@@ -887,23 +927,6 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
     }
 
     protected prepareNextIteration(): void {
-        // Add assistant response with the actual text that was streamed
-        const assistantMessage: ResponseInputItem = {
-            role: 'assistant',
-            content: this.currentResponseText
-        };
-
-        // Add the function calls that were made by the assistant
-        const functionCalls: ResponseInputItem[] = [];
-        for (const [itemId, toolCall] of this.currentToolCalls) {
-            functionCalls.push(...toolCall.reasoningItems ?? [], {
-                type: 'function_call',
-                call_id: toolCall.call_id || itemId,
-                name: toolCall.name,
-                arguments: toolCall.arguments
-            });
-        }
-
         // Add tool results
         const toolResults: ResponseInputItem[] = [];
         for (const [itemId, toolCall] of this.currentToolCalls) {
@@ -920,7 +943,14 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
             });
         }
 
-        this.currentInput = [...this.currentInput, ...this.currentWebSearchReplayItems, assistantMessage, ...functionCalls, ...toolResults];
+        this.currentInput = [...this.currentInput, ...toResponseInputItems(this.currentOutput), ...toolResults];
+        // The latest compaction item subsumes all preceding input, including earlier compactions.
+        for (let i = this.currentInput.length - 1; i >= 0; i--) {
+            if (this.currentInput[i].type === 'compaction') {
+                this.currentInput = this.currentInput.slice(i);
+                break;
+            }
+        }
     }
 }
 

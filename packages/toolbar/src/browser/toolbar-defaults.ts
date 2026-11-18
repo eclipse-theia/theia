@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { nls } from '@theia/core';
-import { DeflatedToolbarTree, ToolbarAlignment } from './toolbar-interfaces';
+import { DeflatedToolbarTree, ToolbarAlignment } from './toolbar-interfaces.js';
 
 // This file specifies the default layout of the toolbar. This binding should be overridden for extenders.
 // Both Toolbar Command Items and Toolbar Contributions can be specified here.

@@ -18,4 +18,4 @@
  * @deprecated since 1.76.0 - `PluginPaths` moved to `@theia/plugin-ext/lib/main/common/paths/const`
  * so the browser-only frontend can share it. Import it from there.
  */
-export { PluginPaths } from '../../common/paths/const';
+export { PluginPaths } from '../../common/paths/const.js';

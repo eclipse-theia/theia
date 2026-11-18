@@ -25,14 +25,14 @@ import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { Diagnostic, Range, DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-protocol';
 import { Event } from '@theia/core/lib/common/event';
-import { MarkerManager } from '../marker-manager';
-import { MarkerInfoNode, MarkerNode, MarkerOptions, MarkerRootNode } from '../marker-tree';
-import { PROBLEM_OPTIONS } from './problem-container';
-import { ProblemManager } from './problem-manager';
-import { ProblemTree } from './problem-tree-model';
+import { MarkerManager } from '../marker-manager.js';
+import { MarkerInfoNode, MarkerNode, MarkerOptions, MarkerRootNode } from '../marker-tree.js';
+import { PROBLEM_OPTIONS } from './problem-container.js';
+import { ProblemManager } from './problem-manager.js';
+import { ProblemTree } from './problem-tree-model.js';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { ProblemCompositeTreeNode } from './problem-composite-tree-node';
-import { Marker } from '../../common/marker';
+import { ProblemCompositeTreeNode } from './problem-composite-tree-node.js';
+import { Marker } from '../../common/marker.js';
 
 disableJSDOM();
 

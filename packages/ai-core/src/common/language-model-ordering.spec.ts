@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { LanguageModelMetaData } from './language-model';
-import { compareModelsByRecency, groupModelsByProvider, providerOf } from './language-model-util';
+import { LanguageModelMetaData } from './language-model.js';
+import { compareModelsByRecency, groupModelsByProvider, providerOf } from './language-model-util.js';
 
 function model(id: string, released?: number, vendor?: string): LanguageModelMetaData {
     return { id, released, vendor, status: { status: 'ready' } };

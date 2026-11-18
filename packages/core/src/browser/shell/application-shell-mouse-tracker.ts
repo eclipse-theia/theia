@@ -14,13 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FrontendApplicationContribution } from '../frontend-application-contribution';
-import { ApplicationShell } from './application-shell';
+import { FrontendApplicationContribution } from '../frontend-application-contribution.js';
+import { ApplicationShell } from './application-shell.js';
 import { injectable, inject } from 'inversify';
-import { DisposableCollection, Disposable } from '../../common/disposable';
-import { Emitter, Event } from '../../common/event';
+import { DisposableCollection, Disposable } from '../../common/disposable.js';
+import { Emitter, Event } from '../../common/event.js';
 import { FocusTracker, PanelLayout, SplitPanel } from '@lumino/widgets';
-import { addEventListener, Widget } from '../widgets';
+import { addEventListener, Widget } from '../widgets/index.js';
+import { NativeTabDragService } from './native-tab-drag-service.js';
+import { SecondaryWindowService } from '../window/secondary-window-service.js';
 /**
  * Contribution that tracks `mouseup` and `mousedown` events.
  *
@@ -34,6 +36,12 @@ export class ApplicationShellMouseTracker implements FrontendApplicationContribu
 
     @inject(ApplicationShell)
     protected readonly applicationShell: ApplicationShell;
+
+    @inject(NativeTabDragService)
+    protected readonly nativeTabDragService: NativeTabDragService;
+
+    @inject(SecondaryWindowService)
+    protected readonly secondaryWindowService: SecondaryWindowService;
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly toDisposeOnActiveChange = new DisposableCollection();
@@ -70,6 +78,25 @@ export class ApplicationShellMouseTracker implements FrontendApplicationContribu
 
         // The `mouseup` event has to be tracked on the `document`. Lumino attaches to there.
         document.addEventListener('mouseup', this.mouseupListener, true);
+
+        // Also track `mouseup` in secondary windows so that overlays are correctly hidden
+        // when the mouse is released in a secondary window.
+        this.toDispose.push(this.secondaryWindowService.onWindowLoaded(win => {
+            win.document.addEventListener('mouseup', this.mouseupListener, true);
+        }));
+        this.toDispose.push(this.secondaryWindowService.onWindowClosed(win => {
+            try {
+                win.document.removeEventListener('mouseup', this.mouseupListener, true);
+            } catch {
+                // window may already be destroyed
+            }
+        }));
+
+        // Native tab drags end without a `mouseup` event. They may also start in a secondary window, whose `mousedown` events are not tracked.
+        this.toDispose.pushAll([
+            this.nativeTabDragService.onDidStartDrag(e => this.mousedownEmitter.fire(e)),
+            this.nativeTabDragService.onDidEndDrag(e => this.mouseupEmitter.fire(e))
+        ]);
 
         // Make sure it is disposed in the end.
         this.toDispose.pushAll([

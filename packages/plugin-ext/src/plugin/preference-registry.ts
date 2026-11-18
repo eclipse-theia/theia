@@ -20,21 +20,21 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { isOSX, isWindows } from '@theia/core/lib/common/os';
 import { URI } from '@theia/core/shared/vscode-uri';
-import { ResourceMap } from '@theia/monaco-editor-core/esm/vs/base/common/map';
-import { IConfigurationOverrides } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration';
-import { Configuration, ConfigurationModel, ConfigurationModelParser } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configurationModels';
-import { Workspace, WorkspaceFolder } from '@theia/monaco-editor-core/esm/vs/platform/workspace/common/workspace';
+import { ResourceMap } from '@theia/monaco-editor-core/esm/vs/base/common/map.js';
+import { IConfigurationOverrides } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration.js';
+import { Configuration, ConfigurationModel, ConfigurationModelParser } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configurationModels.js';
+import { Workspace, WorkspaceFolder } from '@theia/monaco-editor-core/esm/vs/platform/workspace/common/workspace.js';
 import * as theia from '@theia/plugin';
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import {
     PLUGIN_RPC_CONTEXT, PreferenceChangeExt, PreferenceData, PreferenceRegistryExt,
     PreferenceRegistryMain
-} from '../common/plugin-api-rpc';
-import { RPCProtocol } from '../common/rpc-protocol';
-import { isObject, mixin } from '../common/types';
-import { WorkspaceExtImpl } from './workspace';
-import cloneDeep = require('lodash.clonedeep');
-import { ILogService, LogLevel } from '@theia/monaco-editor-core/esm/vs/platform/log/common/log';
+} from '../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../common/rpc-protocol.js';
+import { isObject, mixin } from '../common/types.js';
+import { WorkspaceExtImpl } from './workspace.js';
+import cloneDeep from 'lodash.clonedeep';
+import { ILogService, LogLevel } from '@theia/monaco-editor-core/esm/vs/platform/log/common/log.js';
 
 const injectionRe = /\b__proto__\b|\bconstructor\.prototype\b/;
 
@@ -205,13 +205,11 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
             },
             update: (key: string, value: any, targetScope?: ConfigurationTarget | boolean, withLanguageOverride?: boolean): PromiseLike<void> => {
                 const resourceStr = overrides.resource?.toString();
-                const overrideSegment = overrides.overrideIdentifier ? `[${overrides.overrideIdentifier}].` : '';
                 const preferenceKey = rawSection ? `${rawSection}.${key}` : key;
-                const fullPath = overrideSegment + preferenceKey;
                 if (typeof value !== 'undefined') {
-                    return this.proxy.$updateConfigurationOption(targetScope, fullPath, value, resourceStr, withLanguageOverride);
+                    return this.proxy.$updateConfigurationOption(targetScope, preferenceKey, value, resourceStr, withLanguageOverride, overrides.overrideIdentifier ?? undefined);
                 } else {
-                    return this.proxy.$removeConfigurationOption(targetScope, fullPath, resourceStr, withLanguageOverride);
+                    return this.proxy.$removeConfigurationOption(targetScope, preferenceKey, resourceStr, withLanguageOverride, overrides.overrideIdentifier ?? undefined);
                 }
             },
             inspect: <T>(key: string): ConfigurationInspect<T> | undefined => {
@@ -334,15 +332,13 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
         return Object.freeze({
             affectsConfiguration: (section: string, scope?: theia.ConfigurationScope): boolean => {
                 const { resource, overrideIdentifier } = this.parseConfigurationAccessOptions(scope);
-                const sectionWithLanguage = overrideIdentifier ? `[${overrideIdentifier}].${section}` : section;
                 return eventData.some(change => {
                     const matchesUri = !resource || !change.scope || (resource.toString() + '/').startsWith(change.scope.endsWith('/') ? change.scope : change.scope + '/');
-                    const sliceIndex = overrideIdentifier ? 0 : (this.OVERRIDE_KEY_TEST.exec(change.preferenceName)?.[0].length ?? 0);
-                    const changedPreferenceName = sliceIndex ? change.preferenceName.slice(sliceIndex) : change.preferenceName;
-                    return matchesUri && (
-                        sectionWithLanguage === changedPreferenceName
-                        || sectionWithLanguage.startsWith(`${changedPreferenceName}.`)
-                        || changedPreferenceName.startsWith(`${sectionWithLanguage}.`));
+                    const matchesSection = change.preferenceName === section
+                        || change.preferenceName.startsWith(`${section}.`)
+                        || section.startsWith(`${change.preferenceName}.`);
+                    const matchesOverride = !overrideIdentifier || change.affectedOverrides.includes(overrideIdentifier);
+                    return matchesUri && matchesSection && matchesOverride;
                 });
             }
         });

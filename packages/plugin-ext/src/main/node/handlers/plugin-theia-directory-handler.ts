@@ -23,9 +23,9 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { FileUri } from '@theia/core/lib/node';
 import {
     PluginDeployerDirectoryHandler, PluginDeployerEntry, PluginPackage, PluginDeployerDirectoryHandlerContext, PluginDeployerEntryType, PluginType, PluginIdentifiers
-} from '../../../common/plugin-protocol';
-import { PluginCliContribution } from '../plugin-cli-contribution';
-import { getTempDirPathAsync } from '../temp-dir-util';
+} from '../../../common/plugin-protocol.js';
+import { PluginCliContribution } from '../plugin-cli-contribution.js';
+import { getTempDirPathAsync } from '../temp-dir-util.js';
 
 @injectable()
 export abstract class AbstractPluginDirectoryHandler implements PluginDeployerDirectoryHandler {

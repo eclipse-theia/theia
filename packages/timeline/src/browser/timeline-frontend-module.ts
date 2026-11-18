@@ -16,14 +16,14 @@
 
 import { Container, ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
-import { TimelineService } from './timeline-service';
-import { TimelineWidget } from './timeline-widget';
-import { TimelineTreeWidget } from './timeline-tree-widget';
+import { TimelineService } from './timeline-service.js';
+import { TimelineWidget } from './timeline-widget.js';
+import { TimelineTreeWidget } from './timeline-tree-widget.js';
 import { createTreeContainer, } from '@theia/core/lib/browser';
-import { TimelineTreeModel } from './timeline-tree-model';
-import { TimelineEmptyWidget } from './timeline-empty-widget';
-import { TimelineContextKeyService } from './timeline-context-key-service';
-import { TimelineContribution } from './timeline-contribution';
+import { TimelineTreeModel } from './timeline-tree-model.js';
+import { TimelineEmptyWidget } from './timeline-empty-widget.js';
+import { TimelineContextKeyService } from './timeline-context-key-service.js';
+import { TimelineContribution } from './timeline-contribution.js';
 
 import '../../src/browser/style/index.css';
 import { CommandContribution } from '@theia/core/lib/common';

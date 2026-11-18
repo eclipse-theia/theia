@@ -20,12 +20,12 @@ import {
     CommentThread,
     CommentThreadState,
     CommentThreadCollapsibleState
-} from '../../../common/plugin-api-rpc-model';
-import { CommentGlyphWidget } from './comment-glyph-widget';
+} from '../../../common/plugin-api-rpc-model.js';
+import { CommentGlyphWidget } from './comment-glyph-widget.js';
 import { BaseWidget, DISABLED_CLASS } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
 import { MouseTargetType } from '@theia/editor/lib/browser';
-import { CommentsService } from './comments-service';
+import { CommentsService } from './comments-service.js';
 import {
     CommandMenu,
     CommandRegistry,
@@ -35,7 +35,7 @@ import {
     MenuModelRegistry,
     MenuPath
 } from '@theia/core/lib/common';
-import { CommentsContext } from './comments-context';
+import { CommentsContext } from './comments-context.js';
 import { RefObject } from '@theia/core/shared/react';
 import * as monaco from '@theia/monaco-editor-core';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';

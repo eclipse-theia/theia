@@ -16,7 +16,7 @@
 
 import { MaybePromise } from '@theia/core';
 import { WidgetOpenerOptions } from '@theia/core/lib/browser';
-import { TerminalWidget } from './base/terminal-widget';
+import { TerminalWidget } from './base/terminal-widget.js';
 
 /**
  * Contribution point that allows extensions to intercept terminal placement

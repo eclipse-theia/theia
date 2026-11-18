@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { FuzzySearch } from './fuzzy-search';
+import { FuzzySearch } from './fuzzy-search.js';
 
 describe('fuzzy-search', () => {
 

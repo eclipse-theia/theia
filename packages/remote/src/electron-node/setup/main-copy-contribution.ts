@@ -21,6 +21,9 @@ import { RemoteCopyContribution, RemoteCopyRegistry } from '@theia/core/lib/node
 export class MainCopyContribution implements RemoteCopyContribution {
     async copy(registry: RemoteCopyRegistry): Promise<void> {
         registry.file('package.json');
+        // The bundler emits lib/backend/package.json ({ "type": "module" }); without it Node treats the
+        // ESM backend bundle as typeless, re-parses every file and prints a MODULE_TYPELESS_PACKAGE_JSON warning on stderr.
+        registry.file('lib/backend/package.json');
         await registry.glob('lib/backend/**/*.js');
         await registry.directory('lib/frontend');
         await registry.directory('lib/webview');

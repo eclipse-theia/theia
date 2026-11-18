@@ -21,7 +21,7 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser/fronten
 import { Command, CommandRegistry } from '@theia/core/lib/common/command';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { codicon, Widget } from '@theia/core/lib/browser/widgets';
-import { OutlineViewWidget } from './outline-view-widget';
+import { OutlineViewWidget } from './outline-view-widget.js';
 import { CompositeTreeNode } from '@theia/core/lib/browser/tree';
 import { OS } from '@theia/core/lib/common/os';
 import { nls } from '@theia/core/lib/common/nls';

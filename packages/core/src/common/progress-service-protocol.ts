@@ -17,8 +17,8 @@
 import {
     ProgressUpdate,
     ProgressMessage
-} from './message-service-protocol';
-import { CancellationToken } from './cancellation';
+} from './message-service-protocol.js';
+import { CancellationToken } from './cancellation.js';
 
 export const ProgressClient = Symbol('ProgressClient');
 export interface ProgressClient {

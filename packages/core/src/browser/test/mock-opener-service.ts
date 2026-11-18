@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { OpenerService, OpenHandler } from '../opener-service';
+import { OpenerService, OpenHandler } from '../opener-service.js';
 
 /**
  * Mock opener service implementation for testing. Never provides handlers, but always rejects :)

@@ -29,8 +29,8 @@ if (canvasProto) {
 }
 
 import { expect } from 'chai';
-import { WebviewsMainImpl } from './webviews-main';
-import { WebviewWidget } from './webview/webview';
+import { WebviewsMainImpl } from './webviews-main.js';
+import { WebviewWidget } from './webview/webview.js';
 
 after(() => disableJSDOM());
 

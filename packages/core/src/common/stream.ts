@@ -26,8 +26,8 @@
 /* eslint-disable @theia/explicit-return-type */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DisposableCollection, Disposable } from './disposable';
-import { BinaryBuffer } from './buffer';
+import { DisposableCollection, Disposable } from './disposable.js';
+import { BinaryBuffer } from './buffer.js';
 
 export interface ReadableStreamEvents<T> {
 

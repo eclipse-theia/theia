@@ -28,8 +28,8 @@ import { ReactNode } from '@theia/core/shared/react';
 import { IMouseEvent } from '@theia/monaco-editor-core';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import type { Mermaid } from 'mermaid';
-import { CodeWrapper } from './code-part-renderer';
-import { MarkdownRender } from './markdown-part-renderer';
+import { CodeWrapper } from './code-part-renderer.js';
+import { MarkdownRender } from './markdown-part-renderer.js';
 
 /**
  * Mermaid pulls in a large dependency tree (d3, dagre, ...), so it is loaded lazily on first use.

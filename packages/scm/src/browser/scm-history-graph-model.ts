@@ -18,12 +18,12 @@ import { injectable, inject, postConstruct, named } from '@theia/core/shared/inv
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
-import { ScmService } from './scm-service';
-import { ScmHistoryItem, ScmHistoryItemRef, ScmHistoryProvider, ScmHistoryOptions } from './scm-provider';
-import { computeGraphRows, GraphRow } from './scm-history-graph-lanes';
+import { ScmService } from './scm-service.js';
+import { ScmHistoryItem, ScmHistoryItemRef, ScmHistoryProvider, ScmHistoryOptions } from './scm-provider.js';
+import { computeGraphRows, GraphRow } from './scm-history-graph-lanes.js';
 import { ILogger } from '@theia/core';
-import { getRefColorIndex } from './scm-history-graph-helpers';
-import { ScmPreferences } from '../common/scm-preferences';
+import { getRefColorIndex } from './scm-history-graph-helpers.js';
+import { ScmPreferences } from '../common/scm-preferences.js';
 
 export const PAGE_SIZE = 50;
 

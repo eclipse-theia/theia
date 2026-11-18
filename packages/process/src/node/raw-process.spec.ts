@@ -16,12 +16,12 @@
 import * as chai from 'chai';
 import * as process from 'process';
 import * as stream from 'stream';
-import { createProcessTestContainer } from './test/process-test-container';
-import { RawProcessFactory } from './raw-process';
+import { createProcessTestContainer } from './test/process-test-container.js';
+import { RawProcessFactory } from './raw-process.js';
 import * as temp from 'temp';
 import * as fs from 'fs';
 import * as path from 'path';
-import { IProcessStartEvent, ProcessErrorEvent } from './process';
+import { IProcessStartEvent, ProcessErrorEvent } from './process.js';
 
 /* Allow to create temporary files, but delete them when we're done.  */
 const track = temp.track();
@@ -31,7 +31,7 @@ const track = temp.track();
  */
 
 const expect = chai.expect;
-const FORK_TEST_FILE = path.join(__dirname, '../../src/node/test/process-fork-test.js');
+const FORK_TEST_FILE = path.join(import.meta.dirname, '../../src/node/test/process-fork-test.js');
 
 describe('RawProcess', function (): void {
 

@@ -29,9 +29,9 @@ import { ModelDiscoveryStatusService } from '@theia/ai-core/lib/browser/model-di
 import {
     CHATGPT_ENABLED_PREF, ChatGptAuthService, ChatGptAuthState, ChatGptLanguageModelsManager, ChatGptModelDescription, ChatGptPreferencesSchema, MODELS_PREF,
     SERVER_SIDE_COMPACTION_PREF, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF
-} from '../common';
-import { CHATGPT_DISCOVERY_PROVIDER_ID, ChatGptFrontendApplicationContribution } from './chatgpt-frontend-application-contribution';
-import { ChatGptCommands } from './chatgpt-command-contribution';
+} from '../common/index.js';
+import { CHATGPT_DISCOVERY_PROVIDER_ID, ChatGptFrontendApplicationContribution } from './chatgpt-frontend-application-contribution.js';
+import { ChatGptCommands } from './chatgpt-command-contribution.js';
 
 disableJSDOM();
 

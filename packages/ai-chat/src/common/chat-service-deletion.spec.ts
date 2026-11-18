@@ -16,17 +16,17 @@
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { ChatServiceImpl } from './chat-service';
-import { ChatSessionStore, ChatSessionIndex, ChatModelWithMetadata } from './chat-session-store';
-import { ChatAgentService } from './chat-agent-service';
-import { ChatRequestParser } from './chat-request-parser';
+import { ChatServiceImpl } from './chat-service.js';
+import { ChatSessionStore, ChatSessionIndex, ChatModelWithMetadata } from './chat-session-store.js';
+import { ChatAgentService } from './chat-agent-service.js';
+import { ChatRequestParser } from './chat-request-parser.js';
 import { AIVariableService, ToolInvocationRegistry } from '@theia/ai-core';
 import { ILogger } from '@theia/core';
-import { ChatContentDeserializerRegistry, ChatContentDeserializerRegistryImpl, DefaultChatContentDeserializerContribution } from './chat-content-deserializer';
-import { ChangeSetElementDeserializerRegistry, ChangeSetElementDeserializerRegistryImpl } from './change-set-element-deserializer';
-import { ChatAgentLocation } from './chat-agents';
-import { ChatModel } from './chat-model';
-import { SerializedChatData } from './chat-model-serialization';
+import { ChatContentDeserializerRegistry, ChatContentDeserializerRegistryImpl, DefaultChatContentDeserializerContribution } from './chat-content-deserializer.js';
+import { ChangeSetElementDeserializerRegistry, ChangeSetElementDeserializerRegistryImpl } from './change-set-element-deserializer.js';
+import { ChatAgentLocation } from './chat-agents.js';
+import { ChatModel } from './chat-model.js';
+import { SerializedChatData } from './chat-model-serialization.js';
 
 describe('ChatService Session Deletion', () => {
     let chatService: ChatServiceImpl;

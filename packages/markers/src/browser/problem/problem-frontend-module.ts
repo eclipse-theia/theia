@@ -17,22 +17,22 @@
 import '../../../src/browser/style/index.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { ProblemWidget, PROBLEMS_WIDGET_ID } from './problem-widget';
-import { ProblemContribution } from './problem-contribution';
-import { createProblemWidget } from './problem-container';
+import { ProblemWidget, PROBLEMS_WIDGET_ID } from './problem-widget.js';
+import { ProblemContribution } from './problem-contribution.js';
+import { createProblemWidget } from './problem-container.js';
 import { FrontendApplicationContribution, bindViewContribution, ApplicationShellLayoutMigration, LabelProviderContribution } from '@theia/core/lib/browser';
 import { SaveErrorChecker } from '@theia/core/lib/browser/saveable-service';
-import { ProblemManager } from './problem-manager';
+import { ProblemManager } from './problem-manager.js';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
-import { ProblemTabBarDecorator } from './problem-tabbar-decorator';
+import { ProblemTabBarDecorator } from './problem-tabbar-decorator.js';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { ProblemLayoutVersion3Migration } from './problem-layout-migrations';
+import { ProblemLayoutVersion3Migration } from './problem-layout-migrations.js';
 import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
-import { MarkerTreeLabelProvider } from '../marker-tree-label-provider';
-import { ProblemWidgetTabBarDecorator } from './problem-widget-tab-bar-decorator';
-import { ProblemDecorationContribution, ProblemDecorationsProvider } from './problem-decorations-provider';
-import { ProblemAutoSaveContribution } from './problem-auto-save-contribution';
-import { bindProblemPreferences } from '../../common/problem-preferences';
+import { MarkerTreeLabelProvider } from '../marker-tree-label-provider.js';
+import { ProblemWidgetTabBarDecorator } from './problem-widget-tab-bar-decorator.js';
+import { ProblemDecorationContribution, ProblemDecorationsProvider } from './problem-decorations-provider.js';
+import { ProblemAutoSaveContribution } from './problem-auto-save-contribution.js';
+import { bindProblemPreferences } from '../../common/problem-preferences.js';
 
 export default new ContainerModule(bind => {
     bindProblemPreferences(bind);

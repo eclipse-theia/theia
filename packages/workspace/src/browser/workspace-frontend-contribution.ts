@@ -24,11 +24,11 @@ import {
 } from '@theia/core/lib/browser';
 import { FileDialogService, OpenFileDialogProps, FileDialogTreeFilters } from '@theia/filesystem/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { WorkspaceService } from './workspace-service';
-import { WorkspaceFileService, THEIA_EXT, VSCODE_EXT } from '../common';
-import { WorkspaceCommands } from './workspace-commands';
-import { WorkspaceTrustService } from './workspace-trust-service';
-import { QuickOpenWorkspace } from './quick-open-workspace';
+import { WorkspaceService } from './workspace-service.js';
+import { WorkspaceFileService, THEIA_EXT, VSCODE_EXT } from '../common/index.js';
+import { WorkspaceCommands } from './workspace-commands.js';
+import { WorkspaceTrustService } from './workspace-trust-service.js';
+import { QuickOpenWorkspace } from './quick-open-workspace.js';
 import URI from '@theia/core/lib/common/uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
@@ -38,7 +38,7 @@ import { PreferenceConfigurations } from '@theia/core/lib/common/preferences/pre
 import { nls } from '@theia/core/lib/common/nls';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileStat } from '@theia/filesystem/lib/common/files';
-import { UntitledWorkspaceExitDialog } from './untitled-workspace-exit-dialog';
+import { UntitledWorkspaceExitDialog } from './untitled-workspace-exit-dialog.js';
 import { FilesystemSaveableService } from '@theia/filesystem/lib/browser/filesystem-saveable-service';
 import { StopReason } from '@theia/core/lib/common/frontend-application-state';
 
@@ -404,7 +404,8 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             title: WorkspaceCommands.OPEN_WORKSPACE.dialogLabel,
             canSelectFiles: true,
             canSelectFolders: false,
-            filters: this.getWorkspaceDialogFileFilters()
+            filters: this.getWorkspaceDialogFileFilters(),
+            disableAllFilesFilter: true
         };
         const [rootStat] = await this.workspaceService.roots;
         const workspaceFileUri = await this.fileDialogService.showOpenDialog(props, rootStat);
@@ -432,7 +433,8 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         do {
             selected = await this.fileDialogService.showSaveDialog({
                 title: WorkspaceCommands.SAVE_WORKSPACE_AS.label!,
-                filters: this.getWorkspaceDialogFileFilters()
+                filters: this.getWorkspaceDialogFileFilters(),
+                disableAllFilesFilter: true
             });
             if (selected) {
                 const displayName = selected.displayName;

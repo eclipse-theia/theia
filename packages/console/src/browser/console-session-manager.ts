@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { Emitter, Event, Disposable, DisposableCollection } from '@theia/core';
-import { ConsoleSession } from './console-session';
+import { ConsoleSession } from './console-session.js';
 import { Severity } from '@theia/core/lib/common/severity';
 
 @injectable()

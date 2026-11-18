@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { injectable, inject } from 'inversify';
-import { CancellationToken } from '../common/cancellation';
-import { ProgressClient } from '../common/progress-service-protocol';
-import { ProgressMessage, ProgressUpdate } from '../common/message-service-protocol';
-import { ProgressStatusBarItem } from './progress-status-bar-item';
-import { ProgressLocationService } from './progress-location-service';
+import { CancellationToken } from '../common/cancellation.js';
+import { ProgressClient } from '../common/progress-service-protocol.js';
+import { ProgressMessage, ProgressUpdate } from '../common/message-service-protocol.js';
+import { ProgressStatusBarItem } from './progress-status-bar-item.js';
+import { ProgressLocationService } from './progress-location-service.js';
 
 @injectable()
 export class DispatchingProgressClient implements ProgressClient {

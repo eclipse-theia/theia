@@ -24,18 +24,20 @@ import {
     PluginDeployerResolverInit,
     PluginDeployerEntryType, PluginDeployerHandler, PluginType, UnresolvedPluginEntry, PluginIdentifiers, PluginDeployOptions,
     DuplicateExtensionError
-} from '../../common/plugin-protocol';
-import { PluginDeployerEntryImpl } from './plugin-deployer-entry-impl';
+} from '../../common/plugin-protocol.js';
+import { PluginDeployerEntryImpl } from './plugin-deployer-entry-impl.js';
 import {
     PluginDeployerResolverContextImpl,
     PluginDeployerResolverInitImpl
-} from './plugin-deployer-resolver-context-impl';
-import { ProxyPluginDeployerEntry } from './plugin-deployer-proxy-entry-impl';
-import { PluginDeployerFileHandlerContextImpl } from './plugin-deployer-file-handler-context-impl';
-import { PluginDeployerDirectoryHandlerContextImpl } from './plugin-deployer-directory-handler-context-impl';
+} from './plugin-deployer-resolver-context-impl.js';
+import { ProxyPluginDeployerEntry } from './plugin-deployer-proxy-entry-impl.js';
+import { PluginDeployerFileHandlerContextImpl } from './plugin-deployer-file-handler-context-impl.js';
+import { PluginDeployerDirectoryHandlerContextImpl } from './plugin-deployer-directory-handler-context-impl.js';
 import { ILogger, Emitter, ContributionProvider } from '@theia/core';
-import { PluginCliContribution } from './plugin-cli-contribution';
+import { PluginCliContribution } from './plugin-cli-contribution.js';
+import { PluginUninstallationManager } from './plugin-uninstallation-manager.js';
 import { Measurement, Stopwatch } from '@theia/core/lib/common';
+import { ArchiveExtractor } from '@theia/filesystem/lib/node/archive/archive-extractor';
 
 @injectable()
 export class PluginDeployerImpl implements PluginDeployer {
@@ -54,6 +56,12 @@ export class PluginDeployerImpl implements PluginDeployer {
 
     @inject(Stopwatch)
     protected readonly stopwatch: Stopwatch;
+
+    @inject(ArchiveExtractor)
+    protected readonly archiveExtractor: ArchiveExtractor;
+
+    @inject(PluginUninstallationManager)
+    protected readonly uninstallationManager: PluginUninstallationManager;
 
     /**
      * Inject all plugin resolvers found at runtime.
@@ -171,6 +179,9 @@ export class PluginDeployerImpl implements PluginDeployer {
     /**
      * Resolves plugins for the given type.
      *
+     * The `options` apply to the given plugins only. Their extension dependencies are resolved without them,
+     * and a dependency that is already installed is kept, whatever its version.
+     *
      * Only call it a single time before triggering a single deploy to prevent re-resolving of extension dependencies, i.e.
      * ```ts
      * const deployer: PluginDeployer;
@@ -183,6 +194,7 @@ export class PluginDeployerImpl implements PluginDeployer {
         const pluginsToDeploy = new Map<PluginIdentifiers.VersionedId, PluginDeployerEntry>();
         const unversionedIdsHandled = new Map<PluginIdentifiers.UnversionedId, string[]>();
         const errors: Error[] = [];
+        const requested = new Set(plugins);
 
         const queue: UnresolvedPluginEntry[] = [...plugins];
         while (queue.length) {
@@ -196,7 +208,7 @@ export class PluginDeployerImpl implements PluginDeployer {
                 }
                 const type = entry.type ?? PluginType.System;
                 try {
-                    const pluginDeployerEntries = await this.resolveAndHandle(entry.id, type, options);
+                    const pluginDeployerEntries = await this.resolveAndHandle(entry.id, type, requested.has(entry) ? options : undefined);
                     for (const deployerEntry of pluginDeployerEntries) {
                         const pluginData = await this.pluginDeployerHandler.getPluginDependencies(deployerEntry);
                         const versionedId = pluginData && PluginIdentifiers.componentsToVersionedId(pluginData.metadata.model);
@@ -227,12 +239,18 @@ export class PluginDeployerImpl implements PluginDeployer {
             queue.length = 0;
             for (const { dependencies, type } of pendingDependencies) {
                 for (const [dependency, deployableDependency] of dependencies) {
-                    if (!unversionedIdsHandled.has(dependency as PluginIdentifiers.UnversionedId)) {
-                        queue.push({
-                            id: deployableDependency,
-                            type
-                        });
+                    if (unversionedIdsHandled.has(dependency as PluginIdentifiers.UnversionedId)) {
+                        continue;
                     }
+                    const installedVersion = this.findInstalledVersion(dependency);
+                    if (installedVersion) {
+                        this.logger.info(`Dependency '${dependency}' is already installed with version '${installedVersion}'.`);
+                        continue;
+                    }
+                    queue.push({
+                        id: deployableDependency,
+                        type
+                    });
                 }
             }
         }
@@ -240,6 +258,15 @@ export class PluginDeployerImpl implements PluginDeployer {
             throw errors[0];
         }
         return [...pluginsToDeploy.values()];
+    }
+
+    /**
+     * Returns the version of an installed copy of the given plugin, ignoring copies that are pending uninstallation.
+     */
+    protected findInstalledVersion(id: string): string | undefined {
+        return this.pluginDeployerHandler.getDeployedPluginsById(id)
+            .map(plugin => plugin.metadata.model)
+            .find(model => !this.uninstallationManager.isUninstalled(PluginIdentifiers.componentsToVersionedId(model)))?.version;
     }
 
     protected async resolveAndHandle(id: string, type: PluginType, options?: PluginDeployOptions): Promise<PluginDeployerEntry[]> {
@@ -340,7 +367,7 @@ export class PluginDeployerImpl implements PluginDeployer {
             this.pluginDeployerFileHandlers.map(async pluginFileHandler => {
                 const proxyPluginDeployerEntry = new ProxyPluginDeployerEntry(pluginFileHandler, (pluginDeployerEntry) as PluginDeployerEntryImpl);
                 if (await pluginFileHandler.accept(proxyPluginDeployerEntry)) {
-                    const pluginDeployerFileHandlerContext = new PluginDeployerFileHandlerContextImpl(proxyPluginDeployerEntry);
+                    const pluginDeployerFileHandlerContext = new PluginDeployerFileHandlerContextImpl(proxyPluginDeployerEntry, this.archiveExtractor);
                     await pluginFileHandler.handle(pluginDeployerFileHandlerContext);
                 }
             })

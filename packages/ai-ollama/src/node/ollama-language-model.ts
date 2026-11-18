@@ -42,7 +42,7 @@ import { CancellationToken, ILogger } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ChatRequest, Message, Ollama, Options, Tool, ToolCall as OllamaToolCall } from 'ollama';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
-import { ollamaThinkParamFor } from './ollama-reasoning';
+import { ollamaThinkParamFor } from './ollama-reasoning.js';
 
 export const OllamaModelIdentifier = Symbol('OllamaModelIdentifier');
 

@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { notEmpty } from '../../common/objects';
-import { MockTreeModel } from './test/mock-tree-model';
-import { TreeModel } from './tree-model';
-import { DepthFirstTreeIterator, BreadthFirstTreeIterator, BottomUpTreeIterator, TopDownTreeIterator, Iterators } from './tree-iterator';
-import { createTreeTestContainer } from './test/tree-test-container';
-import { ExpandableTreeNode } from './tree-expansion';
+import { notEmpty } from '../../common/objects.js';
+import { MockTreeModel } from './test/mock-tree-model.js';
+import { TreeModel } from './tree-model.js';
+import { DepthFirstTreeIterator, BreadthFirstTreeIterator, BottomUpTreeIterator, TopDownTreeIterator, Iterators } from './tree-iterator.js';
+import { createTreeTestContainer } from './test/tree-test-container.js';
+import { ExpandableTreeNode } from './tree-expansion.js';
 
 describe('tree-iterator', () => {
 

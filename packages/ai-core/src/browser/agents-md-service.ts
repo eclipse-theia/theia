@@ -20,7 +20,7 @@ import { Disposable, DisposableCollection, Emitter, Event, ILogger, URI } from '
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent, FileOperationEvent } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { AGENTS_MD_FILE_NAME } from '../common/agents-md';
+import { AGENTS_MD_FILE_NAME } from '../common/agents-md.js';
 
 /** Debounce delay for coalescing rapid file system events. */
 const UPDATE_DEBOUNCE_MS = 50;

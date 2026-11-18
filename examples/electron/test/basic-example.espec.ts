@@ -18,6 +18,7 @@ import * as chai from 'chai';
 import * as path from 'path';
 import * as http from 'http';
 import { AddressInfo } from 'net';
+import { pathToFileURL } from 'url';
 import { app, BrowserWindow } from 'electron';
 
 const expect = chai.expect;
@@ -49,14 +50,14 @@ describe('basic-example-spec', function (): void {
         }
 
         // Set the backend config before loading the server module, matching what main.js does
-        const { BackendApplicationConfigProvider } = require('@theia/core/lib/node/backend-application-config-provider');
+        const { BackendApplicationConfigProvider } = await import('@theia/core/lib/node/backend-application-config-provider');
         BackendApplicationConfigProvider.set({
             singleInstance: false,
             configurationFolder: '.theia'
         });
 
-        // eslint-disable-next-line import/no-dynamic-require
-        const serverModule = require(path.join(electronExampleDir, 'src-gen', 'backend', 'server'));
+        // The generated backend is an ES module, which `require` would return as a namespace object.
+        const { default: serverModule } = await import(pathToFileURL(path.join(electronExampleDir, 'src-gen', 'backend', 'server.js')).href);
         server = await serverModule(0, 'localhost');
         expect(server).to.not.be.undefined;
 

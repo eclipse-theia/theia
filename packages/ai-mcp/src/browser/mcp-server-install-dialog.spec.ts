@@ -27,7 +27,7 @@ try {
 
 import { expect } from 'chai';
 import { DialogError } from '@theia/core/lib/browser/dialogs';
-import { MCPServerInstallDialog, MCPServerInstallDialogOptions } from './mcp-server-install-dialog';
+import { MCPServerInstallDialog, MCPServerInstallDialogOptions } from './mcp-server-install-dialog.js';
 
 // Balance the import-time enable; the suite re-enables JSDOM around its own tests so it
 // is robust to other specs in the package toggling the shared JSDOM globals.

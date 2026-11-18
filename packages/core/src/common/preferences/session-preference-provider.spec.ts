@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { SessionPreferenceProvider } from './session-preference-provider';
-import { PreferenceScope } from './preference-scope';
+import { SessionPreferenceProvider } from './session-preference-provider.js';
+import { PreferenceScope } from './preference-scope.js';
 
 describe('SessionPreferenceProvider', () => {
 
@@ -51,12 +51,11 @@ describe('SessionPreferenceProvider', () => {
     it('emits a change event on set', async () => {
         let received: { name: string; newValue: unknown; oldValue: unknown; scope: PreferenceScope } | undefined;
         provider.onDidPreferencesChanged(changes => {
-            const key = Object.keys(changes)[0];
             received = {
-                name: changes[key].preferenceName,
-                newValue: changes[key].newValue,
-                oldValue: changes[key].oldValue,
-                scope: changes[key].scope
+                name: changes[0].preferenceName,
+                newValue: changes[0].newValue,
+                oldValue: changes[0].oldValue,
+                scope: changes[0].scope
             };
         });
         await provider.setPreference('foo', 'bar');

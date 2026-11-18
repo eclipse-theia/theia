@@ -35,6 +35,14 @@ export interface TheiaPlaywrightTestConfig {
     }
 }
 
+export interface TheiaAppLoaderArgs extends TheiaPlaywrightTestConfig, PlaywrightWorkerArgs {
+    /**
+     * A caller-owned page to use when loading a browser application.
+     * The loader never closes a supplied page, including when loading fails.
+     */
+    page?: Page;
+}
+
 function theiaAppFactory<T extends TheiaApp>(factory?: TheiaAppFactory<T>): TheiaAppFactory<T> {
     return (factory ?? TheiaApp) as TheiaAppFactory<T>;
 }
@@ -145,8 +153,15 @@ namespace TheiaElectronAppLoader {
 
 export namespace TheiaAppLoader {
 
+    /**
+     * Loads a Theia application.
+     *
+     * In browser mode, the loader creates a page when none is supplied. If loading succeeds,
+     * the caller owns that page and must close `app.page`. If loading fails, the loader closes
+     * only pages it created itself.
+     */
     export async function load<T extends TheiaApp>(
-        args: TheiaPlaywrightTestConfig & PlaywrightWorkerArgs,
+        args: TheiaAppLoaderArgs,
         initialWorkspace?: TheiaWorkspace,
         factory?: TheiaAppFactory<T>,
     ): Promise<T> {
@@ -157,7 +172,19 @@ export namespace TheiaAppLoader {
             process.env.THEIA_NO_SPLASH = 'true';
             return TheiaElectronAppLoader.load(args, initialWorkspace, factory);
         }
-        const page = await args.browser.newPage();
-        return TheiaBrowserAppLoader.load(page, initialWorkspace, factory);
+        const ownsPage = args.page === undefined;
+        const page = args.page ?? await args.browser.newPage();
+        try {
+            return await TheiaBrowserAppLoader.load(page, initialWorkspace, factory);
+        } catch (error) {
+            if (ownsPage) {
+                try {
+                    await page.close();
+                } catch (closeError) {
+                    console.error('Failed to close the page after loading the Theia application failed.', closeError);
+                }
+            }
+            throw error;
+        }
     }
 }

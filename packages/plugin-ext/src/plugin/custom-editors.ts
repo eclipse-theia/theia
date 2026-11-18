@@ -19,17 +19,17 @@
  *--------------------------------------------------------------------------------------------*/
 // copied and modified from https://github.com/microsoft/vscode/blob/53eac52308c4611000a171cc7bf1214293473c78/src/vs/workbench/api/common/extHostCustomEditors.ts
 
-import { CustomEditorsExt, CustomEditorsMain, Plugin, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
+import { CustomEditorsExt, CustomEditorsMain, Plugin, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc.js';
 import * as theia from '@theia/plugin';
-import { RPCProtocol } from '../common/rpc-protocol';
-import { Disposable, URI } from './types-impl';
-import { UriComponents } from '../common/uri-components';
-import { DocumentsExtImpl } from './documents';
-import { WebviewsExtImpl } from './webviews';
+import { RPCProtocol } from '../common/rpc-protocol.js';
+import { Disposable, URI } from './types-impl.js';
+import { UriComponents } from '../common/uri-components.js';
+import { DocumentsExtImpl } from './documents.js';
+import { WebviewsExtImpl } from './webviews.js';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
-import { Cache } from '../common/cache';
-import * as Converters from './type-converters';
+import { Cache } from '../common/cache.js';
+import * as Converters from './type-converters.js';
 
 export class CustomEditorsExtImpl implements CustomEditorsExt {
     private readonly proxy: CustomEditorsMain;

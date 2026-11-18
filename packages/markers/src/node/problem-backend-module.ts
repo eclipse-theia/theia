@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { bindProblemPreferences } from '../common/problem-preferences';
+import { bindProblemPreferences } from '../common/problem-preferences.js';
 
 export default new ContainerModule(bind => {
     bindProblemPreferences(bind);

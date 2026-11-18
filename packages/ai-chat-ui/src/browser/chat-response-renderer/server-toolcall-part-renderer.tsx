@@ -14,16 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
+import { ChatResponsePartRenderer } from '../chat-response-part-renderer.js';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatResponseContent, ServerToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
 import { HoverService, OpenerService } from '@theia/core/lib/browser';
-import { renderToolCallResult } from './toolcall-result';
-import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
-import { Spinner } from './spinner';
+import { renderToolCallResult } from './toolcall-result.js';
+import { condenseArguments, formatArgsForTooltip } from './toolcall-utils.js';
+import { Spinner } from './spinner.js';
 
 /**
  * Renders a {@link ServerToolCallChatResponseContent}: a tool the provider executed on its own

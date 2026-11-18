@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { AsyncLocalizationProvider, localizationPath } from '../../common/i18n/localization';
-import { WebSocketConnectionProvider } from '../messaging/ws-connection-provider';
-import { LanguageQuickPickService } from './language-quick-pick-service';
+import { AsyncLocalizationProvider, localizationPath } from '../../common/i18n/localization.js';
+import { WebSocketConnectionProvider } from '../messaging/ws-connection-provider.js';
+import { LanguageQuickPickService } from './language-quick-pick-service.js';
 
 export default new ContainerModule(bind => {
     bind(AsyncLocalizationProvider).toDynamicValue(

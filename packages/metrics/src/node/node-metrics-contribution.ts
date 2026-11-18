@@ -16,7 +16,7 @@
 
 import * as prom from 'prom-client';
 import { injectable } from '@theia/core/shared/inversify';
-import { MetricsContribution } from './metrics-contribution';
+import { MetricsContribution } from './metrics-contribution.js';
 
 @injectable()
 export class NodeMetricsContribution implements MetricsContribution {

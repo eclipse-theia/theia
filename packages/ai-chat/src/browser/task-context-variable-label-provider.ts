@@ -18,10 +18,10 @@ import { AIVariableResolutionRequest } from '@theia/ai-core';
 import { URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { codicon, LabelProviderContribution } from '@theia/core/lib/browser';
-import { TaskContextVariableContribution } from './task-context-variable-contribution';
-import { ChatService } from '../common';
-import { TaskContextService } from './task-context-service';
-import { TASK_CONTEXT_VARIABLE } from './task-context-variable';
+import { TaskContextVariableContribution } from './task-context-variable-contribution.js';
+import { ChatService } from '../common/index.js';
+import { TaskContextService } from './task-context-service.js';
+import { TASK_CONTEXT_VARIABLE } from './task-context-variable.js';
 
 @injectable()
 export class TaskContextVariableLabelProvider implements LabelProviderContribution {

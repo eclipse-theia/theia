@@ -21,11 +21,11 @@
  * per `doc/api-management.md` is a major release.
  */
 
-import { FileSystemWatcher } from '../filesystem-watcher';
-import { FileSystemWatcherServiceImpl } from '../filesystem-watcher-service-impl';
+import { FileSystemWatcher } from '../filesystem-watcher.js';
+import { FileSystemWatcherServiceImpl } from '../filesystem-watcher-service-impl.js';
 
-export * from './parcel-watcher';
-export * from '../filesystem-watcher-service-impl';
+export * from './parcel-watcher.js';
+export * from '../filesystem-watcher-service-impl.js';
 
 /** @deprecated since 1.77.0 - use `FileSystemWatcherServiceImpl`, which also serves non-recursive requests. */
 export const ParcelFileSystemWatcherService = FileSystemWatcherServiceImpl;

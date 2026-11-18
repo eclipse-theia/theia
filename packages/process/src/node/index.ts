@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './process-manager';
-export * from './process';
-export * from './raw-process';
-export * from './terminal-process';
-export * from './task-terminal-process';
-export * from './multi-ring-buffer';
+export * from './process-manager.js';
+export * from './process.js';
+export * from './raw-process.js';
+export * from './terminal-process.js';
+export * from './task-terminal-process.js';
+export * from './multi-ring-buffer.js';

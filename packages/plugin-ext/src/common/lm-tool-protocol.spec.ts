@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { uint8ArrayToBase64, base64ToUint8Array } from './lm-tool-protocol';
+import { uint8ArrayToBase64, base64ToUint8Array } from './lm-tool-protocol.js';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 
 describe('lm-tool-protocol base64 helpers', () => {

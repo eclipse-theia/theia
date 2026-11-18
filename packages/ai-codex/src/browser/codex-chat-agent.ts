@@ -46,8 +46,8 @@ import type {
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
-import { CodexToolCallChatResponseContent } from './codex-tool-call-content';
-import { CodexFrontendService } from './codex-frontend-service';
+import { CodexToolCallChatResponseContent } from './codex-tool-call-content.js';
+import { CodexFrontendService } from './codex-frontend-service.js';
 
 export const CODEX_CHAT_AGENT_ID = 'Codex';
 export const CODEX_INPUT_TOKENS_KEY = 'codexInputTokens';

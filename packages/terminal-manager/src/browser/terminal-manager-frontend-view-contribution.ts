@@ -26,11 +26,11 @@ import {
 import { CommandRegistry, Disposable, Event, MenuModelRegistry, nls } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { BOTTOM_AREA_ID } from '@theia/core/lib/browser/shell/theia-dock-panel';
-import { TerminalManagerCommands, TerminalManagerTreeTypes, TERMINAL_MANAGER_TREE_CONTEXT_MENU } from './terminal-manager-types';
-import { TerminalManagerWidget } from './terminal-manager-widget';
-import { TerminalManagerTreeWidget } from './terminal-manager-tree-widget';
+import { TerminalManagerCommands, TerminalManagerTreeTypes, TERMINAL_MANAGER_TREE_CONTEXT_MENU } from './terminal-manager-types.js';
+import { TerminalManagerWidget } from './terminal-manager-widget.js';
+import { TerminalManagerTreeWidget } from './terminal-manager-tree-widget.js';
 import { ConfirmDialog, Dialog } from '@theia/core/lib/browser/dialogs';
-import { TerminalManagerPreferences } from './terminal-manager-preferences';
+import { TerminalManagerPreferences } from './terminal-manager-preferences.js';
 
 @injectable()
 export class TerminalManagerFrontendViewContribution extends AbstractViewContribution<TerminalManagerWidget>

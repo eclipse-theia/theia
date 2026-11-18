@@ -17,9 +17,9 @@
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import * as fs from '@theia/core/shared/fs-extra';
 import { FileUri } from '@theia/core/lib/node';
-import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
+import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment.js';
 import { PluginDeployerParticipant, PluginDeployerStartContext } from '@theia/plugin-ext/lib/common/plugin-protocol';
-import { LocalVSIXFilePluginDeployerResolver } from './local-vsix-file-plugin-deployer-resolver';
+import { LocalVSIXFilePluginDeployerResolver } from './local-vsix-file-plugin-deployer-resolver.js';
 import { ILogger } from '@theia/core';
 
 @injectable()

@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import { IGrammar, StateStack } from 'vscode-textmate';
-import { createTextmateTokenizer, TokenizerState } from './textmate-tokenizer';
+import { createTextmateTokenizer, TokenizerState } from './textmate-tokenizer.js';
 
 describe('createTextmateTokenizer', () => {
 

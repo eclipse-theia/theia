@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { inject, injectable, optional, postConstruct } from 'inversify';
-import { LoggerWatcher } from './logger-watcher';
-import { ILoggerServer, LogLevel, ConsoleLogger, rootLoggerName } from './logger-protocol';
-import { LoggerSanitizer } from './logger-sanitizer';
+import { LoggerWatcher } from './logger-watcher.js';
+import { ILoggerServer, LogLevel, ConsoleLogger, rootLoggerName } from './logger-protocol.js';
+import { LoggerSanitizer } from './logger-sanitizer.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 

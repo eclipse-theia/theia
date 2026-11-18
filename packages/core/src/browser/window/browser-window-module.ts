@@ -15,17 +15,17 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { WindowService } from '../../browser/window/window-service';
-import { DefaultWindowService } from '../../browser/window/default-window-service';
-import { FrontendApplicationContribution } from '../frontend-application-contribution';
-import { ClipboardService } from '../clipboard-service';
-import { BrowserClipboardService } from '../browser-clipboard-service';
-import { SecondaryWindowService } from './secondary-window-service';
-import { DefaultSecondaryWindowService } from './default-secondary-window-service';
-import { bindRootContributionProvider } from '../../common';
-import { WindowTitleContribution } from './window-title-service';
-import { WindowFocusService } from './window-focus-service';
-import { DefaultWindowLaunchArgs, WindowLaunchArgs } from './window-launch-args';
+import { WindowService } from '../../browser/window/window-service.js';
+import { DefaultWindowService } from '../../browser/window/default-window-service.js';
+import { FrontendApplicationContribution } from '../frontend-application-contribution.js';
+import { ClipboardService } from '../clipboard-service.js';
+import { BrowserClipboardService } from '../browser-clipboard-service.js';
+import { SecondaryWindowService } from './secondary-window-service.js';
+import { DefaultSecondaryWindowService } from './default-secondary-window-service.js';
+import { bindRootContributionProvider } from '../../common/index.js';
+import { WindowTitleContribution } from './window-title-service.js';
+import { WindowFocusService } from './window-focus-service.js';
+import { DefaultWindowLaunchArgs, WindowLaunchArgs } from './window-launch-args.js';
 
 export default new ContainerModule(bind => {
     bind(DefaultWindowService).toSelf().inSingletonScope();

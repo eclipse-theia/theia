@@ -22,9 +22,9 @@ import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-tr
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { WorkspaceStorageService } from '@theia/workspace/lib/browser/workspace-storage-service';
 import { hash } from '@theia/core/lib/common/hash';
-import { PromptFragmentCustomizationService } from '../common/prompt-service';
-import { AGENTS_MD_FILE_NAME, PROJECT_INFO_PROMPT_FRAGMENT_ID } from '../common/agents-md';
-import { AgentsMdMigrationReport, AgentsMdMigrationService, LEGACY_PROJECT_INFO_BACKUP_PATH, LEGACY_PROJECT_INFO_PATH } from './agents-md-migration-service';
+import { PromptFragmentCustomizationService } from '../common/prompt-service.js';
+import { AGENTS_MD_FILE_NAME, PROJECT_INFO_PROMPT_FRAGMENT_ID } from '../common/agents-md.js';
+import { AgentsMdMigrationReport, AgentsMdMigrationService, LEGACY_PROJECT_INFO_BACKUP_PATH, LEGACY_PROJECT_INFO_PATH } from './agents-md-migration-service.js';
 
 export const RERUN_AGENTS_MD_MIGRATION_COMMAND: Command = Command.toLocalizedCommand(
     {

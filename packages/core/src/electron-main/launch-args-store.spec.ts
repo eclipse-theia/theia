@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { LaunchArguments } from '../common/launch-arguments';
-import { LaunchArgsStore } from './launch-args-store';
+import { LaunchArguments } from '../common/launch-arguments.js';
+import { LaunchArgsStore } from './launch-args-store.js';
 
 const args = (name: string, value: string): LaunchArguments => ({ values: { [name]: [value] }, negated: [] });
 

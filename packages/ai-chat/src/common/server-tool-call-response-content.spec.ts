@@ -16,8 +16,8 @@
 
 import { expect } from 'chai';
 import { ILogger } from '@theia/core/lib/common';
-import { ChatContentDeserializerRegistryImpl, DefaultChatContentDeserializerContribution } from './chat-content-deserializer';
-import { ServerToolCallChatResponseContent, ServerToolCallChatResponseContentImpl } from './chat-model';
+import { ChatContentDeserializerRegistryImpl, DefaultChatContentDeserializerContribution } from './chat-content-deserializer.js';
+import { ServerToolCallChatResponseContent, ServerToolCallChatResponseContentImpl } from './chat-model.js';
 
 class MockLogger {
     error(): void { }

@@ -305,7 +305,7 @@ export const DEFAULT_LAYOUT: PreferenceLayout[] = [
     },
     {
         id: 'ai-features',
-        label: nls.localize('theia/preferences/ai-features', 'AI Features'),
+        label: nls.localizeByDefault('AI Features'),
         children: [
             {
                 id: 'ai-features.aiEnablement',

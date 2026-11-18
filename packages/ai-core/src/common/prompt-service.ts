@@ -16,12 +16,12 @@
 
 import { Event, Emitter, URI, ILogger, DisposableCollection } from '@theia/core';
 import { inject, injectable, optional, postConstruct, named } from '@theia/core/shared/inversify';
-import { AIVariableArg, AIVariableContext, AIVariableService, createAIResolveVariableCache, ResolvedAIVariable } from './variable-service';
-import { ToolInvocationRegistry } from './tool-invocation-registry';
-import { toolRequestToPromptText } from './language-model-util';
-import { ToolRequest } from './language-model';
-import { FRONT_MATTER_REGEX, matchFunctionsRegEx, matchVariablesRegEx, parseFunctionReference, stripFrontMatter } from './prompt-service-util';
-import { AISettingsService } from './settings-service';
+import { AIVariableArg, AIVariableContext, AIVariableService, createAIResolveVariableCache, ResolvedAIVariable } from './variable-service.js';
+import { ToolInvocationRegistry } from './tool-invocation-registry.js';
+import { toolRequestToPromptText } from './language-model-util.js';
+import { ToolRequest } from './language-model.js';
+import { FRONT_MATTER_REGEX, matchFunctionsRegEx, matchVariablesRegEx, parseFunctionReference, stripFrontMatter } from './prompt-service-util.js';
+import { AISettingsService } from './settings-service.js';
 
 export interface CommandPromptFragmentMetadata {
     /** Display name for this prompt fragment (defaults to fragment id if not specified) */

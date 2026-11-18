@@ -17,10 +17,10 @@
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { ConnectionHandler, RpcConnectionHandler } from '@theia/core/lib/common';
 import { isWindows, isOSX } from '@theia/core/lib/common/os';
-import { ExternalTerminalService, externalTerminalServicePath } from '../common/external-terminal';
-import { MacExternalTerminalService } from './mac-external-terminal-service';
-import { LinuxExternalTerminalService } from './linux-external-terminal-service';
-import { WindowsExternalTerminalService } from './windows-external-terminal-service';
+import { ExternalTerminalService, externalTerminalServicePath } from '../common/external-terminal.js';
+import { MacExternalTerminalService } from './mac-external-terminal-service.js';
+import { LinuxExternalTerminalService } from './linux-external-terminal-service.js';
+import { WindowsExternalTerminalService } from './windows-external-terminal-service.js';
 
 export function bindExternalTerminalService(bind: interfaces.Bind): void {
     const serviceProvider: interfaces.ServiceIdentifier<ExternalTerminalService> =

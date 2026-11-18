@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { Event, MaybePromise } from '@theia/core';
-import { AIVariableContext } from './variable-service';
+import { AIVariableContext } from './variable-service.js';
 
 /** Prompt fragment IDs for each generic capability type */
 export const GENERIC_CAPABILITIES_SKILLS_PROMPT_ID = 'generic-capabilities-skills';

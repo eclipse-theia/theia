@@ -21,8 +21,8 @@ import {
     CLAUDE_CODE_SERVICE_PATH,
     ClaudeCodeClient,
     ClaudeCodeService
-} from '../common/claude-code-service';
-import { ClaudeCodeServiceImpl } from './claude-code-service-impl';
+} from '../common/claude-code-service.js';
+import { ClaudeCodeServiceImpl } from './claude-code-service-impl.js';
 
 const claudeCodeConnectionModule = ConnectionContainerModule.create(({ bind }) => {
     bind(ClaudeCodeServiceImpl).toSelf().inSingletonScope();

@@ -25,7 +25,7 @@ import { nls } from '@theia/core';
 import { codicon, HoverService } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
 import { AvailableGenericCapabilities } from '@theia/ai-chat-ui/lib/browser/generic-capabilities-service';
-import { GenericCapabilitiesTree } from '@theia/ai-chat-ui/lib/browser/generic-capabilities-tree';
+import { GenericCapabilitiesTree, GenericCapabilitiesTreeProps } from '@theia/ai-chat-ui/lib/browser/generic-capabilities-tree';
 import { AiConfigurationItemRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-item-row';
 import { AiConfigurationIconButton } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-primitives';
 import { AiSettingsRowService } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row-service';
@@ -181,6 +181,8 @@ export interface AgentGenericCapabilitiesSettingsProps {
     hoverService: HoverService;
     /** Reveals the snippet that wraps this capability type's selections, as in {@link AgentCapabilitiesSettings}. */
     onOpenPromptSnippet: (fragmentId: string) => void;
+    /** The component of the editor, {@link GenericCapabilitiesTree} by default. */
+    capabilitiesTree?: React.ComponentType<GenericCapabilitiesTreeProps>;
 }
 
 /**
@@ -191,6 +193,7 @@ export interface AgentGenericCapabilitiesSettingsProps {
  */
 export const AgentGenericCapabilitiesSettings = (props: AgentGenericCapabilitiesSettingsProps) => {
     const { agentId, savedSelections, availableCapabilities, usedCapabilities, aiSettingsService, settingsRowService, hoverService, onOpenPromptSnippet } = props;
+    const CapabilitiesTree = props.capabilitiesTree ?? GenericCapabilitiesTree;
     // Held locally so consecutive edits build on each other instead of on the not yet reloaded saved value.
     const [selections, setSelections] = React.useState<GenericCapabilitySelections>(savedSelections ?? {});
     const currentSelections = React.useRef(selections);
@@ -284,7 +287,7 @@ export const AgentGenericCapabilitiesSettings = (props: AgentGenericCapabilities
             </>}
         />
         {editing && availableCapabilities && <div className='ai-agent-generic-capabilities-editor'>
-            <GenericCapabilitiesTree
+            <CapabilitiesTree
                 genericCapabilities={selections}
                 onGenericCapabilityChange={handleChange}
                 // Every change is saved at once, so the tree's "back to saved" reset only has its search to clear.

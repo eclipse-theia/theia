@@ -24,9 +24,9 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from 'inversify';
 import { CommandService, ILogger, Logger } from '@theia/core';
-import { PromptVariableContribution, PROMPT_VARIABLE } from './prompt-variable-contribution';
-import { PromptService, PromptServiceImpl } from '../common/prompt-service';
-import { DefaultAIVariableService, AIVariableService } from '../common/variable-service';
+import { PromptVariableContribution, PROMPT_VARIABLE } from './prompt-variable-contribution.js';
+import { PromptService, PromptServiceImpl } from '../common/prompt-service.js';
+import { DefaultAIVariableService, AIVariableService } from '../common/variable-service.js';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 disableJSDOM();

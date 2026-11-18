@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { MCPServerDescription, MCPServerManager } from '../common';
-import { cleanServerDescription, MCPServerDescriptionRCP, MCPServerManagerServer, MCPServerManagerServerClient } from '../common/mcp-protocol';
+import { MCPServerDescription, MCPServerManager } from '../common/index.js';
+import { cleanServerDescription, MCPServerDescriptionRCP, MCPServerManagerServer, MCPServerManagerServerClient } from '../common/mcp-protocol.js';
 import { ILogger } from '@theia/core';
 
 @injectable()

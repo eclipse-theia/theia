@@ -19,12 +19,12 @@ import { Widget } from '@lumino/widgets';
 import {
     MenuModelRegistry, Command, CommandContribution,
     MenuContribution, CommandRegistry, nls
-} from '../../common';
-import { KeybindingContribution, KeybindingRegistry } from '../keybinding';
-import { WidgetManager } from '../widget-manager';
-import { CommonMenus } from '../common-menus';
-import { ApplicationShell } from './application-shell';
-import { QuickViewService } from '../quick-input';
+} from '../../common/index.js';
+import { KeybindingContribution, KeybindingRegistry } from '../keybinding.js';
+import { WidgetManager } from '../widget-manager.js';
+import { CommonMenus } from '../common-menus.js';
+import { ApplicationShell } from './application-shell.js';
+import { QuickViewService } from '../quick-input/index.js';
 
 export interface OpenViewArguments extends ApplicationShell.WidgetOptions {
     toggle?: boolean

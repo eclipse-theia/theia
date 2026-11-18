@@ -17,8 +17,8 @@
 import { Command, CommandContribution, CommandRegistry } from '@theia/core';
 import { ApplicationShell, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChatViewWidget } from './chat-view-widget';
-import { ChatCommands } from './chat-view-commands';
+import { ChatViewWidget } from './chat-view-widget.js';
+import { ChatCommands } from './chat-view-commands.js';
 
 export const CHAT_FOCUS_INPUT_COMMAND = Command.toLocalizedCommand({
     id: 'ai-chat.focus-input',

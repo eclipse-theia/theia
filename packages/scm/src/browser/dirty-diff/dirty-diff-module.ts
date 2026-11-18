@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { DirtyDiffDecorator } from './dirty-diff-decorator';
-import { DirtyDiffNavigator } from './dirty-diff-navigator';
-import { DirtyDiffWidget, DirtyDiffWidgetFactory, DirtyDiffWidgetProps } from './dirty-diff-widget';
+import { DirtyDiffDecorator } from './dirty-diff-decorator.js';
+import { DirtyDiffNavigator } from './dirty-diff-navigator.js';
+import { DirtyDiffWidget, DirtyDiffWidgetFactory, DirtyDiffWidgetProps } from './dirty-diff-widget.js';
 
 import '../../../src/browser/style/dirty-diff.css';
 

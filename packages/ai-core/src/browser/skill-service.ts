@@ -22,7 +22,7 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { AICorePreferences, PREFERENCE_NAME_SKILL_DIRECTORIES } from '../common/ai-core-preferences';
+import { AICorePreferences, PREFERENCE_NAME_SKILL_DIRECTORIES } from '../common/ai-core-preferences.js';
 import {
     Skill,
     SkillDescription,
@@ -31,7 +31,7 @@ import {
     validateSkillDescription,
     parseSkillFile,
     combineSkillDirectories
-} from '../common/skill';
+} from '../common/skill.js';
 
 /** Debounce delay for coalescing rapid file system events */
 const UPDATE_DEBOUNCE_MS = 50;

@@ -24,7 +24,7 @@ import {
 } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { Emitter, PreferenceService } from '@theia/core/lib/common';
 import { interfaces } from '@theia/core/shared/inversify';
-import { SAMPLE_CHAT_NODE_TOOLBAR_ENABLED_PREF } from './sample-chat-node-toolbar-preferences';
+import { SAMPLE_CHAT_NODE_TOOLBAR_ENABLED_PREF } from './sample-chat-node-toolbar-preferences.js';
 
 export function bindChatNodeToolbarActionContribution(bind: interfaces.Bind): void {
     bind(ChatNodeToolbarActionContribution).toDynamicValue(context => {

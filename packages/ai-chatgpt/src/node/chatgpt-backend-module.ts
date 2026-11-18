@@ -24,12 +24,12 @@ import {
     ChatGptAuthServiceClient,
     ChatGptLanguageModelsManager,
     ChatGptPreferencesSchema
-} from '../common';
-import { ChatGptAuthServiceImpl, createRemoteAuthService } from './chatgpt-auth-service-impl';
-import { ChatGptAuthServiceConfig, ChatGptBackendAuthService, DEFAULT_CHATGPT_AUTH_SERVICE_CONFIG } from './chatgpt-auth-service';
-import { ChatGptLanguageModelsManagerImpl } from './chatgpt-language-models-manager-impl';
-import { ChatGptModelCatalog } from './chatgpt-model-catalog';
-import { ChatGptResponseApiUtils } from './chatgpt-response-api-utils';
+} from '../common/index.js';
+import { ChatGptAuthServiceImpl, createRemoteAuthService } from './chatgpt-auth-service-impl.js';
+import { ChatGptAuthServiceConfig, ChatGptBackendAuthService, DEFAULT_CHATGPT_AUTH_SERVICE_CONFIG } from './chatgpt-auth-service.js';
+import { ChatGptLanguageModelsManagerImpl } from './chatgpt-language-models-manager-impl.js';
+import { ChatGptModelCatalog } from './chatgpt-model-catalog.js';
+import { ChatGptResponseApiUtils } from './chatgpt-response-api-utils.js';
 
 // The language model registry is scoped to a frontend connection, hence so is the manager driving it.
 const chatGptConnectionModule = ConnectionContainerModule.create(({ bind }) => {

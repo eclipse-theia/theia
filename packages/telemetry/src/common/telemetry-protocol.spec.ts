@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { isValidTelemetryEvent } from './telemetry-protocol';
+import { isValidTelemetryEvent } from './telemetry-protocol.js';
 
 describe('telemetry protocol', () => {
     it('validates event kind, attributes, and session', () => {

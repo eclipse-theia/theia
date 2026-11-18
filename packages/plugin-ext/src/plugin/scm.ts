@@ -34,19 +34,19 @@ import {
     ScmHistoryItemChangeDto,
     ScmHistoryOptionsDto,
     ScmHistoryItemRefsChangeEventDto
-} from '../common';
+} from '../common/index.js';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
-import { CommandRegistryImpl } from '../plugin/command-registry';
-import { Splice } from '../common/arrays';
-import { UriComponents } from '../common/uri-components';
-import { Command } from '../common/plugin-api-rpc-model';
-import { RPCProtocol } from '../common/rpc-protocol';
-import { URI, ThemeIcon } from './types-impl';
-import { ScmCommandArg, ScmHistoryItemCommandArg } from '../common/plugin-api-rpc';
+import { CommandRegistryImpl } from '../plugin/command-registry.js';
+import { Splice } from '../common/arrays.js';
+import { UriComponents } from '../common/uri-components.js';
+import { Command } from '../common/plugin-api-rpc-model.js';
+import { RPCProtocol } from '../common/rpc-protocol.js';
+import { URI, ThemeIcon } from './types-impl.js';
+import { ScmCommandArg, ScmHistoryItemCommandArg } from '../common/plugin-api-rpc.js';
 import { sep } from '@theia/core/lib/common/paths';
-import { PluginIconPath } from './plugin-icon-path';
-import { createAPIObject } from './plugin-context';
+import { PluginIconPath } from './plugin-icon-path.js';
+import { createAPIObject } from './plugin-context.js';
 
 type ProviderHandle = number;
 type GroupHandle = number;
@@ -463,14 +463,14 @@ class ScmResourceGroupImpl implements theia.SourceControlResourceGroup {
         return this.resourceStatesMap.get(handle);
     }
 
-    executeResourceCommand(handle: number): Promise<void> {
+    async executeResourceCommand(handle: number): Promise<void> {
         const command = this.resourceStatesCommandsMap.get(handle);
 
         if (!command) {
-            return Promise.resolve(undefined);
+            return;
         }
 
-        return new Promise(() => this.commands.executeCommand(command.command!, ...(command.arguments || [])));
+        await this.commands.executeCommand(command.command!, ...(command.arguments || []));
     }
 
     takeResourceStateSnapshot(): ScmRawResourceSplice[] {
@@ -1032,15 +1032,15 @@ export class ScmExtImpl implements ScmExt {
         return sourceControl && sourceControl.inputBox;
     }
 
-    $provideOriginalResource(sourceControlHandle: number, uriComponents: string, token: theia.CancellationToken): Promise<UriComponents | undefined> {
-        const sourceControl = this.sourceControls.get(sourceControlHandle);
+    async $provideOriginalResource(sourceControlHandle: number, uriComponents: string, token: theia.CancellationToken): Promise<UriComponents | undefined> {
+        const quickDiffProvider = this.sourceControls.get(sourceControlHandle)?.quickDiffProvider;
 
-        if (!sourceControl || !sourceControl.quickDiffProvider || !sourceControl.quickDiffProvider.provideOriginalResource) {
-            return Promise.resolve(undefined);
+        if (!quickDiffProvider?.provideOriginalResource) {
+            return undefined;
         }
 
-        return new Promise<UriComponents | undefined>(() => sourceControl.quickDiffProvider!.provideOriginalResource!(URI.file(uriComponents), token))
-            .then<UriComponents | undefined>(r => r || undefined);
+        const result = await quickDiffProvider.provideOriginalResource(URI.file(uriComponents), token);
+        return result || undefined;
     }
 
     $onInputBoxValueChange(sourceControlHandle: number, value: string): Promise<void> {
