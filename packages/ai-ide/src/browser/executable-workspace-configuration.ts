@@ -20,9 +20,14 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { WorkspaceFileService } from '@theia/workspace/lib/common/workspace-file-service';
 
 /**
- * Recognizes workspace files that define commands the IDE runs when an agent tool names them: task definitions
- * and launch configurations. Besides `tasks.json` and `launch.json` in a configuration folder (`.theia`, `.vscode`),
- * these are the folder's `settings.json` and workspace files, which may carry `tasks` and `launch` sections too.
+ * Recognizes workspace configuration files whose agent-written changes wait for the user's review: `tasks.json`,
+ * `launch.json` and `settings.json` in a configuration folder (`.theia`, `.vscode`), and workspace files. They can
+ * define tasks and launch configurations, and `settings.json` and workspace files can also change settings such as
+ * tool confirmation.
+ *
+ * This is defense in depth, not a complete list: `runTask` also runs tasks that extensions provide from other files,
+ * e.g. npm scripts in `package.json`. The confirmation that `runTask` and `runLaunchConfiguration` always ask for is
+ * what keeps an agent from running commands it wrote.
  *
  * Names are compared case-insensitively, as case-insensitive file systems resolve any spelling to the same file.
  */
