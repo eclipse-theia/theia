@@ -91,7 +91,8 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
             };
         });
 
-        // The window loads before the backend is listening; the frontend asks for the port when it needs it.
+        // The window loads before the backend is listening; its preload script asks for the port right away,
+        // and the answer waits until the backend is listening and the security token cookie is set.
         ipcMain.handle(CHANNEL_GET_BACKEND_PORT, () => application.backendPort);
 
         // electron security token

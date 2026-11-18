@@ -285,15 +285,21 @@ export class ElectronMainApplication {
                     }
                     this.hookApplicationEvents();
                     this.showInitialWindow(argv.includes('--open-url') ? argv[argv.length - 1] : undefined);
-                    // The backend starts in the background. The window loads its content meanwhile and asks the
-                    // main process for the port when it is about to connect (see `TheiaMainApi`), which is answered
-                    // once the backend is listening and the security token cookie for it is set.
+                    // The backend starts in the background. The window loads its content meanwhile, and its preload
+                    // script asks the main process for the port as soon as it loads (see `TheiaMainApi`), which is
+                    // answered once the backend is listening and the security token cookie for it is set.
                     const backendStarted = this.stopwatch.startAsync('electron-main-start-backend', 'Starting backend', () => this.startBackend())
                         .then(async port => {
+                            // The backend may be listening before the app is ready, and Electron provides the session
+                            // that the cookie is set on only once it is.
+                            await app.whenReady();
                             await this.stopwatch.startAsync('electron-main-security-token', 'Attaching security token',
                                 () => this.attachElectronSecurityToken(port));
                             this._backendPort.resolve(port);
                         });
+                    // A failure to start the backend is reported below. Contributions that chain on `backendPort` see
+                    // it as well, but it must not be an unhandled rejection where none does.
+                    this.backendPort.catch(() => { });
                     backendStarted.catch(error => this._backendPort.reject(error));
                     await app.whenReady();
                     await this.stopwatch.startAsync('electron-main-start-contributions', 'Starting contributions',
@@ -306,8 +312,18 @@ export class ElectronMainApplication {
                         secondInstance: false,
                         claimed: await this.isWindowClaimed(launchArgs)
                     });
-                    await backendStarted;
-                    startupMeasurement.info('Startup sequence completed');
+                    try {
+                        await backendStarted;
+                        startupMeasurement.info('Startup sequence completed');
+                    } catch (error) {
+                        // The window cannot connect without its backend, so tell the user and exit.
+                        console.error('Failed to start the backend.', error);
+                        const reason = error instanceof Error ? error.message : String(error);
+                        dialog.showErrorBox(config.applicationName, `Failed to start the backend (${reason}).`);
+                        // `app.exit` emits neither `before-quit` nor `will-quit`, so stop the contributions here.
+                        this.stopContributions();
+                        app.exit(1);
+                    }
                 },
             ).parse();
     }
@@ -702,7 +718,7 @@ export class ElectronMainApplication {
     /**
      * The URI of the frontend for a window. It carries the port of the backend only if `params` specify one,
      * as for a window that connects to a remote backend: a window is loaded before the local backend is
-     * listening and resolves its port from the main process, see `ElectronBackendPort` in the frontend.
+     * listening and resolves its port from the main process, see `ElectronBackendPortResolver` in the frontend.
      */
     protected async createWindowUri(params: WindowSearchParams = {}): Promise<URI> {
         const query = Object.entries(params).map(([name, value]) => `${name}=${value}`).join('&');
@@ -876,7 +892,8 @@ export class ElectronMainApplication {
                 backendProcess.on('message', (msg: AddressInfo | { type: string, id: string, url: string }) => {
                     // The backend server main file is supposed to send the resolved proxy via IPC.
                     if (msg && typeof msg === 'object' && 'type' in msg && msg.type === 'resolve-proxy') {
-                        session.defaultSession.resolveProxy(msg.url).then(
+                        // The backend may ask before the app is ready, and Electron provides the session only once it is.
+                        app.whenReady().then(() => session.defaultSession.resolveProxy(msg.url)).then(
                             result => backendProcess.send({ type: 'resolve-proxy-response', id: msg.id, result }),
                             error => {
                                 console.warn(`Proxy resolution failed for ${msg.url}:`, error);
@@ -891,8 +908,8 @@ export class ElectronMainApplication {
                 backendProcess.on('error', error => {
                     reject(error);
                 });
-                backendProcess.on('exit', code => {
-                    reject(code);
+                backendProcess.on('exit', (code, signal) => {
+                    reject(new Error(signal ? `terminated by ${signal}` : `exited with code ${code}`));
                 });
                 app.on('quit', () => {
                     // Only issue a kill signal if the backend process is running.

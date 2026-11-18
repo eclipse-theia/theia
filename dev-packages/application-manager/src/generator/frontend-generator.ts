@@ -100,19 +100,48 @@ function load(container, jsModule) {
         .then(containerModule => container.load(containerModule.default));
 }
 
+function reportError(message, reason) {
+    console.error(message);
+    if (reason) {
+        console.error(reason);
+    }
+}
+
+/**
+ * Loads the \`frontendPreload\` modules and runs the \`Preloader\`.
+ * Resolves to \`false\` if the frontend cannot start.
+ */
 async function preload(container) {
+    let preloadModulesLoaded = false;
     try {
 ${Array.from(frontendPreloadModules.values(), jsModulePath => `\
         await load(container, import('${jsModulePath}'));`).join(EOL)}
-        const { Preloader } = await import('@theia/core/lib/browser/preload/preloader');
-        const preloader = container.get(Preloader);
-        await preloader.initialize();
+        preloadModulesLoaded = true;
     } catch (reason) {
-        console.error('Failed to run preload scripts.');
-        if (reason) {
-            console.error(reason);
+        reportError('Failed to run preload scripts.', reason);
+    }
+${this.ifElectron(`
+    // The window loads while the backend is still starting, and the Preloader makes the first connection to it.
+    // The port is resolved once the preload modules are loaded, so that they can rebind the resolver.
+    try {
+        const { ElectronBackendPortResolver } = await import('@theia/core/lib/electron-browser/messaging/electron-backend-port-resolver');
+        await container.get(ElectronBackendPortResolver).resolve();
+        ${this.emitStartupLog('backend port resolved')}
+    } catch (reason) {
+        reportError('Failed to resolve the backend port.', reason);
+        return false;
+    }
+`)}
+    if (preloadModulesLoaded) {
+        try {
+            const { Preloader } = await import('@theia/core/lib/browser/preload/preloader');
+            const preloader = container.get(Preloader);
+            await preloader.initialize();
+        } catch (reason) {
+            reportError('Failed to run preload scripts.', reason);
         }
     }
+    return true;
 }
 
 export default (async () => {
@@ -125,13 +154,10 @@ export default (async () => {
     container.load(messagingFrontendOnlyModule);`)}
 
     ${this.emitStartupLog('container created')}
-${this.ifElectron(`
-    // The window loads while the backend is still starting; wait for its port before the first connection.
-    const { ElectronBackendPort } = await import('@theia/core/lib/electron-browser/electron-backend-port');
-    await ElectronBackendPort.resolve();
-    ${this.emitStartupLog('backend port resolved')}
-`)}
-    await preload(container);
+
+    if (!await preload(container)) {
+        return;
+    }
     ${this.emitStartupLog('preloaded')}
 
     ${this.ifMonaco(() => `

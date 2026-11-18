@@ -17,14 +17,6 @@ The default fade-out was shortened from 0.8 s to 0.15 s.
 Everything that waits for `ready` (plugin views, the getting-started editor, the Electron splash screen) now runs while the indicator is still fading out.
 Code that assumed that the `.theia-preload` element is gone when `ready` is reached should wait for its removal instead, e.g. with a `MutationObserver`, or override `revealShell()` to restore the previous behavior.
 
-_Electron: the window loads before the backend is listening_:
-
-`ElectronMainApplication` no longer waits for the backend port before it loads the frontend into the main window. The backend is forked in the background, the window content loads as soon as the window exists, and the frontend asks the main process for the port right before its first connection, through the new `getBackendPort()` of the preload API (`TheiaCoreAPI`), which resolves once the backend is listening and the security token cookie is set.
-
-- The URL that the main process loads into a window no longer carries a `?port=` parameter, except for windows that are opened with explicit `WindowSearchParams` (remote backends). The generated `index.js` resolves the port and writes it into the URL (`ElectronBackendPort.resolve()`) before the preload phase, so `Endpoint`, `getCurrentPort()` and other readers of `location.search` see it as before. Only code that runs earlier than that, in a custom generated entry point, cannot rely on it.
-- `ElectronMainApplicationContribution.onStart` now runs before the backend has started. A contribution that awaits `application.backendPort` there delays the window until the backend is up; chain on the promise instead, as `@theia/mini-browser` does for its security token cookie.
-- Adopters with a custom preload script must expose `getBackendPort()` on `electronTheiaCore`, forwarding to the `CHANNEL_GET_BACKEND_PORT` IPC channel.
-
 _AI Configuration View_:
 
 The AI Configuration view (`@theia/ai-ide`) has been reworked from a tabbed dock panel into a master–detail tree driven by a new public contribution point, `AiConfigurationCategory`.
@@ -193,6 +185,14 @@ What changes for adopters:
 - Backend code that spawns processes on its own before any frontend connects, for example in `BackendApplicationContribution.onStart()`, has to await `ShellEnvironmentServer.whenResolved()` (`@theia/core/lib/common/shell-environment`) before spawning. The headless plugin host, which `@theia/plugin-ext-headless` forks on its own, is started by `HostedPluginServerImpl` once the environment is known; `HostedPluginServerImpl.whenPluginServerStarted()` settles when it has been forked. Code that serves the requests of a held service needs no change.
 - `EnvVariablesServerImpl` reads `process.env` on every request instead of a snapshot taken when it was created, so that the `PATH` of the login shell is reported; its `envs` field is a getter now, and `getValue` answers from it like `getVariables`. The service is not held, as the frontend needs the configuration directory to start, so a frontend that asks for a variable before the login shell has answered gets the `PATH` of the GUI application; it used to get the `fix-path`-ed `PATH` at any time. The `${env:...}` variable of `@theia/variable-resolver` waits for the login shell before it reads, so that a task or launch configuration started early does not pass the `PATH` of the GUI application to its process. A frontend service of your own that passes variables to a process should await `ShellEnvironmentServer.whenResolved()` likewise; the frontend proxy is bound in Electron applications only, so inject it `@optional()`.
 - The login shell runs with `THEIA_RESOLVING_ENVIRONMENT=1` in its environment, which dotfiles can check to skip prompts or programs that would keep the shell from exiting. A shell that does not answer within the new `application.shellEnvironmentResolutionTimeout` preference, 10 seconds by default, is killed, the environment is left as it is, and the user is notified. The preference takes effect at the next start.
+
+#### Electron: the window loads before the backend is listening [#18205](https://github.com/eclipse-theia/theia/pull/18205)
+
+`ElectronMainApplication` no longer waits for the backend port before it loads the frontend into the main window. The backend is forked in the background, the window content loads as soon as the window exists, and the preload script asks the main process for the port as soon as the window loads, through the new `getBackendPort()` of the preload API (`TheiaCoreAPI`), which resolves once the backend is listening and the security token cookie is set.
+
+- The URL that the main process loads into a window no longer carries a `?port=` parameter, except for windows that are opened with explicit `WindowSearchParams` (remote backends). The generated `index.js` resolves the port and writes it into the URL in the preload phase, once the `frontendPreload` modules are loaded and before the `Preloader` makes the first connection, so `Endpoint`, `getCurrentPort()` and other readers of `location.search` see it as before. It does so through the `ElectronBackendPortResolver`, which a `frontendPreload` module can rebind. Only code that runs earlier, such as the top level of a `frontendPreload` module or a custom generated entry point, cannot rely on it.
+- `ElectronMainApplicationContribution.onStart` now runs before the backend has started. A contribution that awaits `application.backendPort` there delays the window until the backend is up; chain on the promise instead, as `@theia/mini-browser` does for its security token cookie.
+- Adopters with a custom preload script must expose `getBackendPort()` on `electronTheiaCore`, forwarding to the `CHANNEL_GET_BACKEND_PORT` IPC channel.
 
 ### v1.77.0
 

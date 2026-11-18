@@ -154,6 +154,11 @@ declare global {
     }
 }
 
+/**
+ * The parameter of the window URL that carries the port of the backend to which the window connects.
+ */
+export const BACKEND_PORT_PARAM = 'port';
+
 export const CHANNEL_WC_METADATA = 'WebContentMetadata';
 export const CHANNEL_GET_BACKEND_PORT = 'GetBackendPort';
 export const CHANNEL_SET_MENU = 'SetMenu';

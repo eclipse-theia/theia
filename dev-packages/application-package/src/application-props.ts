@@ -71,7 +71,7 @@ export namespace ElectronFrontendApplicationConfig {
          *
          * Defaults to all platforms.
          */
-        platforms?: string[];
+        platforms?: NodeJS.Platform[];
     }
     export interface Partial {
 

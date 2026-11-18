@@ -17,7 +17,7 @@
 import { injectable } from 'inversify';
 import { Endpoint } from '../../browser/endpoint.js';
 import { WebSocketConnectionSource } from '../../browser/messaging/ws-connection-source.js';
-import { ElectronBackendPort } from '../electron-backend-port.js';
+import { BACKEND_PORT_PARAM } from '../../electron-common/electron-api.js';
 
 export const LOCAL_PORT_PARAM = 'localPort';
 export function getLocalPort(): string | undefined {
@@ -25,10 +25,10 @@ export function getLocalPort(): string | undefined {
     return params.get(LOCAL_PORT_PARAM) ?? undefined;
 }
 
-export const CURRENT_PORT_PARAM = ElectronBackendPort.PARAM;
+export const CURRENT_PORT_PARAM = BACKEND_PORT_PARAM;
 /**
  * The port of the backend of this window, from the `port` URL parameter. The main process sets it for a
- * window that connects to a remote backend; for a local backend, {@link ElectronBackendPort.resolve}
+ * window that connects to a remote backend; for a local backend, the `ElectronBackendPortResolver`
  * writes it into the URL before the frontend connects.
  */
 export function getCurrentPort(): string | undefined {
