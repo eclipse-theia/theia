@@ -130,12 +130,11 @@ export class SecondaryWindowContribution implements CommandContribution, MenuCon
         registry.registerItem({
             id: EXTRACT_WIDGET.id,
             command: EXTRACT_WIDGET.id,
-            icon: codicon('window'),
+            icon: codicon('open-in-window'),
         });
         registry.registerItem({
             id: RESTORE_WIDGET.id,
             command: RESTORE_WIDGET.id,
-            // TODO use `open-in-window` once the codicon font bundled with Monaco provides it, see #17789
             icon: codicon('screen-normal'),
         });
     }

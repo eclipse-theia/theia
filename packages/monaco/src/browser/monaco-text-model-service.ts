@@ -24,8 +24,13 @@ import { MonacoToProtocolConverter } from './monaco-to-protocol-converter.js';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter.js';
 import { ILogger } from '@theia/core/lib/common/logger';
 import * as monaco from '@theia/monaco-editor-core';
-import { ITextModelService, ITextModelContentProvider } from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService.js';
-import { ITextModelUpdateOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/model.js';
+import {
+    IResolvedTextEditorModel, ITextModelService, ITextModelContentProvider
+} from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService.js';
+import { ITextBufferFactory, ITextModelUpdateOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/model.js';
+import { InMemoryTextModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/inMemoryTextModelService.js';
+import { IModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/model.js';
+import { ILanguageSelection } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language.js';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
 import { ITextResourcePropertiesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/textResourceConfiguration.js';
@@ -65,6 +70,11 @@ export class MonacoTextModelService implements ITextModelService {
     );
 
     protected readonly _visibleModels = new Set<MonacoEditorModel>();
+
+    /**
+     * Owns the synthetic documents, see {@link createSyntheticDocument}. Created lazily as it requires the Monaco services.
+     */
+    protected syntheticDocumentService: InMemoryTextModelService | undefined;
 
     protected readonly onDidCreateEmitter = new Emitter<MonacoEditorModel>();
 
@@ -135,6 +145,21 @@ export class MonacoTextModelService implements ITextModelService {
 
     createModelReference(raw: monaco.Uri | URI): Promise<IReference<MonacoEditorModel>> {
         return this._models.acquire(raw.toString());
+    }
+
+    /**
+     * Creates an in-memory document that is not backed by a resource, e.g. the empty side of a diff of an added or deleted file.
+     * Such documents are not {@link MonacoEditorModel}s, so they are delegated to Monaco's in-memory implementation.
+     */
+    createSyntheticDocument(
+        value: string | ITextBufferFactory,
+        // eslint-disable-next-line no-null/no-null
+        languageSelection: ILanguageSelection | null
+    ): Promise<IReference<IResolvedTextEditorModel>> {
+        if (!this.syntheticDocumentService) {
+            this.syntheticDocumentService = new InMemoryTextModelService(StandaloneServices.get(IModelService));
+        }
+        return this.syntheticDocumentService.createSyntheticDocument(value, languageSelection);
     }
 
     async loadModel(uri: URI): Promise<MonacoEditorModel> {

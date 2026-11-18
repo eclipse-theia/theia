@@ -210,7 +210,7 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
                 new editorBoolConstructor(id++, 'detectIndentation', true, editorGeneratedPreferenceProperties['editor.detectIndentation']),
                 new editorBoolConstructor(id++, 'trimAutoWhitespace', true, editorGeneratedPreferenceProperties['editor.trimAutoWhitespace']),
                 new editorBoolConstructor(id++, 'largeFileOptimizations', true, editorGeneratedPreferenceProperties['editor.largeFileOptimizations']),
-                new editorStringEnumConstructor(id++, 'wordBasedSuggestions', 'matchingDocuments', editorGeneratedPreferenceProperties['editor.wordBasedSuggestions'].enum, editorGeneratedPreferenceProperties['editor.wordBasedSuggestions']),
+                new editorStringEnumConstructor(id++, 'wordBasedSuggestions', editorGeneratedPreferenceProperties['editor.wordBasedSuggestions'].default, editorGeneratedPreferenceProperties['editor.wordBasedSuggestions'].enum, editorGeneratedPreferenceProperties['editor.wordBasedSuggestions']),
                 new editorBoolConstructor(id++, 'stablePeek', false, editorGeneratedPreferenceProperties['editor.stablePeek']),
                 new editorIntConstructor(id++, 'maxTokenizationLineLength', 20000, 1, MAX_SAFE_INTEGER, editorGeneratedPreferenceProperties['editor.maxTokenizationLineLength']),
             );

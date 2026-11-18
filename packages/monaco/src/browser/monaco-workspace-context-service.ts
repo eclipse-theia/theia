@@ -76,4 +76,8 @@ export class MonacoWorkspaceContextService implements IWorkspaceContextService {
     isInsideWorkspace(resource: URI): boolean {
         return false;
     }
+
+    hasWorkspaceData(): boolean {
+        return false;
+    }
 }
