@@ -16,7 +16,7 @@
 
 import * as tls from 'tls';
 import type { Dispatcher } from 'undici';
-import { getProxyAgent } from './proxy';
+import { createProxyDispatcher } from './proxy';
 import { Headers, RequestConfiguration, RequestContext, RequestOptions, RequestService, CancellationToken } from './common-request-service';
 
 export interface NodeRequestOptions extends RequestOptions {
@@ -75,7 +75,7 @@ export class NodeRequestService implements RequestService {
         const headerAuthorization = this.takeProxyAuthorizationHeader(options);
         if (!options.dispatcher) {
             // undici's ProxyAgent rejects a Proxy-Authorization request header, so the authorization goes to the agent
-            options.dispatcher = getProxyAgent(options.url || '', process.env, {
+            options.dispatcher = createProxyDispatcher(process.env, {
                 proxyUrl: await this.getProxyUrl(options.url),
                 strictSSL: options.strictSSL,
                 ca: this.systemCertificates ? this.getCACertificates() : undefined,

@@ -82,6 +82,8 @@ export interface OpenAiClientOptions {
     readonly apiVersion?: string;
     readonly deployment?: string;
     readonly proxyUrl?: string;
+    /** Hosts that bypass the proxy. */
+    readonly noProxy?: string[];
     readonly maxRetries?: number;
     /** Additional HTTP headers sent with every request, e.g. headers required by a gateway in front of the API. */
     readonly headers?: Record<string, string>;
@@ -95,7 +97,7 @@ export interface OpenAiClientOptions {
 export function createOpenAiClient(options: OpenAiClientOptions): OpenAI {
     // The SDK refuses to be constructed without a key, so an endpoint that needs none still gets one.
     const apiKey = options.apiKey ?? 'no-key';
-    const proxyFetch = createProxyFetch(options.proxyUrl);
+    const proxyFetch = createProxyFetch(options.proxyUrl, options.noProxy);
     return options.apiVersion
         ? new AzureOpenAI({
             apiKey, baseURL: options.baseURL, apiVersion: options.apiVersion, deployment: options.deployment,
@@ -132,7 +134,10 @@ export interface OpenAiModelParams {
     developerMessageSettings?: DeveloperMessageSettings;
     maxRetries?: number;
     useResponseApi?: boolean;
+    /** The proxy, e.g. from the `http.proxy` preference. Without it, the proxy of the environment variables is used. */
     proxy?: string;
+    /** Hosts that bypass the proxy, e.g. from the `http.noProxy` preference. */
+    noProxy?: string[];
     reasoningSupport?: ReasoningSupport;
     maxInputTokens?: number;
     serverTools?: ServerToolDescriptor[];
@@ -164,6 +169,7 @@ export class OpenAiModel implements LanguageModel {
     maxRetries: number;
     useResponseApi: boolean;
     proxy?: string;
+    noProxy?: string[];
     reasoningSupport?: ReasoningSupport;
     maxInputTokens?: number;
     serverTools?: ServerToolDescriptor[];
@@ -207,6 +213,7 @@ export class OpenAiModel implements LanguageModel {
         this.maxRetries = params.maxRetries ?? 3;
         this.useResponseApi = params.useResponseApi ?? false;
         this.proxy = params.proxy;
+        this.noProxy = params.noProxy;
         this.reasoningSupport = params.reasoningSupport;
         this.maxInputTokens = params.maxInputTokens;
         this.serverTools = params.serverTools;
@@ -338,6 +345,7 @@ export class OpenAiModel implements LanguageModel {
             apiVersion: this.apiVersion(),
             deployment: this.deployment,
             proxyUrl: this.proxy,
+            noProxy: this.noProxy,
             maxRetries: this.maxRetries,
             headers: this.headers
         });

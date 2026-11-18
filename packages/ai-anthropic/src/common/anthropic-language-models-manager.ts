@@ -52,6 +52,10 @@ export interface AnthropicLanguageModelsManager {
      * stops it being used immediately, wherever it would have been used.
      */
     setAllowEnvironmentApiKey(allowed: boolean): void;
+    /**
+     * Sets the proxy and the hosts that bypass it, i.e. the `http.proxy` and `http.noProxy` preferences.
+     * Without a proxy, the proxy of the environment variables is used.
+     */
     setProxyUrl(proxyUrl: string | undefined, noProxy?: string[]): void;
     createOrUpdateLanguageModels(...models: AnthropicModelDescription[]): Promise<void>;
     removeLanguageModels(...modelIds: string[]): void;

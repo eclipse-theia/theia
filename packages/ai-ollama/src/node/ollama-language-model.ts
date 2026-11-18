@@ -51,7 +51,10 @@ export interface OllamaModelParams {
     model: string;
     status: LanguageModelStatus;
     host: () => string | undefined;
+    /** The proxy, e.g. from the `http.proxy` preference. Without it, the proxy of the environment variables is used. */
     proxy?: string;
+    /** Hosts that bypass the proxy, e.g. from the `http.noProxy` preference. */
+    noProxy?: string[];
     reasoningSupport?: ReasoningSupport;
 }
 
@@ -77,6 +80,7 @@ export class OllamaModel implements LanguageModel {
     status: LanguageModelStatus;
     protected host: () => string | undefined;
     proxy?: string;
+    noProxy?: string[];
     reasoningSupport?: ReasoningSupport;
 
     @inject(OllamaModelParams)
@@ -96,6 +100,7 @@ export class OllamaModel implements LanguageModel {
         this.status = params.status;
         this.host = params.host;
         this.proxy = params.proxy;
+        this.noProxy = params.noProxy;
         this.reasoningSupport = params.reasoningSupport;
     }
 
@@ -438,7 +443,7 @@ export class OllamaModel implements LanguageModel {
         if (!host) {
             throw new Error('Please provide OLLAMA_HOST in preferences or via environment variable');
         }
-        return new Ollama({ host: host, fetch: createProxyFetch(this.proxy) });
+        return new Ollama({ host: host, fetch: createProxyFetch(this.proxy, this.noProxy) });
     }
 
     protected toOllamaTool(tool: ToolRequest): ToolWithHandler {

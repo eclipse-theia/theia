@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
-import { getProxyUrl } from '@theia/ai-core/lib/node';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { OllamaLanguageModelFactory, OllamaModel } from './ollama-language-model.js';
 import { OllamaLanguageModelsManager, OllamaModelDescription } from '../common/index.js';
@@ -53,8 +52,6 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
             const hostProvider = () => this.host;
 
             const host = hostProvider();
-            const normalizedHost = host && !host.includes('://') ? `http://${host}` : host;
-            const proxyUrl = getProxyUrl(normalizedHost ?? 'http://localhost:11434', this._proxyUrl, this._noProxy);
 
             if (existingModel) {
                 if (!(existingModel instanceof OllamaModel)) {
@@ -63,7 +60,8 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
                 }
                 const status = this.calculateStatus(host);
                 await this.languageModelRegistry.patchLanguageModel<OllamaModel>(modelDescription.id, {
-                    proxy: proxyUrl,
+                    proxy: this._proxyUrl,
+                    noProxy: this._noProxy,
                     status,
                     reasoningSupport: modelDescription.reasoningSupport
                 });
@@ -75,7 +73,8 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
                         model: modelDescription.model,
                         status,
                         host: hostProvider,
-                        proxy: proxyUrl,
+                        proxy: this._proxyUrl,
+                        noProxy: this._noProxy,
                         reasoningSupport: modelDescription.reasoningSupport
                     })
                 ]);

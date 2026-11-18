@@ -14,23 +14,26 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as undici from 'undici';
-import { shouldBypassProxyForEnv } from '@theia/core/shared/@theia/request';
+import { createProxyDispatcher } from '@theia/core/shared/@theia/request/lib/proxy';
+import { shouldBypassProxy } from '../common/proxy-util.js';
 
 /**
- * Creates a custom fetch function that routes requests through the given HTTP proxy.
- * Returns `undefined` if no proxy URL is provided.
+ * Creates a custom fetch function that routes requests through the given HTTP proxy or, without it, the proxy of the
+ * `HTTP_PROXY` or `HTTPS_PROXY` environment variable. Requests to the hosts of `noProxy` and of the `no_proxy`
+ * environment variable bypass the proxy. The decision is made per request, so it covers redirects as well.
+ * Returns `undefined` if no proxy is configured.
  *
- * @param proxyUrl - The proxy URL to use, or `undefined` for no proxy.
+ * @param proxyUrl - The proxy URL to use, e.g. from the `http.proxy` preference, or `undefined` for the environment variables.
+ * @param noProxy - Hosts that bypass the proxy, e.g. from the `http.noProxy` preference.
  * @returns A custom fetch function using the proxy, or `undefined`.
  */
-export function createProxyFetch(proxyUrl: string | undefined): typeof fetch | undefined {
-    if (!proxyUrl) {
+export function createProxyFetch(proxyUrl: string | undefined, noProxy?: string[]): typeof fetch | undefined {
+    const dispatcher = createProxyDispatcher(process.env, { proxyUrl, noProxy });
+    if (!dispatcher) {
         return undefined;
     }
-    const proxyAgent = new undici.ProxyAgent(proxyUrl);
     return ((input: string | URL | Request, init?: RequestInit) =>
-        fetch(input, { ...init, dispatcher: proxyAgent } as RequestInit)
+        fetch(input, { ...init, dispatcher } as RequestInit)
     ) as typeof fetch;
 }
 
@@ -40,15 +43,15 @@ export function createProxyFetch(proxyUrl: string | undefined): typeof fetch | u
  * Resolution order:
  * 1. If `settingsProxy` is provided (e.g., from Theia `http.proxy` preference), use it.
  * 2. Otherwise check environment variables based on the target URL scheme.
- * 3. If a proxy is resolved, check `noProxy` and `no_proxy`/`NO_PROXY`. If bypassed, return `undefined`.
+ * 3. If a proxy is resolved, check `no_proxy`/`NO_PROXY` — if bypass, return `undefined`.
  * 4. Return the resolved proxy URL or `undefined` if none found.
  *
  * @param targetUrl - The URL for which to resolve a proxy.
  * @param settingsProxy - An optional proxy URL from application settings.
- * @param noProxy - Optional hosts that bypass the proxy (e.g., from Theia `http.noProxy` preference), combined with `no_proxy`/`NO_PROXY`.
  * @returns The proxy URL to use, or `undefined` if no proxy should be used.
+ * @deprecated Pass the proxy and the `noProxy` hosts to {@link createProxyFetch}, which decides per request.
  */
-export function getProxyUrl(targetUrl: string | undefined, settingsProxy?: string, noProxy?: string[]): string | undefined {
+export function getProxyUrl(targetUrl: string | undefined, settingsProxy?: string): string | undefined {
     let proxyUrl: string | undefined;
 
     if (settingsProxy) {
@@ -76,8 +79,9 @@ export function getProxyUrl(targetUrl: string | undefined, settingsProxy?: strin
         return undefined;
     }
 
-    // Check the `http.noProxy` setting and no_proxy / NO_PROXY
-    if (targetUrl && URL.canParse(targetUrl) && shouldBypassProxyForEnv(new URL(targetUrl), process.env, noProxy)) {
+    // Check no_proxy / NO_PROXY
+    const noProxy = process.env.no_proxy ?? process.env.NO_PROXY;
+    if (shouldBypassProxy(targetUrl, noProxy)) {
         return undefined;
     }
 

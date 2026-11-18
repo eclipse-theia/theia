@@ -17,7 +17,7 @@
 import {
     ApiKeySource, DiscoveredModel, DiscoveredModels, LanguageModelRegistry, LanguageModelStatus, ModelDiscoveryResult, ReasoningSupport
 } from '@theia/ai-core';
-import { getProxyUrl, ModelDiscoveryFetcher } from '@theia/ai-core/lib/node';
+import { ModelDiscoveryFetcher } from '@theia/ai-core/lib/node';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { APIConnectionError } from 'openai';
 import { createOpenAiClient, DeveloperMessageSettings, OpenAiLanguageModelFactory, OpenAiModel } from './openai-language-model.js';
@@ -89,11 +89,10 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
         if (!apiKey) {
             return { models: [], fromCache: false };
         }
-        const proxyUrl = getProxyUrl('https://api.openai.com', this._proxyUrl, this._noProxy);
         return this.discoveryFetcher.fetch({
             snapshotFile: OPENAI_SNAPSHOT_FILE,
             providerLabel: 'OpenAI',
-            listModels: async () => this.toDiscoveredModels(await this.listModels(apiKey, proxyUrl)),
+            listModels: async () => this.toDiscoveredModels(await this.listModels(apiKey, this._proxyUrl, this._noProxy)),
             // Retry only transient connection errors; auth/HTTP errors fail fast.
             isRetryable: error => error instanceof APIConnectionError
         });
@@ -136,8 +135,8 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
     }
 
     /** Iterates the (auto-paginated) `/v1/models` endpoint. Overridable for testing. */
-    protected async listModels(apiKey: string, proxyUrl: string | undefined): Promise<ListedOpenAiModel[]> {
-        const openai = createOpenAiClient({ apiKey, proxyUrl });
+    protected async listModels(apiKey: string, proxyUrl: string | undefined, noProxy?: string[]): Promise<ListedOpenAiModel[]> {
+        const openai = createOpenAiClient({ apiKey, proxyUrl, noProxy });
         const models: ListedOpenAiModel[] = [];
         for await (const model of openai.models.list()) {
             models.push(model);
@@ -182,7 +181,6 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                 }
                 return undefined;
             };
-            const proxyUrl = getProxyUrl(modelDescription.url ?? 'https://api.openai.com', this._proxyUrl, this._noProxy);
 
             const status = this.calculateStatus(modelDescription, apiKeyProvider());
             const metadata = this.resolveMetadata(modelDescription);
@@ -205,7 +203,8 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                     status,
                     maxRetries: modelDescription.maxRetries,
                     useResponseApi: modelDescription.useResponseApi ?? false,
-                    proxy: proxyUrl,
+                    proxy: this._proxyUrl,
+                    noProxy: this._noProxy,
                     reasoningSupport: metadata.reasoningSupport,
                     maxInputTokens: metadata.maxInputTokens,
                     serverTools,
@@ -230,7 +229,8 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                         developerMessageSettings: metadata.developerMessageSettings,
                         maxRetries: modelDescription.maxRetries,
                         useResponseApi: modelDescription.useResponseApi ?? false,
-                        proxy: proxyUrl,
+                        proxy: this._proxyUrl,
+                        noProxy: this._noProxy,
                         reasoningSupport: metadata.reasoningSupport,
                         maxInputTokens: metadata.maxInputTokens,
                         serverTools,

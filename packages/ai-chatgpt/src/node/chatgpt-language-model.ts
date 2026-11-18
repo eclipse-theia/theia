@@ -17,7 +17,7 @@
 import {
     LanguageModel, LanguageModelResponse, LanguageModelStatus, ReasoningSupport, UserRequest
 } from '@theia/ai-core';
-import { createProxyFetch, getProxyUrl } from '@theia/ai-core/lib/node';
+import { createProxyFetch } from '@theia/ai-core/lib/node';
 import { CancellationToken } from '@theia/core';
 import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-model-utils';
 import { applyResponseApiCompaction, getOpenAiRequestSettings } from '@theia/ai-openai/lib/node/openai-request-settings';
@@ -57,7 +57,8 @@ export class ChatGptModel implements LanguageModel {
         public reasoningSupport?: ReasoningSupport,
         public maxInputTokens?: number,
         public serverSideCompactionEnabledByDefault: boolean = true,
-        public serverSideCompactionTokenThresholdByDefault?: number
+        public serverSideCompactionTokenThresholdByDefault?: number,
+        public noProxy?: string[]
     ) { }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -100,7 +101,7 @@ export class ChatGptModel implements LanguageModel {
             throw new Error('The Codex session has no ChatGPT account ID. Please sign in again.');
         }
         const baseURL = codex ? CHATGPT_CODEX_RESPONSES_BASE_URL : CHATGPT_RESPONSES_BASE_URL;
-        const proxyFetch = createProxyFetch(getProxyUrl(baseURL, this.proxy)) ?? fetch;
+        const proxyFetch = createProxyFetch(this.proxy, this.noProxy) ?? fetch;
         return new OpenAI({
             apiKey: async () => (await getCredentials()).accessToken,
             baseURL,
