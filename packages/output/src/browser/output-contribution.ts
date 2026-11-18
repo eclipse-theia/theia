@@ -25,7 +25,7 @@ import { OutputWidget } from './output-widget.js';
 import { OutputContextMenu } from './output-context-menu.js';
 import { OutputUri } from '../common/output-uri.js';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
-import { OutputChannelManager, OutputChannel } from './output-channel.js';
+import { OutputChannelManager, OutputChannel, OutputChannelLogLevel } from './output-channel.js';
 import { OutputCommands } from './output-commands.js';
 import { QuickPickSeparator, QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { nls } from '@theia/core/lib/common/nls';
@@ -215,6 +215,23 @@ export class OutputContribution extends AbstractViewContribution<OutputWidget> i
             isEnabled: () => !!this.outputChannelManager.getChannels().length,
             isVisible: () => !!this.outputChannelManager.getChannels().length
         });
+        registry.registerCommand(OutputCommands.SET_LOG_LEVEL, {
+            execute: async () => {
+                const selection = await this.pickGlobalLogLevelOrLogChannel(this.getLogChannels());
+                if (selection === undefined) {
+                    return;
+                }
+                if (typeof selection === 'number') {
+                    this.outputChannelManager.globalLogLevel = selection;
+                    return;
+                }
+                const logLevel = await this.pickLogLevel(selection);
+                if (logLevel !== undefined) {
+                    // a channel set to the global level follows later changes of the global level
+                    selection.logLevel = logLevel === this.outputChannelManager.globalLogLevel ? undefined : logLevel;
+                }
+            }
+        });
     }
 
     override registerMenus(registry: MenuModelRegistry): void {
@@ -270,5 +287,68 @@ export class OutputContribution extends AbstractViewContribution<OutputWidget> i
         }
         const selectedItem = await this.quickPickService.show(items, { placeholder });
         return selectedItem && ('value' in selectedItem) ? selectedItem.value : undefined;
+    }
+
+    protected getLogChannels(): OutputChannel[] {
+        return this.outputChannelManager.getChannels()
+            .filter(channel => channel.isLogChannel)
+            .sort((left, right) => left.name.localeCompare(right.name));
+    }
+
+    protected async pickGlobalLogLevelOrLogChannel(channels: OutputChannel[]): Promise<OutputChannelLogLevel | OutputChannel | undefined> {
+        const items: Array<QuickPickValue<OutputChannelLogLevel | OutputChannel> | QuickPickSeparator> = [
+            { label: nls.localizeByDefault('All'), type: 'separator' },
+            ...this.createLogLevelQuickPickValues(this.outputChannelManager.globalLogLevel)
+        ];
+        if (channels.length) {
+            items.push(
+                { label: nls.localizeByDefault('Extension Logs'), type: 'separator' },
+                ...channels.map(channel => ({
+                    label: channel.name,
+                    description: channel.logLevel !== undefined ? this.getLogLevelLabel(channel.logLevel) : undefined,
+                    value: channel
+                }))
+            );
+        }
+        const selectedItem = await this.quickPickService.show(items, { placeholder: nls.localizeByDefault('Set Log Level') });
+        return selectedItem && ('value' in selectedItem) ? selectedItem.value : undefined;
+    }
+
+    protected async pickLogLevel(channel: OutputChannel): Promise<OutputChannelLogLevel | undefined> {
+        const logLevelItems = this.createLogLevelQuickPickValues(this.outputChannelManager.getLogLevel(channel));
+        // VS Code's string has a leading space, it must match to be found in the language packs
+        const placeholder = nls.localizeByDefault(' {0}: Select log level', channel.name).trim();
+        const selectedItem = await this.quickPickService.show(logLevelItems, { placeholder });
+        return selectedItem?.value;
+    }
+
+    protected createLogLevelQuickPickValues(currentLogLevel: OutputChannelLogLevel): QuickPickValue<OutputChannelLogLevel>[] {
+        const logLevels = [
+            OutputChannelLogLevel.Trace,
+            OutputChannelLogLevel.Debug,
+            OutputChannelLogLevel.Info,
+            OutputChannelLogLevel.Warning,
+            OutputChannelLogLevel.Error,
+            OutputChannelLogLevel.Off
+        ];
+        const items: QuickPickValue<OutputChannelLogLevel>[] = logLevels.map(logLevel => {
+            const label = this.getLogLevelLabel(logLevel);
+            return {
+                label: logLevel === currentLogLevel ? `$(check) ${label}` : label,
+                value: logLevel
+            };
+        });
+        return items;
+    }
+
+    protected getLogLevelLabel(logLevel: OutputChannelLogLevel): string {
+        switch (logLevel) {
+            case OutputChannelLogLevel.Trace: return nls.localizeByDefault('Trace');
+            case OutputChannelLogLevel.Debug: return nls.localizeByDefault('Debug');
+            case OutputChannelLogLevel.Info: return nls.localizeByDefault('Info');
+            case OutputChannelLogLevel.Warning: return nls.localizeByDefault('Warning');
+            case OutputChannelLogLevel.Error: return nls.localizeByDefault('Error');
+            case OutputChannelLogLevel.Off: return nls.localizeByDefault('Off');
+        }
     }
 }
