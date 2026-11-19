@@ -193,6 +193,7 @@ What changes for adopters:
 - The URL that the main process loads into a window no longer carries a `?port=` parameter, except for windows that are opened with explicit `WindowSearchParams` (remote backends). The generated `index.js` resolves the port and writes it into the URL in the preload phase, once the `frontendPreload` modules are loaded and before the `Preloader` makes the first connection, so `Endpoint`, `getCurrentPort()` and other readers of `location.search` see it as before. It does so through the `ElectronBackendPortResolver`, which a `frontendPreload` module can rebind. Only code that runs earlier, such as the top level of a `frontendPreload` module or a custom generated entry point, cannot rely on it.
 - `ElectronMainApplicationContribution.onStart` now runs before the backend has started. A contribution that awaits `application.backendPort` there delays the window until the backend is up; chain on the promise instead, as `@theia/mini-browser` does for its security token cookie.
 - Adopters with a custom preload script must expose `getBackendPort()` on `electronTheiaCore`, forwarding to the `CHANNEL_GET_BACKEND_PORT` IPC channel.
+- `TheiaMainApi.onStart` registers the handler of the `CHANNEL_GET_BACKEND_PORT` channel. An override of it that does not call `super.onStart` must register that handler itself, otherwise the frontend never gets the port and the window stays blank.
 
 ### v1.77.0
 

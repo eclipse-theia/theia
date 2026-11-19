@@ -300,7 +300,27 @@ export class ElectronMainApplication {
                     // A failure to start the backend is reported below. Contributions that chain on `backendPort` see
                     // it as well, but it must not be an unhandled rejection where none does.
                     this.backendPort.catch(() => { });
-                    backendStarted.catch(error => this._backendPort.reject(error));
+                    // The window cannot connect without its backend, so a failure to start it is reported and ends the
+                    // application, whatever the contributions and the main command do meanwhile. A backend that is
+                    // terminated because the application quits while it starts has not failed.
+                    let quitting = false;
+                    app.once('quit', () => { quitting = true; });
+                    backendStarted.then(
+                        () => startupMeasurement.info('Startup sequence completed'),
+                        async error => {
+                            this._backendPort.reject(error);
+                            // On Linux, the error box is shown only once the app is ready.
+                            await app.whenReady();
+                            if (quitting) {
+                                return;
+                            }
+                            console.error('Failed to start the backend.', error);
+                            const reason = error instanceof Error ? error.message : String(error);
+                            dialog.showErrorBox(config.applicationName, `Failed to start the backend (${reason}).`);
+                            // `app.exit` emits neither `before-quit` nor `will-quit`, so stop the contributions here.
+                            this.stopContributions();
+                            app.exit(1);
+                        });
                     await app.whenReady();
                     await this.stopwatch.startAsync('electron-main-start-contributions', 'Starting contributions',
                         () => this.startContributions());
@@ -312,18 +332,6 @@ export class ElectronMainApplication {
                         secondInstance: false,
                         claimed: await this.isWindowClaimed(launchArgs)
                     });
-                    try {
-                        await backendStarted;
-                        startupMeasurement.info('Startup sequence completed');
-                    } catch (error) {
-                        // The window cannot connect without its backend, so tell the user and exit.
-                        console.error('Failed to start the backend.', error);
-                        const reason = error instanceof Error ? error.message : String(error);
-                        dialog.showErrorBox(config.applicationName, `Failed to start the backend (${reason}).`);
-                        // `app.exit` emits neither `before-quit` nor `will-quit`, so stop the contributions here.
-                        this.stopContributions();
-                        app.exit(1);
-                    }
                 },
             ).parse();
     }
@@ -493,7 +501,7 @@ export class ElectronMainApplication {
     protected isShowSplashScreen(): boolean {
         const options = this.config.electron.splashScreenOptions;
         return !process.env.THEIA_NO_SPLASH && typeof options === 'object' && !!options.content
-            && (!options.platforms || options.platforms.includes(process.platform));
+            && (!options.platforms || options.platforms.some(platform => platform === process.platform));
     }
 
     protected getSplashScreenOptions(): ElectronFrontendApplicationConfig.SplashScreenOptions | undefined {
