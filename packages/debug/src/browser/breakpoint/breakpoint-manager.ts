@@ -352,7 +352,7 @@ export class BreakpointManager {
             const uri = new URI(uriString);
             const bps = this.getBreakpoints(uri);
             for (const bp of bps) {
-                didChange ||= this.doEnableBreakpoint(bp, enabled);
+                didChange = this.doEnableBreakpoint(bp, enabled) || didChange;
             }
             if (didChange) {
                 this.fireOnDidChangeMarkers(uri);
