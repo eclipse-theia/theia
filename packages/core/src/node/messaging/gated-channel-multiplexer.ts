@@ -30,20 +30,27 @@ export class GatedChannelMultiplexer extends ChannelMultiplexer {
      * @param underlyingChannel the channel on which the channels are multiplexed
      * @param gate tells how long to hold the channel of a given id before acknowledging it,
      *   or `undefined` to acknowledge it at once. The channel is acknowledged whether the promise resolves or rejects.
+     * @param accepting tells whether channels are still acknowledged at all, as they are not by a backend that is stopping,
+     *   whose services are going away. A channel that is not acknowledged, also one that was held, fails to open on the
+     *   other side once the connection closes.
      */
-    constructor(underlyingChannel: Channel, protected readonly gate: (id: string) => Promise<void> | undefined) {
+    constructor(underlyingChannel: Channel, protected readonly gate: (id: string) => Promise<void> | undefined,
+        protected readonly accepting: () => boolean = () => true) {
         super(underlyingChannel);
     }
 
     protected override handleOpen(id: string): void {
+        if (!this.accepting()) {
+            return;
+        }
         const hold = this.gate(id);
         if (!hold) {
             super.handleOpen(id);
             return;
         }
         const open = (): void => {
-            // the connection may have been closed while the channel was held
-            if (!this.toDispose.disposed) {
+            // the connection may have been closed, or the backend begun to stop, while the channel was held
+            if (!this.toDispose.disposed && this.accepting()) {
                 super.handleOpen(id);
             }
         };
