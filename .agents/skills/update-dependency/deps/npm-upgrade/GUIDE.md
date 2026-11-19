@@ -22,7 +22,7 @@ Split this file into `ISSUES.md` and `LOG.md` next to it once a section gets too
 8. Reduce the remaining vulnerabilities ([deps/vulnerabilities](../vulnerabilities/GUIDE.md) steps 3 to 7).
 9. Packages that cannot be upgraded (major with API changes, ESM-only, breaks types): leave them, list them under "Currently not fixable" in the PR body, follow up separately. The Electron version moves in its own update (deps/electron), not here.
 10. Commit `chore(deps): NPM upgrade after <version>` with a flat bullet list: ranges aligned, overrides added/removed (`override <pkg> (<parent>) to patched versions`), code adaptations, `reduces npm audit from <n> to <m>`. Unrelated cleanups found on the way (tooling removal, doc fixes) get their own commit (#18005).
-    PR body (template): "What it does" with the same bullets plus the audit counts before/after, then "Currently not fixable" (package, severity, reason); "Follow-ups" with the issues for replacements and migrations; Attribution "Contributed on behalf of STMicroelectronics". Examples: #18005 (detailed), #18149 (short).
+    PR body (template): "What it does" with the same bullets plus the audit counts before/after, then "Currently not fixable" (package, severity, reason); "Follow-ups" with the issues for replacements and migrations; Attribution: ask the user who the contribution is on behalf of, leave it empty if nobody. Examples: #18005 (detailed), #18149 (short).
 11. License check: run `npm run license:check:review` locally with a committer's Eclipse GitLab PAT in `DASH_TOKEN`. It opens one IP Lab ticket per unvetted package; post the ticket links as a PR comment. Merge only once the "3PP License Check" workflow is green (all tickets approved).
 
 ## Coupled versions

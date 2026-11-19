@@ -25,7 +25,7 @@ Split this file into `ISSUES.md` and `LOG.md` next to it once a section gets too
 | `typescript` minor/major | `@typescript-eslint/*` (peer range), `typedoc` (peer range); `.vscode/settings.json` `typescript.tsdk` stays `node_modules/typescript/lib` |
 | `target` / `lib` in `configs/base.tsconfig.json` | `lib` in `configs/build.eslintrc.json`; the minimum Node.js in [doc/runtime-policy.md](../../../../../doc/runtime-policy.md) must support the target |
 | any `compilerOptions` change | `examples/api-tests/test-ts-workspace/tsconfig.json`, which must stay valid for the TypeScript bundled with the built-in `vscode.typescript-language-features` |
-| options that make emit use more `tslib` helpers (`importHelpers`, `esModuleInterop`) | `tslib` in `dependencies` of every published package whose output `require("tslib")` |
+| options that make emit use more `tslib` helpers (`importHelpers`, `esModuleInterop`) | `tslib` in `dependencies` of every published package whose output imports `tslib` |
 | any upgrade | Theia IDE needs the same update (Publishing 3.6 ticket) |
 
 ## Checks
@@ -40,11 +40,11 @@ Split this file into `ISSUES.md` and `LOG.md` next to it once a section gets too
 
 ### `error TS5107: Option 'moduleResolution=node10' is deprecated`
 
-TypeScript 6 deprecates `node`/`node10` resolution. Use `"moduleResolution": "bundler"` (allowed with `module: CommonJS` since 6.0); `ignoreDeprecations` only defers it to TypeScript 7. (#18100)
+TypeScript 6 deprecates `node`/`node10` resolution; `ignoreDeprecations` only defers it to TypeScript 7. #18100 moved to `bundler` with CommonJS; since the ESM switch (#18216) the base config uses `module`/`moduleResolution` `NodeNext`. Keep `NodeNext`; do not go back to `bundler`.
 
-### Imports of non-exported subpaths fail after switching to `bundler`
+### Imports of non-exported subpaths fail
 
-`bundler` honours package `exports`; `openai/internal/request-options` was no longer resolvable. Use the public type (`OpenAI.RequestOptions`). (#18100)
+`NodeNext` (and `bundler` before it) honours package `exports`; `openai/internal/request-options` was no longer resolvable. Use the public type (`OpenAI.RequestOptions`). (#18100)
 
 ### `error TS5101: Option 'downlevelIteration' is deprecated`
 
@@ -102,7 +102,7 @@ ES2022 class field semantics (`Object.defineProperty`) change initialisation ord
 
 Since TypeScript 4.0. Suppressed with `// @ts-expect-error TS2611` in `tab-bars.ts` and `view-container.ts`. (#10355)
 
-### IDE reports errors for `moduleResolution: bundler` with CommonJS
+### IDE reports tsconfig errors the workspace compiler accepts
 
 The editor uses its bundled, older TypeScript. Select the workspace version (`typescript.tsdk` is set in `.vscode/settings.json`). (#18100, Migration v1.77.0)
 
@@ -112,6 +112,7 @@ Newest first. One entry per merged update and target branch.
 
 | Date | Branch | From → To | PR | Notes |
 |---|---|---|---|---|
+| 2026-11-03 | master | ~6.0.3 (unchanged) | #18216 | ESM switch: `module`/`moduleResolution` `NodeNext`, `"type": "module"` with generated `exports` maps, `emitDecoratorMetadata: false`, `allowSyntheticDefaultImports`; `dev-packages` stay CommonJS. Breaking, CHANGELOG + Migration |
 | 2026-10-14 | master | ~5.9.3 → ~6.0.3 | #18100 | `bundler` resolution, `esModuleInterop`, explicit `types`, `strict: false`, `noUncheckedSideEffectImports: false`; typescript-eslint 7 → 8, TSLint bridge and `eslint-plugin-deprecation` removed, typedoc 0.28.20; `tslib` declared in 19 packages. Breaking, CHANGELOG + Migration |
 | 2026-01-14 | master | ~5.4.5 → ~5.9.3 | #16774 | Together with built-ins 1.104.0. Target/lib ES2019 → ES2023, `useDefineForClassFields: false`, code fixes in a separate commit |
 | 2024-05-22 | master | ~4.5.5 → ~5.4.5 | #13628 | typescript-eslint 4 → 6; stricter typings, `nls-extract` fix. CHANGELOG entry. (typescript-eslint 6 → 7 came later with the npm switch, #14481) |

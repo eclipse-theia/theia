@@ -16,8 +16,8 @@ Split this file into `ISSUES.md` and `LOG.md` next to it once a section gets too
 ### openai
 
 - Used via Chat Completions (`openai-chat-completion-stream.ts`, own tool loop since #17623, not `runTools`) and the Responses API (`openai-response-api-utils.ts`, default for official models since #18094).
-- `MistralFixedOpenAI` overrides the internal `prepareOptions` (`openai/internal/request-options`); check it still exists and still sees every request.
-- `ChatGptResponseApiUtils.streamResponse` (`ai-chatgpt`) deliberately bypasses `responses.stream()`; keep the override.
+- `MistralFixedOpenAI` overrides the SDK's `prepareOptions` (typed with the public `OpenAI.RequestOptions`); check it still exists and still sees every request.
+- `OpenAiResponseApiUtils.streamResponse` (`ai-openai`, also used by `ai-chatgpt`) deliberately iterates the raw `responses.create({ stream: true })` instead of `responses.stream()`; keep it that way.
 
 ### @anthropic-ai/sdk
 
@@ -44,7 +44,7 @@ Split this file into `ISSUES.md` and `LOG.md` next to it once a section gets too
 
 | When this changes | Also update |
 |---|---|
-| `openai` | both `ai-openai` and `ai-chatgpt`; `MistralFixedOpenAI.prepareOptions`; ChatGPT `streamResponse` |
+| `openai` | both `ai-openai` and `ai-chatgpt`; `MistralFixedOpenAI.prepareOptions`; `OpenAiResponseApiUtils.streamResponse` |
 | `@modelcontextprotocol/sdk` | `zod` in `ai-mcp-server`, `ai-terminal`, `examples/api-samples` (SDK accepts `^3.25 \|\| ^4.0`); same range in `ai-mcp` and `ai-mcp-server` |
 | `undici` in `ai-core` (proxy) | stays within `openai`'s `undici` peer range (`>=5 <9` for 7.x) |
 | Copilot CLI / `@github/copilot-sdk` | `copilot-sdk-types.ts` mirror and its header version |
@@ -65,7 +65,7 @@ The provider sends a keep-alive heartbeat event that older `openai` versions do 
 
 ### ChatGPT subscription streams fail on `response.metadata` events
 
-The SDK's `responses.stream()` accumulator rejects events it does not know. `ChatGptResponseApiUtils.streamResponse` iterates the raw `responses.create({ stream: true })` instead. (#18169)
+The SDK's `responses.stream()` accumulator rejects events it does not know. `OpenAiResponseApiUtils.streamResponse` iterates the raw `responses.create({ stream: true })` instead. (#18169; moved from `ChatGptResponseApiUtils` into the base class for all models in #18224)
 
 ### Type errors in `openai-response-api-utils.ts` / `openai-streaming-iterator.ts` after `openai` 7
 
