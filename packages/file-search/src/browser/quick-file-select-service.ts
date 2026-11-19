@@ -101,8 +101,12 @@ export class QuickFileSelectService {
             const locations = [...this.navigationLocationService.locations()].reverse();
             for (const location of locations) {
                 const uriString = location.uri.toString();
+                const root = roots
+                    .filter(candidate => candidate.resource.isEqualOrParent(location.uri))
+                    .sort((a, b) => b.resource.toString().length - a.resource.toString().length)[0];
+                const matchString = root ? uriString.substring(root.resource.toString().length).replace(/^\//, '') : uriString;
 
-                if (location.uri.scheme === 'file' && !alreadyCollected.has(uriString) && fuzzy.test(fileFilter, uriString)) {
+                if (location.uri.scheme === 'file' && !alreadyCollected.has(uriString) && fuzzy.test(fileFilter, matchString)) {
                     if (recentlyUsedItems.length === 0) {
                         recentlyUsedItems.push({
                             type: 'separator',
