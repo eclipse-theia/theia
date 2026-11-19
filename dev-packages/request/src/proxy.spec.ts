@@ -15,119 +15,229 @@
  ********************************************************************************/
 
 import { expect } from 'chai';
+import * as http from 'http';
+import * as net from 'net';
 import * as tls from 'tls';
-import { Agent, ProxyAgent } from 'undici';
-import { getProxyAgent } from './proxy';
+import { Agent, Dispatcher, fetch, getGlobalDispatcher, MockAgent, setGlobalDispatcher } from 'undici';
+import { createProxyDispatcher, getProxyAgent, ProxySettings } from './proxy';
 
 describe('proxy', () => {
     describe('getProxyAgent', () => {
-        it('should return undefined when no proxy is configured', () => {
-            const agent = getProxyAgent('https://example.com', {});
-            expect(agent).to.be.undefined;
-        });
-
-        it('should return a dispatcher when proxy URL is provided via options', () => {
-            const agent = getProxyAgent('https://example.com', {}, {
-                proxyUrl: 'http://proxy.example.com:8080'
-            });
-            expect(agent).to.not.be.undefined;
-        });
-
-        it('should return a dispatcher when HTTP_PROXY env variable is set for http URLs', () => {
-            const env = { HTTP_PROXY: 'http://proxy.example.com:8080' };
-            const agent = getProxyAgent('http://example.com', env);
-            expect(agent).to.not.be.undefined;
-        });
-
-        it('should return a dispatcher when http_proxy env variable is set for http URLs', () => {
-            const env = { http_proxy: 'http://proxy.example.com:8080' };
-            const agent = getProxyAgent('http://example.com', env);
-            expect(agent).to.not.be.undefined;
-        });
-
-        it('should return a dispatcher when HTTPS_PROXY env variable is set for https URLs', () => {
-            const env = { HTTPS_PROXY: 'http://proxy.example.com:8080' };
-            const agent = getProxyAgent('https://example.com', env);
-            expect(agent).to.not.be.undefined;
-        });
-
-        it('should fall back to HTTP_PROXY for https URLs when HTTPS_PROXY is not set', () => {
-            const env = { HTTP_PROXY: 'http://proxy.example.com:8080' };
-            const agent = getProxyAgent('https://example.com', env);
-            expect(agent).to.not.be.undefined;
-        });
-
         it('should return undefined for invalid request URLs', () => {
-            const agent = getProxyAgent('not-a-url', {}, {
-                proxyUrl: 'http://proxy.example.com:8080'
-            });
-            expect(agent).to.be.undefined;
+            expect(getProxyAgent('not-a-url', {}, { proxyUrl: 'http://proxy.example.com:8080' })).to.be.undefined;
+        });
+    });
+
+    describe('createProxyDispatcher', () => {
+        it('should return undefined when no proxy is configured', () => {
+            expect(createProxyDispatcher({})).to.be.undefined;
         });
 
         it('should return undefined for non-http proxy protocols', () => {
-            const agent = getProxyAgent('https://example.com', {}, {
-                proxyUrl: 'socks5://proxy.example.com:1080'
-            });
-            expect(agent).to.be.undefined;
+            expect(createProxyDispatcher({}, { proxyUrl: 'socks5://proxy.example.com:1080' })).to.be.undefined;
         });
 
         it('should return undefined for invalid proxy URLs', () => {
-            const agent = getProxyAgent('https://example.com', {}, {
-                proxyUrl: 'not-a-valid-url'
-            });
-            expect(agent).to.be.undefined;
+            expect(createProxyDispatcher({}, { proxyUrl: 'not-a-valid-url' })).to.be.undefined;
         });
 
-        it('should return an Agent (not ProxyAgent) when strictSSL is false and no proxy is set', () => {
-            const agent = getProxyAgent('https://example.com', {}, {
-                strictSSL: false
-            });
-            expect(agent).to.not.be.undefined;
-        });
-
-        it('should prefer proxyUrl option over environment variables', () => {
-            const env = { HTTP_PROXY: 'http://env-proxy.example.com:8080' };
-            const agent = getProxyAgent('http://example.com', env, {
-                proxyUrl: 'http://option-proxy.example.com:9090'
-            });
-            expect(agent).to.not.be.undefined;
-        });
-
-        for (const url of ['http://localhost:3000', 'https://LOCALHOST', 'http://app.localhost:8080', 'http://127.0.0.1:3000', 'http://127.1.2.3', 'http://[::1]:3000']) {
-            it(`should not use a proxy for the loopback URL ${url}`, () => {
-                const env = { HTTP_PROXY: 'http://env-proxy.example.com:8080', HTTPS_PROXY: 'http://env-proxy.example.com:8080' };
-                expect(getProxyAgent(url, env, { proxyUrl: 'http://option-proxy.example.com:9090' })).to.be.undefined;
-            });
-        }
-
-        it('should use a proxy for hosts that only look like loopback hosts', () => {
-            const proxyUrl = 'http://proxy.example.com:8080';
-            expect(getProxyAgent('http://localhost.example.com', {}, { proxyUrl })).to.be.instanceOf(ProxyAgent);
-            expect(getProxyAgent('http://127.0.0.1.example.com', {}, { proxyUrl })).to.be.instanceOf(ProxyAgent);
+        it('should return an Agent when strictSSL is false and no proxy is set', () => {
+            expect(createProxyDispatcher({}, { strictSSL: false })).to.be.instanceOf(Agent);
         });
 
         it('should share one Agent per CA list when no proxy is used', () => {
             const ca = tls.getCACertificates('default');
-            const agent = getProxyAgent('https://example.com', {}, { ca });
+            const agent = createProxyDispatcher({}, { ca });
             expect(agent).to.be.instanceOf(Agent);
-            expect(getProxyAgent('https://other.example.com', {}, { ca })).to.equal(agent);
-            expect(getProxyAgent('https://example.com', {}, { ca: [...ca] })).to.not.equal(agent);
+            expect(createProxyDispatcher({}, { ca })).to.equal(agent);
+            expect(createProxyDispatcher({}, { ca: [...ca] })).to.not.equal(agent);
         });
 
         it('should not share the Agent that skips certificate verification', () => {
             const ca = tls.getCACertificates('default');
-            const shared = getProxyAgent('https://example.com', {}, { ca });
-            const insecure = getProxyAgent('https://example.com', {}, { ca, strictSSL: false });
+            const shared = createProxyDispatcher({}, { ca });
+            const insecure = createProxyDispatcher({}, { ca, strictSSL: false });
             expect(insecure).to.be.instanceOf(Agent);
             expect(insecure).to.not.equal(shared);
         });
 
-        it('should return a ProxyAgent when a CA list and a proxy are given', () => {
-            const agent = getProxyAgent('https://example.com', {}, {
-                proxyUrl: 'https://proxy.example.com:8443',
-                ca: tls.getCACertificates('default')
+        describe('routing', () => {
+            /** A host that is not a loopback host, the proxy tunnels it to the target server. */
+            const proxiedHost = 'example.test';
+            let target: http.Server;
+            let proxy: http.Server;
+            let targetPort: number;
+            let proxyURL: string;
+            /** The `host:port` of each CONNECT request the proxy received. */
+            let tunnels: string[];
+            /** The `Proxy-Authorization` header of each CONNECT request the proxy received. */
+            let authorizations: (string | undefined)[];
+
+            before(async () => {
+                target = http.createServer((req, res) => {
+                    if (req.url === '/redirect') {
+                        res.writeHead(302, { location: `http://${proxiedHost}/` }).end();
+                    } else {
+                        res.end('ok');
+                    }
+                });
+                proxy = http.createServer();
+                proxy.on('connect', (req: http.IncomingMessage, socket: net.Socket, head: Buffer) => {
+                    tunnels.push(req.url!);
+                    authorizations.push(req.headers['proxy-authorization']);
+                    const upstream = net.connect(targetPort, '127.0.0.1', () => {
+                        socket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
+                        upstream.write(head);
+                        upstream.pipe(socket);
+                        socket.pipe(upstream);
+                    });
+                    upstream.on('error', () => socket.destroy());
+                    socket.on('error', () => upstream.destroy());
+                });
+                targetPort = await listen(target);
+                proxyURL = `http://127.0.0.1:${await listen(proxy)}`;
             });
-            expect(agent).to.be.instanceOf(ProxyAgent);
+
+            after(() => {
+                target.close();
+                proxy.close();
+            });
+
+            beforeEach(() => {
+                tunnels = [];
+                authorizations = [];
+            });
+
+            async function request(url: string, env: typeof process.env, options?: ProxySettings): Promise<void> {
+                const dispatcher = createProxyDispatcher(env, options);
+                try {
+                    const response = await fetch(url, { dispatcher });
+                    expect(await response.text()).to.equal('ok');
+                } finally {
+                    await dispatcher?.close();
+                }
+            }
+
+            /**
+             * Sends a request that fails: an `https:` request fails behind the tunnel because the target server does not speak TLS,
+             * and a request to the proxied host fails without the proxy because the host does not resolve.
+             */
+            async function requestFailing(url: string, env: typeof process.env, options?: ProxySettings): Promise<void> {
+                const dispatcher = createProxyDispatcher(env, options);
+                try {
+                    await fetch(url, { dispatcher }).catch(() => undefined);
+                } finally {
+                    await dispatcher?.destroy();
+                }
+            }
+
+            it('should use the proxy of the HTTP_PROXY env variable', async () => {
+                await request(`http://${proxiedHost}/`, { HTTP_PROXY: proxyURL });
+                expect(tunnels).to.deep.equal([`${proxiedHost}:80`]);
+            });
+
+            it('should use the proxy of the http_proxy env variable', async () => {
+                await request(`http://${proxiedHost}/`, { http_proxy: proxyURL });
+                expect(tunnels).to.deep.equal([`${proxiedHost}:80`]);
+            });
+
+            it('should prefer the http_proxy env variable over HTTP_PROXY', async () => {
+                await request(`http://${proxiedHost}/`, { HTTP_PROXY: 'http://127.0.0.1:1', http_proxy: proxyURL });
+                expect(tunnels).to.deep.equal([`${proxiedHost}:80`]);
+            });
+
+            it('should use the proxy of the HTTPS_PROXY env variable for https URLs', async () => {
+                await requestFailing(`https://${proxiedHost}/`, { HTTP_PROXY: 'http://127.0.0.1:1', HTTPS_PROXY: proxyURL });
+                expect(tunnels).to.deep.equal([`${proxiedHost}:443`]);
+            });
+
+            it('should fall back to the HTTP_PROXY env variable for https URLs', async () => {
+                await requestFailing(`https://${proxiedHost}/`, { HTTP_PROXY: proxyURL });
+                expect(tunnels).to.deep.equal([`${proxiedHost}:443`]);
+            });
+
+            it('should prefer the proxyUrl option over environment variables', async () => {
+                await request(`http://${proxiedHost}/`, { HTTP_PROXY: 'http://127.0.0.1:1' }, { proxyUrl: proxyURL });
+                expect(tunnels).to.deep.equal([`${proxiedHost}:80`]);
+            });
+
+            it('should bypass the proxy for hosts of the noProxy option', async () => {
+                await requestFailing(`http://${proxiedHost}/`, {}, { proxyUrl: proxyURL, noProxy: [proxiedHost] });
+                expect(tunnels).to.be.empty;
+            });
+
+            it('should combine the noProxy option with the NO_PROXY env variable', async () => {
+                const env = { NO_PROXY: `other.${proxiedHost}` };
+                const options = { proxyUrl: proxyURL, noProxy: [proxiedHost] };
+                await requestFailing(`http://${proxiedHost}/`, env, options);
+                await requestFailing(`http://other.${proxiedHost}/`, env, options);
+                expect(tunnels).to.be.empty;
+            });
+
+            it('should bypass the proxy for all hosts when the rules contain `*`', async () => {
+                await requestFailing(`http://${proxiedHost}/`, { NO_PROXY: 'example.com' }, { proxyUrl: proxyURL, noProxy: ['*'] });
+                expect(tunnels).to.be.empty;
+            });
+
+            it('should decide again for the target of a redirect', async () => {
+                await request(`http://localhost:${targetPort}/redirect`, {}, { proxyUrl: proxyURL });
+                expect(tunnels).to.deep.equal([`${proxiedHost}:80`]);
+            });
+
+            it('should send the proxyAuthorization option to the proxy', async () => {
+                await request(`http://${proxiedHost}/`, {}, { proxyUrl: proxyURL, proxyAuthorization: 'Basic dG9rZW4=' });
+                expect(authorizations).to.deep.equal(['Basic dG9rZW4=']);
+            });
+
+            it('should prefer the credentials of the proxy URL over the proxyAuthorization option', async () => {
+                const proxyWithCredentials = proxyURL.replace('http://', 'http://user:pass@');
+                await request(`http://${proxiedHost}/`, {}, { proxyUrl: proxyWithCredentials, proxyAuthorization: 'Basic dG9rZW4=' });
+                expect(authorizations).to.deep.equal([`Basic ${Buffer.from('user:pass').toString('base64')}`]);
+            });
+
+            it('should send the proxyAuthorization option if the proxy URL has a username but no password', async () => {
+                const proxyWithUsername = proxyURL.replace('http://', 'http://user@');
+                await request(`http://${proxiedHost}/`, {}, { proxyUrl: proxyWithUsername, proxyAuthorization: 'Basic dG9rZW4=' });
+                expect(authorizations).to.deep.equal(['Basic dG9rZW4=']);
+            });
+
+            it('should use the proxy for hosts that only look like loopback hosts', async () => {
+                await request(`http://localhost.${proxiedHost}/`, {}, { proxyUrl: proxyURL });
+                await request(`http://127.0.0.1.${proxiedHost}/`, {}, { proxyUrl: proxyURL });
+                expect(tunnels).to.deep.equal([`localhost.${proxiedHost}:80`, `127.0.0.1.${proxiedHost}:80`]);
+            });
+
+            describe('loopback hosts', () => {
+                let globalDispatcher: Dispatcher;
+                let mockAgent: MockAgent;
+
+                // Loopback requests go to the global dispatcher, which answers them without a connection here
+                beforeEach(() => {
+                    globalDispatcher = getGlobalDispatcher();
+                    mockAgent = new MockAgent();
+                    mockAgent.disableNetConnect();
+                    setGlobalDispatcher(mockAgent);
+                });
+
+                afterEach(async () => {
+                    setGlobalDispatcher(globalDispatcher);
+                    await mockAgent.close();
+                });
+
+                for (const url of ['http://localhost:3000', 'https://LOCALHOST', 'http://app.localhost:8080', 'http://127.0.0.1:3000', 'http://127.1.2.3', 'http://[::1]:3000']) {
+                    it(`should not use a proxy for the loopback URL ${url}`, async () => {
+                        mockAgent.get(new URL(url).origin).intercept({ path: '/' }).reply(200, 'ok');
+                        const env = { HTTP_PROXY: proxyURL, HTTPS_PROXY: proxyURL };
+                        await request(url, env, { proxyUrl: proxyURL });
+                        expect(tunnels).to.be.empty;
+                    });
+                }
+            });
         });
     });
 });
+
+async function listen(server: http.Server): Promise<number> {
+    await new Promise<void>(resolve => server.listen(0, resolve));
+    return (server.address() as net.AddressInfo).port;
+}

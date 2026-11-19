@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
-import { getProxyUrl } from '@theia/ai-core/lib/node';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { HuggingFaceModel } from './huggingface-language-model.js';
 import { HuggingFaceLanguageModelsManager, HuggingFaceModelDescription } from '../common/index.js';
@@ -26,6 +25,7 @@ export class HuggingFaceLanguageModelsManagerImpl implements HuggingFaceLanguage
 
     protected _apiKey: string | undefined;
     protected _proxyUrl: string | undefined;
+    protected _noProxy: string[] | undefined;
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
@@ -47,14 +47,12 @@ export class HuggingFaceLanguageModelsManagerImpl implements HuggingFaceLanguage
             const apiKeyProvider = () => this.apiKey;
             const status = this.calculateStatus(this.apiKey);
 
-            const proxyUrl = getProxyUrl('https://api-inference.huggingface.co', this._proxyUrl);
-
             if (model) {
                 if (!(model instanceof HuggingFaceModel)) {
                     this.logger.warn(`Hugging Face: model ${modelDescription.id} is not a Hugging Face model`);
                     continue;
                 }
-                await this.languageModelRegistry.patchLanguageModel<HuggingFaceModel>(modelDescription.id, { status, proxy: proxyUrl });
+                await this.languageModelRegistry.patchLanguageModel<HuggingFaceModel>(modelDescription.id, { status, proxy: this._proxyUrl, noProxy: this._noProxy });
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new HuggingFaceModel(
@@ -68,7 +66,8 @@ export class HuggingFaceLanguageModelsManagerImpl implements HuggingFaceLanguage
                         undefined,
                         undefined,
                         undefined,
-                        proxyUrl,
+                        this._proxyUrl,
+                        this._noProxy
                     )
                 ]);
             }
@@ -83,11 +82,12 @@ export class HuggingFaceLanguageModelsManagerImpl implements HuggingFaceLanguage
         this._apiKey = apiKey || undefined;
     }
 
-    setProxyUrl(proxyUrl: string | undefined): void {
+    setProxyUrl(proxyUrl: string | undefined, noProxy?: string[]): void {
         if (proxyUrl) {
             this._proxyUrl = proxyUrl;
         } else {
             this._proxyUrl = undefined;
         }
+        this._noProxy = noProxy;
     }
 }

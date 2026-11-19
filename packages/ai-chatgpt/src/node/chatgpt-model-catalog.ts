@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ILogger } from '@theia/core';
-import { createProxyFetch, getProxyUrl } from '@theia/ai-core/lib/node';
+import { createProxyFetch } from '@theia/ai-core/lib/node';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { CHATGPT_FALLBACK_MODELS, CHATGPT_RESPONSES_BASE_URL } from '../common/index.js';
 import { ChatGptBackendAuthService } from './chatgpt-auth-service.js';
@@ -83,7 +83,7 @@ export class ChatGptModelCatalog {
             if (!credentials) {
                 return [];
             }
-            const proxyFetch = createProxyFetch(getProxyUrl(CHATGPT_MODELS_URL)) ?? fetch;
+            const proxyFetch = createProxyFetch() ?? fetch;
             const response = await proxyFetch(CHATGPT_MODELS_URL, {
                 headers: {
                     Authorization: `Bearer ${credentials.accessToken}`,

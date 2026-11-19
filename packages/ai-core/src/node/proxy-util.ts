@@ -14,23 +14,26 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as undici from 'undici';
+import { createProxyDispatcher } from '@theia/core/shared/@theia/request/lib/proxy';
 import { shouldBypassProxy } from '../common/proxy-util.js';
 
 /**
- * Creates a custom fetch function that routes requests through the given HTTP proxy.
- * Returns `undefined` if no proxy URL is provided.
+ * Creates a custom fetch function that routes requests through the given HTTP proxy or, without it, the proxy of the
+ * `HTTP_PROXY` or `HTTPS_PROXY` environment variable. Requests to the hosts of `noProxy` and of the `no_proxy`
+ * environment variable bypass the proxy. The decision is made per request, so it covers redirects as well.
+ * Returns `undefined` if no proxy is configured.
  *
- * @param proxyUrl - The proxy URL to use, or `undefined` for no proxy.
+ * @param proxyUrl - The proxy URL to use, e.g. from the `http.proxy` preference, or `undefined` for the environment variables.
+ * @param noProxy - Hosts that bypass the proxy, e.g. from the `http.noProxy` preference.
  * @returns A custom fetch function using the proxy, or `undefined`.
  */
-export function createProxyFetch(proxyUrl: string | undefined): typeof fetch | undefined {
-    if (!proxyUrl) {
+export function createProxyFetch(proxyUrl?: string, noProxy?: string[]): typeof fetch | undefined {
+    const dispatcher = createProxyDispatcher(process.env, { proxyUrl, noProxy });
+    if (!dispatcher) {
         return undefined;
     }
-    const proxyAgent = new undici.ProxyAgent(proxyUrl);
     return ((input: string | URL | Request, init?: RequestInit) =>
-        fetch(input, { ...init, dispatcher: proxyAgent } as RequestInit)
+        fetch(input, { ...init, dispatcher } as RequestInit)
     ) as typeof fetch;
 }
 
@@ -46,6 +49,7 @@ export function createProxyFetch(proxyUrl: string | undefined): typeof fetch | u
  * @param targetUrl - The URL for which to resolve a proxy.
  * @param settingsProxy - An optional proxy URL from application settings.
  * @returns The proxy URL to use, or `undefined` if no proxy should be used.
+ * @deprecated Pass the proxy and the `noProxy` hosts to {@link createProxyFetch}, which decides per request.
  */
 export function getProxyUrl(targetUrl: string | undefined, settingsProxy?: string): string | undefined {
     let proxyUrl: string | undefined;

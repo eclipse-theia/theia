@@ -99,7 +99,8 @@ export class HuggingFaceModel implements LanguageModel {
         public readonly family?: string,
         public readonly maxInputTokens?: number,
         public readonly maxOutputTokens?: number,
-        public proxy?: string
+        public proxy?: string,
+        public noProxy?: string[]
     ) { }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -174,6 +175,6 @@ export class HuggingFaceModel implements LanguageModel {
         if (!token) {
             throw new Error('Please provide a Hugging Face API token.');
         }
-        return new InferenceClient(token, { fetch: createProxyFetch(this.proxy) });
+        return new InferenceClient(token, { fetch: createProxyFetch(this.proxy, this.noProxy) });
     }
 }
