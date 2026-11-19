@@ -100,6 +100,7 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
             event.returnValue = this.electronSecurityToken.value;
         });
 
+        // Kept as a fallback, see `ElectronSecurityTokenService.setElectronSecurityTokenCookie`
         ipcMain.handle(CHANNEL_ATTACH_SECURITY_TOKEN, (event, endpoint) => session.defaultSession.cookies.set({
             url: endpoint,
             name: ElectronSecurityToken,

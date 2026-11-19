@@ -956,6 +956,7 @@ export class ElectronMainApplication {
 
     protected async attachElectronSecurityToken(port: number): Promise<void> {
         await this.electronSecurityTokenService.setElectronSecurityTokenCookie(`http://localhost:${port}`);
+        this.electronSecurityTokenService.addElectronSecurityTokenHeader(port);
     }
 
     protected hookApplicationEvents(): void {
@@ -1024,6 +1025,8 @@ export class ElectronMainApplication {
                     minWidth: defaultOptions.minWidth,
                     minHeight: defaultOptions.minHeight,
                     webPreferences: {
+                        // Must match the opener, otherwise Electron 45+ opens the child in its own process and `window.open` returns `null`.
+                        sandbox: defaultOptions.webPreferences?.sandbox,
                         enableDeprecatedPaste: defaultOptions.webPreferences?.enableDeprecatedPaste
                     }
                 };
