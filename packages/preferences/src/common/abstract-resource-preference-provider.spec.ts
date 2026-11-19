@@ -29,7 +29,6 @@ import { bindPreferenceService } from '@theia/core/lib/browser/frontend-applicat
 import { bindMockPreferenceProviders } from '@theia/core/lib/browser/preferences/test';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Listener, MessageService, PreferenceSchemaService } from '@theia/core/lib/common';
-import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { PreferenceTransactionFactory } from '../browser/preference-transaction-manager.js';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
@@ -73,7 +72,6 @@ describe('AbstractResourcePreferenceProvider', () => {
         testContainer.rebind(<any>PreferenceSchemaService).toConstantValue(mockSchemaProvider);
         testContainer.bind(<any>PreferenceStorageFactory).toFactory(() => () => preferenceStorage);
         testContainer.bind(<any>MessageService).toConstantValue(undefined);
-        testContainer.bind(<any>MonacoWorkspace).toConstantValue(undefined);
         testContainer.bind(<any>EditorManager).toConstantValue(undefined);
         testContainer.bind(<any>PreferenceTransactionFactory).toConstantValue(undefined);
         provider = testContainer.resolve(<any>LessAbstractPreferenceProvider);

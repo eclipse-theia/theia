@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 import '../../src/browser/style/index.css';
-import './preferences-monaco-contribution.js';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { bindViewContribution, FrontendApplicationContribution, noopWidgetStatusBarContribution, OpenHandler, WidgetStatusBarContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -26,7 +25,6 @@ import { PreferencesContribution } from './preferences-contribution.js';
 import { PreferenceScopeCommandManager } from './util/preference-scope-command-manager.js';
 import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
 import { PreferencesJsonSchemaContribution } from './preferences-json-schema-contribution.js';
-import { MonacoJSONCEditor } from './monaco-jsonc-editor.js';
 import { PreferenceTransaction, PreferenceTransactionFactory, preferenceTransactionFactoryCreator } from './preference-transaction-manager.js';
 import { PreferenceOpenHandler } from './preference-open-handler.js';
 import { CliPreferences, CliPreferencesPath } from '../common/cli-preferences.js';
@@ -60,7 +58,6 @@ export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind
     bind(PreferencesJsonSchemaContribution).toSelf().inSingletonScope();
     bind(JsonSchemaContribution).toService(PreferencesJsonSchemaContribution);
 
-    bind(MonacoJSONCEditor).toSelf().inSingletonScope();
     bind(PreferenceTransaction).toSelf();
     bind(PreferenceTransactionFactory).toFactory(preferenceTransactionFactoryCreator);
     bind(PreferenceStorageFactory).toFactory(({ container }) => (uri: URI, scope: PreferenceScope) => new FrontendPreferenceStorage(

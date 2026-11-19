@@ -24,13 +24,14 @@ import {
 import {
     FrontendApplicationContribution, KeybindingContribution, QuickInputService, StylingParticipant, WebSocketConnectionProvider, UndoRedoHandler, WidgetStatusBarContribution
 } from '@theia/core/lib/browser';
-import { TextEditorProvider, DiffNavigatorProvider, TextEditor, FormatterService } from '@theia/editor/lib/browser';
+import { TextEditorProvider, DiffNavigatorProvider, TextEditor, FormatterService, TextEditorDocumentService } from '@theia/editor/lib/browser';
 import { MonacoEditorProvider, MonacoEditorFactory, SaveParticipant } from './monaco-editor-provider.js';
 import { MonacoEditorMenuContribution } from './monaco-menu.js';
 import { MonacoEditorCommandHandlers } from './monaco-command.js';
 import { MonacoKeybindingContribution } from './monaco-keybinding.js';
 import { MonacoLanguages } from './monaco-languages.js';
 import { MonacoWorkspace } from './monaco-workspace.js';
+import { MonacoJSONCEditor } from './monaco-jsonc-editor.js';
 import { ActiveMonacoEditorContribution, MonacoEditorService, MonacoEditorServiceFactory, VSCodeContextKeyService, VSCodeThemeService } from './monaco-editor-service.js';
 import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService.js';
 import { MonacoTextModelService, MonacoEditorModelFactory, MonacoEditorModelFilter } from './monaco-text-model-service.js';
@@ -115,6 +116,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     }
 
     bind(MonacoWorkspace).toSelf().inSingletonScope();
+    bind(MonacoJSONCEditor).toSelf().inSingletonScope();
     bind(MonacoWorkspaceContextService).toSelf().inSingletonScope();
 
     bind(MonacoConfigurationService).toDynamicValue(({ container }) => createMonacoConfigurationService(container)).inSingletonScope();
@@ -130,6 +132,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     });
     bind(MonacoEditorService).toDynamicValue(() => StandaloneServices.get(ICodeEditorService) as MonacoEditorService).inSingletonScope();
     bind(MonacoTextModelService).toSelf().inSingletonScope();
+    bind(TextEditorDocumentService).toService(MonacoTextModelService);
     bind(MonacoContextMenuService).toSelf().inSingletonScope();
     bind(MonacoEditorServices).toSelf().inSingletonScope();
     bind(MonacoEditorProvider).toSelf().inSingletonScope();
