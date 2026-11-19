@@ -112,23 +112,6 @@ selects a different credential store; only the default suffix convention support
 Backend consumers use the `ChatGptBackendAuthService` interface symbol from the same module, which application authors can rebind
 for a custom auth implementation. The frontend RPC service remains a narrow facade: it never exposes credentials or backend client registration.
 
-### Migrating from Theia 1.77
-
-`ChatGptAuthServiceConfig` now configures OSS authentication and requires `agentName` instead of a fixed `clientId`.
-Applications that previously supplied a custom Codex client ID or callback host through that binding must move those overrides
-to `ChatGptCodexAuthServiceConfig`. The default Codex configuration inherits shared fields, such as key-store identifiers,
-from `ChatGptAuthServiceConfig`.
-Codex OAuth constants and helpers previously exported by `chatgpt-oauth` now live in `chatgpt-codex-oauth`;
-`chatgpt-oauth` describes the OSS protocol instead.
-
-Custom auth implementations must support parameterless `startLogin` and login operations bound to its returned `loginId`.
-Signing out forgets the current session and registration; there are no account-list or account-selection RPC methods.
-Backend implementations also implement `setAuthenticationMode`, signing out the previous mode on changes;
-individual protocol sessions use `ChatGptBackendAuthSession` instead.
-Backend credentials include the mode's OAuth `clientId` (fixed for Codex, issued by OpenAI for OSS) and a session identity
-that remains stable through refresh and changes on reconnect. The frontend does not select accounts or client IDs.
-`ChatGptModel` takes separate `oss` and `codex` Responses utility instances; its `initializeOpenAi` hook receives the selected credentials.
-
 ### Cache affinity
 
 Inference requests send a stable `session-id` for cache affinity and the current chat's `thread-id`.
