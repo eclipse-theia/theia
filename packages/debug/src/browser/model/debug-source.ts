@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { isWindows, OS, Path } from '@theia/core';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
@@ -88,6 +89,12 @@ export class DebugSource extends DebugSourceData {
         if (raw.path.match(SCHEME_PATTERN)) {
             return new URI(raw.path);
         }
-        return new URI(Uri.file(raw.path));
+        // Paths from the debug adapter are in the backend's native format; on a
+        // non-Windows frontend Uri.file would percent-encode Windows separators.
+        const path = OS.backend.isWindows ? Path.normalizePathSeparator(raw.path) : raw.path;
+        // Uri.file would replace the backslashes of a POSIX filename with slashes
+        // on a Windows frontend, so build the file uri from the path as-is there.
+        const fileUri = OS.backend.isWindows || !isWindows ? Uri.file(path) : Uri.from({ scheme: 'file', path });
+        return new URI(fileUri);
     }
 }
