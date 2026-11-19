@@ -15,11 +15,15 @@
    - `examples/electron/package.json` `devDependencies.electron`
    - `package-lock.json`, 3 places: `examples/electron` devDependencies, `node_modules/electron` (`version`, `resolved`, `integrity` from `npm view electron@<v> dist.integrity`), `packages/electron` peerDependencies
    - re-export lists in `packages/core/README.md` and `packages/electron/README.md` (version in text and npm URL)
+   - named-export lists in `packages/core/electron-shared/electron/index.cjs` and `packages/electron/shared/electron/index.cjs`: `npm install` (`afterInstall`, `generate-theia-re-exports`) regenerates them and the READMEs; commit them when Electron adds or removes exports (45 added `LanguageModelUtility`, `localAIHandler`)
    - `.github/workflows/native-dependencies.yml`: step name `Use Node.js v<node>` and `node-version`, both the bundled Node.js version
    - `REMOTE_NODE_VERSION` in `packages/remote/src/electron-node/setup/remote-node-setup-service.ts`, see Coupled versions
 4. Lockfile: if Electron's own dependencies are unchanged, edit the 3 places by hand. `npm install --package-lock-only` gives the same result, but in a sandbox it can drop unrelated `hasInstallScript` lines; never commit those.
    If dependencies changed, regenerate per [lockfile-maintenance.md](../../../../../doc/lockfile-maintenance.md) and run `node scripts/verify-lockfile-platforms.js`.
 5. Major version: read the breaking changes of every skipped major and adapt the code. Past adaptions:
+   - 45: a `window.open()` child of an unsandboxed opener gets its own sandboxed process (and `window.open()` returns `null`) unless its `sandbox` matches the opener; secondary windows take `sandbox` from the main window's `webPreferences` in `setWindowOpenHandler`
+   - 45 (undocumented by Electron): Chromium stores the `THEIA_ELECTRON_TOKEN` cookie but no longer sends it from the `file://` frontend to `localhost`; `ElectronSecurityTokenService.addElectronSecurityTokenHeader()` adds it to backend requests in an `onBeforeSendHeaders` listener
+   - Not every breaking change is documented: start the app after every major, not only for the manual checks
    - 44: clipboard is async (W3C Clipboard API) and no longer available in the renderer; read via `ipcMain.handle`/`ipcRenderer.invoke`, `readClipboard()` and `ElectronClipboardService.readText()` return `Promise<string>` (#18150)
    - 42: no `postinstall` binary download; `prepareElectron()` runs `electron/install.js` (#17586)
    - 36 (from 30): `File.path` gone, preload exposes `webUtils.getPathForFile()` for drag and drop (#15837)
@@ -34,7 +38,7 @@
 | When this changes | Also update |
 |---|---|
 | Node.js bundled in Electron | `native-dependencies.yml` step name and `node-version` |
-| Node.js bundled in Electron | `REMOTE_NODE_VERSION` in `packages/remote/.../remote-node-setup-service.ts` (bumped with 37.2.1, 38.x, 44.4.5 and in f1c0746c1; missed by #18244 and #18245) |
+| Node.js bundled in Electron | `REMOTE_NODE_VERSION` in `packages/remote/.../remote-node-setup-service.ts` (bumped with 37.2.1, 38.x, 44.4.5, 45.4.1 and in f1c0746c1; missed by #18244 and #18245) |
 | Node.js major bundled in Electron (22 → 24 with Electron 42) | `@types/node`, possibly `engines.node`, see [deps/nodejs](../nodejs/GUIDE.md) |
 | V8 major | native modules rebuilt against Electron (`DEFAULT_MODULES` in `dev-packages/application-manager/src/rebuild.ts`), `nan`, compiler requirements |
 | `@electron/rebuild` major | its `node-gyp` (v3 used a fork that failed on Node 24, #17079) |
@@ -42,11 +46,23 @@
 
 ## Checks
 
-- `npm ci` needs X11 dev headers (`libx11-dev`, `libxkbfile-dev`) for `native-keymap`.
+- `npm ci` needs X11 dev headers (`libx11-dev`, `libxkbfile-dev`) for `native-keymap`; without them it fails after deleting `node_modules`, so check `pkg-config --exists x11 xkbfile` first.
 - `npm run build` (rebuilds native modules for Electron), `npm run lint`.
+  A leftover `.browser_modules` makes `rebuild:electron` skip with `native node modules are already rebuilt for electron`; remove it with `npm run rebuild:clean` first.
 - `xvfb-run -a npm run test:electron` (Electron smoke test, revived in #17335; needs a display).
 - Manual: `npm run start:electron`; open a workspace, edit and save, terminal, menus, secondary windows, native dialogs, copy/paste in editor, terminal, input fields and Explorer. For a major also `vscode.env.clipboard` from an extension and the splash screen.
 - Test on Linux, macOS and Windows for a major (Publishing 3.8); Electron E2E on CI only runs on Linux.
+
+## Debugging
+
+When the app stays on the loading screen, the backend log shows nothing relevant and DevTools cannot be opened:
+
+1. Get the renderer console in the terminal: `ELECTRON_ENABLE_LOGGING=1 npm run start > electron.log 2>&1` in `examples/electron`. The `start` script already passes `--plugins` and `--ovsx-router-config`; passing them again fails with `defaultPluginsValueViaCli.split is not a function`.
+2. The last `Frontend: ...` startup line shows where it stops. After `container created`, the preload contributions wait for backend RPC, so the connection to the backend does not come up.
+3. The backend does not log rejected WebSocket handshakes. Temporarily log the refusing validator, `request.headers.origin` and the cookie names in `WsRequestValidator.allowWsUpgrade()` (`packages/core/src/node/ws-request-validators.ts`).
+4. Iterate with `npx tsc -b packages/core` and `npx theia build --mode development` in `examples/electron` (skips the native rebuild).
+
+If `ldd node_modules/electron/dist/electron | grep 'not found'` reports missing libraries, the agent cannot start Electron: the user starts the app and writes the log into the repo, e.g. `examples/electron/electron.log` (git-ignored), as the agent may have its own `/tmp`. Otherwise run it under `xvfb-run -a`.
 
 ## Known issues
 
@@ -100,6 +116,7 @@ Newest first. One entry per merged update and target branch.
 
 | Date | Branch | From → To | PR | Notes |
 |---|---|---|---|---|
+| 2026-11-19 | master | 44.9.1 → 45.4.1 | #18436 | Breaking: Chromium 156, `window.open()` children need the opener's `sandbox` (secondary windows). Undocumented: token cookie no longer sent from `file://`, token added as a request header in the main process. New exports in the generated `index.cjs` lists. Workflow Node and `REMOTE_NODE_VERSION` 24.22.3 (`REMOTE_NODE_VERSION` was stale at 24.21.0). Lockfile edited by hand. |
 | 2026-10-23 | master | 44.4.5 → 44.9.1 | #18244 | Latest fixes. Workflow Node 24.22.1. `REMOTE_NODE_VERSION` not bumped (still 24.21.0). |
 | 2026-10-23 | release/1.74.x | 42.11.8 → 42.11.16 | #18245 | Latest fixes, released as v1.74.3. Workflow Node 24.22.1; lockfile edited by hand; native zips reused from v1.74.2. |
 | 2026-10-13 | master | 42.8.1 → 44.4.5 | #18150 | Breaking: async clipboard (`readClipboard()`, `ElectronClipboardService.readText()` return promises), macOS 13+, 64-bit only. Clang for native modules on Linux CI (8296297cb). Node 24.21.0 in workflow and `REMOTE_NODE_VERSION`. Publishing 3.8 / runtime policy added (e16adde42). |
