@@ -385,7 +385,9 @@ describe('BreakpointManager — enable/disable', () => {
 
     it('enableAllBreakpoints(true) enables all breakpoint types', () => {
         const bp = makeSourceBreakpoint(FILE_A, 10, { enabled: false });
-        manager.setBreakpoints(FILE_A, [bp]);
+        // Two source breakpoints in one file: every breakpoint must be toggled, not just the first
+        const bp2 = makeSourceBreakpoint(FILE_A, 20, { enabled: false });
+        manager.setBreakpoints(FILE_A, [bp, bp2]);
         const fbp = makeFunctionBreakpoint('myFunc');
         fbp.enabled = false;
         manager.addFunctionBreakpoint(fbp);
@@ -396,6 +398,8 @@ describe('BreakpointManager — enable/disable', () => {
 
         // Disable all first
         manager.enableAllBreakpoints(false);
+        expect(manager.getBreakpoints(FILE_A)).to.have.length(2);
+        expect(manager.getBreakpoints(FILE_A).every(b => !b.origin.enabled)).to.be.true;
 
         const sourceEvents: SourceBreakpointsChangeEvent[] = [];
         const funcEvents: FunctionBreakpointsChangeEvent[] = [];
@@ -408,7 +412,9 @@ describe('BreakpointManager — enable/disable', () => {
 
         manager.enableAllBreakpoints(true);
 
-        expect(manager.getBreakpoints(FILE_A)[0].origin.enabled).to.be.true;
+        const sourceBreakpoints = manager.getBreakpoints(FILE_A);
+        expect(sourceBreakpoints).to.have.length(2);
+        expect(sourceBreakpoints.every(b => b.origin.enabled)).to.be.true;
         expect(manager.getFunctionBreakpoints()[0].origin.enabled).to.be.true;
         expect(manager.getInstructionBreakpoints()[0].origin.enabled).to.be.true;
         expect(manager.getDataBreakpoints()[0].origin.enabled).to.be.true;
