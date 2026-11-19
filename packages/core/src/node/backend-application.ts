@@ -218,8 +218,17 @@ export class BackendApplication {
         // Workaround for Electron not installing a handler to ignore SIGPIPE error
         // (https://github.com/electron/electron/issues/13254)
         process.on('SIGPIPE', () => {
-            this.logger.error(new Error('Unexpected SIGPIPE'));
+            // Ignore SIGPIPE to avoid logging to a potentially closed output stream.
         });
+
+        const handleOutputStreamError = (error: NodeJS.ErrnoException): void => {
+            if (error.code !== 'EPIPE') {
+                throw error;
+            }
+        };
+
+        process.stdout.on('error', handleOutputStreamError);
+        process.stderr.on('error', handleOutputStreamError);
 
         // Handles normal process termination.
         process.on('exit', () => this.onStop());
@@ -508,11 +517,13 @@ export class BackendApplication {
     }
 
     protected handleUncaughtError(error: Error): void {
-        if (error) {
-            this.logger.error('Uncaught Exception: ', error.toString());
-            if (error.stack) {
-                this.logger.error(error.stack);
-            }
+        if (!error) {
+            return;
+        }
+
+        this.logger.error('Uncaught Exception: ', error.toString());
+        if (error.stack) {
+            this.logger.error(error.stack);
         }
     }
 
