@@ -7,7 +7,7 @@
     "@theia/ai-core": "1.77.0",
     "@theia/core": "1.77.0",
     "@theia/preferences": "1.77.0",
-    "tslib": "^2.8.1"
+    "tslib": "^2.9.1"
   },
   "main": "lib/common",
   "exports": {
