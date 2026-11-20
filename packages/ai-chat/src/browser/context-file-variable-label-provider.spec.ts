@@ -395,6 +395,44 @@ describe('ContextFileVariableLabelProvider', () => {
             expect(provider.getDetails(request)).to.equal('frontend • src');
         });
 
+        it('does not invalidate cached lookups when files are only updated', async () => {
+            let lookupCount = 0;
+            resolverFunction = async (arg: string) => {
+                lookupCount++;
+                if (arg === 'src/service.ts') {
+                    return new URI('file:///ws/backend/src/service.ts');
+                }
+                return undefined;
+            };
+
+            const request: AIVariableResolutionRequest = {
+                variable: { id: 'file', name: 'file', description: 'File' },
+                arg: 'src/service.ts'
+            };
+
+            const onDidChange = Event.toPromise(provider.onDidChange);
+            provider.getDetails(request);
+            await onDidChange;
+            expect(provider.getDetails(request)).to.equal('backend • src');
+            expect(lookupCount).to.equal(1);
+
+            let didChangeFired = false;
+            const listener = provider.onDidChange(() => {
+                didChangeFired = true;
+            });
+
+            fileChangesEmitter.fire(new FileChangesEvent([
+                { resource: new URI('file:///ws/backend/src/service.ts'), type: FileChangeType.UPDATED }
+            ]));
+
+            await new Promise(resolve => setTimeout(resolve, 10));
+            listener.dispose();
+
+            expect(didChangeFired).to.be.false;
+            expect(provider.getDetails(request)).to.equal('backend • src');
+            expect(lookupCount).to.equal(1);
+        });
+
         it('invalidates and re-resolves when workspace roots change', async () => {
             resolverFunction = async (arg: string) => {
                 if (arg === 'src/service.ts') {

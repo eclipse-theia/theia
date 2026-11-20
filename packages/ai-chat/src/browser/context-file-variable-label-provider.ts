@@ -20,6 +20,7 @@ import { Disposable, DisposableCollection, Emitter, Event, Path, URI } from '@th
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { DidChangeLabelEvent, LabelProvider, LabelProviderContribution } from '@theia/core/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/files.js';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ChangeSetFileService } from './change-set-file-service.js';
 
@@ -58,8 +59,8 @@ export class ContextFileVariableLabelProvider implements LabelProviderContributi
     @postConstruct()
     init(): void {
         if (this.fileService?.onDidFilesChange) {
-            this.toDispose.push(this.fileService.onDidFilesChange(() => {
-                this.handleFilesOrWorkspaceChanged();
+            this.toDispose.push(this.fileService.onDidFilesChange(event => {
+                this.handleFilesChanged(event);
             }));
         }
         if (this.workspaceService?.onWorkspaceChanged) {
@@ -148,6 +149,15 @@ export class ContextFileVariableLabelProvider implements LabelProviderContributi
             return undefined;
         }
         return path.hasDir ? path.dir.toString() : '';
+    }
+
+    protected handleFilesChanged(event: FileChangesEvent): void {
+        const hasStructuralChanges = (typeof event.gotAdded === 'function' && typeof event.gotDeleted === 'function')
+            ? (event.gotAdded() || event.gotDeleted())
+            : event.changes?.some(change => change.type === FileChangeType.ADDED || change.type === FileChangeType.DELETED);
+        if (hasStructuralChanges) {
+            this.handleFilesOrWorkspaceChanged();
+        }
     }
 
     protected handleFilesOrWorkspaceChanged(): void {
