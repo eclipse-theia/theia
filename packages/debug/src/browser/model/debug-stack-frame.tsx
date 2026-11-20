@@ -203,4 +203,11 @@ export class DebugStackFrame extends DebugStackFrameData implements TreeElement 
         return undefined;
     }
 
+    /**
+     * Discards the cached scopes, so that they are fetched again from the debug adapter on the next request.
+     */
+    forgetScopes(): void {
+        this.scopes = undefined;
+    }
+
 }

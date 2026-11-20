@@ -70,6 +70,10 @@ export class ExpressionContainer implements CompositeConsoleItem {
         return !!this.presentationHint?.lazy;
     }
 
+    get readOnly(): boolean {
+        return !!this.presentationHint?.attributes?.includes('readOnly') || this.lazy;
+    }
+
     async resolveLazy(): Promise<void> {
         const { session, variablesReference, lazy } = this;
         if (!session || !variablesReference || !lazy) {
@@ -184,6 +188,34 @@ export class ExpressionContainer implements CompositeConsoleItem {
         }
     }
 
+    protected async openSetValueDialog(title: string, initialValue: string, setValue: (value: string) => Promise<void>): Promise<void> {
+        const input = new SingleTextInputDialog({
+            title,
+            initialValue,
+            placeholder: nls.localizeByDefault('Value'),
+            validate: async (value, mode) => {
+                if (!value) {
+                    return false;
+                }
+                if (mode === 'open') {
+                    try {
+                        await setValue(value);
+                    } catch (error) {
+                        console.error('setValue failed:', error);
+                        if (error.body?.error) {
+                            const errorMessage: DebugProtocol.Message = error.body.error;
+                            if (errorMessage.showUser) {
+                                return formatMessage(errorMessage.format, errorMessage.variables);
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+        });
+        await input.open();
+    }
+
 }
 export namespace ExpressionContainer {
     export interface Options {
@@ -230,10 +262,6 @@ export class DebugVariable extends ExpressionContainer {
     protected _value: string | undefined;
     get value(): string {
         return this._value || this.variable.value;
-    }
-
-    get readOnly(): boolean {
-        return this.presentationHint?.attributes?.includes('readOnly') || this.lazy;
     }
 
     override render(): React.ReactNode {
@@ -314,31 +342,7 @@ export class DebugVariable extends ExpressionContainer {
         if (!this.supportSetVariable || this.readOnly) {
             return;
         }
-        const input = new SingleTextInputDialog({
-            title: nls.localize('theia/debug/debugVariableInput', 'Set {0} Value', this.name),
-            initialValue: this.value,
-            placeholder: nls.localizeByDefault('Value'),
-            validate: async (value, mode) => {
-                if (!value) {
-                    return false;
-                }
-                if (mode === 'open') {
-                    try {
-                        await this.setValue(value);
-                    } catch (error) {
-                        console.error('setValue failed:', error);
-                        if (error.body?.error) {
-                            const errorMessage: DebugProtocol.Message = error.body.error;
-                            if (errorMessage.showUser) {
-                                return formatMessage(errorMessage.format, errorMessage.variables);
-                            }
-                        }
-                    }
-                }
-                return true;
-            }
-        });
-        await input.open();
+        await this.openSetValueDialog(nls.localize('theia/debug/debugVariableInput', 'Set {0} Value', this.name), this.value, value => this.setValue(value));
     }
 
 }

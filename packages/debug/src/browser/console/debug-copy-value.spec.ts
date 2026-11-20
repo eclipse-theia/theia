@@ -31,7 +31,7 @@ interface TestSession extends Pick<DebugSession, 'capabilities' | 'evaluate'> { 
 
 class TestDebugWatchExpression extends DebugWatchExpression {
 
-    setValue(value: string): void {
+    setDisplayedValue(value: string): void {
         this._value = value;
     }
 }
@@ -56,7 +56,7 @@ function createWatchExpression(session: TestSession): TestDebugWatchExpression {
         remove: () => undefined,
         onDidChange: () => undefined
     });
-    watchExpression.setValue('truncated');
+    watchExpression.setDisplayedValue('truncated');
     return watchExpression;
 }
 
