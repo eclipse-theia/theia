@@ -164,6 +164,7 @@ export class TasksExtImpl implements TasksExt {
             const runId = customExecution ? this.nextCallbackId() : undefined;
             if (customExecution && runId) {
                 taskDto.executionId = runId;
+                delete taskDto.customExecution;
                 this.customExecutionFunctions.set(runId, customExecution.callback);
                 this.customExecutionTasks.set(runId, task);
             }
@@ -192,7 +193,7 @@ export class TasksExtImpl implements TasksExt {
             return adapter.provideTasks(CancellationToken.None).then(tasks => {
                 for (const task of tasks) {
                     if (task.executionType === 'customExecution') {
-                        this.applyCustomExecution(task, adapter);
+                        this.applyCustomExecution(task);
                     }
                 }
                 return tasks;
@@ -209,7 +210,7 @@ export class TasksExtImpl implements TasksExt {
                 // ensure we do not lose task type and execution id during resolution as we need it for custom execution
                 resolvedTask.executionType = resolvedTask.executionType ?? task.executionType;
                 if (resolvedTask.executionType === 'customExecution') {
-                    this.applyCustomExecution(resolvedTask, adapter);
+                    this.applyCustomExecution(resolvedTask);
                 }
                 return resolvedTask;
             });
@@ -218,14 +219,14 @@ export class TasksExtImpl implements TasksExt {
         }
     }
 
-    private applyCustomExecution(task: TaskDto, adapter: TaskProviderAdapter): void {
+    private applyCustomExecution(task: TaskDto): void {
         if (task.callback) {
             task.executionId = this.addCustomExecution(task.callback);
-            const execution = adapter.takeCustomExecution(task.callback);
-            if (execution) {
-                this.providedCustomExecutions.set(task.executionId, execution);
+            if (task.customExecution) {
+                this.providedCustomExecutions.set(task.executionId, task.customExecution);
             }
-            task.callback = undefined;
+            delete task.callback;
+            delete task.customExecution;
         }
     }
 

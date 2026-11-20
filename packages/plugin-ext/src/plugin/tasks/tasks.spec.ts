@@ -265,6 +265,19 @@ describe('Tasks with a CustomExecution subclass', () => {
             expect(execution.task).to.equal(task);
         });
 
+        it('does not send the execution object to the main side', async () => {
+            const execution = new CommandCustomExecution('make', ['build']);
+            const sent: TaskDto[] = [];
+            const start = startExternally;
+            // Copy at call time, as the RPC layer encodes the DTO then.
+            startExternally = d => { sent.push({ ...d }); return start(d); };
+
+            await ext.executeTask(createCustomTask(execution));
+
+            expect(sent).to.have.length(1);
+            expect(sent[0]).to.not.have.property('customExecution');
+        });
+
         it('runs the task again when Rerun Last Task starts it after it ended', async () => {
             const task = createCustomTask(new CommandCustomExecution('make', ['build']));
             let dto: TaskDto | undefined;
@@ -340,6 +353,7 @@ describe('Tasks with a CustomExecution subclass', () => {
             const execution = new CommandCustomExecution('make', ['build']);
             ext.registerTaskProvider('test', { provideTasks: () => [createCustomTask(execution)], resolveTask: () => undefined });
             const [dto] = await ext.$provideTasks(0);
+            expect(dto).to.not.have.property('customExecution');
 
             const started: theia.TaskExecution[] = [];
             ext.onDidStartTask(e => started.push(e.execution));
@@ -360,6 +374,7 @@ describe('Tasks with a CustomExecution subclass', () => {
             ext.registerTaskProvider('test', { provideTasks: () => [], resolveTask: task => ({ ...task, execution }) });
             const unresolved = Converter.fromTask({ ...createCustomTask(execution), execution: undefined })!;
             const dto = await ext.$resolveTask(0, unresolved, CancellationToken.None);
+            expect(dto).to.not.have.property('customExecution');
 
             const started: theia.TaskExecution[] = [];
             ext.onDidStartTask(e => started.push(e.execution));

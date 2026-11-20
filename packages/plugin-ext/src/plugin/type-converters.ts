@@ -1116,6 +1116,7 @@ export function fromCustomExecution(execution: types.CustomExecution, taskDto: T
     const callback = execution.callback;
     if (callback) {
         taskDto.callback = callback;
+        taskDto.customExecution = execution;
         return taskDto;
     } else {
         throw new Error('Converting CustomExecution callback is not implemented');
