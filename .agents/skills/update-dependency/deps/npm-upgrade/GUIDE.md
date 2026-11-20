@@ -15,7 +15,7 @@ Split this file into `ISSUES.md` and `LOG.md` next to it once a section gets too
    - `@types/vscode` in `sample-plugins/*/*`: keep the floor at the `engines.vscode` value (#18005).
    - Exact pins and tilde ranges that exist on purpose (e.g. `ssh-config` `~5.0.x` in `@theia/remote`, `diff`/`@types/diff` 5.x in `@theia/scm`, `perfect-scrollbar` `1.5.5` override). Check `git log -S'<pkg>' -- '<file>'` before changing one.
 4. Root `overrides`: only for transitive packages no range bump can reach. Scope them to the parent when possible (`"nx": { "axios": … }`). Remove an override once nothing needs it any more (efcce0a7b dropped `yauzl`).
-   After adding or changing an override, delete `package-lock.json` and run `npm install`; npm does not re-resolve a locked edge for a new override (#18005, #18149). Confirm with `npm ls <pkg>` (no `invalid`).
+   After adding or changing an override, regenerate the lockfile: npm does not re-resolve a locked edge for a new override (#18005, #18149). Delete `node_modules` too (root and workspaces), not only `package-lock.json`, see Known issues. Confirm with `npm ls <pkg>` (no `invalid`) and that `grep -c '"resolved":' package-lock.json` is close to the old count.
 5. Sync `allowScripts` in the root `package.json` with every lockfile entry that has `hasInstallScript` (`true` if needed, `false` if cosmetic), see lockfile-maintenance.md.
 6. Fix compile errors and failing tests caused by new transitive types (see Known issues). Keep code changes minimal and comment casts.
 7. Commit the regenerated `packages/core/README.md` (re-export versions, rewritten by `afterInstall` → `generate-theia-re-exports`).
@@ -54,6 +54,18 @@ npm 10 (Node 22) pruned platform-specific optional deps (`@esbuild/*`, `@nx/nx-*
 ### Override in `package.json` but `npm ls` still shows the old version as `invalid`
 
 npm keeps the already locked edge when an override is added. Delete `package-lock.json` and regenerate. (#18005 for `uuid` under `trash`, #18149 for `uuid` and `@tootallnate/once`)
+
+### Regenerated lockfile lacks `resolved`/`integrity` and overrides still `invalid`
+
+Deleting only `package-lock.json` and running `npm install` with `node_modules` present builds the lockfile from the installed tree: ~1,950 of ~2,140 entries lost `resolved`/`integrity`, and the hoisted `@tootallnate/once` stayed at 1.1.2 despite the override. Remove `node_modules` (root and workspaces) as well, or run `npm install --package-lock-only` without `node_modules`. (after 1.77.0)
+
+### `npm install` fails in `@theia/core` `afterInstall` without network access to schemastore.org
+
+`download:json-schema` cannot fetch `catalog.json`; the lockfile and `packages/core/README.md` are already written by then. Locally an existing `packages/core/lib/browser/catalog.json` is enough for compile and tests; CI has network access. (after 1.77.0)
+
+### `npm ci` fails on `native-keymap` without X11 headers and no root access
+
+Install with `npm ci --ignore-scripts`, run `npm rebuild` for every `allowScripts` entry set to `true` except `native-keymap`, then `npx theia-patch`, `npm run -s compute-references` and `npx lerna run afterInstall`. Compile, lint and unit tests work; the Electron build and tests need the real native module. (after 1.77.0)
 
 ### `vsce package` of the sample plugins refuses: `@types/vscode` greater than `engines.vscode`
 
@@ -105,6 +117,7 @@ Newest first. One entry per merged update and target branch.
 
 | Date | Branch | From → To | PR | Notes |
 |---|---|---|---|---|
+| 2026-11-17 | master | after 1.77.0 | #18420 | Ranges aligned; puppeteer 25.17.0, minimatch 11, rimraf 6, zod floor 4.6.7 (drops zod 3); override `follow-redirects` (nx); `jsondiffpatch` override removed; `@types/vscode` held in sample plugins. Clean regen needed `node_modules` removed. Held back: `@vscode/proxy-agent`, `diff`, `mermaid` 12, lerna 10, TypeScript 7. |
 | 2026-10-12 | master | after 1.76.0 | #18149 | Ranges aligned (incl. `@playwright/test` 1.63.0), `simple-git` 4.0.2 in ai-ide, scoped overrides for `axios` (nx) and `basic-ftp`, full regen so `uuid`/`@tootallnate/once` overrides apply. |
 | 2026-09-15 | master | after 1.75.0 | #18005 | Overrides `pacote` (lerna), `smol-toml` (nx), `jsondiffpatch`, `qs` (express), `@tootallnate/once`; `tar-stream` type fix; `@types/vscode` held in sample plugins; `@vscode/vsce` dev dep and platform-restore tooling dropped. Held back: `decompress` (needs replacement), `ai`/`@ai-sdk/*` (v5 migration), `diff`, `stream-json` via `scanoss`. |
 | 2026-08-12 | master | after 1.74.x | #17909 | Unused `less` removed; overrides `tar`, `adm-zip`, `uuid`, `serialize-javascript`, `js-yaml`, `dompurify`; `brace-expansion`/`@typescript-eslint/utils` overrides scoped. Held back: `electron` (own update), `@vscode/proxy-agent` (API change in `plugin-host-proxy.ts`), `diff`, `decompress`. |
