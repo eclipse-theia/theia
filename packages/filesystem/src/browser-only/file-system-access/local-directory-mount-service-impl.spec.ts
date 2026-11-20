@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { expect } from 'chai';
-import { ILogger, URI } from '@theia/core';
+import { URI } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { LocalDirectoryHandleRecord, LocalDirectoryHandleStore } from './local-directory-handle-store.js';
 import { LocalDirectoryFileSystemProviderFactory } from './local-directory-file-system-provider.js';
 import { LocalDirectoryMount } from './local-directory-mount-service.js';
@@ -41,7 +42,7 @@ const createHandle = (name: string): FileSystemDirectoryHandle => {
 const createService = <T extends LocalDirectoryMountServiceImpl>(service: T, records: Promise<LocalDirectoryHandleRecord[]> = Promise.resolve([])): T => {
     const store: Partial<LocalDirectoryHandleStore> = { getAll: () => records, put: async () => { } };
     const providerFactory = (() => ({ dispose: () => { } })) as unknown as LocalDirectoryFileSystemProviderFactory;
-    Object.assign(service, { store, providerFactory, logger: {} as ILogger });
+    Object.assign(service, { store, providerFactory, logger: new MockLogger() });
     (service as unknown as { init(): void }).init();
     return service;
 };

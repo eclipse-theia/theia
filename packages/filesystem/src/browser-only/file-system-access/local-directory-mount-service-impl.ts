@@ -60,6 +60,7 @@ export class LocalDirectoryMountServiceImpl implements LocalDirectoryMountServic
     protected async restore(): Promise<void> {
         // No mount can exist without the API, so don't touch IndexedDB at startup.
         if (!this.isSupported()) {
+            this.logger.debug('The File System Access API is not available, local folders are not restored');
             return;
         }
         try {
@@ -197,7 +198,7 @@ export class LocalDirectoryMountServiceImpl implements LocalDirectoryMountServic
     }
 
     protected getUniqueName(handleName: string): string {
-        // '/' would split the mount name into several path segments.
+        // `Path` treats `/` and `\` as separators, either would split the name into several segments.
         const base = handleName.replace(/[\\/]/g, '_').trim() || 'folder';
         let name = base;
         for (let i = 2; this.mounts.has(name); i++) {

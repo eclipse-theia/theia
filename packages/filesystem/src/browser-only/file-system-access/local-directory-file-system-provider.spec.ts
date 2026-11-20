@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { Container } from '@theia/core/shared/inversify';
-import { URI } from '@theia/core';
+import { ILogger, URI } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { expect } from 'chai';
 import { FileChange, FileChangeType, FileSystemProviderError, FileSystemProviderErrorCode, FileType } from '../../common/files.js';
@@ -59,6 +60,7 @@ describe('LocalDirectoryFileSystemProvider', () => {
         const container = new Container();
         container.bind(LocalDirectoryFileSystemProviderOptions).toConstantValue({ handle: root });
         container.bind(EncodingService).toSelf().inSingletonScope();
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
         container.bind(LocalDirectoryFileSystemProvider).toSelf().inSingletonScope();
         provider = container.get(LocalDirectoryFileSystemProvider);
         changes = [];

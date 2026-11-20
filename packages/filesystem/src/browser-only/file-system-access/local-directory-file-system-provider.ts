@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { Disposable, DisposableCollection, Emitter, Event, Path, URI } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { Disposable, DisposableCollection, Emitter, Event, ILogger, Path, URI } from '@theia/core';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
@@ -83,6 +83,9 @@ export class LocalDirectoryFileSystemProvider implements Disposable,
     @inject(EncodingService)
     protected readonly encodingService: EncodingService;
 
+    @inject(ILogger) @named('filesystem:LocalDirectoryFileSystemProvider')
+    protected readonly logger: ILogger;
+
     protected readonly openFiles = new Map<number, OpenFile>();
     protected nextFd = 1;
 
@@ -91,7 +94,7 @@ export class LocalDirectoryFileSystemProvider implements Disposable,
     // #region watching
 
     watch(resource: URI, opts: WatchOptions): Disposable {
-        // Without the FileSystemObserver (Chromium only) there is no way to learn about changes that are made outside of Theia.
+        // Older Chromium versions lack the FileSystemObserver, so changes made outside of Theia go unnoticed.
         // Changes made through this provider are always reported by the mutating methods themselves.
         const observerConstructor = this.getObserverConstructor();
         if (!observerConstructor) {
@@ -106,10 +109,7 @@ export class LocalDirectoryFileSystemProvider implements Disposable,
         });
         this.resolveHandle(watched)
             .then(handle => disposed ? undefined : observer.observe(handle, { recursive: opts.recursive }))
-            .catch(() => {
-                // The watched resource may be gone or not observable, there is nothing useful to do about that.
-            });
-        // `push` returns a disposable that also removes the watcher from the collection again.
+            .catch(error => this.logger.debug(`Cannot observe ${resource.toString()}`, error));
         return this.toDispose.push(Disposable.create(() => {
             disposed = true;
             observer.disconnect();
@@ -237,6 +237,7 @@ export class LocalDirectoryFileSystemProvider implements Disposable,
                     if (this.isError(error, 'NotAllowedError') || this.isError(error, 'SecurityError')) {
                         throw error;
                     }
+                    this.logger.debug(`Cannot move ${from.toString()}, falling back to copy and delete`, error);
                 }
             }
             if (!moved) {

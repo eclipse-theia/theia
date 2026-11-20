@@ -16,6 +16,7 @@
 
 import { expect } from 'chai';
 import { Emitter, Event, URI } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { FileChange, FileChangeType, FileSystemProviderErrorCode, FileType, Stat } from '../../common/files.js';
 import { OPFSFileSystemProvider } from '../opfs-filesystem-provider.js';
 import { BrowserOnlyCompositeFileSystemProvider } from './browser-only-composite-file-system-provider.js';
@@ -177,7 +178,7 @@ describe('BrowserOnlyCompositeFileSystemProvider', () => {
         opfs = new FakeProvider();
         mounts = new FakeMountService();
         composite = new BrowserOnlyCompositeFileSystemProvider();
-        Object.assign(composite, { opfs: opfs as unknown as OPFSFileSystemProvider, mountService: mounts as unknown as LocalDirectoryMountService });
+        Object.assign(composite, { opfs: opfs as unknown as OPFSFileSystemProvider, mountService: mounts as unknown as LocalDirectoryMountService, logger: new MockLogger() });
         (composite as unknown as { init(): void }).init();
         events = [];
         composite.onDidChangeFile(changes => events.push(...changes));

@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { Disposable, DisposableCollection, DisposableWrapper, Emitter, Event, Path, URI } from '@theia/core';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { Disposable, DisposableCollection, DisposableWrapper, Emitter, Event, ILogger, Path, URI } from '@theia/core';
 import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import {
     FileChange, FileChangeType, FileDeleteOptions, FileOpenOptions, FileOverwriteOptions,
@@ -66,6 +66,9 @@ export class BrowserOnlyCompositeFileSystemProvider implements Disposable,
 
     @inject(LocalDirectoryMountService)
     protected readonly mountService: LocalDirectoryMountService;
+
+    @inject(ILogger) @named('filesystem:BrowserOnlyCompositeFileSystemProvider')
+    protected readonly logger: ILogger;
 
     protected readonly toDispose = new DisposableCollection(this.onDidChangeFileEmitter);
     protected readonly subscriptions = new Map<string, MountSubscription>();
@@ -243,7 +246,7 @@ export class BrowserOnlyCompositeFileSystemProvider implements Disposable,
             if (mount.permission === 'granted') {
                 watcher.set(mount.provider.watch(route.relative, opts));
             }
-        }, () => { /* the mount does not exist (anymore), nothing to watch */ });
+        }, error => this.logger.debug(`Cannot watch ${resource.toString()}`, error));
         return watcher;
     }
 
