@@ -18,6 +18,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { MenuPath } from '@theia/core/lib/common/menu';
 import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { Anchor, ContextMenuAccess, ContextMenuRenderer, Coordinate } from '@theia/core/lib/browser';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Menu } from '@theia/core/shared/@lumino/widgets';
 import { CommandRegistry } from '@theia/core/shared/@lumino/commands';
 import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/contextview/browser/contextView.js';
@@ -63,15 +64,20 @@ export class MonacoContextMenuService implements IContextMenuService {
         const anchor = this.toAnchor(delegate.getAnchor());
         const actions = delegate.getActions();
         const context = this.getContext(delegate);
+        const toDisposeOnHide = new DisposableCollection();
+        let hidden = false;
         const onHide = () => {
+            hidden = true;
+            toDisposeOnHide.dispose();
             delegate.onHide?.(false);
             this.onDidHideContextMenuEmitter.fire();
         };
 
         // Actions for editor context menu come as 'MenuItemAction' items
         // In case of 'Quick Fix' actions come as 'CodeActionAction' items
+        let access: ContextMenuAccess;
         if (actions.length > 0 && actions[0] instanceof MenuItemAction) {
-            this.contextMenuRenderer.render({
+            access = this.contextMenuRenderer.render({
                 context: context,
                 menuPath: this.menuPath(),
                 anchor,
@@ -82,9 +88,28 @@ export class MonacoContextMenuService implements IContextMenuService {
             this.populateMenu(menu, actions);
             menu.aboutToClose.connect(() => onHide());
             menu.open(anchor.x, anchor.y);
-            this.contextMenuRenderer.current = new ContextMenuAccess(menu);
+            access = new ContextMenuAccess(menu);
+            this.contextMenuRenderer.current = access;
+        }
+        if (!hidden) {
+            toDisposeOnHide.push(this.closeOnMouseWheel(access));
         }
         this.onDidShowContextMenuEmitter.fire();
+    }
+
+    /**
+     * Closes the context menu when the user scrolls outside of it, as Monaco does for its own context menu.
+     * Otherwise the menu stays at a fixed position while the content it was opened for scrolls away.
+     */
+    protected closeOnMouseWheel(access: ContextMenuAccess): Disposable {
+        const listener = (event: WheelEvent) => {
+            if (event.target instanceof Element && event.target.closest('.lm-Menu')) {
+                return; // scrolling inside the menu or one of its submenus
+            }
+            access.dispose();
+        };
+        window.addEventListener('wheel', listener, { capture: true, passive: true });
+        return Disposable.create(() => window.removeEventListener('wheel', listener, { capture: true }));
     }
 
     protected populateMenu(menu: Menu, actions: readonly IAction[]): void {
