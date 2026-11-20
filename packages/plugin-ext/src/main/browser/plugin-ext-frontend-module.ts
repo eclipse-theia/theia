@@ -79,6 +79,8 @@ import { bindTreeViewDecoratorUtilities, TreeViewDecoratorService } from './view
 import { PluginMenuCommandAdapter } from './menus/plugin-menu-command-adapter.js';
 import './theme-icon-override.js';
 import { PluginIconService } from './plugin-icon-service.js';
+import { FetchFileServiceContribution, FetchFileSystemProvider } from './fetch-file-system-provider.js';
+import { FileServiceContribution } from '@theia/filesystem/lib/browser/file-service';
 import { PluginTerminalRegistry } from './plugin-terminal-registry.js';
 import { DnDFileContentStore } from './view/dnd-file-content-store.js';
 import { WebviewContextKeys } from './webview/webview-context-keys.js';
@@ -283,6 +285,10 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(PluginIconService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(PluginIconService);
+
+    bind(FetchFileSystemProvider).toSelf().inSingletonScope();
+    bind(FetchFileServiceContribution).toSelf().inSingletonScope();
+    bind(FileServiceContribution).toService(FetchFileServiceContribution);
 
     bind(PluginAuthenticationServiceImpl).toSelf().inSingletonScope();
     rebind(AuthenticationService).toService(PluginAuthenticationServiceImpl);
