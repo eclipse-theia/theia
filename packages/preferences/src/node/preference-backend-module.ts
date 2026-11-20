@@ -24,7 +24,7 @@ import { bindPreferenceProviders } from './preference-bindings.js';
 import { PreferenceStorageFactory } from '../common/abstract-resource-preference-provider.js';
 import { PreferenceScope, URI } from '@theia/core';
 import { BackendPreferenceStorage } from './backend-preference-storage.js';
-import { JSONCEditor } from '../common/jsonc-editor.js';
+import { JSONCEditor } from '@theia/core/lib/common/jsonc-editor';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { DiskFileSystemProvider } from '@theia/filesystem/lib/node/disk-file-system-provider';
 
@@ -37,7 +37,6 @@ export default new ContainerModule(bind => {
     bind(CliPreferences).toService(PreferenceCliContribution);
     bind(CliContribution).toService(PreferenceCliContribution);
     bind(RemoteCliContribution).toService(PreferenceCliContribution);
-    bind(JSONCEditor).toSelf().inSingletonScope();
 
     bind(PreferenceStorageFactory).toFactory(({ container }) => (uri: URI, scope: PreferenceScope) => new BackendPreferenceStorage(
         container.get(DiskFileSystemProvider),

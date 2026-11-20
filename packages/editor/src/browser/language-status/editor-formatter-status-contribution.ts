@@ -60,7 +60,7 @@ function getScopeDisplayInfo(scope: FormatterSettingScope): ScopeDisplayInfo {
  * - error: invalid configuration with no fallback
  * - warning: invalid config with fallback available (single formatter case)
  */
-const enum FormatterIcon {
+export enum FormatterIcon {
     Info = '$(info)',
     Error = '$(error)',
     Warning = '$(warning)'
@@ -69,7 +69,7 @@ const enum FormatterIcon {
 /**
  * Display information for a formatter status.
  */
-interface FormatterDisplayInfo {
+export interface FormatterDisplayInfo {
     /** Icon to display (check, error, warning) */
     icon: FormatterIcon;
     /** Label text (formatter name or status) */

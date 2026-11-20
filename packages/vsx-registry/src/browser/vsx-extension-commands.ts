@@ -79,4 +79,10 @@ export namespace VSXExtensionsCommands {
         category: EXTENSIONS_CATEGORY,
         iconClass: codicon('refresh')
     });
+    export const ADD_TO_WORKSPACE_RECOMMENDATIONS: Command = {
+        id: 'vsxExtensions.addToWorkspaceRecommendations'
+    };
+    export const REMOVE_FROM_WORKSPACE_RECOMMENDATIONS: Command = {
+        id: 'vsxExtensions.removeFromWorkspaceRecommendations'
+    };
 }

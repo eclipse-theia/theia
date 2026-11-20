@@ -227,7 +227,7 @@ export namespace BackendApplicationConfig {
 
         /**
          * When `true`, proxy-related user preferences (`http.proxy`, `http.proxyStrictSSL`,
-         * `http.proxyAuthorization`) will be read from the backend PreferenceService and applied
+         * `http.proxyAuthorization`, `http.systemCertificates`) will be read from the backend PreferenceService and applied
          * to the backend's NodeRequestService. When `false` (the default), proxy settings can only
          * be configured via CLI flags (`--proxy-url`, etc.) or environment variables (`HTTP_PROXY`,
          * `HTTPS_PROXY`).
