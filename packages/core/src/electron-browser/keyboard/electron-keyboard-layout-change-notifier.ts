@@ -33,7 +33,15 @@ export class ElectronKeyboardLayoutChangeNotifier implements KeyboardLayoutChang
 
     @postConstruct()
     protected init(): void {
-        window.electronTheiaCore.onKeyboardLayoutChanged((newLayout: NativeKeyboardLayout) => this.nativeLayoutChanged.fire(newLayout));
+        window.electronTheiaCore.onKeyboardLayoutChanged((newLayout: NativeKeyboardLayout) => this.notifyLayoutChanged(newLayout));
+    }
+
+    /**
+     * Announce a layout that was found to differ from the one in use, e.g. the current native layout
+     * once it has been retrieved after the cached one of the last session was applied.
+     */
+    notifyLayoutChanged(newLayout: NativeKeyboardLayout): void {
+        this.nativeLayoutChanged.fire(newLayout);
     }
 
 }
