@@ -623,6 +623,16 @@ export class ChatViewTreeWidget extends TreeWidget {
         }
     }
 
+    /** The label of a request or response for screen readers. It also says when a compaction excludes the message from future prompts. */
+    protected getChatNodeAriaLabel(node: RequestNode | ResponseNode): string {
+        const label = isRequestNode(node)
+            ? nls.localize('theia/ai/chat-ui/yourMessage', 'Your message')
+            : nls.localize('theia/ai/chat-ui/responseFrom', 'Response from {0}', this.getAgentLabel(node));
+        return node.isStale
+            ? nls.localize('theia/ai/chat-ui/compactedMessage', '{0}, compacted and not sent in future prompts', label)
+            : label;
+    }
+
     protected override renderNode(
         node: TreeNode,
         props: NodeProps
@@ -633,9 +643,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         if (!(isRequestNode(node) || isResponseNode(node))) {
             return super.renderNode(node, props);
         }
-        const ariaLabel = isRequestNode(node)
-            ? nls.localize('theia/ai/chat-ui/yourMessage', 'Your message')
-            : nls.localize('theia/ai/chat-ui/responseFrom', 'Response from {0}', this.getAgentLabel(node));
+        const ariaLabel = this.getChatNodeAriaLabel(node);
         return <React.Fragment key={node.id}>
             <div
                 className={`theia-ChatNode${node.isStale ? ' theia-ChatNode-stale' : ''}`}

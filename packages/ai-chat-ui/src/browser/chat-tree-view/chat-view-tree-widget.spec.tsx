@@ -28,7 +28,7 @@ import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { OpenerService } from '@theia/core/lib/browser';
 import { MarkdownRender } from '../chat-response-renderer/markdown-part-renderer';
 import { BLOCKED_RESOURCE_CLASS } from '../chat-response-renderer/block-external-resources';
-import { ChatRequestRender, RequestNode } from './chat-view-tree-widget';
+import { ChatRequestRender, ChatViewTreeWidget, RequestNode, ResponseNode } from './chat-view-tree-widget';
 
 disableJSDOM();
 
@@ -112,5 +112,24 @@ describe('chat-view-tree-widget resource blocking policy', () => {
             expect(container.querySelector('img')).to.be.null;
             done();
         }, 50);
+    });
+});
+
+describe('chat-view-tree-widget aria label', () => {
+    const widget = Object.create(ChatViewTreeWidget.prototype) as ChatViewTreeWidget;
+    (widget as unknown as { getAgent: () => { name: string } }).getAgent = () => ({ name: 'Coder' });
+    const ariaLabel = (node: RequestNode | ResponseNode): string =>
+        (widget as unknown as { getChatNodeAriaLabel(node: RequestNode | ResponseNode): string }).getChatNodeAriaLabel(node);
+    const request = { request: {}, sessionId: 's' } as unknown as RequestNode;
+    const response = { response: {}, sessionId: 's' } as unknown as ResponseNode;
+
+    it('names the request and the response', () => {
+        expect(ariaLabel(request)).to.equal('Your message');
+        expect(ariaLabel(response)).to.equal('Response from Coder');
+    });
+
+    it('says that a compaction excludes a stale message from future prompts', () => {
+        expect(ariaLabel({ ...request, isStale: true })).to.equal('Your message, compacted and not sent in future prompts');
+        expect(ariaLabel({ ...response, isStale: true })).to.equal('Response from Coder, compacted and not sent in future prompts');
     });
 });

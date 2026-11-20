@@ -96,6 +96,14 @@ export class ChatRequestParserImpl implements ChatRequestParser {
         const unresolved: ParsedChatRequest = { request, parts, toolRequests, deferredToolIds, variables: [] };
         const agentId = options?.selectAgentId ? options.selectAgentId(unresolved) : this.agentService.resolveAgent(unresolved)?.id;
         const resolutionContext: ChatContext & AgentScopedVariableContext = { ...context, agentId };
+        if (agentId) {
+            // A command that exists only for other agents stays as the typed text, as the completion does not offer it either
+            parts.forEach((part, index) => {
+                if (this.isCommandOfOtherAgents(request.text, part, agentId)) {
+                    parts[index] = new ParsedChatRequestTextPart(part.range, request.text.substring(part.range.start, part.range.endExclusive));
+                }
+            });
+        }
 
         // Resolve all variables and add them to the variable parts.
         // Parse resolved variable texts again for tool requests.
@@ -359,6 +367,14 @@ export class ChatRequestParserImpl implements ChatRequestParser {
             match = nextCommandReg.exec(message);
         }
         return undefined;
+    }
+
+    protected isCommandOfOtherAgents(text: string, part: ParsedChatRequestPart, agentId: string): boolean {
+        if (!(part instanceof ParsedChatRequestVariablePart) || part.variableName !== 'prompt' || text.charAt(part.range.start) !== chatSubcommandLeader) {
+            return false;
+        }
+        const commandName = part.variableArg?.split('|')[0] ?? '';
+        return !!this.promptService.getPromptFragmentByCommandName(commandName) && !this.promptService.getPromptFragmentByCommandName(commandName, agentId);
     }
 
     /**

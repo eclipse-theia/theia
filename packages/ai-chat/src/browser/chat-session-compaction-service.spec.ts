@@ -22,7 +22,8 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import {
-    AgentService, DefaultAIVariableService, LanguageModel, LanguageModelMessage, LanguageModelRequirement, LanguageModelResponse, LanguageModelService, PromptFragment,
+    AgentService, DefaultAIVariableService, LanguageModel, LanguageModelMessage, LanguageModelRegistry, LanguageModelRequirement, LanguageModelResponse, LanguageModelService,
+    PromptFragment,
     PromptService, PromptServiceImpl, ToolInvocationRegistryImpl, UserRequest
 } from '@theia/ai-core';
 import { PromptVariableContribution } from '@theia/ai-core/lib/browser/prompt-variable-contribution';
@@ -132,11 +133,16 @@ describe('ChatSessionCompactionServiceImpl', () => {
     let commands: PromptFragment[];
     let registered: PromptFragment[];
     let model: MutableChatModel;
+    let readyModels: string[];
 
     beforeEach(() => {
         summaryAgent = new FakeSummaryAgent();
         registered = [];
+        readyModels = ['anthropic/opus'];
         const container = new Container();
+        container.bind(LanguageModelRegistry).toConstantValue({
+            getLanguageModel: async (id: string) => ({ id, status: { status: readyModels.includes(id) ? 'ready' : 'unavailable' } })
+        } as unknown as LanguageModelRegistry);
         container.bind(AgentService).toConstantValue({ getAgents: () => [summaryAgent] } as unknown as AgentService);
         container.bind(PromptService).toConstantValue({
             addBuiltInPromptFragment: (fragment: PromptFragment) => { registered.push(fragment); },
@@ -322,6 +328,17 @@ describe('ChatSessionCompactionServiceImpl', () => {
                 expect(await promptText('/review focus on the tests')).to.equal('Review for Own: focus on the tests');
             });
 
+            it('leaves a command for other agents as the typed text', async () => {
+                // The fragment ID differs from the command name, as for a customized command
+                promptService.addBuiltInPromptFragment({
+                    id: 'own-deploy-fragment', template: 'Deploy for Own: $ARGUMENTS', isCommand: true, commandName: 'deploy', commandAgents: [OWN_AGENT]
+                });
+
+                expect(await promptText('/deploy prod', OWN_AGENT)).to.equal('Deploy for Own: prod');
+                expect(await promptText('/deploy prod', 'Other')).to.equal('/deploy prod');
+                expect(await promptText('/deploy prod and /review the tests', 'Other')).to.equal('/deploy prod and Review for all: the tests');
+            });
+
             it('agrees with the commands of the completion', async () => {
                 for (const agentId of [OWN_AGENT, 'Other']) {
                     const completion = promptService.getCommands(agentId).find(command => command.commandName === 'review');
@@ -394,6 +411,45 @@ describe('ChatSessionCompactionServiceImpl', () => {
             expect(summaryAgent.llmRequest?.settings).to.deep.equal({});
             const replayed = summaryAgent.llmRequest?.messages.filter(LanguageModelMessage.isCompactionMessage);
             expect(replayed?.map(message => message.provider)).to.deep.equal(['anthropic']);
+        });
+
+        describe('with a server-side marker in the history', () => {
+            function addProviderMarker(languageModel: string | undefined): void {
+                const one = model.addRequest(parsed('one'));
+                one.response.setLanguageModel(languageModel);
+                one.response.response.addContent(new CompactionChatResponseContentImpl('anthropic', { content: 'server summary' }, 'server summary'));
+                one.response.response.addContent(new TextChatResponseContentImpl('a'));
+                one.response.complete();
+            }
+
+            it('makes the summary with the model that made the marker, because only this model can replay it', async () => {
+                addProviderMarker('anthropic/opus');
+                addExchange('two', 'b');
+
+                await service.compact(addCommand());
+
+                expect(summaryAgent.inner?.session.settings?.commonSettings?.modelId).to.equal('anthropic/opus');
+            });
+
+            it('keeps the history and reports a clear error if this model is not ready', async () => {
+                addProviderMarker('openai/gpt');
+                const command = addCommand();
+
+                await service.compact(command);
+
+                expect(summaryAgent.invocations).to.equal(0);
+                expect(command.response.isError).to.equal(true);
+                expect(command.response.errorObject?.message).to.contain('server-side compaction of the language model openai/gpt');
+                expect(ChatSessionCompaction.getStaleRequests(model)).to.deep.equal([]);
+            });
+
+            it('uses the model of the summary agent if the history has no server-side marker', async () => {
+                addExchange('one', 'a');
+
+                await service.compact(addCommand());
+
+                expect(summaryAgent.inner?.session.settings?.commonSettings?.modelId).to.equal(undefined);
+            });
         });
 
         it('sends no compaction setting if the session has none', async () => {

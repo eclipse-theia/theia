@@ -14,11 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AgentService, PromptService, ResolvedPromptFragment } from '@theia/ai-core';
+import { AgentService, LanguageModelRegistry, PromptService, ResolvedPromptFragment } from '@theia/ai-core';
 import { CancellationToken, nls } from '@theia/core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import {
-    ChatAgent, ChatAgentLocation, ChatModel, ChatRequestModel, MutableChatModel, MutableChatRequestModel, ParsedChatRequestTextPart, ResponseTokenUsage
+    ChatAgent, ChatAgentLocation, ChatModel, ChatRequestModel, CompactionChatResponseContent, MutableChatModel, MutableChatRequestModel, ParsedChatRequestTextPart,
+    ResponseTokenUsage
 } from '../common';
 import { ChatSessionSummaryAgent } from '../common/chat-session-summary-agent';
 import { CHAT_SESSION_SUMMARY_PROMPT } from '../common/chat-session-summary-agent-prompt';
@@ -49,6 +50,7 @@ export class ChatSessionSummarizer {
 
     @inject(AgentService) protected readonly agentService: AgentService;
     @inject(PromptService) protected readonly promptService: PromptService;
+    @inject(LanguageModelRegistry) @optional() protected readonly languageModelRegistry: LanguageModelRegistry | undefined;
 
     /**
      * @throws an error if the agent cannot make the summary. Then the result is not usable as a summary.
@@ -59,15 +61,18 @@ export class ChatSessionSummarizer {
         const agent = options.agent ?? this.getSummaryAgent();
         if (!agent) { throw new Error(nls.localize('theia/ai/chat/summarizer/noAgent', 'Unable to identify agent for summary.')); }
 
+        const requests = options.requests ?? model.getRequests();
         const summaryModel = new MutableChatModel(ChatAgentLocation.Panel);
-        // The history can hold a server-side compaction marker. The provider replays it only if compaction is on for the
-        // request. Without the setting of the session, a model with compaction off by default skips the marker and
-        // sends the full history before it again, which can be more than the context limit.
+        // The history can hold a server-side compaction marker. Only the provider that made it can replay it, and only if
+        // compaction is on for the request. Otherwise the provider skips the marker and sends the full history before it
+        // again, which can be more than the context limit. Thus the summary uses the model that made the latest marker,
+        // and the compaction setting of the session.
         const compaction = model.settings?.commonSettings?.compaction;
-        if (compaction) {
-            summaryModel.setSettings({ commonSettings: { compaction } });
+        const modelId = await this.getMarkerModelId(requests);
+        if (compaction || modelId) {
+            summaryModel.setSettings({ commonSettings: { ...(compaction ? { compaction } : {}), ...(modelId ? { modelId } : {}) } });
         }
-        (options.requests ?? model.getRequests())
+        requests
             .filter((candidate): candidate is MutableChatRequestModel => candidate instanceof MutableChatRequestModel)
             .forEach(request => summaryModel['_hierarchy'].append(request));
         const text = options.instructions ? `${prompt.text}\n\nAlso follow these instructions from the user: ${options.instructions}` : prompt.text;
@@ -91,6 +96,26 @@ export class ChatSessionSummarizer {
             summary: summaryRequest.response.response.asDisplayString(),
             tokenUsage: summaryRequest.response.tokenUsage
         };
+    }
+
+    /**
+     * The language model that made the latest server-side compaction marker in the requests, if one did.
+     * @throws an error if this model is not ready, because another model cannot replay the marker.
+     */
+    protected async getMarkerModelId(requests: readonly ChatRequestModel[]): Promise<string | undefined> {
+        const request = [...requests].reverse().find(candidate => candidate.response.response.content
+            .some(content => CompactionChatResponseContent.is(content) && !CompactionChatResponseContent.isSessionCompaction(content)));
+        const modelId = request?.response.languageModel;
+        if (!modelId || !this.languageModelRegistry) {
+            return undefined;
+        }
+        const languageModel = await this.languageModelRegistry.getLanguageModel(modelId);
+        if (languageModel?.status.status !== 'ready') {
+            throw new Error(nls.localize('theia/ai/chat/summarizer/markerModelNotReady',
+                'The history holds a server-side compaction of the language model {0}. Only this model can read it, and it is not ready. Make it ready, then try again.',
+                modelId));
+        }
+        return modelId;
     }
 
     protected getSummaryAgent(): ChatAgent | undefined {
