@@ -19,6 +19,12 @@ import { injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { escapeRegExpCharacters } from '@theia/core/lib/common/strings';
 
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+// some code copied and modified from https://github.com/microsoft/vscode/blob/1.95.0/src/vs/workbench/contrib/output/common/outputLinkComputer.ts
+
 export interface OutputLinkWorkspaceFolder {
     uri: URI;
     /** The OS-specific path of the folder, as it appears in tool output. */
