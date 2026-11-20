@@ -36,7 +36,8 @@ import {
     LanguageModelRequest,
     LanguageModelStatus,
     LanguageModelTextResponse,
-    UserRequest
+    UserRequest,
+    extractErrorMessageWithCause
 } from '@theia/ai-core';
 import { CancellationToken, ILogger } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
@@ -52,6 +53,11 @@ export interface OllamaModelParams {
     status: LanguageModelStatus;
     host: () => string | undefined;
     proxy?: string;
+    /**
+     * The undici request timeout in milliseconds applied to the Ollama client's fetch. `0` disables
+     * the timeout; `undefined` keeps undici's defaults. See {@link createProxyFetch}.
+     */
+    requestTimeout?: number;
     reasoningSupport?: ReasoningSupport;
 }
 
@@ -77,7 +83,17 @@ export class OllamaModel implements LanguageModel {
     status: LanguageModelStatus;
     protected host: () => string | undefined;
     proxy?: string;
+    requestTimeout?: number;
     reasoningSupport?: ReasoningSupport;
+
+    /**
+     * Cached fetch returned by {@link createProxyFetch}. Recreated only when the proxy or request
+     * timeout change, so that the underlying undici connection pool is reused across requests
+     * instead of a fresh {@link undici.Agent} being created per request. The {@link Ollama} client
+     * itself is cheap and is created per request around this cached fetch.
+     */
+    protected proxyFetch?: typeof fetch;
+    protected proxyFetchConfig?: { proxy?: string; requestTimeout?: number };
 
     @inject(OllamaModelParams)
     protected readonly params: OllamaModelParams;
@@ -96,6 +112,7 @@ export class OllamaModel implements LanguageModel {
         this.status = params.status;
         this.host = params.host;
         this.proxy = params.proxy;
+        this.requestTimeout = params.requestTimeout;
         this.reasoningSupport = params.reasoningSupport;
     }
 
@@ -157,13 +174,23 @@ export class OllamaModel implements LanguageModel {
         cancellation?: CancellationToken,
         reasoning?: ReasoningSettings
     ): Promise<LanguageModelStreamResponse> {
-        const supportsThinking = await this.checkThinkingSupport(ollama, chatRequest.model);
-        const thinkParam = supportsThinking ? this.getThinkingParameter(reasoning, chatRequest.model) : false;
-        const responseStream = await ollama.chat({
-            ...chatRequest,
-            stream: true,
-            think: thinkParam
-        });
+        let responseStream;
+        try {
+            const supportsThinking = await this.checkThinkingSupport(ollama, chatRequest.model);
+            const thinkParam = supportsThinking ? this.getThinkingParameter(reasoning, chatRequest.model) : false;
+            responseStream = await ollama.chat({
+                ...chatRequest,
+                stream: true,
+                think: thinkParam
+            });
+        } catch (error) {
+            this.logger.error('Error in Ollama streaming:', error.message);
+            // Flatten the `cause` chain into the message before re-throwing: the RPC error
+            // extension drops `cause`, so an Ollama timeout during the `show`/`chat` setup calls
+            // would otherwise reach the chat as a bare "fetch failed". See {@link extractErrorMessageWithCause}.
+            const errorMessage = error instanceof Error ? extractErrorMessageWithCause(error) : 'Unknown error occurred';
+            throw new Error(`Ollama API request failed: ${errorMessage}`);
+        }
 
         cancellation?.onCancellationRequested(() => {
             responseStream.abort();
@@ -243,7 +270,11 @@ export class OllamaModel implements LanguageModel {
                     }
                 } catch (error) {
                     that.logger.error('Error in Ollama streaming:', error.message);
-                    throw error;
+                    // Flatten the `cause` chain into the message before re-throwing: the RPC error
+                    // extension drops `cause`, so an Ollama timeout would otherwise reach the chat
+                    // as a bare "fetch failed". See {@link extractErrorMessageWithCause}.
+                    const errorMessage = error instanceof Error ? extractErrorMessageWithCause(error) : 'Unknown error occurred';
+                    throw new Error(`Ollama API request failed: ${errorMessage}`);
                 }
             }
         };
@@ -375,7 +406,8 @@ export class OllamaModel implements LanguageModel {
             return result;
         } catch (error) {
             this.logger.error('Error in ollama call:', error.message);
-            throw error;
+            const errorMessage = error instanceof Error ? extractErrorMessageWithCause(error) : 'Unknown error occurred';
+            throw new Error(`Ollama API request failed: ${errorMessage}`);
         }
     }
 
@@ -438,7 +470,16 @@ export class OllamaModel implements LanguageModel {
         if (!host) {
             throw new Error('Please provide OLLAMA_HOST in preferences or via environment variable');
         }
-        return new Ollama({ host: host, fetch: createProxyFetch(this.proxy) });
+        // Reuse the existing proxy-aware fetch (and its undici connection pool) unless the relevant
+        // configuration changed, so that a fresh Agent is not created per request. The Ollama client
+        // is cheap, so it is created per request around the cached fetch.
+        if (!this.proxyFetch
+            || this.proxyFetchConfig?.proxy !== this.proxy
+            || this.proxyFetchConfig?.requestTimeout !== this.requestTimeout) {
+            this.proxyFetch = createProxyFetch(this.proxy, this.requestTimeout);
+            this.proxyFetchConfig = { proxy: this.proxy, requestTimeout: this.requestTimeout };
+        }
+        return new Ollama({ host, fetch: this.proxyFetch });
     }
 
     protected toOllamaTool(tool: ToolRequest): ToolWithHandler {

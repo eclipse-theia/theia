@@ -15,10 +15,12 @@
 // *****************************************************************************
 
 import { AI_CORE_PREFERENCES_TITLE, MODEL_PROVIDER_TYPE_DETAIL, ModelProviderTypeDetail } from '@theia/ai-core/lib/common/ai-core-preferences';
+import { nls } from '@theia/core';
 import { PreferenceSchema } from '@theia/core/lib/common';
 
 export const HOST_PREF = 'ai-features.ollama.ollamaHost';
 export const MODELS_PREF = 'ai-features.ollama.ollamaModels';
+export const REQUEST_TIMEOUT_PREF = 'ai-features.ollama.requestTimeout';
 
 export const OllamaPreferencesSchema: PreferenceSchema = {
     properties: {
@@ -35,6 +37,14 @@ export const OllamaPreferencesSchema: PreferenceSchema = {
             items: {
                 type: 'string'
             }
+        },
+        [REQUEST_TIMEOUT_PREF]: {
+            type: 'integer',
+            default: 300000,
+            title: AI_CORE_PREFERENCES_TITLE,
+            minimum: 0,
+            description: nls.localize('theia/ai/ollama/requestTimeout/description',
+                'Maximum time in milliseconds to wait for data from the Ollama server. Set to 0 to disable.')
         }
     }
 };
