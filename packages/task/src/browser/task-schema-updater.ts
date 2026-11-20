@@ -22,9 +22,9 @@
 
 import Ajv from '@theia/core/shared/ajv';
 import debounce from 'p-debounce';
-import { postConstruct, injectable, inject } from '@theia/core/shared/inversify';
+import { postConstruct, injectable, inject, named } from '@theia/core/shared/inversify';
 import { JsonSchemaContribution, JsonSchemaDataStore, JsonSchemaRegisterContext } from '@theia/core/lib/browser/json-schema-store';
-import { deepClone, Emitter, nls } from '@theia/core/lib/common';
+import { deepClone, Emitter, ILogger, nls } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { inputsSchema } from '@theia/variable-resolver/lib/browser/variable-input-schema';
 import URI from '@theia/core/lib/common/uri';
@@ -53,6 +53,9 @@ export class TaskSchemaUpdater implements JsonSchemaContribution {
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
+
+    @inject(ILogger) @named('task:TaskSchemaUpdater')
+    protected readonly logger: ILogger;
 
     protected readonly onDidChangeTaskSchemaEmitter = new Emitter<void>();
     readonly onDidChangeTaskSchema = this.onDidChangeTaskSchemaEmitter.event;
@@ -87,20 +90,35 @@ export class TaskSchemaUpdater implements JsonSchemaContribution {
         // The validator is compiled when it is needed: the schema is updated for every task definition and
         // problem matcher that is registered, most of them during the start-up.
         this.validationSchema = schema;
-        this.doValidate = undefined;
         this.jsonSchemaData.setSchema(this.uri, schema);
         this.onDidChangeTaskSchemaEmitter.fire(undefined);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     validate(data: any): boolean {
-        if (!this.doValidate && this.validationSchema) {
-            this.doValidate = new Ajv().compile(this.validationSchema);
-        }
+        this.compileValidationSchema();
         return !!this.doValidate && !!this.doValidate(data);
     }
     protected doValidate: Ajv.ValidateFunction | undefined;
+    /** The schema of the last update, as long as it has not been compiled. */
     protected validationSchema: IJSONSchema | undefined;
+
+    /**
+     * Compiles the schema of the last update, if that has not been done yet. A schema that cannot be compiled, for example
+     * because of a task definition that contributes an invalid schema, is reported once and leaves the last valid validator in place.
+     */
+    protected compileValidationSchema(): void {
+        const schema = this.validationSchema;
+        if (!schema) {
+            return;
+        }
+        this.validationSchema = undefined;
+        try {
+            this.doValidate = new Ajv().compile(schema);
+        } catch (error) {
+            this.logger.error('The task schema is invalid. Task configurations are validated against the last valid schema.', error);
+        }
+    }
 
     /**
      * Adds given task schema to `taskConfigurationSchema` as `oneOf` subschema.
