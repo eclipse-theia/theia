@@ -108,8 +108,15 @@ export class DebugWatchExpression extends ExpressionItem {
         if (!session || !frame || !this.supportSetExpression || value === this.value) {
             return;
         }
-        await session.sendRequest('setExpression', { expression: this.expression, value, frameId: frame.raw.id });
-        await this.evaluate();
+        const response = await session.sendRequest('setExpression', { expression: this.expression, value, frameId: frame.raw.id });
+        this.setResult({
+            result: response.body.value,
+            type: response.body.type,
+            variablesReference: response.body.variablesReference ?? 0,
+            namedVariables: response.body.namedVariables,
+            indexedVariables: response.body.indexedVariables,
+            presentationHint: response.body.presentationHint
+        });
         frame.forgetScopes();
         session['fireDidChange']();
     }
