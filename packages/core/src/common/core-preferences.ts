@@ -242,6 +242,17 @@ export const corePreferenceSchema: PreferenceSchema = {
             'description': nls.localizeByDefault('Controls whether an editor is revealed in any of the visible groups if opened. If disabled, an editor will prefer to open in the currently active editor group. If enabled, an already opened editor will be revealed instead of opened again in the currently active editor group. Note that there are some cases where this setting is ignored, such as when forcing an editor to open in a specific group or to the side of the currently active group.'),
             'default': false
         },
+        'workbench.editor.navigationOrder': {
+            type: 'string',
+            enum: ['position', 'recency'],
+            enumDescriptions: [
+                nls.localize('theia/core/navigationOrder/position', 'Navigate tabs in the order they appear in the tab bar.'),
+                nls.localize('theia/core/navigationOrder/recency', 'Navigate tabs in the order they were last activated (most recent first).'),
+            ],
+            default: 'position',
+            description: nls.localize('theia/core/navigationOrder', 'Controls the order in which tab navigation cycles through the tabs of the current tab bar, for example the "Show Next Tab" and "Show Previous Tab" commands bound to Ctrl+Tab.'),
+            scope: PreferenceScope.User
+        },
         'workbench.editor.decorations.badges': {
             'type': 'boolean',
             'description': nls.localizeByDefault('Controls whether editor file decorations should use badges.'),
@@ -365,6 +376,7 @@ export interface CoreConfiguration {
     'workbench.editor.mouseBackForwardToNavigate': boolean;
     'workbench.editor.closeOnFileDelete': boolean;
     'workbench.editor.revealIfOpen': boolean;
+    'workbench.editor.navigationOrder': 'position' | 'recency';
     'workbench.editor.decorations.badges': boolean;
     'workbench.colorTheme': string;
     'workbench.iconTheme': string;
