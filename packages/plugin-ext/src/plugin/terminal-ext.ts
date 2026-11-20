@@ -16,7 +16,7 @@
 
 import { UUID } from '@theia/core/shared/@lumino/coreutils';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT, Plugin, TerminalOptions } from '../common/plugin-api-rpc.js';
+import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT, Plugin, StartTerminalProfileOptions, TerminalOptions } from '../common/plugin-api-rpc.js';
 import { RPCProtocol } from '../common/rpc-protocol.js';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { MultiKeyMap } from '@theia/core/lib/common/collections';
@@ -344,7 +344,7 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
         return 'pty' in options;
     }
 
-    async $startProfile(profileId: string, cancellationToken: theia.CancellationToken): Promise<string> {
+    async $startProfile(profileId: string, startOptions: StartTerminalProfileOptions, cancellationToken: theia.CancellationToken): Promise<string> {
         const provider = this.terminalProfileProviders.get(profileId);
         if (!provider) {
             throw new Error(`No terminal profile provider with id '${profileId}'`);
@@ -357,9 +357,9 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
         const options = profile.options;
         if (this.isExtensionTerminalOptions(options)) {
             this._pseudoTerminals.set(id, new PseudoTerminal(id, this.proxy, options.pty));
-            return this.proxy.$createTerminal(id, { name: options.name }, undefined, true);
+            return this.proxy.$createTerminal(id, { name: options.name }, startOptions.parentId, true);
         } else {
-            return this.proxy.$createTerminal(id, profile.options);
+            return this.proxy.$createTerminal(id, profile.options, startOptions.parentId);
         }
     }
 

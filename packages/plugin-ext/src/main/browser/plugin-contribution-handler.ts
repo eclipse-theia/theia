@@ -44,7 +44,7 @@ import { PluginIconService } from './plugin-icon-service.js';
 import { PluginIconThemeService } from './plugin-icon-theme-service.js';
 import { ContributionProvider, isObject, OVERRIDE_PROPERTY_PATTERN, PreferenceSchemaService } from '@theia/core/lib/common';
 import * as monaco from '@theia/monaco-editor-core';
-import { ContributedTerminalProfileStore, TerminalProfileStore } from '@theia/terminal/lib/browser/terminal-profile-service';
+import { ContributedTerminalProfileStore, TerminalProfileStartOptions, TerminalProfileStore } from '@theia/terminal/lib/browser/terminal-profile-service';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { PluginTerminalRegistry } from './plugin-terminal-registry.js';
@@ -455,8 +455,8 @@ export class PluginContributionHandler {
             for (const profile of contributions.terminalProfiles) {
                 pushContribution(`terminalProfiles.${profile.id}`, () => {
                     this.contributedProfileStore.registerTerminalProfile(profile.title, {
-                        async start(): Promise<TerminalWidget> {
-                            const terminalId = await self.pluginTerminalRegistry.start(profile.id);
+                        async start(options?: TerminalProfileStartOptions): Promise<TerminalWidget> {
+                            const terminalId = await self.pluginTerminalRegistry.start(profile.id, options);
                             const result = self.terminalService.getById(terminalId);
                             if (!result) {
                                 throw new Error(`Error starting terminal from profile ${profile.id}`);
