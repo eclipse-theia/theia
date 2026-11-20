@@ -354,6 +354,7 @@ describe('Tasks with a CustomExecution subclass', () => {
             ext.registerTaskProvider('test', { provideTasks: () => [createCustomTask(execution)], resolveTask: () => undefined });
             const [dto] = await ext.$provideTasks(0);
             expect(dto).to.not.have.property('customExecution');
+            expect(dto).to.not.have.property('callback');
 
             const started: theia.TaskExecution[] = [];
             ext.onDidStartTask(e => started.push(e.execution));
@@ -375,6 +376,7 @@ describe('Tasks with a CustomExecution subclass', () => {
             const unresolved = Converter.fromTask({ ...createCustomTask(execution), execution: undefined })!;
             const dto = await ext.$resolveTask(0, unresolved, CancellationToken.None);
             expect(dto).to.not.have.property('customExecution');
+            expect(dto).to.not.have.property('callback');
 
             const started: theia.TaskExecution[] = [];
             ext.onDidStartTask(e => started.push(e.execution));
@@ -402,6 +404,54 @@ describe('Tasks with a CustomExecution subclass', () => {
             await ext.$onDidStartTask({ id: 1, task: first }, 1);
 
             expect(ran).to.deep.equal(['first']);
+        });
+
+        it('gives onDidStartTask the execution object of each provided task that shares a callback', async () => {
+            const proxy: Partial<TasksMain> = { $registerTaskProvider: () => { }, $customExecutionComplete: async () => { } };
+            const rpc = {
+                getProxy<T>(_proxyId: ProxyIdentifier<T>): T {
+                    return proxy as unknown as T;
+                }
+            } as RPCProtocol;
+            const ext = new TasksExtImpl(rpc, { attachPtyToTerminal: () => { } } as unknown as TerminalServiceExtImpl, NO_WORKSPACE);
+            const build = new CommandCustomExecution('make', ['build']);
+            const clean = new CommandCustomExecution('make', ['clean']);
+            clean.callback = build.callback;
+            ext.registerTaskProvider('test', { provideTasks: () => [createCustomTask(build), createCustomTask(clean)], resolveTask: () => undefined });
+            const [buildDto, cleanDto] = await ext.$provideTasks(0);
+
+            const started: theia.TaskExecution[] = [];
+            ext.onDidStartTask(e => started.push(e.execution));
+            await ext.$onDidStartTask({ id: 1, task: buildDto }, 1);
+            await ext.$onDidStartTask({ id: 2, task: cleanDto }, 1);
+
+            expect(started[0].task.execution).to.equal(build);
+            expect(started[1].task.execution).to.equal(clean);
+        });
+
+        it('keeps the id of an execution the provider returns again, and runs its current callback', async () => {
+            const proxy: Partial<TasksMain> = { $registerTaskProvider: () => { }, $customExecutionComplete: async () => { } };
+            const rpc = {
+                getProxy<T>(_proxyId: ProxyIdentifier<T>): T {
+                    return proxy as unknown as T;
+                }
+            } as RPCProtocol;
+            const ext = new TasksExtImpl(rpc, { attachPtyToTerminal: () => { } } as unknown as TerminalServiceExtImpl, NO_WORKSPACE);
+            const ran: string[] = [];
+            const recording = (name: string) => async () => {
+                ran.push(name);
+                return { onDidWrite: new Emitter<string>().event, open: () => { }, close: () => { } };
+            };
+            const execution = new CustomExecution(recording('old'));
+            ext.registerTaskProvider('test', { provideTasks: () => [createCustomTask(execution)], resolveTask: () => undefined });
+            const [first] = await ext.$provideTasks(0);
+            execution.callback = recording('new');
+            const [second] = await ext.$provideTasks(0);
+            expect(second.executionId).to.equal(first.executionId);
+
+            await ext.$onDidStartTask({ id: 1, task: first }, 1);
+
+            expect(ran).to.deep.equal(['new']);
         });
     });
 });

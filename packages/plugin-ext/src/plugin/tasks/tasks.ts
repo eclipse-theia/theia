@@ -41,7 +41,7 @@ export class TasksExtImpl implements TasksExt {
     private executions = new Map<number, theia.TaskExecution>();
     protected callbackIdBase: string = UUID.uuid4();
     protected callbackId = 0;
-    protected customExecutionIds: Map<ExecutionCallback, string> = new Map();
+    protected customExecutionIds: Map<CustomExecution, string> = new Map();
     protected customExecutionFunctions: Map<string, ExecutionCallback> = new Map();
     protected customExecutionTasks: Map<string, theia.Task> = new Map();
     protected providedCustomExecutions: Map<string, theia.CustomExecution> = new Map();
@@ -220,14 +220,12 @@ export class TasksExtImpl implements TasksExt {
     }
 
     private applyCustomExecution(task: TaskDto): void {
-        if (task.callback) {
-            task.executionId = this.addCustomExecution(task.callback);
-            if (task.customExecution) {
-                this.providedCustomExecutions.set(task.executionId, task.customExecution);
-            }
-            delete task.callback;
-            delete task.customExecution;
+        const execution: CustomExecution | undefined = task.customExecution;
+        if (execution) {
+            task.executionId = this.addCustomExecution(execution);
         }
+        delete task.callback;
+        delete task.customExecution;
     }
 
     private addNewAdapter(adapter: TaskProviderAdapter): number {
@@ -294,13 +292,19 @@ export class TasksExtImpl implements TasksExt {
         this.customExecutionTasks.delete(runId);
     }
 
-    private addCustomExecution(callback: ExecutionCallback): string {
-        let id = this.customExecutionIds.get(callback);
+    /**
+     * Gives each execution object of a provided task its own id, which a provider that returns the same tasks again reuses.
+     * Executions that share a callback still get their own ids, so each task keeps its own execution.
+     */
+    private addCustomExecution(execution: CustomExecution): string {
+        let id = this.customExecutionIds.get(execution);
         if (!id) {
             id = this.nextCallbackId();
-            this.customExecutionIds.set(callback, id);
-            this.customExecutionFunctions.set(id, callback);
+            this.customExecutionIds.set(execution, id);
+            this.providedCustomExecutions.set(id, execution);
         }
+        // The plugin may have replaced the callback since it last returned the execution.
+        this.customExecutionFunctions.set(id, execution.callback);
         return id;
     }
 
