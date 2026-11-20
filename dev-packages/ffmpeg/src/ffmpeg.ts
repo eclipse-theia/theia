@@ -42,6 +42,7 @@ export interface FfmpegOptions {
     electronDist?: string
     ffmpegPath?: string
     platform?: NodeJS.Platform
+    arch?: NodeJS.Architecture
 }
 
 /**
