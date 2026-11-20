@@ -21,11 +21,33 @@ import { ILogger } from '../../common/index.js';
 
 decorate(injectable(), NodeRequestService);
 
+type ProxyResponseHandler = (result: string | undefined) => void;
+
 @injectable()
 export class ElectronBackendRequestService extends NodeRequestService {
 
     @inject(ILogger) @named('core:ElectronBackendRequestService')
     protected readonly logger: ILogger;
+
+    private static readonly pendingProxyRequests = new Map<string, ProxyResponseHandler>();
+    private static proxyResponseListenerAttached = false;
+
+    private static attachProxyResponseListener(): void {
+        if (this.proxyResponseListenerAttached || !process.send) {
+            return;
+        }
+        this.proxyResponseListenerAttached = true;
+        process.on('message', (msg: unknown) => {
+            const response = msg as { type: string, id: string, result: string };
+            if (response?.type === 'resolve-proxy-response' && response.id) {
+                const handler = this.pendingProxyRequests.get(response.id);
+                if (handler) {
+                    this.pendingProxyRequests.delete(response.id);
+                    handler(response.result);
+                }
+            }
+        });
+    }
 
     override async getProxyUrl(url: string): Promise<string | undefined> {
         if (this.proxyUrl) {
@@ -34,8 +56,15 @@ export class ElectronBackendRequestService extends NodeRequestService {
         try {
             const proxy = await this.resolveProxy(url);
             if (proxy && proxy !== 'DIRECT') {
-                const proxyHost = proxy.split(' ')[1];
-                return this.buildProxyUrl(url, proxyHost);
+                // Handle fallback proxies separated by semicolons, e.g., "PROXY proxy:8080; DIRECT"
+                const firstProxy = proxy.split(';')[0].trim();
+                const proxyType = firstProxy.split(' ')[0];  // e.g., "PROXY", "HTTPS"
+                const proxyHost = firstProxy.split(' ')[1];
+                if (!proxyHost) {
+                    // Malformed proxy string, fall back
+                    return super.getProxyUrl(url);
+                }
+                return this.buildProxyUrl(proxyHost, proxyType);
             }
         } catch (e) {
             this.logger.error('Could not resolve electron proxy.', e);
@@ -44,20 +73,39 @@ export class ElectronBackendRequestService extends NodeRequestService {
     }
 
     override async resolveProxy(url: string): Promise<string | undefined> {
-        // TODO: Implement IPC to the backend to access the Electron proxy resolver
-        return undefined;
+        if (!process.send) {
+            // Running in --no-cluster mode (in the Electron main process): call session directly.
+            const { session } = await import('../../../electron-shared/electron/index.cjs');
+            return session.defaultSession.resolveProxy(url);
+        }
+        // Running as a forked child process: ask the main process via Node IPC.
+        return new Promise<string | undefined>(resolve => {
+            const id = Math.random().toString(36).slice(2);
+            ElectronBackendRequestService.attachProxyResponseListener();
+            const timer = setTimeout(() => {
+                ElectronBackendRequestService.pendingProxyRequests.delete(id);
+                resolve(undefined);
+            }, 5000);
+            ElectronBackendRequestService.pendingProxyRequests.set(id, (result: string | undefined) => {
+                clearTimeout(timer);
+                resolve(result);
+            });
+            process.send!({ type: 'resolve-proxy', id, url });
+        });
     }
 
-    protected buildProxyUrl(url: string, proxyHost: string): string {
+    protected buildProxyUrl(proxyHost: string, proxyType: string): string | undefined {
+        if (proxyType !== 'HTTPS' && proxyType !== 'PROXY') {
+            return undefined;
+        }
+
         if (proxyHost.startsWith('http://') || proxyHost.startsWith('https://')) {
             return proxyHost;
         }
-        if (url.startsWith('http://')) {
-            return 'http://' + proxyHost;
-        } else if (url.startsWith('https://')) {
-            return 'https://' + proxyHost;
-        }
-        return proxyHost;
+
+        return proxyType === 'HTTPS'
+            ? 'https://' + proxyHost
+            : 'http://' + proxyHost;
     }
 
     protected override async processOptions(options: NodeRequestOptions): Promise<NodeRequestOptions> {

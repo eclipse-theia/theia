@@ -44,6 +44,8 @@ import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-stor
 import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access';
 import { TaskContextKeyService } from './task-context-key-service.js';
 import { WorkspaceRestrictionContribution, WorkspaceRestriction } from '@theia/workspace/lib/browser/workspace-trust-service';
+import { VariableContribution } from '@theia/variable-resolver/lib/browser';
+import { TaskVariableContribution } from './task-variable-contribution.js';
 
 export default new ContainerModule(bind => {
     bind(TaskFrontendContribution).toSelf().inSingletonScope();
@@ -83,6 +85,8 @@ export default new ContainerModule(bind => {
     bind(TaskTemplateSelector).toSelf().inSingletonScope();
     bind(TaskTerminalWidgetManager).toSelf().inSingletonScope();
     bind(TaskContextKeyService).toSelf().inSingletonScope();
+    bind(TaskVariableContribution).toSelf().inSingletonScope();
+    bind(VariableContribution).toService(TaskVariableContribution);
 
     bindProcessTaskModule(bind);
     bindTaskPreferences(bind);

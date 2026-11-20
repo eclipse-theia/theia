@@ -1835,7 +1835,7 @@ export interface WorkspaceEditMetadata {
     } | ThemeIcon;
 }
 
-export const enum FileEditType {
+export enum FileEditType {
     File = 1,
     Text = 2,
     // eslint-disable-next-line @typescript-eslint/no-shadow

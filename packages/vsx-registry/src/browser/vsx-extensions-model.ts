@@ -24,10 +24,8 @@ import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/browser/hosted
 import { VSXExtension, VSXExtensionFactory } from './vsx-extension.js';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model.js';
-import { PreferenceInspection, PreferenceInspectionScope, PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
+import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { RecommendedExtensions } from '../common/recommended-extensions-preference-contribution.js';
-import URI from '@theia/core/lib/common/uri';
 import { VSXAllVersions, VSXExtensionRaw, VSXSearchEntry, VSXSearchOptions, VSXTargetPlatform } from '@theia/ovsx-client/lib/ovsx-types';
 import { OVSXApiFilterProvider } from '@theia/ovsx-client';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
@@ -36,6 +34,7 @@ import { RequestContext, RequestService } from '@theia/core/shared/@theia/reques
 import { HostedPluginServer, PluginIdentifiers, PluginType } from '@theia/plugin-ext';
 import { HostedPluginWatcher } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin-watcher';
 import { ILogger } from '@theia/core';
+import { WorkspaceRecommendationsService } from './recommended-extensions/workspace-recommendations-service.js';
 
 @injectable()
 export class VSXExtensionsModel {
@@ -90,6 +89,9 @@ export class VSXExtensionsModel {
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
+
+    @inject(WorkspaceRecommendationsService)
+    protected readonly workspaceRecommendationsService: WorkspaceRecommendationsService;
 
     @inject(VSXExtensionsSearchModel)
     readonly search: VSXExtensionsSearchModel;
@@ -415,38 +417,11 @@ export class VSXExtensionsModel {
 
     protected updateRecommended(): Promise<Array<VSXExtension | undefined>> {
         return this.doChange<Array<VSXExtension | undefined>>(async () => {
-            const allRecommendations = new Set<string>();
-            const allUnwantedRecommendations = new Set<string>();
-
-            const updateRecommendationsForScope = (scope: PreferenceInspectionScope, root?: URI) => {
-                const { recommendations, unwantedRecommendations } = this.getRecommendationsForScope(scope, root);
-                recommendations.forEach(recommendation => allRecommendations.add(recommendation.toLowerCase()));
-                unwantedRecommendations.forEach(unwantedRecommendation => allUnwantedRecommendations.add(unwantedRecommendation));
-            };
-
-            updateRecommendationsForScope('defaultValue'); // In case there are application-default recommendations.
-            const roots = await this.workspaceService.roots;
-            for (const root of roots) {
-                updateRecommendationsForScope('workspaceFolderValue', root.resource);
-            }
-            if (this.workspaceService.saved) {
-                updateRecommendationsForScope('workspaceValue');
-            }
-            const recommendedSorted = new Set(Array.from(allRecommendations).sort((a, b) => this.compareExtensions(a, b)));
-            allUnwantedRecommendations.forEach(unwantedRecommendation => recommendedSorted.delete(unwantedRecommendation));
+            await this.workspaceService.roots;
+            const recommendedSorted = new Set(this.workspaceRecommendationsService.getRecommendedExtensionIds().sort((a, b) => this.compareExtensions(a, b)));
             this._recommended = recommendedSorted;
             return Promise.all(Array.from(recommendedSorted, plugin => this.refresh(plugin)));
         });
-    }
-
-    protected getRecommendationsForScope(scope: PreferenceInspectionScope, root?: URI): Required<RecommendedExtensions> {
-        const inspection: PreferenceInspection<Required<RecommendedExtensions>> | undefined =
-            this.preferences.inspect<Required<RecommendedExtensions>>('extensions', root?.toString());
-        const configuredValue = inspection ? inspection[scope] : undefined;
-        return {
-            recommendations: configuredValue?.recommendations ?? [],
-            unwantedRecommendations: configuredValue?.unwantedRecommendations ?? [],
-        };
     }
 
     protected compileReadme(readmeMarkdown: string): string {

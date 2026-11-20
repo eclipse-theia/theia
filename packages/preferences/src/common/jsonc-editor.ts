@@ -14,52 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as jsoncparser from 'jsonc-parser';
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
-import { isWindows, PreferenceService } from '@theia/core';
-
-@injectable()
-export class JSONCEditor {
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
-
-    setValue(model: string, path: jsoncparser.JSONPath, value: JSONValue): string {
-        const edits = this.getEditOperations(model, path, value);
-        return jsoncparser.applyEdits(model, edits);
-    }
-
-    protected getEditOperations(content: string, path: jsoncparser.JSONPath, value: JSONValue): jsoncparser.Edit[] {
-        // Everything is already undefined - no need for changes.
-        if (!content && value === undefined) {
-            return [];
-        }
-        // Delete the entire document.
-        if (!path.length && value === undefined) {
-            return [{
-                offset: 0,
-                length: content.length,
-                content: ''
-            }];
-        }
-        const tabSize = this.preferenceService.get('editor.tabSize', { fallback: 4, override: 'json' });
-        const insertSpaces = this.preferenceService.get('editor.insertSpaces', { fallback: true, override: 'json' });
-
-        const jsonCOptions = {
-            formattingOptions: {
-                insertSpaces,
-                tabSize,
-                eol: this.getEOL()
-            }
-        };
-        return jsoncparser.modify(content, path, value, jsonCOptions);
-    }
-
-    getEOL(): string {
-        const eol = this.preferenceService.get('files.eol', { override: 'json' });
-        if (eol && typeof eol === 'string' && eol !== 'auto') {
-            return eol;
-        }
-        return isWindows ? '\r\n' : '\n';
-    }
-}
+/**
+ * @deprecated since 1.78.0. Import `JSONCEditor` and `JSONCEditorImpl` from `@theia/core/lib/common/jsonc-editor` instead.
+ */
+export { JSONCEditor, JSONCEditorImpl } from '@theia/core/lib/common/jsonc-editor';

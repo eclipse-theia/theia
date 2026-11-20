@@ -29,6 +29,8 @@
 .theia-tree-view-description {
   color: var(--theia-descriptionForeground);
   font-size: var(--theia-ui-font-size0);
+  /* With the row's line height, the smaller font would make the row taller and shift the rows below. */
+  line-height: 1;
   margin-left: var(--theia-ui-padding);
 }
 
@@ -37,7 +39,19 @@
   height: 100%;
 }
 
+/* The list fills the space below the message, instead of the whole view, so the view itself does not scroll. */
+.theia-tree-view .theia-TreeContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.theia-tree-view .theia-TreeContainer > [data-virtuoso-scroller] {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
 .theia-tree-view .theia-TreeContainer .theia-TreeViewInfo {
+  flex: none;
   margin-top: 7px;
   margin-bottom: 10px;
   margin-left: 17px;

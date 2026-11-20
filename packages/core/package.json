@@ -94,6 +94,7 @@
     "iconv-lite": "^0.6.3",
     "inversify": "^6.2.2",
     "jschardet": "^2.3.0",
+    "jsonc-parser": "^3.3.1",
     "keytar": "7.9.0",
     "lodash.debounce": "^4.0.8",
     "lodash.throttle": "^4.1.1",
@@ -220,6 +221,9 @@
     {
       "frontendElectron": "lib/electron-browser/token/electron-token-frontend-module",
       "backendElectron": "lib/electron-node/token/electron-token-backend-module"
+    },
+    {
+      "frontendElectron": "lib/electron-browser/shell-environment/electron-shell-environment-module"
     },
     {
       "backend": "lib/node/hosting/backend-hosting-module",

@@ -15,7 +15,11 @@
  ********************************************************************************/
 
 import { expect } from 'chai';
+import { constants } from 'crypto';
 import * as http from 'http';
+import * as https from 'https';
+import * as net from 'net';
+import * as tls from 'tls';
 import { NodeRequestOptions, NodeRequestService } from './node-request-service';
 import { CancellationToken, RequestContext } from './common-request-service';
 
@@ -285,6 +289,126 @@ describe('NodeRequestService', () => {
         });
     });
 
+    describe('loopback requests', () => {
+        it('should not send requests to loopback hosts through the configured proxy', async () => {
+            const configuredService = new NodeRequestService();
+            // nothing listens on port 1, so a proxied request would fail
+            await configuredService.configure({ proxyUrl: 'http://127.0.0.1:1' });
+            const result = await configuredService.request({ url: url('/text') });
+            expect(RequestContext.asText(result)).to.equal('hello world');
+        });
+    });
+
+    describe('system certificates', () => {
+        let tlsServer: https.Server;
+        let tlsPort: number;
+        let tunnelProxy: http.Server;
+        let tunnelProxyUrl: string;
+        let tunnels: string[];
+        const tunnelSockets = new Set<net.Socket>();
+
+        class TestRequestService extends NodeRequestService {
+            constructor(protected readonly systemCertificateList: string[]) {
+                super();
+            }
+            protected override getSystemCertificates(): string[] {
+                return this.systemCertificateList;
+            }
+            caCertificatesForTest(): readonly string[] {
+                return this.getCACertificates();
+            }
+        }
+
+        before(done => {
+            // without session resumption, so that every request verifies the certificate
+            tlsServer = https.createServer({ key: TEST_LEAF_KEY, cert: TEST_LEAF_CERTIFICATE, secureOptions: constants.SSL_OP_NO_TICKET }, (req, res) => {
+                res.writeHead(200, { 'Content-Type': 'text/plain' });
+                res.end('secure');
+            });
+            // a proxy that tunnels every CONNECT to the TLS server, whatever host was asked for
+            tunnelProxy = http.createServer();
+            tunnelProxy.on('connect', (req: http.IncomingMessage, clientSocket: net.Socket, head: Buffer) => {
+                tunnels.push(req.url ?? '');
+                const serverSocket = net.connect(tlsPort, '127.0.0.1', () => {
+                    clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
+                    serverSocket.write(head);
+                    serverSocket.pipe(clientSocket);
+                    clientSocket.pipe(serverSocket);
+                });
+                tunnelSockets.add(clientSocket).add(serverSocket);
+                serverSocket.on('error', () => clientSocket.destroy());
+                clientSocket.on('error', () => serverSocket.destroy());
+            });
+            tlsServer.listen(0, '127.0.0.1', () => {
+                tlsPort = (tlsServer.address() as net.AddressInfo).port;
+                tunnelProxy.listen(0, '127.0.0.1', () => {
+                    tunnelProxyUrl = `http://127.0.0.1:${(tunnelProxy.address() as net.AddressInfo).port}`;
+                    done();
+                });
+            });
+        });
+
+        after(done => {
+            tunnelSockets.forEach(socket => socket.destroy());
+            tlsServer.closeAllConnections();
+            tunnelProxy.close(() => tlsServer.close(done));
+        });
+
+        beforeEach(() => {
+            tunnels = [];
+        });
+
+        async function expectFailure(promise: Promise<unknown>): Promise<void> {
+            try {
+                await promise;
+            } catch {
+                return;
+            }
+            throw new Error('expected the request to fail');
+        }
+
+        it('should not trust a certificate that only the operating system trusts by default', async () => {
+            const configuredService = new TestRequestService([TEST_ROOT_CERTIFICATE]);
+            await expectFailure(configuredService.request({ url: `https://localhost:${tlsPort}/` }));
+        });
+
+        it('should trust the certificates of the operating system when enabled', async () => {
+            const configuredService = new TestRequestService([TEST_ROOT_CERTIFICATE]);
+            await configuredService.configure({ systemCertificates: true });
+            const result = await configuredService.request({ url: `https://localhost:${tlsPort}/` });
+            expect(RequestContext.asText(result)).to.equal('secure');
+        });
+
+        it('should not trust the certificates of the operating system when disabled again', async () => {
+            const configuredService = new TestRequestService([TEST_ROOT_CERTIFICATE]);
+            await configuredService.configure({ systemCertificates: true });
+            await configuredService.configure({ systemCertificates: false });
+            await expectFailure(configuredService.request({ url: `https://localhost:${tlsPort}/` }));
+        });
+
+        it('should keep the default certificates of Node', async () => {
+            const configuredService = new TestRequestService([TEST_ROOT_CERTIFICATE]);
+            const ca = configuredService.caCertificatesForTest();
+            expect(ca).to.include.members(tls.getCACertificates('default'));
+            expect(ca).to.include(TEST_ROOT_CERTIFICATE);
+        });
+
+        it('should trust the certificates of the operating system through a proxy', async () => {
+            const configuredService = new TestRequestService([TEST_ROOT_CERTIFICATE]);
+            await configuredService.configure({ proxyUrl: tunnelProxyUrl, systemCertificates: true });
+            const result = await configuredService.request({ url: `https://theia-test.example:${tlsPort}/` });
+            expect(RequestContext.asText(result)).to.equal('secure');
+            expect(tunnels).to.deep.equal([`theia-test.example:${tlsPort}`]);
+        });
+
+        it('should not trust a certificate that only the operating system trusts through a proxy by default', async () => {
+            const configuredService = new TestRequestService([TEST_ROOT_CERTIFICATE]);
+            await configuredService.configure({ proxyUrl: tunnelProxyUrl });
+            await expectFailure(configuredService.request({ url: `https://theia-test.example:${tlsPort}/` }));
+            expect(tunnels).to.deep.equal([`theia-test.example:${tlsPort}`]);
+        });
+    });
+
     describe('redirect handling', () => {
         it('should follow redirects by default', async () => {
             const result = await service.request({ url: url('/redirect') });
@@ -312,3 +436,38 @@ describe('NodeRequestService', () => {
         });
     });
 });
+
+// A test CA and a certificate it issued for `localhost`, `127.0.0.1` and `theia-test.example`, valid until 2126.
+const TEST_ROOT_CERTIFICATE = `-----BEGIN CERTIFICATE-----
+MIIBoTCCAUegAwIBAgIUMhem9+3+sb0i7CUk2OHBikwYsLgwCgYIKoZIzj0EAwIw
+HTEbMBkGA1UEAwwSVGhlaWEgVGVzdCBSb290IENBMCAXDTI2MTExMTE3MzQxOVoY
+DzIxMjYxMDE4MTczNDE5WjAdMRswGQYDVQQDDBJUaGVpYSBUZXN0IFJvb3QgQ0Ew
+WTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAARULdMYsl2bysGj5S0lglBMc27JKjnl
+VHq8QPqRzb/n9K0XfePxqU1fTdzMOdOgS0FrFsIman8qNoHO0x55WS2Co2MwYTAd
+BgNVHQ4EFgQUp7Mf9BCOPWigEMBjsTLjfHPwNpswHwYDVR0jBBgwFoAUp7Mf9BCO
+PWigEMBjsTLjfHPwNpswDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMCAQYw
+CgYIKoZIzj0EAwIDSAAwRQIhAMjU3qpexGUDLewlvRcDFXSMhuQa+N7ZhaXDyZ46
+D8/eAiAe784y/BIWfp07BKly4oTtkTwPAONKOf9RS9jnIozBHg==
+-----END CERTIFICATE-----
+`;
+
+const TEST_LEAF_CERTIFICATE = `-----BEGIN CERTIFICATE-----
+MIIB2TCCAX+gAwIBAgIULoP/Rb/AOeLCXkhKzhorQXgw3RUwCgYIKoZIzj0EAwIw
+HTEbMBkGA1UEAwwSVGhlaWEgVGVzdCBSb290IENBMCAXDTI2MTExMTE3MzQxOVoY
+DzIxMjYxMDE4MTczNDE5WjAUMRIwEAYDVQQDDAlsb2NhbGhvc3QwWTATBgcqhkjO
+PQIBBggqhkjOPQMBBwNCAASMHCfAiSXjGjn1SXt4aUxsxq2wkTPfOqr3+aBO3ymw
+jrpq8O6HQQ4eq4UF7G3sHQL3TYW+hZdR8ldpgM5SVMuro4GjMIGgMAkGA1UdEwQC
+MAAwDgYDVR0PAQH/BAQDAgeAMBMGA1UdJQQMMAoGCCsGAQUFBwMBMC4GA1UdEQQn
+MCWCCWxvY2FsaG9zdIcEfwAAAYISdGhlaWEtdGVzdC5leGFtcGxlMB0GA1UdDgQW
+BBTB0tTdLZuPwnYCWGYApVxssEyiOjAfBgNVHSMEGDAWgBSnsx/0EI49aKAQwGOx
+MuN8c/A2mzAKBggqhkjOPQQDAgNIADBFAiAPAfZmAyClZigcjWNrq8W/vecVi+Sv
+aebYzhkVv5Ea3wIhAIJnIIDENlP9KymdpKUO5Omyzb9bEotAu44Ap9EZbXI6
+-----END CERTIFICATE-----
+`;
+
+const TEST_LEAF_KEY = `-----BEGIN PRIVATE KEY-----
+MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg2govYeQf0yzCGKfU
+fB26QFykGAZwmtuF+BDaRO1hFZahRANCAASMHCfAiSXjGjn1SXt4aUxsxq2wkTPf
+Oqr3+aBO3ymwjrpq8O6HQQ4eq4UF7G3sHQL3TYW+hZdR8ldpgM5SVMur
+-----END PRIVATE KEY-----
+`;

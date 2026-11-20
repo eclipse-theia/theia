@@ -87,7 +87,13 @@ export namespace DebugSessionOptions {
  */
 export type DebugSessionOptionsData = DebugSessionOptionsBase & (DebugConfiguration | DebugCompound);
 
-export type InternalDebugSessionOptions = DebugSessionOptions & { id: number };
+export type InternalDebugSessionOptions = DebugSessionOptions & {
+    id: number;
+    /** The configuration before resolution. */
+    unresolvedConfiguration?: DebugConfiguration;
+    /** The launch configuration the session started from, used to tell whether it changed. */
+    launchConfiguration?: DebugConfiguration;
+};
 
 export namespace InternalDebugSessionOptions {
 
