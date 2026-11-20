@@ -96,4 +96,29 @@ describe('PreferenceSchemaServiceImpl', () => {
 
         expect(service.getDefaultValue(KEY, undefined)).to.equal('second');
     });
+
+    it('should mark the properties of a schema as restricted by default, unless a property opts out', () => {
+        service.addSchema({
+            defaultRestricted: true,
+            properties: {
+                'test.restrictedByDefault': { type: 'string' },
+                'test.optedOut': { type: 'string', restricted: false }
+            }
+        });
+
+        expect(service.getSchemaProperty('test.restrictedByDefault')?.restricted).to.be.true;
+        expect(service.getSchemaProperty('test.optedOut')?.restricted).to.be.false;
+        expect(service.getJSONSchema(PreferenceScope.User).properties?.['test.restrictedByDefault']).to.deep.equal({ type: 'string', default: undefined });
+    });
+
+    it('should not restrict a property unless its schema or the property says so', () => {
+        service.addSchema({
+            properties: {
+                'test.restricted': { type: 'string', restricted: true }
+            }
+        });
+
+        expect(service.getSchemaProperty(KEY)).to.not.have.property('restricted');
+        expect(service.getSchemaProperty('test.restricted')?.restricted).to.be.true;
+    });
 });

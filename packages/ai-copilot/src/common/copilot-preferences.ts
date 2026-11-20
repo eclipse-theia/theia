@@ -23,6 +23,7 @@ export const COPILOT_ENTERPRISE_URL_PREF = 'ai-features.copilot.enterpriseUrl';
 export const COPILOT_EXECUTABLE_PATH_PREF = 'ai-features.copilot.executablePath';
 
 export const CopilotPreferencesSchema: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [COPILOT_ENABLED_PREF]: {
             type: 'boolean',

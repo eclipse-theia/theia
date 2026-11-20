@@ -32,7 +32,10 @@ import {
     PreferenceService,
     bindTreePreferences,
     PreferenceProviderProvider,
-    PreferenceProvider
+    PreferenceProvider,
+    PreferenceExclusionPolicy,
+    PreferenceExclusionService,
+    PreferenceExclusionServiceImpl
 } from '../common/index.js';
 import {
     BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution,
@@ -192,6 +195,9 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => ctx.container.getNamed(PreferenceProvider, scope));
     bind(PreferenceSchemaServiceImpl).toSelf().inSingletonScope();
     bind(PreferenceSchemaService).toService(PreferenceSchemaServiceImpl);
+    bindRootContributionProvider(bind, PreferenceExclusionPolicy);
+    bind(PreferenceExclusionServiceImpl).toSelf().inSingletonScope();
+    bind(PreferenceExclusionService).toService(PreferenceExclusionServiceImpl);
     bind(PreferenceProvider).to(DefaultsPreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Default);
     bind(PreferenceLanguageOverrideService).toSelf().inSingletonScope();
     bind(PreferenceServiceImpl).toSelf().inSingletonScope();

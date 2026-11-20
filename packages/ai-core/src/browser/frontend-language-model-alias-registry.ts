@@ -90,8 +90,9 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
             this.loadFromPreference();
             this.aiConfigurationService.onDidChange(change => {
                 if (change.affectsPreference(LANGUAGE_MODEL_ALIASES_PREFERENCE)) {
+                    const previous = JSON.stringify(this.aliases);
                     this.loadFromPreference();
-                    if (!change.preferenceName) {
+                    if (JSON.stringify(this.aliases) !== previous) {
                         this.onDidChangeEmitter.fire();
                     }
                 }

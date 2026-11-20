@@ -40,6 +40,7 @@ export type RegistryArtifactKind = 'skill' | 'mcp' | 'plugin';
  * without the user ever being asked.
  */
 export const AIRegistryPreferencesSchema: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [AUTO_UPDATE_PREF]: {
             type: 'string',

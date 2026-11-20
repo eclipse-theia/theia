@@ -70,6 +70,7 @@ export const PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD = 'ai-featur
 export const LANGUAGE_MODEL_ALIASES_PREFERENCE = 'ai-features.languageModelAliases';
 
 export const aiCorePreferenceSchema: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [PREFERENCE_NAME_SERVER_SIDE_COMPACTION]: {
             title: AI_CORE_PREFERENCES_TITLE,

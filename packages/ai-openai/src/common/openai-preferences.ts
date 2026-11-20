@@ -29,6 +29,7 @@ export const SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF = 'ai-features.openAiOf
 export const CUSTOM_ENDPOINTS_PREF = 'ai-features.openAiCustom.customOpenAiModels';
 
 export const OpenAiPreferencesSchema: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [API_KEY_PREF]: {
             type: 'string',

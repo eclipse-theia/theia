@@ -22,6 +22,7 @@ export const SHELL_COMMAND_ALLOWLIST_PREFERENCE = 'ai-features.terminal.shellCom
 export const SHELL_COMMAND_DENYLIST_PREFERENCE = 'ai-features.terminal.shellCommandDenylist';
 
 export const shellCommandPreferences: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [SHELL_COMMAND_ALLOWLIST_PREFERENCE]: {
             type: 'array',

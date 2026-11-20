@@ -22,6 +22,7 @@ export const AI_LLAMAFILE_PREFERENCES_TITLE = nls.localize('theia/ai/llamaFile/p
 export const PREFERENCE_LLAMAFILE = 'ai-features.llamafile.llamafiles';
 
 export const aiLlamafilePreferencesSchema: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [PREFERENCE_LLAMAFILE]: {
             title: AI_LLAMAFILE_PREFERENCES_TITLE,

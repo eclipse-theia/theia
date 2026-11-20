@@ -20,6 +20,7 @@ export const MCP_SERVERS_PREF = 'ai-features.mcp.mcpServers';
 export const MCP_USE_WORKSPACE_AS_ROOT_PREF = 'ai-features.mcp.useWorkspaceAsRoot';
 
 export const McpServersPreferenceSchema: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [MCP_SERVERS_PREF]: {
             type: 'object',

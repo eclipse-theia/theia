@@ -67,6 +67,8 @@ export interface PreferenceSchema {
     title?: string,
     /** Whether properties in this schema are overridable by default. Defaults to false. */
     defaultOverridable?: boolean;
+    /** Whether properties in this schema are {@link PreferenceDataProperty.restricted restricted} by default. Defaults to false. */
+    defaultRestricted?: boolean;
     properties: IndexedAccess<PreferenceDataProperty>;
 }
 
@@ -82,6 +84,11 @@ export interface PreferenceDataProperty extends IJSONSchema {
     hidden?: boolean;
     /** The maximum scope where values for this property can be set. */
     scope?: PreferenceScope;
+    /**
+     * If true, the value is read only from trusted sources: the workspace and folder settings of a workspace
+     * that isn't trusted don't apply. The default value and the values of the other scopes must be safe to use then.
+     */
+    restricted?: boolean;
     /** Metadata intended for custom renderers */
     typeDetails?: any;
     /** Tags can be searched for in the UI */
