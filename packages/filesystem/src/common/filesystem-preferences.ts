@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
+import { SiblingClause } from '@theia/core/lib/common/glob';
 import { createPreferenceProxy, PreferenceProxy } from '@theia/core/lib/common/preferences/preference-proxy';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
@@ -51,7 +52,32 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
             default: { '**/.git': true, '**/.svn': true, '**/.hg': true, '**/CVS': true, '**/.DS_Store': true },
             // eslint-disable-next-line max-len
             markdownDescription: nls.localize('theia/filesystem/filesExclude', 'Configure [glob patterns](https://aka.ms/vscode-glob-patterns) for excluding files and folders. For example, the file Explorer decides which files and folders to show or hide based on this setting.'),
-            scope: PreferenceScope.Folder
+            scope: PreferenceScope.Folder,
+            additionalProperties: {
+                anyOf: [
+                    {
+                        type: 'boolean',
+                        enum: [true, false],
+                        enumDescriptions: [
+                            nls.localizeByDefault('Enable the pattern.'),
+                            nls.localizeByDefault('Disable the pattern.')
+                        ],
+                        description: nls.localizeByDefault('The glob pattern to match file paths against. Set to true or false to enable or disable the pattern.')
+                    },
+                    {
+                        type: 'object',
+                        properties: {
+                            when: {
+                                type: 'string',
+                                pattern: '\\w*\\$\\(basename\\)\\w*',
+                                default: '$(basename).ext',
+                                // eslint-disable-next-line max-len
+                                markdownDescription: nls.localizeByDefault('Additional check on the siblings of a matching file. Use \\$(basename) as variable for the matching file name.')
+                            }
+                        }
+                    }
+                ]
+            }
         },
         'files.enableTrash': {
             type: 'boolean',
@@ -114,7 +140,7 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
 
 export interface FileSystemConfiguration {
     'files.watcherExclude': { [globPattern: string]: boolean }
-    'files.exclude': { [key: string]: boolean }
+    'files.exclude': { [key: string]: boolean | SiblingClause }
     'files.enableTrash': boolean
     'files.associations': { [filepattern: string]: string }
     'files.encoding': string

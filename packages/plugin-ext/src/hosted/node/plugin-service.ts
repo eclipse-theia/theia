@@ -23,6 +23,7 @@ import { PluginDeployerImpl } from '../../main/node/plugin-deployer-impl.js';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service.js';
 import { PluginUninstallationManager } from '../../main/node/plugin-uninstallation-manager.js';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { ShellEnvironmentServer } from '@theia/core/lib/common/shell-environment';
 
 export const BackendPluginHostableFilter = Symbol('BackendPluginHostableFilter');
 /**
@@ -55,6 +56,9 @@ export class HostedPluginServerImpl implements HostedPluginServer {
 
     @inject(PluginUninstallationManager) protected readonly uninstallationManager: PluginUninstallationManager;
 
+    @inject(ShellEnvironmentServer)
+    protected readonly shellEnvironment: ShellEnvironmentServer;
+
     @inject(BackendPluginHostableFilter)
     @optional()
     protected backendPluginHostableFilter: BackendPluginHostableFilter;
@@ -68,6 +72,9 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     protected readonly pluginVersions = new Map<PluginIdentifiers.UnversionedId, string>();
 
     protected readonly initialized = new Deferred<void>();
+
+    /** Settles once the plugin host has been started, see {@link startPluginServer}. */
+    protected pluginServerStarted: Promise<void> | undefined;
 
     constructor(
         @inject(HostedPluginSupport) private readonly hostedPlugin: HostedPluginSupport) {
@@ -138,7 +145,7 @@ export class HostedPluginServerImpl implements HostedPluginServer {
         const backendPlugins = (await this.deployerHandler.getDeployedBackendPlugins())
             .filter(this.backendPluginHostableFilter);
         if (backendPlugins.length > 0) {
-            this.hostedPlugin.runPluginServer(this.getServerName());
+            this.startPluginServer();
         }
         const plugins = new Set<PluginIdentifiers.VersionedId>();
         const addIds = (identifiers: Promise<PluginIdentifiers.VersionedId[]>): Promise<void> => identifiers
@@ -200,9 +207,35 @@ export class HostedPluginServerImpl implements HostedPluginServer {
         return Promise.all(plugins.map(plugin => this.localizationService.localizePlugin(plugin)));
     }
 
-    onMessage(pluginHostId: string, message: Uint8Array): Promise<void> {
+    /**
+     * Starts the plugin host once the `PATH` of the user's login shell has been applied to `process.env`,
+     * so that the plugins and the processes they start find the user's tools. The plugin metadata does not wait for it.
+     * Messages for the plugin host wait for the start, see {@link onMessage}.
+     */
+    protected startPluginServer(): Promise<void> {
+        if (!this.pluginServerStarted) {
+            this.pluginServerStarted = this.shellEnvironment.whenResolved().then(() => {
+                // the frontend may have gone away in the meantime
+                if (!this.toDispose.disposed) {
+                    this.hostedPlugin.runPluginServer(this.getServerName());
+                }
+            });
+            this.pluginServerStarted.catch(error => this.logger.error('Could not start the plugin host:', error));
+        }
+        return this.pluginServerStarted;
+    }
+
+    /**
+     * Settles once the plugin host has been started, see {@link startPluginServer}, and rejects if it could not be started.
+     * Resolves at once if the plugin host has not been started, for example because no backend plugin is deployed.
+     */
+    whenPluginServerStarted(): Promise<void> {
+        return this.pluginServerStarted ?? Promise.resolve();
+    }
+
+    async onMessage(pluginHostId: string, message: Uint8Array): Promise<void> {
+        await this.pluginServerStarted;
         this.hostedPlugin.onMessage(pluginHostId, message);
-        return Promise.resolve();
     }
 
     getExtPluginAPI(): Promise<ExtPluginApi[]> {

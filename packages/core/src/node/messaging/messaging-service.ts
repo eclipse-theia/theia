@@ -21,7 +21,7 @@ export interface MessagingService {
      * Accept a web socket channel on the given path.
      * A path supports the route syntax: https://github.com/rcs/route-parser#what-can-i-use-in-my-routes.
      */
-    registerChannelHandler(path: string, handler: (params: MessagingService.PathParams, channel: Channel) => void): void;
+    registerChannelHandler(path: string, handler: (params: MessagingService.PathParams, channel: Channel) => void, options?: MessagingService.ChannelHandlerOptions): void;
     /**
      * Accept a web socket connection on the given path.
      * A path supports the route syntax: https://github.com/rcs/route-parser#what-can-i-use-in-my-routes.
@@ -38,6 +38,10 @@ export namespace MessagingService {
     export const Identifier = Symbol('MessagingService');
     export interface PathParams {
         [name: string]: string
+    }
+    export interface ChannelHandlerOptions {
+        /** See `ConnectionHandler.independentOfShellEnvironment`. The default is `false`. */
+        independentOfShellEnvironment?: boolean;
     }
     export const Contribution = Symbol('MessagingService.Contribution');
     export interface Contribution {

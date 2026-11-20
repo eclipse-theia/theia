@@ -15,14 +15,17 @@
 // *****************************************************************************
 
 import * as jsoncparser from 'jsonc-parser';
-import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
-import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
+import { MonacoEditorModel } from './monaco-editor-model.js';
+import { MonacoWorkspace } from './monaco-workspace.js';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
+import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
+import { JSONCEditor } from '@theia/core/lib/common/jsonc-editor';
 
 @injectable()
 export class MonacoJSONCEditor {
     @inject(MonacoWorkspace) protected readonly workspace: MonacoWorkspace;
+    @inject(JSONCEditor) protected readonly jsoncEditor: JSONCEditor;
 
     async setValue(model: MonacoEditorModel, path: jsoncparser.JSONPath, value: unknown, shouldSave = true): Promise<void> {
         const edits = this.getEditOperations(model, path, value);
@@ -33,28 +36,10 @@ export class MonacoJSONCEditor {
 
     getEditOperations(model: MonacoEditorModel, path: jsoncparser.JSONPath, value: unknown): monaco.editor.IIdentifiedSingleEditOperation[] {
         const textModel = model.textEditorModel;
-        const content = model.getText();
-        // Everything is already undefined - no need for changes.
-        if (!content.trim() && value === undefined) {
-            return [];
-        }
-        // Delete the entire document.
-        if (!path.length && value === undefined) {
-            return [{
-                range: textModel.getFullModelRange(),
-                text: null, // eslint-disable-line no-null/no-null
-                forceMoveMarkers: false
-            }];
-        }
-        const { insertSpaces, tabSize, defaultEOL } = textModel.getOptions();
-        const jsonCOptions = {
-            formattingOptions: {
-                insertSpaces,
-                tabSize,
-                eol: defaultEOL === monaco.editor.DefaultEndOfLine.LF ? '\n' : '\r\n'
-            }
-        };
-        return jsoncparser.modify(content, path, value, jsonCOptions).map(edit => {
+        // The model's options already account for the detected indentation and the language-specific preferences.
+        const { insertSpaces, tabSize } = textModel.getOptions();
+        const formattingOptions = { insertSpaces, tabSize, eol: textModel.getEOL() };
+        return this.jsoncEditor.getEditOperations(model.getText(), path, value as JSONValue, formattingOptions).map(edit => {
             const start = textModel.getPositionAt(edit.offset);
             const end = textModel.getPositionAt(edit.offset + edit.length);
             return {
