@@ -144,7 +144,7 @@ Log lines the scripts currently capture:
 - `Frontend <ContributionName>.<phase>`: per-contribution timing for `initialize`, `configure`, `onStart`, `initializeLayout`, and `onDidInitializeLayout`.
 - `Backend <ContributionName>.<phase>`: per-contribution timing for `initialize`, `configure`, and `onStart`.
 - `Frontend <ContributionName> settled` / `Backend <ContributionName> settled`: per-contribution settlement, logged only when a contribution returned promises from more than one lifecycle method.
-- `Electron main <activity>`: the Stopwatch measurements of the Electron main process (`Starting backend`, `Attaching security token`, `Starting contributions`, `Startup sequence completed`), which account for the time before the first window can be shown.
+- `Electron main <activity>`: the Stopwatch measurements of the Electron main process (`Starting backend`, `Attaching security token`, `Starting contributions`, `Startup sequence completed`). The main window loads its content while these run, so they overlap with the window load instead of preceding it: `Startup sequence completed` marks when the backend is listening and its security token cookie is set, which is when the frontend gets the backend port.
 
 The generated entry points also log start-up milestones in a similar format, which the scripts report as seconds since the respective process or page start:
 

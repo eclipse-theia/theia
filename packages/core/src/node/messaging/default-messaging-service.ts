@@ -51,11 +51,22 @@ export class DefaultMessagingService implements MessagingService, BackendApplica
 
     protected readonly channelHandlers = new ConnectionHandlers<Channel>();
 
+    /**
+     * Whether the backend is stopping. Its containers are unbound then, so the service channels that frontends
+     * open, or that were held until now, are no longer acknowledged, see {@link createChannelMultiplexer}.
+     */
+    protected stopping = false;
+
     initialize(): void {
         this.registerConnectionHandler(servicesPath, (_, socket) => this.handleConnection(socket));
         for (const contribution of this.contributions.getContributions()) {
             contribution.configure(this);
         }
+    }
+
+    onStop(): void {
+        // The held channels are released when the login shell, killed as the backend stops, has exited, which is after this.
+        this.stopping = true;
     }
 
     registerConnectionHandler(path: string, callback: (params: MessagingService.PathParams, mainChannel: Channel) => void): void {
@@ -79,10 +90,11 @@ export class DefaultMessagingService implements MessagingService, BackendApplica
 
     /**
      * Creates the multiplexer of the service channels on the main channel of a frontend. It holds the channels of the
-     * services that depend on the environment of the user's login shell until that environment is known, see {@link holdChannel}.
+     * services that depend on the environment of the user's login shell until that environment is known, see {@link holdChannel},
+     * and acknowledges no channel once the backend is stopping.
      */
     protected createChannelMultiplexer(mainChannel: Channel, channelHandlers: ConnectionHandlers<Channel>): ChannelMultiplexer {
-        return new GatedChannelMultiplexer(mainChannel, id => this.holdChannel(id, channelHandlers));
+        return new GatedChannelMultiplexer(mainChannel, id => this.holdChannel(id, channelHandlers), () => !this.stopping);
     }
 
     /**

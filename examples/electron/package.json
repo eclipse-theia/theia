@@ -14,7 +14,11 @@
         "electron": {
           "splashScreenOptions": {
             "content": "resources/theia-logo.svg",
-            "height": 90
+            "height": 90,
+            "platforms": [
+              "win32",
+              "linux"
+            ]
           },
           "appUserModelId": "EclipseTheia.ElectronExample"
         }
