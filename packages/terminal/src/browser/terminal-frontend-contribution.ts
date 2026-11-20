@@ -618,7 +618,8 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                 if (!profile) {
                     return;
                 }
-                const ref = this.currentTerminal;
+                // Like VS Code, split the active terminal even if it doesn't have the focus, e.g. one revealed by an extension.
+                const ref = this.currentTerminal ?? this.lastUsedTerminal;
                 await this.openTerminal(ref ? { ref, mode: 'split-right' } : undefined, profile);
             }
         });
@@ -1135,7 +1136,9 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             }
         }
 
-        const termWidget = await profile?.start();
+        // Profiles contributed by extensions may show the terminal before it is returned, so a split is passed as its location.
+        const location = options?.mode?.startsWith('split-') && options.ref instanceof TerminalWidget ? { parentTerminal: options.ref.id } : undefined;
+        const termWidget = await profile?.start({ location });
         if (!!termWidget) {
             this.open(termWidget, { widgetOptions: options });
         }

@@ -19,6 +19,7 @@ const disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
 import { TerminalService } from './base/terminal-service.js';
+import { TerminalWidget, TerminalWidgetOptions } from './base/terminal-widget.js';
 import { ShellTerminalProfile } from './shell-terminal-profile.js';
 import { DefaultProfileStore, DefaultTerminalProfileService, NULL_PROFILE } from './terminal-profile-service.js';
 
@@ -111,5 +112,22 @@ describe('DefaultTerminalProfileService', () => {
     it('should not report a default profile if there are no profiles', () => {
         const emptyService = new DefaultTerminalProfileService(new DefaultProfileStore());
         expect(emptyService.defaultProfile).to.be.undefined;
+    });
+});
+
+describe('ShellTerminalProfile', () => {
+    it('should create the terminal with the location it is started with', async () => {
+        const created: TerminalWidgetOptions[] = [];
+        const terminalService = {
+            newTerminal: async (options: TerminalWidgetOptions) => {
+                created.push(options);
+                return { start: async () => 0 } as unknown as TerminalWidget;
+            }
+        } as unknown as TerminalService;
+        const profile = new ShellTerminalProfile(terminalService, { shellPath: '/bin/zsh' });
+
+        await profile.start({ location: { parentTerminal: 'terminal-0' } });
+
+        expect(created).to.deep.equal([{ shellPath: '/bin/zsh', location: { parentTerminal: 'terminal-0' } }]);
     });
 });

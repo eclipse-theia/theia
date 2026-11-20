@@ -16,19 +16,33 @@
 
 import { Emitter, Event } from '@theia/core';
 import { injectable, unmanaged } from '@theia/core/shared/inversify';
-import { TerminalWidget } from './base/terminal-widget.js';
+import { TerminalLocationOptions, TerminalWidget } from './base/terminal-widget.js';
 import { ShellTerminalProfile } from './shell-terminal-profile.js';
 
 export const TerminalProfileService = Symbol('TerminalProfileService');
 export const ContributedTerminalProfileStore = Symbol('ContributedTerminalProfileStore');
 export const UserTerminalProfileStore = Symbol('UserTerminalProfileStore');
 
+/**
+ * Options for starting a terminal from a {@link TerminalProfile}.
+ */
+export interface TerminalProfileStartOptions {
+    /**
+     * Where to place the terminal, e.g. as a split of another terminal.
+     */
+    readonly location?: TerminalLocationOptions;
+}
+
 export interface TerminalProfile {
     /**
      * A human-readable name to present the profile to the user. Defaults to the ID of the profile.
      */
     readonly label?: string;
-    start(): Promise<TerminalWidget>;
+    /**
+     * Creates and starts a terminal. The terminal is placed according to its location when it is opened, which may happen
+     * before this promise resolves, e.g. if an extension providing the profile shows the terminal.
+     */
+    start(options?: TerminalProfileStartOptions): Promise<TerminalWidget>;
 }
 
 export const NULL_PROFILE: TerminalProfile = {

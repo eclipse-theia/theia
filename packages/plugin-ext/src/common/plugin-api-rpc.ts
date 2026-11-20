@@ -315,8 +315,18 @@ export interface CommandRegistryExt {
     registerArgumentProcessor(processor: ArgumentProcessor): void;
 }
 
+/**
+ * Options for starting a terminal from a contributed terminal profile.
+ */
+export interface StartTerminalProfileOptions {
+    /**
+     * The ID of the terminal to split, if the terminal is opened as a split.
+     */
+    parentId?: string;
+}
+
 export interface TerminalServiceExt {
-    $startProfile(providerId: string, cancellationToken: theia.CancellationToken): Promise<string>;
+    $startProfile(providerId: string, options: StartTerminalProfileOptions, cancellationToken: theia.CancellationToken): Promise<string>;
     $terminalCreated(id: string, name: string): void;
     $terminalNameChanged(id: string, name: string): void;
     $terminalOpened(id: string, processId: number, terminalId: number, cols: number, rows: number): void;
