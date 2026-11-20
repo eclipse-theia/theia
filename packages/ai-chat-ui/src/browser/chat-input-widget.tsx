@@ -1182,6 +1182,21 @@ export class AIChatInputWidget extends ReactWidget {
             }
         }));
         this.toDispose.push(this.favoriteModels.onDidChange(() => this.update()));
+        this.toDispose.push(this.labelProvider.onDidChange(event => {
+            if (typeof event?.affects !== 'function') {
+                this.update();
+                return;
+            }
+            const context = this.getContext();
+            if (context?.some(element => event.affects(element))) {
+                this.update();
+                return;
+            }
+            const changeSetElements = this._chatModel?.changeSet?.getElements();
+            if (changeSetElements?.some(element => event.affects(element.uri))) {
+                this.update();
+            }
+        }));
         // An agent's default is usually an alias, so editing which model the alias points at changes what
         // "Default" resolves to and with it the model-dependent state. The registry's own change event
         // does not cover this: the models it holds are the same ones, only the alias moved.
