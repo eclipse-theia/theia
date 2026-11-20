@@ -979,16 +979,17 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
         return taskDto;
     }
 
+    // Before the shell check, which matches any object with a `command`, including CustomExecution subclasses.
+    if (types.CustomExecution.is(execution)) {
+        return fromCustomExecution(execution, taskDto);
+    }
+
     if (types.ShellExecution.is(execution)) {
         return fromShellExecution(execution, taskDto);
     }
 
     if (types.ProcessExecution.is(execution)) {
         return fromProcessExecution(execution, taskDto);
-    }
-
-    if (types.CustomExecution.is(execution)) {
-        return fromCustomExecution(execution, taskDto);
     }
 
     return taskDto;
@@ -1115,6 +1116,7 @@ export function fromCustomExecution(execution: types.CustomExecution, taskDto: T
     const callback = execution.callback;
     if (callback) {
         taskDto.callback = callback;
+        taskDto.customExecution = execution;
         return taskDto;
     } else {
         throw new Error('Converting CustomExecution callback is not implemented');
