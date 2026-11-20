@@ -33,6 +33,11 @@ export namespace nls {
      * Automatically localizes a text if that text also exists in the vscode repository.
      */
     export function localizeByDefault(defaultValue: string, ...args: FormatType[]): string {
+        if (localization && !hasTranslations(localization)) {
+            // Only text replacements, which are found by the default value: building the index of the default keys
+            // for the first lookup would cost tens of milliseconds of the start-up for nothing.
+            return localize('', defaultValue, ...args);
+        }
         if (localization) {
             const key = getDefaultKey(defaultValue);
             if (key) {
@@ -42,6 +47,15 @@ export namespace nls {
             }
         }
         return Localization.format(defaultValue, args);
+    }
+
+    function hasTranslations(value: Localization): boolean {
+        for (const key in value.translations) {
+            if (Object.prototype.hasOwnProperty.call(value.translations, key)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     export function getDefaultKey(defaultValue: string): string {

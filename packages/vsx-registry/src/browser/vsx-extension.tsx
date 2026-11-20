@@ -347,7 +347,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
         }
 
         if (this.downloadCount) {
-            md += `  \r${nls.localize('theia/vsx-registry/downloadCount', 'Download count: {0}', downloadCompactFormatter.format(this.downloadCount))}`;
+            md += `  \r${nls.localize('theia/vsx-registry/downloadCount', 'Download count: {0}', formatCompactDownloadCount(this.downloadCount))}`;
         }
 
         if (this.averageRating) {
@@ -573,9 +573,14 @@ export namespace AbstractVSXExtensionComponent {
     }
 }
 
-const downloadFormatter = new Intl.NumberFormat();
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const downloadCompactFormatter = new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' } as any);
+// The formatters are created on first use: creating them when the module is loaded costs several milliseconds
+// of the frontend's start-up.
+let downloadFormatter: Intl.NumberFormat | undefined;
+let downloadCompactFormatter: Intl.NumberFormat | undefined;
+const formatDownloadCount = (downloadCount: number): string =>
+    (downloadFormatter ??= new Intl.NumberFormat()).format(downloadCount);
+const formatCompactDownloadCount = (downloadCount: number): string =>
+    (downloadCompactFormatter ??= new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' })).format(downloadCount);
 const averageRatingFormatter = (averageRating: number): number => Math.round(averageRating * 2) / 2;
 const getAverageRatingTitle = (averageRating: number): string =>
     nls.localizeByDefault('Average rating: {0} out of 5', averageRatingFormatter(averageRating));
@@ -619,7 +624,7 @@ export class VSXExtensionComponent<Props extends VSXExtensionComponent.Props = V
             }
             stat={
                 <>
-                    {!!downloadCount && <span className='download-count'><i className={codicon('cloud-download')} />{downloadCompactFormatter.format(downloadCount)}</span>}
+                    {!!downloadCount && <span className='download-count'><i className={codicon('cloud-download')} />{formatCompactDownloadCount(downloadCount)}</span>}
                     {!!averageRating && <span className='average-rating'><i className={codicon('star-full')} />{averageRatingFormatter(averageRating)}</span>}
                 </>
             }
@@ -670,7 +675,7 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
                             {publisher}
                         </span>
                         {!!downloadCount && <span className='download-count' onClick={this.openExtension}>
-                            <i className={codicon('cloud-download')} />{downloadFormatter.format(downloadCount)}</span>}
+                            <i className={codicon('cloud-download')} />{formatDownloadCount(downloadCount)}</span>}
                         {
                             averageRating !== undefined &&
                             <span className='average-rating' title={getAverageRatingTitle(averageRating)} onClick={this.openAverageRating}>{this.renderStars()}</span>
