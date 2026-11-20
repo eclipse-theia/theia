@@ -67,6 +67,24 @@ describe('OutputLinkComputer', () => {
         expect(urls('GET https://example.com/api 200', posixRoot)).to.be.empty;
     });
 
+    it('should not link text with slashes if the workspace folder is a file system root', () => {
+        const posixRoot = new OutputLinkComputer();
+        posixRoot.setWorkspaceFolders([{ uri: new URI('file:///'), fsPath: '/' }]);
+        expect(urls('Content-Type: application/json', posixRoot)).to.be.empty;
+        expect(urls('progress 50/100 and/or', posixRoot)).to.be.empty;
+    });
+
+    it('should not link the workspace path within another path', () => {
+        expect(urls('/other/workspace/project/README.md')).to.be.empty;
+    });
+
+    it('should link paths after delimiters', () => {
+        expect(urls('file=/workspace/project/a.ts (/workspace/project/b.ts:3)')).to.deep.equal([
+            'file:///workspace/project/a.ts',
+            'file:///workspace/project/b.ts#L3'
+        ]);
+    });
+
     it('should compute the range of the link', () => {
         const [link] = computer.computeLinks(['first line', 'see /workspace/project/a.ts']);
         expect(link.range).to.deep.equal({ startLineNumber: 2, startColumn: 5, endLineNumber: 2, endColumn: 28 });

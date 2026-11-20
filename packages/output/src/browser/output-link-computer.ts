@@ -58,7 +58,8 @@ export class OutputLinkComputer {
         return folderPaths.flatMap(path => {
             // the path of a file system root already ends with a separator
             const separator = /[\\/]$/.test(path) ? '' : '[\\\\/]';
-            const folder = `${escapeRegExpCharacters(path)}${separator}`;
+            // don't start a match within a word or path, e.g. `application/json` if the folder is `/`
+            const folder = `(?<![\\w.\\-/\\\\])${escapeRegExpCharacters(path)}${separator}`;
             return [
                 // /ws/src/server.js on line 8, column 13
                 `${folder}(?<path>${pathWithExtension}) on line (?<line>\\d+)(?:, column (?<column>\\d+))?`,
