@@ -83,6 +83,9 @@ export class RpcProtocol {
             this.pendingRequests.clear();
             this.pendingRequestCancellationEventListeners.forEach(disposable => disposable.dispose());
             this.pendingRequestCancellationEventListeners.clear();
+            // Requests still being handled can no longer be cancelled by the caller, so cancel them now.
+            this.cancellationTokenSources.forEach(source => source.cancel());
+            this.cancellationTokenSources.clear();
             this.toDispose.dispose();
         });
         this.toDispose.push(channel.onMessage(readBuffer => this.handleMessage(this.decoder.parse(readBuffer()))));

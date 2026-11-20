@@ -273,7 +273,8 @@ export class DiskFileSystemProvider implements Disposable,
     }
 
     readFileStream(resource: URI, opts: FileReadStreamOptions, token: CancellationToken): ReadableStreamEvents<Uint8Array> {
-        const stream = newWriteableStream<Uint8Array>(data => BinaryBuffer.concat(data.map(data => BinaryBuffer.wrap(data))).buffer);
+        // The high water mark makes reading wait while a paused stream holds this many buffers, instead of reading the whole file into memory.
+        const stream = newWriteableStream<Uint8Array>(data => BinaryBuffer.concat(data.map(data => BinaryBuffer.wrap(data))).buffer, { highWaterMark: 16 });
 
         readFileIntoStream(this, resource, stream, data => data.buffer, {
             ...opts,
