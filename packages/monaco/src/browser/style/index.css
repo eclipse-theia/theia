@@ -254,11 +254,6 @@
     color: var(--vscode-editorSuggestWidget-focusHighlightForeground) !important;
 }
 
-.symbol-icon-center {
-  align-self: center;
-  margin-right: 4px;
-}
-
 .monaco-inputbox.error > .ibwrapper > .input,
 .monaco-inputbox.warning > .ibwrapper > .input,
 .monaco-inputbox.info > .ibwrapper > .input {

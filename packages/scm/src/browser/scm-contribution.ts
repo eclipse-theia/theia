@@ -38,7 +38,6 @@ import URI from '@theia/core/lib/common/uri';
 import { ScmQuickOpenService } from './scm-quick-open-service.js';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
-import { Color } from '@theia/core/lib/common/color';
 import { ScmColors } from './scm-colors.js';
 import { ScmCommand } from './scm-provider.js';
 import { ScmDecorationsService } from '../browser/decorations/scm-decorations-service.js';
@@ -552,30 +551,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
                 },
                 description: 'Foreground color 5 for additional lanes in the SCM history graph.'
             },
-            {
-                id: ScmColors.editorGutterModifiedBackground, defaults: {
-                    dark: '#1B81A8',
-                    light: '#2090D3',
-                    hcDark: '#1B81A8',
-                    hcLight: '#2090D3'
-                }, description: 'Editor gutter background color for lines that are modified.'
-            },
-            {
-                id: ScmColors.editorGutterAddedBackground, defaults: {
-                    dark: '#487E02',
-                    light: '#48985D',
-                    hcDark: '#487E02',
-                    hcLight: '#48985D'
-                }, description: 'Editor gutter background color for lines that are added.'
-            },
-            {
-                id: ScmColors.editorGutterDeletedBackground, defaults: {
-                    dark: 'editorError.foreground',
-                    light: 'editorError.foreground',
-                    hcDark: 'editorError.foreground',
-                    hcLight: 'editorError.foreground'
-                }, description: 'Editor gutter background color for lines that are deleted.'
-            },
+            // The `editorGutter.*Background` and `editorOverviewRuler.*Foreground` colors are registered by `EditorGutterColorContribution` in core
             {
                 id: 'minimapGutter.modifiedBackground', defaults: {
                     dark: 'editorGutter.modifiedBackground',
@@ -599,30 +575,6 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
                     hcDark: 'editorGutter.deletedBackground',
                     hcLight: 'editorGutter.deletedBackground'
                 }, description: 'Minimap gutter background color for lines that are deleted.'
-            },
-            {
-                id: 'editorOverviewRuler.modifiedForeground', defaults: {
-                    dark: Color.transparent(ScmColors.editorGutterModifiedBackground, 0.6),
-                    light: Color.transparent(ScmColors.editorGutterModifiedBackground, 0.6),
-                    hcDark: Color.transparent(ScmColors.editorGutterModifiedBackground, 0.6),
-                    hcLight: Color.transparent(ScmColors.editorGutterModifiedBackground, 0.6)
-                }, description: 'Overview ruler marker color for modified content.'
-            },
-            {
-                id: 'editorOverviewRuler.addedForeground', defaults: {
-                    dark: Color.transparent(ScmColors.editorGutterAddedBackground, 0.6),
-                    light: Color.transparent(ScmColors.editorGutterAddedBackground, 0.6),
-                    hcDark: Color.transparent(ScmColors.editorGutterAddedBackground, 0.6),
-                    hcLight: Color.transparent(ScmColors.editorGutterAddedBackground, 0.6)
-                }, description: 'Overview ruler marker color for added content.'
-            },
-            {
-                id: 'editorOverviewRuler.deletedForeground', defaults: {
-                    dark: Color.transparent(ScmColors.editorGutterDeletedBackground, 0.6),
-                    light: Color.transparent(ScmColors.editorGutterDeletedBackground, 0.6),
-                    hcDark: Color.transparent(ScmColors.editorGutterDeletedBackground, 0.6),
-                    hcLight: Color.transparent(ScmColors.editorGutterDeletedBackground, 0.6)
-                }, description: 'Overview ruler marker color for deleted content.'
             },
             {
                 id: 'scmGraph.historyItemHoverAdditionsForeground', defaults: {

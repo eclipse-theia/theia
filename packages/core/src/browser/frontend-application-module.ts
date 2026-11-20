@@ -23,6 +23,8 @@ import '../../src/browser/style/materialcolors.css';
 import 'font-awesome/css/font-awesome.min.css';
 import 'file-icons-js/css/style.css';
 import '@vscode/codicons/dist/codicon.css';
+// Import after file-icons-js so that Theia's sizing of the file icons takes precedence.
+import '../../src/browser/style/file-icons.css';
 
 import { ContainerModule } from 'inversify';
 import {
@@ -152,6 +154,10 @@ import { ViewColumnService } from './shell/view-column-service.js';
 import { DomInputUndoRedoHandler, UndoRedoHandler, UndoRedoHandlerService } from './undo-redo-handler.js';
 import { WidgetStatusBarContribution, WidgetStatusBarService } from './widget-status-bar-service.js';
 import { SymbolIconColorContribution } from './symbol-icon-color-contribution.js';
+import { TerminalColorContribution } from './terminal-color-contribution.js';
+import { NotificationColorContribution } from './notification-color-contribution.js';
+import { DebugIconColorContribution } from './debug-icon-color-contribution.js';
+import { EditorGutterColorContribution } from './editor-gutter-color-contribution.js';
 import { CorePreferences, bindCorePreferences } from '../common/core-preferences.js';
 import { bindBadgeDecoration } from './badges/index.js';
 import { PerspectiveContribution, PerspectiveService, PerspectiveServiceImpl, PerspectiveServiceInternal, WidgetAreaResolverImpl } from './perspective-service.js';
@@ -319,6 +325,14 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     );
     bind(SymbolIconColorContribution).toSelf().inSingletonScope();
     bind(ColorContribution).toService(SymbolIconColorContribution);
+    bind(TerminalColorContribution).toSelf().inSingletonScope();
+    bind(ColorContribution).toService(TerminalColorContribution);
+    bind(NotificationColorContribution).toSelf().inSingletonScope();
+    bind(ColorContribution).toService(NotificationColorContribution);
+    bind(DebugIconColorContribution).toSelf().inSingletonScope();
+    bind(ColorContribution).toService(DebugIconColorContribution);
+    bind(EditorGutterColorContribution).toSelf().inSingletonScope();
+    bind(ColorContribution).toService(EditorGutterColorContribution);
 
     bindCommonStylingParticipants(bind);
 

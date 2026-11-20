@@ -119,21 +119,6 @@
   overflow: hidden;
 }
 
-/* Section headers and spacing */
-.settings-section-title {
-  font-size: var(--theia-ui-font-size3);
-  font-weight: 600;
-  margin: 0 0 calc(var(--theia-ui-padding) * 1.5) 0;
-  padding: 0 0 calc(var(--theia-ui-padding) / 2) 0;
-  border-bottom: var(--theia-border-width) solid var(--theia-widget-border);
-}
-
-.settings-section-title pre {
-  font-size: calc(var(--theia-ui-font-size0) * 0.9);
-  color: var(--theia-descriptionForeground);
-  margin-top: calc(var(--theia-ui-padding) / 2);
-}
-
 /* Agent title with toggle */
 .agent-title-with-toggle {
   display: block;
@@ -834,29 +819,6 @@ button.agent-chip:focus-visible {
   font-size: var(--theia-ui-font-size1);
   line-height: 1.6;
   padding: calc(var(--theia-ui-padding) * 2);
-}
-
-/* Welcome message container */
-.theia-WelcomeMessage-Container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  overflow-y: auto;
-  height: 100%;
-  width: 100%;
-}
-
-.theia-WelcomeMessage-Container-Inner {
-  margin: auto 0;
-  /* Centred vertically */
-  width: 100%;
-}
-
-.theia-WelcomeMessage-Divider {
-  align-self: stretch;
-  height: 0;
-  border-top: 1px solid var(--theia-dropdown-border);
-  margin: calc(var(--theia-ui-padding) * 2) calc(var(--theia-ui-padding) * 3);
 }
 
 .theia-WelcomeMessage {
@@ -2149,17 +2111,6 @@ button.agent-chip:focus-visible {
 .ai-sessions-view-empty .codicon {
   font-size: calc(var(--theia-ui-font-size1) * 2.5);
   opacity: 0.5;
-}
-
-/* Persistent banner strip rendered above the AI chat content when an AI session
- * override (e.g. --session-preference) is active. */
-.chat-banner-host {
-  flex: none;
-  width: 100%;
-}
-
-.chat-banner-host:empty {
-  display: none;
 }
 
 .theia-ai-allow-all-mode-strip {

@@ -14,6 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
+.symbol-icon-center {
+    align-self: center;
+    margin-right: 4px;
+}
+
 /*
   We need to explicitly select the specific panels
   Otherwise, the codicon styles are applied to all codicons in the application.

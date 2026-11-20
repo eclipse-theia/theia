@@ -57,7 +57,7 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 import { TerminalCopyOnSelectionHandler } from './terminal-copy-on-selection-handler.js';
 import { TerminalWatcher } from '../common/terminal-watcher.js';
 import { nls } from '@theia/core/lib/common/nls';
-import { Profiles, terminalAnsiColorMap, TerminalPreferences } from '../common/terminal-preferences.js';
+import { Profiles, TerminalPreferences } from '../common/terminal-preferences.js';
 import { ShellTerminalProfile } from './shell-terminal-profile.js';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { Color } from '@theia/core/lib/common/color';
@@ -1131,26 +1131,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
      * It should be aligned with https://code.visualstudio.com/api/references/theme-color#integrated-terminal-colors
      */
     registerColors(colors: ColorRegistry): void {
-        colors.register({
-            id: 'terminal.background',
-            defaults: {
-                dark: 'panel.background',
-                light: 'panel.background',
-                hcDark: 'panel.background',
-                hcLight: 'panel.background'
-            },
-            description: nls.localizeByDefault('The background color of the terminal, this allows coloring the terminal differently to the panel.')
-        });
-        colors.register({
-            id: 'terminal.foreground',
-            defaults: {
-                light: '#333333',
-                dark: '#CCCCCC',
-                hcDark: '#FFFFFF',
-                hcLight: '#292929'
-            },
-            description: nls.localizeByDefault('The foreground color of the terminal.')
-        });
+        // `terminal.background`, `terminal.foreground` and the ANSI colors are registered in core.
         colors.register({
             id: 'terminalCursor.foreground',
             description: nls.localizeByDefault('The foreground color of the terminal cursor.')
@@ -1200,15 +1181,5 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             },
             description: nls.localizeByDefault('The color of the border that separates split panes within the terminal. This defaults to panel.border.')
         });
-        // eslint-disable-next-line guard-for-in
-        for (const id in terminalAnsiColorMap) {
-            const entry = terminalAnsiColorMap[id];
-            const colorName = id.substring(13);
-            colors.register({
-                id,
-                defaults: entry.defaults,
-                description: nls.localizeByDefault("'{0}' ANSI color in the terminal.", colorName)
-            });
-        }
     }
 }
