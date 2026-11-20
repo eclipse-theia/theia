@@ -31,10 +31,10 @@ import URI from '@theia/core/lib/common/uri';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { FileDialogService, OpenFileDialogProps } from '@theia/filesystem/lib/browser';
-import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { VSXExtensionRaw } from '@theia/ovsx-client';
-import { DuplicateExtensionError, PluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
+import { VscodeCommands } from '@theia/plugin-ext-vscode/lib/browser/plugin-vscode-commands-contribution';
+import { PluginIdentifiers, PluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { DateTime } from 'luxon';
 import { VSXRegistryService } from '../common/vsx-registry-service.js';
 import { IGNORE_RECOMMENDATIONS_ID } from '../common/recommended-extensions-preference-contribution.js';
@@ -55,12 +55,20 @@ export namespace VSXCommands {
     };
 }
 
+/** An installed extension that a VSIX file replaces. */
+export interface VsixReplacement {
+    id: PluginIdentifiers.UnversionedId;
+    /** The version that is installed at the moment. */
+    installedVersion: string;
+    /** The version in the VSIX file. */
+    version: string;
+}
+
 @injectable()
 export class VSXExtensionsContribution extends AbstractViewContribution<VSXExtensionsViewContainer> implements ColorContribution, FrontendApplicationContribution {
 
     @inject(VSXExtensionsModel) protected model: VSXExtensionsModel;
     @inject(PluginServer) protected pluginServer: PluginServer;
-    @inject(FileService) protected fileService: FileService;
     @inject(WindowService) protected windowService: WindowService;
     @inject(CommandRegistry) protected commandRegistry: CommandRegistry;
     @inject(FileDialogService) protected fileDialogService: FileDialogService;
@@ -290,28 +298,23 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
      * The implementation doesn't check if the file is a valid VSIX file, or the URI has a *.vsix extension.
      * The caller should ensure the file is a valid VSIX file.
      *
-     * If the extension is already installed, asks the user whether to replace it.
-     *
-     * This calls the plugin server and not `workbench.extensions.installExtension`, because that command ignores duplicates.
+     * A VSIX always replaces an installed extension with the same ID. Thus, if the extension is installed in any version,
+     * this asks the user before it installs the file, and offers a reload after the replacement.
      *
      * @param fileURI the URI of the file to install.
      */
     protected async installVsixFile(fileURI: URI): Promise<void> {
         const extensionName = this.labelProvider.getName(fileURI);
         try {
-            const pluginEntry = `local-file:${await this.fileService.fsPath(fileURI)}`;
-            try {
-                await this.pluginServer.install(pluginEntry, undefined, { ifInstalled: 'fail' });
+            const replacement = await this.findVsixReplacement(fileURI);
+            if (replacement && !await this.confirmReplaceExtension(replacement)) {
+                return;
+            }
+            await this.commandRegistry.executeCommand(VscodeCommands.INSTALL_EXTENSION_FROM_ID_OR_URI.id, fileURI);
+            if (replacement) {
+                await this.promptReloadAfterReplace(replacement);
+            } else {
                 this.messageService.info(nls.localizeByDefault('Completed installing extension.', extensionName));
-            } catch (e) {
-                const details = DuplicateExtensionError.getDetails(e);
-                if (!details) {
-                    throw e;
-                }
-                if (await this.confirmReplaceExtension(details)) {
-                    await this.pluginServer.install(pluginEntry, undefined, { ifInstalled: 'replace' });
-                    await this.promptReloadAfterReplace(details);
-                }
             }
         } catch (e) {
             this.messageService.error(nls.localize('theia/vsx-registry/failedInstallingVSIX', 'Failed to install {0} from VSIX.', extensionName));
@@ -319,7 +322,25 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         }
     }
 
-    protected confirmReplaceExtension({ id, installedVersion, version }: DuplicateExtensionError.Details): Promise<boolean | undefined> {
+    /**
+     * @returns the installed extension that the VSIX file replaces, if there is one.
+     * Ignores an extension that is uninstalled and waits for a restart.
+     */
+    protected async findVsixReplacement(fileURI: URI): Promise<VsixReplacement | undefined> {
+        const identity = await this.vsxRegistryService.readVsixIdentity(fileURI.toString());
+        if (!identity) {
+            return undefined;
+        }
+        const id = PluginIdentifiers.componentsToUnversionedId(identity);
+        const [installed, uninstalled] = await Promise.all([this.pluginServer.getInstalledPlugins(), this.pluginServer.getUninstalledPlugins()]);
+        const installedVersion = installed
+            .filter(versionedId => !uninstalled.includes(versionedId))
+            .map(versionedId => PluginIdentifiers.idAndVersionFromVersionedId(versionedId))
+            .find(candidate => candidate?.id === id)?.version;
+        return installedVersion ? { id, installedVersion, version: identity.version } : undefined;
+    }
+
+    protected confirmReplaceExtension({ id, installedVersion, version }: VsixReplacement): Promise<boolean | undefined> {
         return new ConfirmDialog({
             title: nls.localize('theia/vsx-registry/replaceVSIXTitle', 'Extension Already Installed'),
             msg: nls.localize('theia/vsx-registry/replaceVSIXMessage',
@@ -331,7 +352,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
     /**
      * The running plugin host keeps the old extension until the next reload.
      */
-    protected async promptReloadAfterReplace({ id, version }: DuplicateExtensionError.Details): Promise<void> {
+    protected async promptReloadAfterReplace({ id, version }: VsixReplacement): Promise<void> {
         const reload = nls.localizeByDefault('Reload Window');
         const choice = await this.messageService.info(
             nls.localize('theia/vsx-registry/replacedVSIX', 'Replaced the extension \'{0}\' with version {1}. Reload the window to use it.', id, version),

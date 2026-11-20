@@ -16,6 +16,7 @@
 
 import { LanguageInfo } from '@theia/core/lib/common/i18n/localization';
 import { VSXExtensionRaw, VSXQueryOptions, VSXQueryResult, VSXSearchOptions, VSXSearchResult } from '@theia/ovsx-client/lib/ovsx-types';
+import { PluginIdentifiers } from '@theia/plugin-ext/lib/common/plugin-identifiers';
 
 export const VSX_REGISTRY_SERVICE_PATH = '/services/vsx-registry';
 
@@ -49,4 +50,12 @@ export interface VSXRegistryService {
      * Derives the manifest URL from the download URL, fetches and parses it.
      */
     fetchLanguagePackInfo(downloadUrl: string): Promise<LanguageInfo[]>;
+
+    /**
+     * Reads the ID and version of the extension in a local VSIX file from its `extension/package.json`.
+     * Returns undefined if the file has no valid `package.json`.
+     *
+     * @param vsixUri the `file:` URI of the VSIX file.
+     */
+    readVsixIdentity(vsixUri: string): Promise<PluginIdentifiers.Components | undefined>;
 }

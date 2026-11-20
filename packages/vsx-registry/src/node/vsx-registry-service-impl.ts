@@ -23,6 +23,9 @@ import { VSXExtensionRaw, VSXQueryOptions, VSXQueryResult, VSXSearchOptions, VSX
 import { OVSXClientProvider } from '../common/ovsx-client-provider.js';
 import { VSXEnvironment } from '../common/vsx-environment.js';
 import { VSXRegistryService } from '../common/vsx-registry-service.js';
+import { FileUri } from '@theia/core/lib/common/file-uri';
+import { PluginIdentifiers } from '@theia/plugin-ext/lib/common/plugin-identifiers';
+import { extractExtensionIdentityFromVsix } from '@theia/plugin-ext-vscode/lib/node/plugin-vscode-utils';
 
 @injectable()
 export class VSXRegistryServiceImpl implements VSXRegistryService {
@@ -96,6 +99,10 @@ export class VSXRegistryServiceImpl implements VSXRegistryService {
         } catch {
             return [];
         }
+    }
+
+    async readVsixIdentity(vsixUri: string): Promise<PluginIdentifiers.Components | undefined> {
+        return extractExtensionIdentityFromVsix(FileUri.fsPath(vsixUri));
     }
 
     protected async validateRegistryOrigin(url: string): Promise<boolean> {

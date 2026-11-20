@@ -210,8 +210,12 @@ export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
             if (!sourceLocations) {
                 return false;
             }
-            await Promise.all(Array.from(sourceLocations,
-                location => fs.remove(location).catch(err => this.logger.error(`Failed to remove source for ${pluginId} at ${location}`, err))));
+            // The source of a built-in extension is part of the application, so it stays on disk.
+            // This happens when a user extension with another version of a built-in extension is deployed.
+            if (!this.isBuiltIn(pluginId)) {
+                await Promise.all(Array.from(sourceLocations,
+                    location => fs.remove(location).catch(err => this.logger.error(`Failed to remove source for ${pluginId} at ${location}`, err))));
+            }
             this.sourceLocations.delete(pluginId);
             this.localizationService.undeployLocalizations(pluginId);
             this.uninstallationManager.markAsUninstalled(pluginId);
@@ -220,6 +224,11 @@ export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
             this.logger.error('Error uninstalling plugin', e);
             return false;
         }
+    }
+
+    protected isBuiltIn(pluginId: PluginIdentifiers.VersionedId): boolean {
+        const deployed = this.deployedFrontendPlugins.get(pluginId) ?? this.deployedBackendPlugins.get(pluginId);
+        return !!deployed && deployed.type !== PluginType.User;
     }
 
     protected markAsInstalled(id: PluginIdentifiers.VersionedId): void {

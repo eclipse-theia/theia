@@ -31,10 +31,9 @@ import { expect } from 'chai';
 import { QuickPickItem } from '@theia/core/lib/browser';
 import { Command, CommandHandler, CommandRegistry } from '@theia/core/lib/common/command';
 import URI from '@theia/core/lib/common/uri';
-import { DuplicateExtensionError, PluginDeployOptions } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { VSXExtension } from './vsx-extension.js';
 import { VSXExtensionsCommands } from './vsx-extension-commands.js';
-import { VSXExtensionsContribution } from './vsx-extensions-contribution.js';
+import { VSXExtensionsContribution, VsixReplacement } from './vsx-extensions-contribution.js';
 
 after(() => disableJSDOM());
 
@@ -103,36 +102,47 @@ describe('VSXExtensionsContribution: "Install Specific Version" with no availabl
 describe('VSXExtensionsContribution: installing a VSIX file', () => {
 
     const uri = new URI('file:///tmp/ext.vsix');
-    const details: DuplicateExtensionError.Details = { id: 'foo.bar', installedVersion: '1.0.0', version: '2.0.0' };
+    const replacement: VsixReplacement = { id: 'foo.bar', installedVersion: '1.0.0', version: '2.0.0' };
 
     interface Scenario {
-        install: (options?: PluginDeployOptions) => Promise<void>;
+        installed?: string[];
+        uninstalled?: string[];
+        identity?: { publisher: string, name: string, version: string };
+        /** `false` for a VSIX file without a valid `package.json`. */
+        readable?: boolean;
+        install?: () => Promise<void>;
         confirm?: boolean;
         reloadChoice?: string;
     }
 
-    async function run({ install, confirm, reloadChoice }: Scenario): Promise<{
-        installs: Array<[string, PluginDeployOptions | undefined]>,
-        confirmed: DuplicateExtensionError.Details[],
+    const vsixIdentity = { publisher: 'foo', name: 'bar', version: '2.0.0' };
+
+    async function run({ installed = [], uninstalled = [], identity = vsixIdentity, readable = true, install, confirm, reloadChoice }: Scenario): Promise<{
+        installs: unknown[][],
+        confirmed: VsixReplacement[],
         infos: string[],
         errors: string[],
         reloads: number
     }> {
         const contribution = new VSXExtensionsContribution();
         const result = {
-            installs: [] as Array<[string, PluginDeployOptions | undefined]>,
-            confirmed: [] as DuplicateExtensionError.Details[],
+            installs: [] as unknown[][],
+            confirmed: [] as VsixReplacement[],
             infos: [] as string[],
             errors: [] as string[],
             reloads: 0
         };
         Object.assign(contribution, {
             labelProvider: { getName: () => 'ext.vsix' },
-            fileService: { fsPath: async () => '/tmp/ext.vsix' },
+            vsxRegistryService: { readVsixIdentity: async () => readable ? identity : undefined },
             pluginServer: {
-                install: async (entry: string, _type: unknown, options?: PluginDeployOptions) => {
-                    result.installs.push([entry, options]);
-                    await install(options);
+                getInstalledPlugins: async () => installed,
+                getUninstalledPlugins: async () => uninstalled
+            },
+            commandRegistry: {
+                executeCommand: async (...args: unknown[]) => {
+                    result.installs.push(args);
+                    await install?.();
                 }
             },
             messageService: {
@@ -146,8 +156,8 @@ describe('VSXExtensionsContribution: installing a VSIX file', () => {
             },
             windowService: { reload: () => result.reloads++ },
             logger: { warn: () => { } },
-            confirmReplaceExtension: async (d: DuplicateExtensionError.Details) => {
-                result.confirmed.push(d);
+            confirmReplaceExtension: async (r: VsixReplacement) => {
+                result.confirmed.push(r);
                 return confirm;
             }
         });
@@ -155,37 +165,51 @@ describe('VSXExtensionsContribution: installing a VSIX file', () => {
         return result;
     }
 
-    const failIfInstalled = async (options?: PluginDeployOptions) => {
-        if (options?.ifInstalled === 'fail') {
-            throw DuplicateExtensionError.create('Extension foo.bar is already installed.', details);
-        }
-    };
-
-    it('installs without a dialog if the extension is not installed', async () => {
-        const result = await run({ install: async () => { } });
-        expect(result.installs).to.deep.equal([['local-file:/tmp/ext.vsix', { ifInstalled: 'fail' }]]);
+    it('installs with workbench.extensions.installExtension and no dialog if the extension is not installed', async () => {
+        const result = await run({ installed: ['other.ext@1.0.0'] });
+        expect(result.installs).to.deep.equal([['workbench.extensions.installExtension', uri]]);
         expect(result.confirmed).to.be.empty;
         expect(result.errors).to.be.empty;
         expect(result.infos).to.have.lengthOf(1);
+        expect(result.reloads).to.equal(0);
     });
 
-    it('does not replace the extension if the user cancels the dialog', async () => {
-        const result = await run({ install: failIfInstalled, confirm: false });
-        expect(result.confirmed).to.deep.equal([details]);
+    for (const [title, installedVersion, version] of [['the same', '2.0.0', '2.0.0'], ['an older', '1.0.0', '2.0.0'], ['a newer', '3.0.0', '2.0.0']]) {
+        it(`asks before it replaces ${title} version`, async () => {
+            const result = await run({ installed: [`foo.bar@${installedVersion}`], identity: { publisher: 'foo', name: 'bar', version } });
+            expect(result.confirmed).to.deep.equal([{ id: 'foo.bar', installedVersion, version }]);
+        });
+    }
+
+    it('ignores a version that is uninstalled and waits for a restart', async () => {
+        const result = await run({ installed: ['foo.bar@1.0.0'], uninstalled: ['foo.bar@1.0.0'] });
+        expect(result.confirmed).to.be.empty;
         expect(result.installs).to.have.lengthOf(1);
+    });
+
+    it('installs without a dialog if it cannot read the identity of the VSIX file', async () => {
+        const result = await run({ installed: ['foo.bar@1.0.0'], readable: false });
+        expect(result.confirmed).to.be.empty;
+        expect(result.installs).to.have.lengthOf(1);
+    });
+
+    it('does not install if the user cancels the dialog', async () => {
+        const result = await run({ installed: ['foo.bar@1.0.0'], confirm: false });
+        expect(result.confirmed).to.deep.equal([replacement]);
+        expect(result.installs).to.be.empty;
         expect(result.infos).to.be.empty;
         expect(result.errors).to.be.empty;
     });
 
-    it('does not replace the extension if the user closes the dialog', async () => {
-        const result = await run({ install: failIfInstalled, confirm: undefined });
-        expect(result.installs).to.have.lengthOf(1);
+    it('does not install if the user closes the dialog', async () => {
+        const result = await run({ installed: ['foo.bar@1.0.0'], confirm: undefined });
+        expect(result.installs).to.be.empty;
         expect(result.errors).to.be.empty;
     });
 
     it('replaces the extension and offers a reload if the user confirms the dialog', async () => {
-        const result = await run({ install: failIfInstalled, confirm: true, reloadChoice: 'Reload Window' });
-        expect(result.installs.map(([, options]) => options?.ifInstalled)).to.deep.equal(['fail', 'replace']);
+        const result = await run({ installed: ['foo.bar@1.0.0'], confirm: true, reloadChoice: 'Reload Window' });
+        expect(result.installs).to.have.lengthOf(1);
         expect(result.infos).to.have.lengthOf(1);
         expect(result.infos[0]).to.contain('foo.bar').and.to.contain('2.0.0');
         expect(result.reloads).to.equal(1);
@@ -193,30 +217,18 @@ describe('VSXExtensionsContribution: installing a VSIX file', () => {
     });
 
     it('does not reload if the user dismisses the reload message', async () => {
-        const result = await run({ install: failIfInstalled, confirm: true });
+        const result = await run({ installed: ['foo.bar@1.0.0'], confirm: true });
         expect(result.reloads).to.equal(0);
     });
 
     it('shows an error if the replacement fails', async () => {
-        const result = await run({
-            install: async options => {
-                await failIfInstalled(options);
-                throw new Error('Deployment failed.');
-            },
-            confirm: true
-        });
+        const result = await run({ installed: ['foo.bar@1.0.0'], confirm: true, install: async () => { throw new Error('Deployment failed.'); } });
         expect(result.infos).to.be.empty;
         expect(result.errors).to.have.lengthOf(1);
     });
 
-    it('shows an error and no dialog for other failures', async () => {
+    it('shows an error if the install fails', async () => {
         const result = await run({ install: async () => { throw new Error('Deployment failed.'); } });
-        expect(result.confirmed).to.be.empty;
-        expect(result.errors).to.have.lengthOf(1);
-    });
-
-    it('shows an error and no dialog for a duplicate without details', async () => {
-        const result = await run({ install: async () => { throw DuplicateExtensionError.create('Extension foo.bar is already installed.'); } });
         expect(result.confirmed).to.be.empty;
         expect(result.errors).to.have.lengthOf(1);
     });

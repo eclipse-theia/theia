@@ -16,9 +16,8 @@
 
 import * as path from 'path';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { DuplicateExtensionError, PluginDeployerHandler, PluginDeployerResolverContext, PluginDeployOptions, PluginIdentifiers, PluginType } from '@theia/plugin-ext';
+import { PluginDeployerHandler, PluginDeployerResolverContext, PluginIdentifiers, PluginType } from '@theia/plugin-ext';
 import { LocalPluginDeployerResolver } from '@theia/plugin-ext/lib/main/node/resolvers/local-plugin-deployer-resolver';
-import { PluginUninstallationManager } from '@theia/plugin-ext/lib/main/node/plugin-uninstallation-manager';
 import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment.js';
 import { isVSCodePluginFile } from './plugin-vscode-file-handler.js';
 import { existsInDeploymentDir, replaceInDeploymentDir, unpackToDeploymentDir, extractExtensionIdentityFromVsix } from './plugin-vscode-utils.js';
@@ -32,7 +31,6 @@ export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerReso
 
     @inject(PluginVSCodeEnvironment) protected readonly environment: PluginVSCodeEnvironment;
     @inject(PluginDeployerHandler) protected readonly pluginDeployerHandler: PluginDeployerHandler;
-    @inject(PluginUninstallationManager) protected readonly uninstallationManager: PluginUninstallationManager;
 
     @inject(ILogger) @named('plugin-ext-vscode:LocalVSIXFilePluginDeployerResolver')
     protected override readonly logger: ILogger;
@@ -48,7 +46,7 @@ export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerReso
         return super.accept(pluginId) && isVSCodePluginFile(pluginId);
     }
 
-    async resolveFromLocalPath(pluginResolverContext: PluginDeployerResolverContext, localPath: string, options?: PluginDeployOptions): Promise<void> {
+    async resolveFromLocalPath(pluginResolverContext: PluginDeployerResolverContext, localPath: string): Promise<void> {
         // Extract the true extension identity from the VSIX package.json
         // This prevents duplicate installations when the same extension is installed from VSIX files with different filenames
         // See: https://github.com/eclipse-theia/theia/issues/16845
@@ -72,19 +70,10 @@ export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerReso
 
         const versionedId = PluginIdentifiers.componentsToVersionedId(components);
         const unversionedId = PluginIdentifiers.componentsToUnversionedId(components);
-        const { version } = components;
 
-        // Check if the deployment directory already exists on disk
+        // As in VS Code, a VSIX always replaces the installed extension: the same version, an upgrade or a downgrade.
+        // "Install from VSIX..." asks the user before it calls the install.
         const existsOnDisk = await existsInDeploymentDir(this.environment, versionedId);
-        if (options?.ifInstalled !== 'replace') {
-            const installedVersion = existsOnDisk ? version : options?.ifInstalled === 'fail' ? this.findInstalledVersion(unversionedId) : undefined;
-            if (installedVersion) {
-                throw DuplicateExtensionError.create(
-                    `Extension ${unversionedId} is already installed (version: ${installedVersion}).`,
-                    { id: unversionedId, installedVersion, version }
-                );
-            }
-        }
 
         // The handler skips IDs that it knows and would keep the old metadata, so a redeploy of this version always needs an undeploy.
         // The handler also keeps that metadata for a version that it uninstalled, for example after an upgrade, although the directory is gone.
@@ -112,14 +101,5 @@ export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerReso
             return;
         }
         await this.pluginDeployerHandler.undeployPlugin(versionedId);
-    }
-
-    /**
-     * @returns the version of a deployed user extension. Ignores built-in extensions and extensions that are uninstalled and wait for a restart.
-     */
-    protected findInstalledVersion(unversionedId: PluginIdentifiers.UnversionedId): string | undefined {
-        return this.pluginDeployerHandler.getDeployedPluginsById(unversionedId)
-            .find(plugin => plugin.type === PluginType.User && !this.uninstallationManager.isUninstalled(PluginIdentifiers.componentsToVersionedId(plugin.metadata.model)))
-            ?.metadata.model.version;
     }
 }
