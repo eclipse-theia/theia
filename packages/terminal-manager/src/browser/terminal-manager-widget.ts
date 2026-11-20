@@ -172,7 +172,8 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
             created: nextTerminalCreationToken(),
             ...options,
         } as TerminalWidgetOptions);
-        terminalWidget.start();
+        // The widget may be created for a page or a view that is not visible yet, e.g. the default page in a collapsed panel at start-up
+        terminalWidget.startWhenShown();
         return terminalWidget;
     }
 

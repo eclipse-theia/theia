@@ -35,19 +35,28 @@ describe('TerminalFrontendContribution', () => {
         disableJSDOM();
     });
 
-    it('adds the terminal of the default layout without waiting for its process to start', async () => {
+    it('adds the terminal of the default layout without waiting for the preferences or starting its process', async () => {
         const contribution = new TerminalFrontendContribution();
-        const started = new Deferred<void>();
-        const widget = { start: () => started.promise } as unknown as TerminalWidget;
+        const preferencesReady = new Deferred<void>();
+        const startRequested = new Deferred<void>();
+        let started = false;
+        const widget = {
+            start: async () => { started = true; },
+            startWhenShown: () => startRequested.resolve()
+        } as unknown as TerminalWidget;
         const added: unknown[] = [];
         Object.assign(contribution, {
-            preferenceService: { ready: Promise.resolve(), get: () => undefined },
-            shell: { addWidget: (candidate: unknown) => { added.push(candidate); } },
+            preferenceService: { ready: preferencesReady.promise, get: () => undefined },
+            shell: { addWidget: (candidate: unknown, options: unknown) => { added.push([candidate, options]); } },
             logger: new MockLogger(),
             newTerminal: async () => widget
         });
-        await contribution.initializeLayout();
-        expect(added).to.deep.equal([widget]);
-        started.resolve();
+        contribution.initializeLayout();
+        expect(added).to.deep.equal([]);
+
+        preferencesReady.resolve();
+        await startRequested.promise;
+        expect(added).to.deep.equal([[widget, { area: 'bottom' }]]);
+        expect(started).to.equal(false);
     });
 });
