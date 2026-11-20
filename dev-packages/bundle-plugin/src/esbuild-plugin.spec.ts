@@ -175,6 +175,50 @@ describe('nativeDependenciesPlugin', () => {
                 .to.equal('/opt/x.asar/resources/app.asar.unpacked/lib/backend/native/rg');
         });
     });
+
+    describe('copied executables', () => {
+
+        let root: string;
+        let cwd: string;
+
+        beforeEach(() => {
+            root = fs.mkdtempSync(path.join(os.tmpdir(), 'theia-native-dependencies-'));
+            cwd = process.cwd();
+            process.chdir(root);
+        });
+
+        afterEach(() => {
+            process.chdir(cwd);
+            fs.rmSync(root, { recursive: true, force: true });
+        });
+
+        it('replaces an existing executable rather than overwriting it in place', async () => {
+            // macOS kills a process started from an executable that was rewritten in place, see #18411.
+            const fileName = process.platform === 'win32' ? 'rg.exe' : 'rg';
+            const ripgrepPackage = path.join(root, 'node_modules', '@vscode', `ripgrep-${process.platform}-${process.arch}`);
+            fs.mkdirSync(path.join(ripgrepPackage, 'bin'), { recursive: true });
+            fs.writeFileSync(path.join(ripgrepPackage, 'package.json'), JSON.stringify({ name: `@vscode/ripgrep-${process.platform}-${process.arch}` }));
+            fs.writeFileSync(path.join(ripgrepPackage, 'bin', fileName), 'current ripgrep');
+
+            const outdir = path.join(root, 'lib', 'backend');
+            const target = path.join(outdir, 'native', fileName);
+            fs.mkdirSync(path.dirname(target), { recursive: true });
+            fs.writeFileSync(target, 'ripgrep of the previous build');
+            const previous = fs.statSync(target);
+
+            const { build, onEnd } = createFakeBuild(outdir);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            nativeDependenciesPlugin({ trash: false, ripgrep: true, pty: false, nativeBindings: {} }).setup(build as any);
+            await onEnd[0]({ errors: [] });
+
+            expect(fs.readFileSync(target, 'utf8')).to.equal('current ripgrep');
+            expect(fs.statSync(target).ino, 'the target must be a new file').to.not.equal(previous.ino);
+            expect(fs.readdirSync(path.dirname(target)), 'no temporary file may be left behind').to.deep.equal([fileName]);
+            if (process.platform !== 'win32') {
+                expect(fs.statSync(target).mode & 0o111, 'the target must be executable').to.equal(0o111);
+            }
+        });
+    });
 });
 
 describe('compressAssetsPlugin', () => {
