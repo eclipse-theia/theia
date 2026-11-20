@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
+import { environment } from '@theia/application-package/lib/environment';
 import { OS, OSBackendProvider } from '../../common/os.js';
 import { PreloadContribution } from './preloader.js';
 
@@ -25,6 +26,10 @@ export class OSPreloadContribution implements PreloadContribution {
     protected readonly osBackendProvider: OSBackendProvider;
 
     async initialize(): Promise<void> {
+        if (this.isBackendLocal()) {
+            // `OS.backend` describes the frontend's OS by default, which is the backend's as well.
+            return;
+        }
         const osType = await this.osBackendProvider.getBackendOS();
         const isWindows = osType === 'Windows';
         const isOSX = osType === 'OSX';
@@ -32,6 +37,15 @@ export class OSPreloadContribution implements PreloadContribution {
         OS.backend.isWindows = isWindows;
         OS.backend.type = () => osType;
         OS.backend.EOL = isWindows ? '\r\n' : '\n';
+    }
+
+    /**
+     * Whether the backend runs on the frontend's machine, so that the preload does not need to ask for its OS.
+     * That is the case in an Electron window, unless it is connected to a remote backend, which its `localPort`
+     * search parameter indicates.
+     */
+    protected isBackendLocal(): boolean {
+        return environment.electron.is() && !new URL(location.href).searchParams.has('localPort');
     }
 
 }
