@@ -44,6 +44,12 @@ const GEMINI_4_REASONING_SUPPORT: ReasoningSupport = {
     defaultLevel: 'auto'
 };
 
+// Gemini 4 Neon and Hydrogen additionally accept `xhigh`; Argon and Carbon reject it.
+const GEMINI_4_XHIGH_REASONING_SUPPORT: ReasoningSupport = {
+    supportedLevels: ['low', 'medium', 'high', 'xhigh', 'auto'],
+    defaultLevel: 'auto'
+};
+
 /**
  * Maps a Gemini model id to its reasoning API shape (Gemini 3 and 4 → `effort`, Gemini 2.5 → `budget`).
  * Inferred from the id because /v1beta/models only exposes a single `thinking` boolean.
@@ -60,6 +66,9 @@ export function reasoningApiFromModelId(modelId: string): ReasoningApi | undefin
 
 /** The reasoning levels of a Gemini model that supports reasoning, inferred from its id. */
 export function reasoningSupportFromModelId(modelId: string): ReasoningSupport {
+    if (/^gemini-4-(?:neon|hydrogen)(?:-|$)/i.test(modelId)) {
+        return GEMINI_4_XHIGH_REASONING_SUPPORT;
+    }
     return /^gemini-4(?:\.|-)/i.test(modelId) ? GEMINI_4_REASONING_SUPPORT : GEMINI_REASONING_SUPPORT;
 }
 

@@ -59,6 +59,8 @@ const GPT6_ASTRA_SOL_REASONING_SUPPORT: ReasoningSupport = {
 const OPENAI_MODEL_FAMILIES: ReadonlyArray<readonly [prefix: string, defaults: OpenAiModelDefaults]> = [
     ['gpt-6-astra', { contextWindow: 1_050_000, reasoningSupport: GPT6_ASTRA_SOL_REASONING_SUPPORT }],
     ['gpt-6.1-sol', { contextWindow: 1_050_000, reasoningSupport: GPT6_ASTRA_SOL_REASONING_SUPPORT }],
+    ['gpt-6.2-astra', { contextWindow: 1_050_000, reasoningSupport: GPT6_ASTRA_SOL_REASONING_SUPPORT }],
+    ['gpt-6.2-sol', { contextWindow: 1_050_000, reasoningSupport: GPT6_ASTRA_SOL_REASONING_SUPPORT }],
     ['gpt-6', { contextWindow: 1_050_000, reasoningSupport: GPT6_REASONING_SUPPORT }],
     ['gpt-5.6', { contextWindow: 1_050_000, reasoningSupport: GPT6_REASONING_SUPPORT }],
     ['gpt-5.5', { contextWindow: 1_050_000, reasoningSupport: GPT5_REASONING_SUPPORT }],

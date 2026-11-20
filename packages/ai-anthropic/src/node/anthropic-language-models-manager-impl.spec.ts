@@ -306,6 +306,11 @@ describe('AnthropicLanguageModelsManagerImpl - metadata derivation', () => {
         it('returns true for claude-opus-5-0 (newer major version)', () => {
             expect(capabilityFor('claude-opus-5-0')).to.equal(true);
         });
+        for (const modelId of ['claude-fable-5', 'claude-fable-5-2', 'claude-mythos-5', 'claude-mythos-5-2']) {
+            it(`returns true for ${modelId} (Fable and Mythos support compaction since their first release)`, () => {
+                expect(capabilityFor(modelId)).to.equal(true);
+            });
+        }
         it('returns false for claude-3-opus-20240229 (old date-style id)', () => {
             expect(capabilityFor('claude-3-opus-20240229')).to.equal(false);
         });
