@@ -23,7 +23,8 @@ import { nls, PreferenceService } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import {
-    CHATGPT_ENABLED_PREF, CHATGPT_PROVIDER_ID, ChatGptAuthService, ChatGptLanguageModelsManager, ChatGptModelDescription, MODELS_PREF,
+    CHATGPT_AUTHENTICATION_MODE_PREF, ChatGptAuthenticationMode, CHATGPT_ENABLED_PREF, CHATGPT_PROVIDER_ID,
+    ChatGptAuthService, ChatGptLanguageModelsManager, ChatGptModelDescription, MODELS_PREF,
     SERVER_SIDE_COMPACTION_PREF, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF
 } from '../common/index.js';
 import { ChatGptCommands } from './chatgpt-command-contribution.js';
@@ -52,6 +53,7 @@ export class ChatGptFrontendApplicationContribution implements FrontendApplicati
     @inject(ModelDiscoveryStatusService)
     protected discoveryStatus: ModelDiscoveryStatusService;
 
+    protected modeUpdate: Promise<void> = Promise.resolve();
     protected registeredModels: string[] = [];
     protected refreshGeneration = 0;
     /** Serializes the refreshes, so a slow one cannot register models the next one already dropped. */
@@ -65,11 +67,16 @@ export class ChatGptFrontendApplicationContribution implements FrontendApplicati
                 modelIdPrefix: CHATGPT_PROVIDER_ID,
                 refresh: () => this.refreshModels()
             });
+            this.updateAuthenticationMode();
             this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
             this.refreshModels();
 
             this.preferenceService.onPreferenceChanged(event => {
-                if (event.preferenceName === MODELS_PREF || event.preferenceName === CHATGPT_ENABLED_PREF) {
+                if (event.preferenceName === CHATGPT_AUTHENTICATION_MODE_PREF) {
+                    this.updateAuthenticationMode();
+                    this.removeRegisteredModels();
+                    this.refreshModels();
+                } else if (event.preferenceName === MODELS_PREF || event.preferenceName === CHATGPT_ENABLED_PREF) {
                     if (!this.isEnabled()) {
                         this.removeRegisteredModels();
                         this.updateDisabledStatus();
@@ -94,15 +101,25 @@ export class ChatGptFrontendApplicationContribution implements FrontendApplicati
 
             // Signing in or out changes the credentials, the availability of the models and which models are granted.
             this.authService.onAuthStateChanged(state => {
-                if (!state.isAuthenticated) {
+                if (!state.isAuthenticated || state.canUseChatGptPlan === false) {
                     this.removeRegisteredModels();
                     if (this.isEnabled()) {
-                        this.updateDiscoveryStatus(false, false, []);
+                        if (state.isAuthenticated && state.canUseChatGptPlan === false) {
+                            this.updateSharingDisabledStatus();
+                        } else if (!state.isAuthenticated) {
+                            this.updateDiscoveryStatus(false, false, []);
+                        }
                     }
                 }
                 this.refreshModels();
             });
         });
+    }
+
+    protected updateAuthenticationMode(): void {
+        this.modeUpdate = this.manager.setAuthenticationMode(this.preferenceService.get<ChatGptAuthenticationMode>(CHATGPT_AUTHENTICATION_MODE_PREF, 'codex'));
+        // The refresh reports the error, but an older discovery may still be awaiting its response.
+        this.modeUpdate.catch(() => undefined);
     }
 
     protected refreshModels(): Promise<void> {
@@ -123,19 +140,37 @@ export class ChatGptFrontendApplicationContribution implements FrontendApplicati
     }
 
     protected async doRefreshModels(generation: number): Promise<void> {
+        try {
+            await this.modeUpdate;
+        } catch {
+            if (generation !== this.refreshGeneration) {
+                return;
+            }
+            // A later login may have recovered a failed durable logout. Reconfirm the mode instead of retaining that failure forever.
+            this.updateAuthenticationMode();
+            await this.modeUpdate;
+        }
+        if (generation !== this.refreshGeneration) {
+            return;
+        }
         if (!this.isEnabled()) {
             this.removeRegisteredModels();
             this.updateDisabledStatus();
             return;
         }
         const configured = this.preferenceService.get<string[]>(MODELS_PREF, []);
-        const { isAuthenticated } = await this.authService.getAuthState();
+        const { isAuthenticated, canUseChatGptPlan } = await this.authService.getAuthState();
         if (generation !== this.refreshGeneration) {
             return;
         }
         if (!isAuthenticated) {
             this.removeRegisteredModels();
             this.updateDiscoveryStatus(false, false, []);
+            return;
+        }
+        if (canUseChatGptPlan === false) {
+            this.removeRegisteredModels();
+            this.updateSharingDisabledStatus();
             return;
         }
         if (!configured.length) {
@@ -187,6 +222,19 @@ export class ChatGptFrontendApplicationContribution implements FrontendApplicati
             lastFetch: undefined,
             fromCache: undefined,
             action: undefined
+        });
+    }
+
+    protected updateSharingDisabledStatus(): void {
+        this.discoveryStatus.updateStatus(CHATGPT_DISCOVERY_PROVIDER_ID, {
+            state: 'no-credentials',
+            stateLabel: nls.localize('theia/ai/chatgpt/discovery/sharingDisabled', 'Token sharing disabled'),
+            message: nls.localize('theia/ai/chatgpt/discovery/enableSharing',
+                'Connected to ChatGPT, but token sharing is not enabled. Reconnect to enable it for this account.'),
+            discovered: [],
+            lastFetch: undefined,
+            fromCache: undefined,
+            action: { label: nls.localizeByDefault('Reconnect'), commandId: ChatGptCommands.SIGN_IN.id }
         });
     }
 

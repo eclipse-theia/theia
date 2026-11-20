@@ -134,7 +134,7 @@ export class OpenAiResponseApiUtils {
                     input,
                     ...sentSettings,
                     stream: true
-                }, cancellationToken));
+                }, cancellationToken), cancellationToken);
                 return { stream: this.createSimpleResponseApiStreamIterator(stream, cancellationToken) };
             } else {
                 const response = await this.sendWithReasoningSummaryFallback(effectiveSettings, modelId, sentSettings => openai.responses.create({
@@ -142,7 +142,7 @@ export class OpenAiResponseApiUtils {
                     instructions,
                     input,
                     ...sentSettings
-                }));
+                }), cancellationToken);
 
                 return {
                     text: response.output_text || '',
@@ -252,16 +252,18 @@ export class OpenAiResponseApiUtils {
     async sendWithReasoningSummaryFallback<T>(
         settings: Record<string, unknown>,
         modelId: string,
-        send: (settings: Record<string, unknown>) => Promise<T>
+        send: (settings: Record<string, unknown>) => Promise<T>,
+        cancellationToken?: CancellationToken
     ): Promise<T> {
         const sentSettings = this.withoutRejectedReasoningSummary(settings, modelId);
         try {
             return await send(sentSettings);
         } catch (error) {
-            if (!this.handleReasoningSummaryRejection(error, sentSettings, modelId)) {
-                throw error;
+            if (!cancellationToken?.isCancellationRequested && this.handleReasoningSummaryRejection(error, sentSettings, modelId)) {
+                return this.sendWithReasoningSummaryFallback(settings, modelId, send, cancellationToken);
             }
-            return send(this.withoutRejectedReasoningSummary(settings, modelId));
+            this.logProviderError(error, modelId, cancellationToken);
+            throw error;
         }
     }
 
@@ -271,26 +273,58 @@ export class OpenAiResponseApiUtils {
     async *streamWithReasoningSummaryFallback(
         settings: Record<string, unknown>,
         modelId: string,
-        open: (settings: Record<string, unknown>) => AsyncIterable<ResponseStreamEvent>
+        open: (settings: Record<string, unknown>) => AsyncIterable<ResponseStreamEvent>,
+        cancellationToken?: CancellationToken
     ): AsyncIterable<ResponseStreamEvent> {
         const sentSettings = this.withoutRejectedReasoningSummary(settings, modelId);
         let received = false;
+        const serverToolTypes = new Set<string>();
         try {
             for await (const event of open(sentSettings)) {
+                if (cancellationToken?.isCancellationRequested) {
+                    throw new CancellationError();
+                }
                 received = true;
+                if ((event.type === 'response.output_item.added' || event.type === 'response.output_item.done')
+                    && (event.item.type === 'web_search_call' || event.item.type === 'tool_search_call')) {
+                    serverToolTypes.add(event.item.type);
+                }
                 yield event;
             }
         } catch (error) {
-            if (received || !this.handleReasoningSummaryRejection(error, sentSettings, modelId)) {
-                throw error;
+            if (!received && !cancellationToken?.isCancellationRequested && this.handleReasoningSummaryRejection(error, sentSettings, modelId)) {
+                yield* this.streamWithReasoningSummaryFallback(settings, modelId, open, cancellationToken);
+                return;
             }
-            yield* open(this.withoutRejectedReasoningSummary(settings, modelId));
+            this.logProviderError(error, modelId, cancellationToken, [...serverToolTypes]);
+            throw error;
         }
+    }
+
+    /** Copy only scalar diagnostics, never SDK headers or arbitrary response bodies. */
+    protected logProviderError(error: unknown, modelId: string, cancellationToken?: CancellationToken, serverToolTypes: string[] = []): void {
+        if (cancellationToken?.isCancellationRequested || error instanceof CancellationError || error instanceof OpenAI.APIUserAbortError
+            || (isObject(error) && error.name === 'AbortError')) {
+            return;
+        }
+        const metadata: Record<string, unknown> = { modelId, provider: this.compactionProvider };
+        if (serverToolTypes.length) {
+            metadata.serverToolTypes = serverToolTypes;
+        }
+        if (isObject(error)) {
+            for (const key of ['name', 'message', 'status', 'code', 'type', 'param', 'request_id', 'sequence_number', 'response_id', 'event_type']) {
+                const value = error[key];
+                if (typeof value === 'string' || typeof value === 'number') {
+                    metadata[key] = value;
+                }
+            }
+        }
+        this.logger.error('Response API provider failure:', metadata);
     }
 
     streamResponse(openai: OpenAI, parameters: ResponseCreateParamsStreaming, cancellationToken?: CancellationToken): AsyncIterable<ResponseStreamEvent> {
         return this.streamingRetry.retry(
-            async signal => openai.responses.create(parameters, { signal }),
+            signal => openai.responses.create(parameters, { signal }),
             openai.maxRetries ?? 3,
             event => ['response.created', 'response.queued', 'response.in_progress', 'response.metadata'].includes(event.type),
             cancellationToken
@@ -302,7 +336,6 @@ export class OpenAiResponseApiUtils {
         cancellationToken?: CancellationToken
     ): AsyncIterable<LanguageModelStreamResponsePart> {
 
-        const logger = this.logger;
         const compactionProvider = this.compactionProvider;
         const reasoningSummaryThought = (event: ResponseStreamEvent): ThinkingResponsePart | undefined => this.reasoningSummaryThought(event);
 
@@ -351,11 +384,6 @@ export class OpenAiResponseApiUtils {
                             }
                         }
                     }
-                } catch (error) {
-                    if (!cancellationToken?.isCancellationRequested && !(error instanceof CancellationError)) {
-                        logger.error('Response API error:', error);
-                    }
-                    throw error;
                 } finally {
                     // Yield partial usage data when stream is aborted before response.completed
                     if (!usageYielded && lastUsage && (lastUsage.input_tokens > 0 || lastUsage.output_tokens > 0)) {
@@ -583,9 +611,6 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
             this.dispose();
         } catch (error) {
             if (!this.done) {
-                if (!this.cancellationToken?.isCancellationRequested && !(error instanceof CancellationError)) {
-                    this.logger.error('Response API error:', error);
-                }
                 this.terminalError = error instanceof Error ? error : new Error(String(error));
                 this.dispose();
             }
@@ -606,7 +631,7 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
                 tools: this.tools,
                 ...settings,
                 stream: true
-            }, this.streamCancellation.token));
+            }, this.streamCancellation.token), this.streamCancellation.token);
 
             for await (const event of stream) {
                 if (this.done || this.cancellationToken?.isCancellationRequested) {
@@ -627,7 +652,7 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
             input: this.currentInput,
             tools: this.tools,
             ...settings
-        }));
+        }), this.cancellationToken);
 
         // Record token usage
         if (response.usage) {
@@ -889,8 +914,13 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
 
     protected handleFunctionCallDone(functionCall: ResponseFunctionToolCall): void {
         if (!functionCall.id) { this.logger.warn('Unexpected absence of ID for call ID', functionCall.call_id); return; }
-        const toolCall = this.currentToolCalls.get(functionCall.id);
-        if (toolCall) {
+        let toolCall = this.currentToolCalls.get(functionCall.id);
+        if (!toolCall) {
+            toolCall = this.createToolCall(functionCall, functionCall.id);
+            toolCall.reasoningItems = this.pendingReasoningItems.splice(0);
+            this.currentToolCalls.set(functionCall.id, toolCall);
+            this.handleFunctionCall(toolCall, false);
+        } else {
             toolCall.name = functionCall.name || toolCall.name;
             toolCall.arguments = functionCall.arguments || toolCall.arguments;
             if (!toolCall.call_id && functionCall.call_id) {

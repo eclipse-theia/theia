@@ -15,16 +15,15 @@
 // *****************************************************************************
 
 import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
-import { getProxyUrl } from '@theia/ai-core/lib/node';
 import { ILogger, nls } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-model-utils';
 import { getOpenAiModelDefaults } from '@theia/ai-openai/lib/node/openai-model-defaults';
-import { CHATGPT_RESPONSES_BASE_URL, ChatGptLanguageModelsManager, ChatGptModelDescription } from '../common/index.js';
+import { ChatGptAuthenticationMode, ChatGptLanguageModelsManager, ChatGptModelDescription } from '../common/index.js';
 import { ChatGptBackendAuthService } from './chatgpt-auth-service.js';
 import { ChatGptModel } from './chatgpt-language-model.js';
 import { ChatGptModelCatalog } from './chatgpt-model-catalog.js';
-import { ChatGptResponseApiUtils } from './chatgpt-response-api-utils.js';
+import { ChatGptCodexResponseApiUtils, ChatGptResponseApiUtils } from './chatgpt-response-api-utils.js';
 
 @injectable()
 export class ChatGptLanguageModelsManagerImpl implements ChatGptLanguageModelsManager {
@@ -37,6 +36,9 @@ export class ChatGptLanguageModelsManagerImpl implements ChatGptLanguageModelsMa
 
     @inject(ChatGptResponseApiUtils)
     protected readonly responseApiUtils: ChatGptResponseApiUtils;
+
+    @inject(ChatGptCodexResponseApiUtils)
+    protected readonly codexResponseApiUtils: ChatGptCodexResponseApiUtils;
 
     @inject(OpenAiModelUtils)
     protected readonly modelUtils: OpenAiModelUtils;
@@ -53,13 +55,17 @@ export class ChatGptLanguageModelsManagerImpl implements ChatGptLanguageModelsMa
         this.proxyUrl = proxyUrl || undefined;
     }
 
+    setAuthenticationMode(mode: ChatGptAuthenticationMode): Promise<void> {
+        return this.authService.setAuthenticationMode(mode);
+    }
+
     getAvailableModels(): Promise<string[]> {
         return this.modelCatalog.getAvailableModels();
     }
 
     async createOrUpdateLanguageModels(...modelDescriptions: ChatGptModelDescription[]): Promise<void> {
         const status = await this.calculateStatus();
-        const proxy = getProxyUrl(CHATGPT_RESPONSES_BASE_URL, this.proxyUrl);
+        const proxy = this.proxyUrl;
         for (const description of modelDescriptions) {
             // The ChatGPT plan serves OpenAI models, so their published capabilities apply.
             const defaults = getOpenAiModelDefaults(description.model);
@@ -85,8 +91,8 @@ export class ChatGptLanguageModelsManagerImpl implements ChatGptLanguageModelsMa
                         description.id,
                         description.model,
                         status,
-                        () => this.authService.getCredentials(),
-                        this.responseApiUtils,
+                        (clientId, sessionId) => this.authService.getCredentials(clientId, sessionId),
+                        { oss: this.responseApiUtils, codex: this.codexResponseApiUtils },
                         this.modelUtils,
                         description.maxRetries,
                         proxy,
@@ -101,9 +107,13 @@ export class ChatGptLanguageModelsManagerImpl implements ChatGptLanguageModelsMa
     }
 
     protected async calculateStatus(): Promise<LanguageModelStatus> {
-        return (await this.authService.getAuthState()).isAuthenticated
+        const state = await this.authService.getAuthState();
+        if (!state.isAuthenticated) {
+            return { status: 'unavailable', message: nls.localize('theia/ai/chatgpt/notSignedIn', 'Not signed in with ChatGPT') };
+        }
+        return state.canUseChatGptPlan !== false
             ? { status: 'ready' }
-            : { status: 'unavailable', message: nls.localize('theia/ai/chatgpt/notSignedIn', 'Not signed in with ChatGPT') };
+            : { status: 'unavailable', message: nls.localize('theia/ai/chatgpt/sharingDisabled', 'ChatGPT token sharing is not enabled') };
     }
 
     removeLanguageModels(...modelIds: string[]): void {

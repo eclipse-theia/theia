@@ -223,6 +223,32 @@ describe('AbstractChatAgent.invoke reasoning error recovery', () => {
     });
 });
 
+describe('AbstractChatAgent.sendLlmRequest session metadata', () => {
+    for (const parentSessionId of [undefined, 'parent-session']) {
+        it(`forwards session metadata for ${parentSessionId ? 'a delegated' : 'a standalone'} chat`, async () => {
+            let capturedRequest: UserRequest | undefined;
+            const agent = new class extends TestChatAgent {
+                protected override languageModelService = {
+                    async sendRequest(_model: LanguageModel, request: UserRequest): Promise<LanguageModelResponse> {
+                        capturedRequest = request;
+                        return { text: '' };
+                    }
+                } as unknown as LanguageModelService;
+            }();
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
+            model.parentSessionId = parentSessionId;
+            try {
+                const request = model.addRequest(createParsedRequest('Hello'));
+                await agent.exposeSendLlmRequest(request, { id: 'test-model' } as LanguageModel);
+                expect(capturedRequest).to.include({ sessionId: model.id, requestId: request.id });
+                expect(capturedRequest!.parentSessionId).to.equal(parentSessionId);
+            } finally {
+                model.dispose();
+            }
+        });
+    }
+});
+
 describe('AbstractChatAgent.sendLlmRequest server tools', () => {
 
     const ANTHROPIC_SERVER_TOOLS: ServerToolDescriptor[] = [

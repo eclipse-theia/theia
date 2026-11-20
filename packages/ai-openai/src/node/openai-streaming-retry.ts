@@ -27,13 +27,17 @@ export class OpenAiStreamingRetry {
         }
         const error = event.type === 'response.failed' && isObject(event.response) ? event.response.error
             : event.type === 'error' ? event : undefined;
-        if (!isObject(error)) {
-            return event.type === 'response.failed' ? new Error('OpenAI response failed.') : undefined;
+        if (!isObject(error) && event.type !== 'response.failed') {
+            return undefined;
         }
-        return Object.assign(new Error(typeof error.message === 'string' ? error.message : 'OpenAI response failed.'), {
-            code: error.code,
-            type: error.type === 'error' ? undefined : error.type,
-            param: error.param
+        const details = isObject(error) ? error : {};
+        return Object.assign(new Error(typeof details.message === 'string' ? details.message : 'OpenAI response failed.'), {
+            code: details.code,
+            type: details.type === 'error' ? undefined : details.type,
+            param: details.param,
+            sequence_number: event.sequence_number,
+            response_id: event.type === 'response.failed' && isObject(event.response) ? event.response.id : event.response_id,
+            event_type: event.type
         });
     }
 
