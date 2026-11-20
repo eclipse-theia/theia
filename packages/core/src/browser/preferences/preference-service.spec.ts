@@ -109,6 +109,20 @@ describe('Preference Service', () => {
         expect(prefService.get('test.number')).equals(0);
     });
 
+    it('should return the schema default right after construction', () => {
+        const container = createTestContainer();
+        container.get<PreferenceSchemaService>(PreferenceSchemaService).addSchema({
+            properties: {
+                'test.default': {
+                    type: 'string',
+                    default: 'fallback'
+                }
+            }
+        });
+        const service = container.get<PreferenceService>(PreferenceService);
+        expect(service.get('test.default')).equals('fallback');
+    });
+
     it('should throw a TypeError if the preference (reference object) is modified', () => {
         prefSchema.addSchema({
             scope: PreferenceScope.Folder,
