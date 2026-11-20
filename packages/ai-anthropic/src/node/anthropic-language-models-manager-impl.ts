@@ -223,12 +223,12 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
     }
 
     /**
-     * Server-side compaction (`compact_20260112`) is available on Claude Opus and Sonnet 4.6 and later.
+     * Server-side compaction (`compact_20260112`) is available on Claude Opus and Sonnet 4.6 and later, and on all Claude Fable and Mythos models.
      * Heuristic over the model id; override to read the capability from the `/v1/models` endpoint or for custom endpoints.
      */
     protected deriveServerSideCompactionSupport(description: AnthropicModelDescription): boolean {
         // The minor segment is optional: dateless major releases omit it (e.g. claude-opus-5, claude-sonnet-5).
-        const match = /(opus|sonnet)-(\d+)(?:-(\d+))?/.exec(description.model);
+        const match = /(opus|sonnet|fable|mythos)-(\d+)(?:-(\d+))?/.exec(description.model);
         if (!match) {
             return false;
         }

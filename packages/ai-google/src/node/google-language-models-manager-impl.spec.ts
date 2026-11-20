@@ -97,6 +97,8 @@ describe('reasoningApiFromModelId', () => {
 
     it('maps Gemini 4 family ids to "effort"', () => {
         expect(reasoningApiFromModelId('gemini-4-argon')).to.equal('effort');
+        expect(reasoningApiFromModelId('gemini-4-neon')).to.equal('effort');
+        expect(reasoningApiFromModelId('gemini-4-hydrogen')).to.equal('effort');
         expect(reasoningApiFromModelId('gemini-4.1-pro')).to.equal('effort');
     });
 
@@ -126,6 +128,15 @@ describe('reasoningSupportFromModelId', () => {
         expect(supportedLevels).to.include.members(['low', 'medium', 'high', 'auto']);
         expect(supportedLevels).to.not.include('minimal');
         expect(supportedLevels).to.not.include('off');
+    });
+
+    it('offers "xhigh" only for Gemini 4 Neon and Hydrogen', () => {
+        for (const model of ['gemini-4-neon', 'gemini-4-hydrogen']) {
+            expect(reasoningSupportFromModelId(model).supportedLevels, model).to.deep.equal(['low', 'medium', 'high', 'xhigh', 'auto']);
+        }
+        for (const model of ['gemini-4-argon', 'gemini-4-carbon']) {
+            expect(reasoningSupportFromModelId(model).supportedLevels, model).to.deep.equal(['low', 'medium', 'high', 'auto']);
+        }
     });
 
     it('keeps the full range of levels for Gemini 3 and 2.5', () => {
