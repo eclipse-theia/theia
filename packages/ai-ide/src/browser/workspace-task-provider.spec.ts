@@ -302,6 +302,30 @@ describe('Workspace Task Provider Cancellation Tests', () => {
         expect(tasks[2]).to.deep.equal({ label: 'global-task', workspaceRoot: GLOBAL_SCOPE_TOKEN });
     });
 
+    it('TaskListProvider should describe what each task executes', async () => {
+        mockTaskService.getTasks = async () => [
+            { label: 'npm: test', _scope: 'file:///home/user/frontend', type: 'npm', script: 'test', detail: 'mocha src/**/*.spec.ts' } as TaskConfiguration,
+            {
+                label: 'lint', _scope: 'file:///home/user/frontend', type: 'shell',
+                command: 'eslint', args: ['--fix', { value: 'src dir', quoting: 'escape' }]
+            } as TaskConfiguration,
+            { label: 'build', _scope: 'file:///home/user/frontend', type: 'process', command: 'tsc' } as TaskConfiguration,
+            { label: 'compound', _scope: 'file:///home/user/frontend', type: 'shell', dependsOn: ['build', 'lint'] } as TaskConfiguration
+        ];
+
+        const taskListProvider = container.get(TaskListProvider);
+        const handler = taskListProvider.getTool().handler;
+        const result = await handler(JSON.stringify({ filter: '' }), mockCtx);
+
+        const tasks = JSON.parse(result as string);
+        expect(tasks).to.deep.equal([
+            { label: 'npm: test', workspaceRoot: 'frontend', detail: 'mocha src/**/*.spec.ts' },
+            { label: 'lint', workspaceRoot: 'frontend', detail: 'eslint --fix src dir' },
+            { label: 'build', workspaceRoot: 'frontend', detail: 'tsc' },
+            { label: 'compound', workspaceRoot: 'frontend' }
+        ]);
+    });
+
     it('TaskRunnerProvider should disambiguate workspace-scoped task via scope token', async () => {
         mockTaskService.getTasks = async () => [
             { label: 'build', _scope: 'file:///home/user/frontend', type: 'shell' } as TaskConfiguration,
