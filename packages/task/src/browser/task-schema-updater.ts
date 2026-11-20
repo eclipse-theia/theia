@@ -84,16 +84,23 @@ export class TaskSchemaUpdater implements JsonSchemaContribution {
         taskConfigurationSchema.anyOf = [processTaskConfigurationSchema, ...customizedDetectedTasks, ...customSchemas];
 
         const schema = this.getTaskSchema();
-        this.doValidate = new Ajv().compile(schema);
+        // The validator is compiled when it is needed: the schema is updated for every task definition and
+        // problem matcher that is registered, most of them during the start-up.
+        this.validationSchema = schema;
+        this.doValidate = undefined;
         this.jsonSchemaData.setSchema(this.uri, schema);
         this.onDidChangeTaskSchemaEmitter.fire(undefined);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     validate(data: any): boolean {
+        if (!this.doValidate && this.validationSchema) {
+            this.doValidate = new Ajv().compile(this.validationSchema);
+        }
         return !!this.doValidate && !!this.doValidate(data);
     }
     protected doValidate: Ajv.ValidateFunction | undefined;
+    protected validationSchema: IJSONSchema | undefined;
 
     /**
      * Adds given task schema to `taskConfigurationSchema` as `oneOf` subschema.

@@ -1179,7 +1179,8 @@ export interface WorkspaceData {
 export namespace WorkspaceData {
     // The `name` of a folder is not validated when loading, so that a workspace file with an invalid name still loads,
     // and the folder falls back to its folder name, as in VS Code. The editor still validates it against `workspaceSchema`.
-    const validateSchema = new Ajv().compile(withoutFolderName(workspaceSchema));
+    // Compiled on first use: compiling it when the module is loaded costs about 20 ms of the frontend's start-up.
+    let validateSchema: Ajv.ValidateFunction | undefined;
 
     function withoutFolderName(schema: IJSONSchema): IJSONSchema {
         const copy: IJSONSchema = structuredClone(schema);
@@ -1192,6 +1193,7 @@ export namespace WorkspaceData {
     }
 
     export function is(data: unknown): data is WorkspaceData {
+        validateSchema ??= new Ajv().compile(withoutFolderName(workspaceSchema));
         return !!validateSchema(data);
     }
 

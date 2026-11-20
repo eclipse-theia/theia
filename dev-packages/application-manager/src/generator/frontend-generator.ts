@@ -95,9 +95,51 @@ self.MonacoEnvironment = {
     }
 }`)}
 
-function load(container, jsModule) {
-    return Promise.resolve(jsModule)
-        .then(containerModule => container.load(containerModule.default));
+/**
+ * Logs how long a step of the start-up took, in the format of the \`Stopwatch\`, and records it as a user timing
+ * measure, so that it shows both in the start-up reports and in a performance trace.
+ */
+function measureStartup(activity, startTime) {
+    const endTime = performance.now();
+    performance.measure(\`Frontend \${activity}\`, { start: startTime, end: endTime });
+    console.debug(\`Frontend \${activity}: \${(endTime - startTime).toFixed(1)} ms [\${(endTime / 1000).toFixed(3)} s since frontend page start]\`);
+}
+
+let taskStartTime = performance.now();
+
+/**
+ * Yields to the event loop when the current task has run for longer than ${this.moduleLoadingTaskBudget()} ms, so that the page can
+ * paint and handle events between the modules instead of being blocked until all of them are loaded.
+ */
+function yieldIfDue() {
+    if (performance.now() - taskStartTime < ${this.moduleLoadingTaskBudget()}) {
+        return undefined;
+    }
+    const scheduler = self['scheduler'];
+    const yielded = scheduler && typeof scheduler.yield === 'function'
+        ? scheduler.yield()
+        : new Promise(resolve => {
+            const channel = new MessageChannel();
+            channel.port1.onmessage = () => {
+                channel.port1.close();
+                resolve(undefined);
+            };
+            channel.port2.postMessage(undefined);
+        });
+    return yielded.then(() => {
+        taskStartTime = performance.now();
+    });
+}
+
+/**
+ * Loads a container module and measures it. The time includes the evaluation of every module that it is the first to require.
+ */
+async function load(container, name, loadModule) {
+    const startTime = performance.now();
+    const containerModule = await loadModule();
+    container.load(containerModule.default);
+    measureStartup(\`module \${name}\`, startTime);
+    await yieldIfDue();
 }
 
 function reportError(message, reason) {
@@ -115,7 +157,7 @@ async function preload(container) {
     let preloadModulesLoaded = false;
     try {
 ${Array.from(frontendPreloadModules.values(), jsModulePath => `\
-        await load(container, import('${jsModulePath}'));`).join(EOL)}
+        await load(container, '${jsModulePath}', () => import('${jsModulePath}'));`).join(EOL)}
         preloadModulesLoaded = true;
     } catch (reason) {
         reportError('Failed to run preload scripts.', reason);
@@ -155,15 +197,21 @@ export default (async () => {
 
     ${this.emitStartupLog('container created')}
 
+    const preloadStartTime = performance.now();
     if (!await preload(container)) {
         return;
     }
+    measureStartup('preload', preloadStartTime);
     ${this.emitStartupLog('preloaded')}
 
     ${this.ifMonaco(() => `
+    const monacoStartTime = performance.now();
     const { MonacoInit } = await import('@theia/monaco/lib/browser/monaco-init');
+    measureStartup('Monaco module', monacoStartTime);
+    await yieldIfDue();
     `)};
 
+    const coreModulesStartTime = performance.now();
     const { FrontendApplication } = await import('@theia/core/lib/browser');
     const { frontendApplicationModule } = await import('@theia/core/lib/browser/frontend-application-module');
     const { loggerFrontendModule } = await import('@theia/core/lib/browser/logger-frontend-module');
@@ -176,14 +224,18 @@ export default (async () => {
     ${this.ifBrowserOnly(`const { loggerFrontendOnlyModule } = await import('@theia/core/lib/browser-only/logger-frontend-only-module');
     container.load(loggerFrontendOnlyModule);`)}
 
+    measureStartup('core modules', coreModulesStartTime);
     ${this.emitStartupLog('core modules loaded')}
 
     try {
+        await yieldIfDue();
+        const modulesStartTime = performance.now();
 ${Array.from(frontendModules.values(), jsModulePath => `\
-        await load(container, import('${jsModulePath}'));`).join(EOL)}
+        await load(container, '${jsModulePath}', () => import('${jsModulePath}'));`).join(EOL)}
         ${this.ifMonaco(() => `
         MonacoInit.init(container);
         `)};
+        measureStartup('modules', modulesStartTime);
         ${this.emitStartupLog('modules loaded')}
         await start();
     } catch (reason) {
@@ -196,12 +248,22 @@ ${Array.from(frontendModules.values(), jsModulePath => `\
     function start() {
         (window['theia'] = window['theia'] || {}).container = container;
         ${this.emitStartupLog('resolving application')}
+        const resolveStartTime = performance.now();
         const application = container.get(FrontendApplication);
+        measureStartup('application resolution', resolveStartTime);
         ${this.emitStartupLog('application resolved')}
         return application.start();
     }
 })();
 `;
+    }
+
+    /**
+     * The time in milliseconds after which the loading of the frontend modules yields to the event loop.
+     * Loading a module is not interrupted, so a task can run longer when a module takes longer to load.
+     */
+    protected moduleLoadingTaskBudget(): number {
+        return 50;
     }
 
     /** HTML for secondary windows that contain an extracted widget. */
