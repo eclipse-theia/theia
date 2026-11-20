@@ -209,6 +209,7 @@ export class WebSocketConnectionSource implements ConnectionSource {
     protected createWebSocket(url: string): Socket {
         return io(url, {
             path: this.createSocketIoPath(url),
+            transports: this.createSocketIoTransports(),
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 10000,
@@ -220,7 +221,8 @@ export class WebSocketConnectionSource implements ConnectionSource {
      * Path for Socket.io to make its requests to.
      */
     protected createSocketIoPath(url: string): string | undefined {
-        if (location.protocol === Endpoint.PROTO_FILE) {
+        if (!Endpoint.isServedByBackend(location)) {
+            // The page is not served by the backend (a file or application scheme origin): the backend is at its root.
             return '/socket.io';
         }
         let { pathname } = location;
@@ -228,5 +230,17 @@ export class WebSocketConnectionSource implements ConnectionSource {
             pathname += '/';
         }
         return pathname + 'socket.io';
+    }
+
+    /**
+     * Transports for Socket.io to connect with, or `undefined` for its defaults.
+     */
+    protected createSocketIoTransports(): string[] | undefined {
+        if (!Endpoint.isServedByBackend(location)) {
+            // The page's origin differs from the backend's: HTTP long-polling would be a cross-origin request
+            // without the security token cookie, whereas the WebSocket handshake is not subject to CORS.
+            return ['websocket'];
+        }
+        return undefined;
     }
 }
