@@ -428,7 +428,7 @@ export class DebugSession implements CompositeTreeElement {
                 clientID: 'Theia',
                 clientName: nls.localize('theia/debug/TheiaIDE', 'Theia IDE'),
                 adapterID: this.configuration.type,
-                locale: 'en-US',
+                locale: nls.locale || nls.defaultLocale,
                 linesStartAt1: true,
                 columnsStartAt1: true,
                 pathFormat: 'path',
