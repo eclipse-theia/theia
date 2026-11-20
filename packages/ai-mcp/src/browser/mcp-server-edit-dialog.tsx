@@ -244,7 +244,7 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                 </div>
 
                 <div className="mcp-form-field">
-                    <label>{nls.localize('theia/ai/mcpConfiguration/environmentVariables', 'Environment Variables')}:</label>
+                    <label>{nls.localizeByDefault('Environment Variables')}:</label>
                     <textarea
                         className="theia-input"
                         defaultValue={this.formData.env}
@@ -297,7 +297,7 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
         return (
             <>
                 <div className="mcp-form-field">
-                    <label>{nls.localize('theia/ai/mcpConfiguration/serverUrl', 'Server URL')}:</label>
+                    <label>{nls.localizeByDefault('Server URL')}:</label>
                     <input
                         type="text"
                         className="theia-input"

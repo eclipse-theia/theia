@@ -17,7 +17,7 @@
 import { inject, injectable, named } from 'inversify';
 import {
     screen, app, BrowserWindow, WebContents, Event as ElectronEvent, BrowserWindowConstructorOptions, nativeImage,
-    nativeTheme, shell, dialog
+    nativeTheme, shell, dialog, session
 } from '../../electron-shared/electron/index.cjs';
 import * as path from 'path';
 import { Argv } from '../../shared/yargs/index.cjs';
@@ -233,6 +233,11 @@ export class ElectronMainApplication {
 
     /** Used to temporarily store the reference to an early created main window */
     protected initialWindow?: BrowserWindow;
+    /**
+     * Settles once the early main window of `showInitialWindow` has been created, so that the main command,
+     * which no longer waits for the backend and may run first, reuses it instead of opening a second window.
+     */
+    protected initialWindowCreated?: Promise<void>;
 
     get config(): FrontendApplicationConfig {
         if (!this._config) {
@@ -280,14 +285,45 @@ export class ElectronMainApplication {
                     }
                     this.hookApplicationEvents();
                     this.showInitialWindow(argv.includes('--open-url') ? argv[argv.length - 1] : undefined);
-                    const port = await this.stopwatch.startAsync('electron-main-start-backend', 'Starting backend', () => this.startBackend());
-                    this._backendPort.resolve(port);
+                    // The backend starts in the background. The window loads its content meanwhile, and its preload
+                    // script asks the main process for the port as soon as it loads (see `TheiaMainApi`), which is
+                    // answered once the backend is listening and the security token cookie for it is set.
+                    const backendStarted = this.stopwatch.startAsync('electron-main-start-backend', 'Starting backend', () => this.startBackend())
+                        .then(async port => {
+                            // The backend may be listening before the app is ready, and Electron provides the session
+                            // that the cookie is set on only once it is.
+                            await app.whenReady();
+                            await this.stopwatch.startAsync('electron-main-security-token', 'Attaching security token',
+                                () => this.attachElectronSecurityToken(port));
+                            this._backendPort.resolve(port);
+                        });
+                    // A failure to start the backend is reported below. Contributions that chain on `backendPort` see
+                    // it as well, but it must not be an unhandled rejection where none does.
+                    this.backendPort.catch(() => { });
+                    // The window cannot connect without its backend, so a failure to start it is reported and ends the
+                    // application, whatever the contributions and the main command do meanwhile. A backend that is
+                    // terminated because the application quits while it starts has not failed.
+                    let quitting = false;
+                    app.once('quit', () => { quitting = true; });
+                    backendStarted.then(
+                        () => startupMeasurement.info('Startup sequence completed'),
+                        async error => {
+                            this._backendPort.reject(error);
+                            // On Linux, the error box is shown only once the app is ready.
+                            await app.whenReady();
+                            if (quitting) {
+                                return;
+                            }
+                            console.error('Failed to start the backend.', error);
+                            const reason = error instanceof Error ? error.message : String(error);
+                            dialog.showErrorBox(config.applicationName, `Failed to start the backend (${reason}).`);
+                            // `app.exit` emits neither `before-quit` nor `will-quit`, so stop the contributions here.
+                            this.stopContributions();
+                            app.exit(1);
+                        });
                     await app.whenReady();
-                    await this.stopwatch.startAsync('electron-main-security-token', 'Attaching security token',
-                        () => this.attachElectronSecurityToken(port));
                     await this.stopwatch.startAsync('electron-main-start-contributions', 'Starting contributions',
                         () => this.startContributions());
-                    startupMeasurement.info('Startup sequence completed');
 
                     const launchArgs = LaunchArgvParser.parse(argv);
                     this.handleMainCommand({
@@ -379,7 +415,7 @@ export class ElectronMainApplication {
 
     protected showInitialWindow(urlToOpen: string | undefined): void {
         if (this.isShowWindowEarly() || this.isShowSplashScreen()) {
-            app.whenReady().then(async () => {
+            this.initialWindowCreated = app.whenReady().then(async () => {
                 const options = await this.getLastWindowOptions();
                 // If we want to show a splash screen, don't auto open the main window
                 if (this.isShowSplashScreen()) {
@@ -458,8 +494,14 @@ export class ElectronMainApplication {
         return splashScreenWindow;
     }
 
+    /**
+     * Whether a splash screen is shown while the frontend loads: one is configured (`splashScreenOptions`), not
+     * suppressed by `THEIA_NO_SPLASH`, and the configuration does not restrict it to other platforms than this one.
+     */
     protected isShowSplashScreen(): boolean {
-        return !process.env.THEIA_NO_SPLASH && typeof this.config.electron.splashScreenOptions === 'object' && !!this.config.electron.splashScreenOptions.content;
+        const options = this.config.electron.splashScreenOptions;
+        return !process.env.THEIA_NO_SPLASH && typeof options === 'object' && !!options.content
+            && (!options.platforms || options.platforms.some(platform => platform === process.platform));
     }
 
     protected getSplashScreenOptions(): ElectronFrontendApplicationConfig.SplashScreenOptions | undefined {
@@ -597,6 +639,10 @@ export class ElectronMainApplication {
     }
 
     protected async reuseOrCreateWindow(asyncOptions: MaybePromise<TheiaBrowserWindowOptions>): Promise<BrowserWindow> {
+        if (this.initialWindowCreated) {
+            await this.initialWindowCreated.catch(error => console.error('Failed to create the initial window.', error));
+            this.initialWindowCreated = undefined;
+        }
         if (!this.initialWindow) {
             return this.createWindow(asyncOptions);
         }
@@ -677,10 +723,12 @@ export class ElectronMainApplication {
         }
     }
 
+    /**
+     * The URI of the frontend for a window. It carries the port of the backend only if `params` specify one,
+     * as for a window that connects to a remote backend: a window is loaded before the local backend is
+     * listening and resolves its port from the main process, see `ElectronBackendPortResolver` in the frontend.
+     */
     protected async createWindowUri(params: WindowSearchParams = {}): Promise<URI> {
-        if (!('port' in params)) {
-            params.port = (await this.backendPort).toString();
-        }
         const query = Object.entries(params).map(([name, value]) => `${name}=${value}`).join('&');
         return FileUri.create(this.globals.THEIA_FRONTEND_HTML_PATH)
             .withQuery(query);
@@ -849,15 +897,27 @@ export class ElectronMainApplication {
                 await this.getForkOptions(),
             );
             return new Promise((resolve, reject) => {
-                // The backend server main file is also supposed to send the resolved http(s) server port via IPC.
-                backendProcess.on('message', (address: AddressInfo) => {
-                    resolve(address.port);
+                backendProcess.on('message', (msg: AddressInfo | { type: string, id: string, url: string }) => {
+                    // The backend server main file is supposed to send the resolved proxy via IPC.
+                    if (msg && typeof msg === 'object' && 'type' in msg && msg.type === 'resolve-proxy') {
+                        // The backend may ask before the app is ready, and Electron provides the session only once it is.
+                        app.whenReady().then(() => session.defaultSession.resolveProxy(msg.url)).then(
+                            result => backendProcess.send({ type: 'resolve-proxy-response', id: msg.id, result }),
+                            error => {
+                                console.warn(`Proxy resolution failed for ${msg.url}:`, error);
+                                backendProcess.send({ type: 'resolve-proxy-response', id: msg.id, result: undefined });
+                            }
+                        );
+                        return;
+                    }
+                    // The backend server main file is also supposed to send the resolved http(s) server port via IPC.
+                    resolve((msg as AddressInfo).port);
                 });
                 backendProcess.on('error', error => {
                     reject(error);
                 });
-                backendProcess.on('exit', code => {
-                    reject(code);
+                backendProcess.on('exit', (code, signal) => {
+                    reject(new Error(signal ? `terminated by ${signal}` : `exited with code ${code}`));
                 });
                 app.on('quit', () => {
                     // Only issue a kill signal if the backend process is running.
@@ -960,10 +1020,7 @@ export class ElectronMainApplication {
                 const defaultOptions = this.getDefaultOptions();
                 const options: BrowserWindowConstructorOptions = {
                     ...this.getDefaultTheiaSecondaryWindowBounds(),
-                    // We always need the native window frame for now because the secondary window does not have Theia's title bar by default.
-                    // In 'custom' title bar mode this would leave the window without any window controls (close, min, max)
-                    // TODO set to this.useNativeWindowFrame when secondary windows support a custom title bar.
-                    frame: true,
+                    frame: this.didUseNativeWindowFrameOnStart.get(webContents.id) ?? this.useNativeWindowFrame,
                     minWidth: defaultOptions.minWidth,
                     minHeight: defaultOptions.minHeight,
                     webPreferences: {
@@ -971,12 +1028,12 @@ export class ElectronMainApplication {
                     }
                 };
 
-                if (!this.useNativeWindowFrame) {
-                    // If the main window does not have a native window frame, do not show  an icon in the secondary window's native title bar.
-                    // The data url is a 1x1 transparent png
-                    options.icon = nativeImage.createFromDataURL(
-                        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12P4DwQACfsD/WMmxY8AAAAASUVORK5CYII=');
+                const appIcon = this.config.electron?.windowOptions?.icon;
+                if (appIcon) {
+                    const iconPath = path.resolve(this.globals.THEIA_APP_PROJECT_PATH, appIcon as string);
+                    options.icon = nativeImage.createFromPath(iconPath);
                 }
+
                 return {
                     action: 'allow',
                     overrideBrowserWindowOptions: options,

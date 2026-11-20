@@ -18,7 +18,9 @@ import { inject, injectable, postConstruct } from 'inversify';
 import { DefaultSecondaryWindowService } from '../../browser/window/default-secondary-window-service.js';
 import { ApplicationShell, ExtractableWidget } from '../../browser/index.js';
 import { ElectronWindowService } from './electron-window-service.js';
+import { ElectronWindowTitleBarService } from '../menu/electron-window-title-bar-service.js';
 import { Deferred, timeout } from '../../common/promise-util.js';
+import { isOSX } from '../../common/os.js';
 import { ElectronWindowPreferences, PREF_WINDOW_ZOOM_LEVEL } from '../../electron-common/electron-window-preferences.js';
 
 @injectable()
@@ -26,6 +28,9 @@ export class ElectronSecondaryWindowService extends DefaultSecondaryWindowServic
 
     @inject(ElectronWindowPreferences)
     protected readonly electronWindowPreferences: ElectronWindowPreferences;
+
+    @inject(ElectronWindowTitleBarService)
+    protected readonly titleBarService: ElectronWindowTitleBarService;
 
     @postConstruct()
     override init(): void {
@@ -82,8 +87,32 @@ export class ElectronSecondaryWindowService extends DefaultSecondaryWindowServic
         const currentZoomLevel = this.electronWindowPreferences.get(PREF_WINDOW_ZOOM_LEVEL, 0);
         window.electronTheiaCore.setZoomLevel(currentZoomLevel, newWindow.name);
 
-        // Below code may be used to debug contents of secondary window
-        // window.electronTheiaCore.openDevToolsForWindow(newWindow.name);
+        this.createCustomTitleBarForSecondaryWindow(newWindow, widget);
+    }
+
+    protected async createCustomTitleBarForSecondaryWindow(newWindow: Window, widget: ExtractableWidget): Promise<void> {
+        if (isOSX) {
+            return;
+        }
+        const titleBarStyle = await window.electronTheiaCore.getTitleBarStyleAtStartup();
+        if (titleBarStyle !== 'custom') {
+            return;
+        }
+
+        const topPanel = newWindow.document.getElementById('theia-top-panel');
+        if (!topPanel) {
+            return;
+        }
+
+        const doc = newWindow.document;
+        const windowName = newWindow.name;
+
+        topPanel.appendChild(this.titleBarService.createDragPanel(doc));
+        topPanel.appendChild(this.titleBarService.createTitleElement(doc, widget.title.label));
+        topPanel.appendChild(this.titleBarService.createWindowControlsContainer(doc, windowName));
+
+        const toggleDisposable = this.titleBarService.setupMaximizeRestoreToggle(doc.body, windowName);
+        newWindow.addEventListener('pagehide', () => toggleDisposable.dispose());
     }
     private async canClose(extractableWidget: ExtractableWidget, shell: ApplicationShell, newWindow: Window): Promise<boolean> {
         return this.restoreWidgets(newWindow, extractableWidget, shell);

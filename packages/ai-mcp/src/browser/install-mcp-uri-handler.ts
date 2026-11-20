@@ -137,7 +137,7 @@ export class InstallMcpUriHandler implements OpenHandler {
 
     /** True if a server with this name is already in `ai-features.mcp.mcpServers`. */
     protected isAlreadyInstalled(localName: string): boolean {
-        const stored = this.preferenceService.get<Record<string, unknown>>(MCP_SERVERS_PREF, {}) ?? {};
+        const stored = this.preferenceService.get<Record<string, unknown>>(MCP_SERVERS_PREF, {fallback: {}}) ?? {};
         return Object.prototype.hasOwnProperty.call(stored, localName);
     }
 

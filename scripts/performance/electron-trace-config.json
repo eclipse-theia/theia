@@ -6,6 +6,7 @@
     "enable_systrace": false,
     "included_categories": [
       "blink",
+      "blink.user_timing",
       "loading",
       "disabled-by-default-devtools.timeline"
     ],

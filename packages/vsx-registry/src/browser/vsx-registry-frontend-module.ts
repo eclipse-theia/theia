@@ -51,6 +51,7 @@ import { VsxExtensionArgumentProcessor } from './vsx-extension-argument-processo
 import { ArgumentProcessorContribution } from '@theia/plugin-ext/lib/main/browser/command-registry-main';
 import { ExtensionSchemaContribution } from './recommended-extensions/recommended-extensions-json-schema.js';
 import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
+import { WorkspaceRecommendationsService, WorkspaceRecommendationsServiceImpl } from './recommended-extensions/workspace-recommendations-service.js';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(VSXEnvironment)
@@ -145,4 +146,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(ExtensionSchemaContribution).toSelf().inSingletonScope();
     bind(JsonSchemaContribution).toService(ExtensionSchemaContribution);
+
+    bind(WorkspaceRecommendationsServiceImpl).toSelf().inSingletonScope();
+    bind(WorkspaceRecommendationsService).toService(WorkspaceRecommendationsServiceImpl);
 });

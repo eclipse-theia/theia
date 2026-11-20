@@ -163,7 +163,7 @@ export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
             }
 
             for (const server of serversToInstall) {
-                const currentServers = this.preferenceService.get<Record<string, MCPServerDescription>>(MCP_SERVERS_PREF, {});
+                const currentServers = this.preferenceService.get<Record<string, MCPServerDescription>>(MCP_SERVERS_PREF, {fallback: {}});
                 await this.preferenceService.set(MCP_SERVERS_PREF, { ...currentServers, [server.name]: server }, PreferenceScope.User);
                 await this.mcpService.addOrUpdateServer(server);
             }

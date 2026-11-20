@@ -135,7 +135,7 @@ const GrepToolComponent: React.FC<{
     const compactHeader = (
         <>
             <div className="claude-code-tool header-left">
-                <span className="claude-code-tool title">{nls.localize('theia/ai/claude-code/searching', 'Searching')}</span>
+                <span className="claude-code-tool title">{nls.localizeByDefault('Searching')}</span>
                 <span className={`${codicon('search')} claude-code-tool icon`} />
                 <span className="claude-code-tool pattern">"{input.pattern}"</span>
                 <span className="claude-code-tool scope">{nls.localizeByDefault('in {0}', getSearchScope())}</span>

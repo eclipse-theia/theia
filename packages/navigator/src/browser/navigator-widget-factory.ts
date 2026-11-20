@@ -44,7 +44,6 @@ export class NavigatorWidgetFactory implements WidgetFactory {
         order: 0,
         canHide: true,
         initiallyCollapsed: true,
-        // this property currently has no effect (https://github.com/eclipse-theia/theia/issues/7755)
         weight: 20
     };
 

@@ -20,6 +20,7 @@ import { ElectronWebSocketConnectionSource } from './electron-ws-connection-sour
 import { ElectronIpcConnectionSource, ElectronMainConnectionProvider } from './electron-ipc-connection-source.js';
 import { ElectronLocalWebSocketConnectionSource, getLocalPort } from './electron-local-ws-connection-source.js';
 import { ElectronFrontendIdProvider } from './electron-frontend-id-provider.js';
+import { ElectronBackendPortResolver, ElectronBackendPortResolverImpl } from './electron-backend-port-resolver.js';
 import { FrontendIdProvider } from '../../browser/messaging/frontend-id-provider.js';
 import { ConnectionSource } from '../../browser/messaging/connection-source.js';
 import { LocalConnectionProvider, RemoteConnectionProvider, ServiceConnectionProvider } from '../../browser/messaging/service-connection-provider.js';
@@ -40,6 +41,8 @@ export const messagingFrontendModule = new ContainerModule(bind => {
     bind(ElectronIpcConnectionSource).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(ElectronIpcConnectionSource);
     bind(ElectronLocalWebSocketConnectionSource).toSelf().inSingletonScope();
+    bind(ElectronBackendPortResolverImpl).toSelf().inSingletonScope();
+    bind(ElectronBackendPortResolver).toService(ElectronBackendPortResolverImpl);
     bind(backendServiceProvider).toDynamicValue(ctx => {
         const container = ctx.container.createChild();
         container.bind(ServiceConnectionProvider).toSelf().inSingletonScope();

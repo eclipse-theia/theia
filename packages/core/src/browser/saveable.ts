@@ -317,7 +317,7 @@ export namespace SaveableWidget {
 /**
  * Possible formatting types when saving.
  */
-export const enum FormatType {
+export enum FormatType {
     /**
      * Formatting should occur (default).
      */

@@ -125,7 +125,7 @@ const EditToolComponent: React.FC<{
     const compactHeader = (
         <>
             <div className="claude-code-tool header-left">
-                <span className="claude-code-tool title">{nls.localize('theia/ai/claude-code/editing', 'Editing')}</span>
+                <span className="claude-code-tool title">{nls.localizeByDefault('Editing')}</span>
                 <span className={`${getIcon(input.file_path)} claude-code-tool icon`} />
                 <span
                     className="claude-code-tool file-name clickable-element"
@@ -153,7 +153,7 @@ const EditToolComponent: React.FC<{
                 <code className="claude-code-tool detail-value">{input.file_path}</code>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">{nls.localizeByDefault('From')}</span>
+                <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/from', 'From')}</span>
                 <pre className="claude-code-tool detail-value code-preview">
                     {input.old_string.length > 200
                         ? input.old_string.substring(0, 200) + '...'
@@ -161,7 +161,7 @@ const EditToolComponent: React.FC<{
                 </pre>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">{nls.localizeByDefault('To')}</span>
+                <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/to', 'To')}</span>
                 <pre className="claude-code-tool detail-value code-preview">
                     {input.new_string.length > 200
                         ? input.new_string.substring(0, 200) + '...'

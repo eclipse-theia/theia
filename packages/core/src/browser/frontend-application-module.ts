@@ -98,6 +98,7 @@ import { CommandOpenHandler } from './command-open-handler.js';
 import { LanguageService } from './language-service.js';
 import { EncodingRegistry } from './encoding-registry.js';
 import { EncodingService } from '../common/encoding-service.js';
+import { JSONCEditor, JSONCEditorImpl } from '../common/jsonc-editor.js';
 import { AuthenticationService, AuthenticationServiceImpl } from '../browser/authentication-service.js';
 import { DecorationsService, DecorationsServiceImpl } from './decorations-service.js';
 import { keyStoreServicePath, KeyStoreService } from '../common/key-store.js';
@@ -154,6 +155,7 @@ import { SymbolIconColorContribution } from './symbol-icon-color-contribution.js
 import { CorePreferences, bindCorePreferences } from '../common/core-preferences.js';
 import { bindBadgeDecoration } from './badges/index.js';
 import { PerspectiveContribution, PerspectiveService, PerspectiveServiceImpl, PerspectiveServiceInternal, WidgetAreaResolverImpl } from './perspective-service.js';
+import { SecondaryWindowStyleMirror } from './secondary-window-style-mirror.js';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -307,6 +309,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
 
     bind(EncodingService).toSelf().inSingletonScope();
     bind(EncodingRegistry).toSelf().inSingletonScope();
+    bind(JSONCEditorImpl).toSelf().inSingletonScope();
+    bind(JSONCEditor).toService(JSONCEditorImpl);
 
     bind(ResourceContextKey).toSelf().inSingletonScope();
     bind(CommonFrontendContribution).toSelf().inSingletonScope();
@@ -493,6 +497,9 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(SaveableSecondaryWindowCloseContribution).toSelf().inSingletonScope();
     bind(SecondaryWindowCloseContribution).toService(SaveableSecondaryWindowCloseContribution);
     bind(ViewColumnService).toSelf().inSingletonScope();
+
+    bind(SecondaryWindowStyleMirror).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(SecondaryWindowStyleMirror);
 
     bind(UndoRedoHandlerService).toSelf().inSingletonScope();
     bindRootContributionProvider(bind, UndoRedoHandler);

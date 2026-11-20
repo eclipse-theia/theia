@@ -344,10 +344,10 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
             {local && this.renderArrayField(nls.localizeByDefault('Arguments'), server.args ?? [],
                 nls.localize('theia/ai/mcpConfiguration/addArgument', 'Add argument…'),
                 values => this.updateServer(server, { args: values }))}
-            {local && this.renderKeyValueField(nls.localize('theia/ai/mcpConfiguration/environmentVariables', 'Environment Variables'), server.env ?? {},
+            {local && this.renderKeyValueField(nls.localizeByDefault('Environment Variables'), server.env ?? {},
                 lines => this.updateServer(server, { env: lines }))}
             {local && this.renderPluginPathsSection(server)}
-            {remote && this.renderTextField(nls.localize('theia/ai/mcpConfiguration/serverUrl', 'Server URL'), server.serverUrl, false, false,
+            {remote && this.renderTextField(nls.localizeByDefault('Server URL'), server.serverUrl, false, false,
                 value => this.updateServer(server, { serverUrl: value }),
                 server.serverUrl.trim() ? undefined : nls.localize('theia/ai/mcpConfiguration/form/serverUrlRequired', 'Server URL is required for remote servers'))}
             {remote && !oauth && this.renderTextField(
@@ -597,7 +597,7 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
     }
 
     getSearchItems(): AiConfigurationSearchItem[] {
-        const serverTypeLabel = nls.localize('theia/ai/mcpConfiguration/serverTypeLabel', 'MCP server');
+        const serverTypeLabel = nls.localizeByDefault('MCP server');
         const toolTypeLabel = nls.localizeByDefault('Tool');
         const items: AiConfigurationSearchItem[] = [];
         for (const server of this.servers) {

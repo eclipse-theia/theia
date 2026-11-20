@@ -16,6 +16,7 @@
 
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService, WorkspaceMetadataStorageService, WorkspaceMetadataStore } from '@theia/workspace/lib/browser';
 import { PreferenceService } from '@theia/core/lib/common';
 import { StorageService } from '@theia/core/lib/browser';
@@ -87,7 +88,7 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     }
 
     async storeSessions(...sessions: Array<ChatModel | ChatModelWithMetadata>): Promise<void> {
-        this.storePromise = this.storePromise.then(async () => {
+        return this.enqueue(async () => {
             const root = await this.ensureStorageReady();
             if (!root) {
                 this.logger.debug('Session persistence is disabled: skipping store.');
@@ -142,7 +143,17 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
             await this.trimSessions();
             this.logger.debug('Finished storing sessions');
         });
-        return this.storePromise;
+    }
+
+    /**
+     * Runs a write operation after all previously enqueued operations have settled.
+     * The returned promise reports the outcome of this operation only, so a failed
+     * operation does not prevent subsequent operations from running.
+     */
+    protected enqueue(operation: () => Promise<void>): Promise<void> {
+        const result = this.storePromise.then(operation);
+        this.storePromise = result.catch(() => undefined);
+        return result;
     }
 
     private isChatModelWithMetadata(session: ChatModel | ChatModelWithMetadata): session is ChatModelWithMetadata {
@@ -176,7 +187,7 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     }
 
     async deleteSession(sessionId: string): Promise<void> {
-        this.storePromise = this.storePromise.then(async () => {
+        return this.enqueue(async () => {
             const root = await this.ensureStorageReady();
             if (!root) {
                 this.logger.debug('Session persistence is disabled: skipping delete.', { sessionId });
@@ -198,11 +209,10 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
             await this.saveIndex(index);
             this.logger.debug('Session removed from index', { sessionId });
         });
-        return this.storePromise;
     }
 
     async clearAllSessions(): Promise<void> {
-        this.storePromise = this.storePromise.then(async () => {
+        return this.enqueue(async () => {
             const root = await this.ensureStorageReady();
             if (!root) {
                 this.logger.debug('Session persistence is disabled: skipping clear.');
@@ -219,7 +229,6 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
             this.indexCache = {};
             await this.saveIndex({});
         });
-        return this.storePromise;
     }
 
     async getSessionIndex(): Promise<ChatSessionIndex> {
@@ -229,14 +238,13 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     }
 
     async setSessionTitle(sessionId: string, title: string): Promise<void> {
-        this.storePromise = this.storePromise.then(async () => {
+        return this.enqueue(async () => {
             const index = await this.loadIndex();
             if (index[sessionId]) {
                 index[sessionId].title = title;
                 await this.saveIndex(index);
             }
         });
-        return this.storePromise;
     }
 
     /**
@@ -427,42 +435,63 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         }
         const indexFile = root.resolve(INDEX_FILE);
 
+        let rawIndex: unknown;
         try {
             const content = await this.fileService.readFile(indexFile);
-            const rawIndex = JSON.parse(content.value.toString());
-
-            // Validate and clean up index entries
-            const validatedIndex: ChatSessionIndex = {};
-            let hasInvalidEntries = false;
-
-            for (const [sessionId, metadata] of Object.entries(rawIndex)) {
-                // Check if entry has required fields and valid values
-                if (this.isValidMetadata(metadata)) {
-                    validatedIndex[sessionId] = metadata as ChatSessionMetadata;
-                } else {
-                    hasInvalidEntries = true;
-                    this.logger.warn('Removing invalid session metadata from index', {
-                        sessionId,
-                        metadata
-                    });
-                }
+            rawIndex = JSON.parse(content.value.toString());
+        } catch (e) {
+            if (!this.isMissingOrCorruptIndexError(e)) {
+                throw e;
             }
+            if (e instanceof SyntaxError) {
+                this.logger.warn('Session index is not valid JSON: starting a new index.', { indexFile: indexFile.toString(), error: e });
+            } else {
+                this.logger.debug('Session index does not exist: starting a new index.', { indexFile: indexFile.toString() });
+            }
+            rawIndex = {};
+        }
 
-            // If we removed any entries, persist the cleaned index
-            if (hasInvalidEntries) {
-                this.logger.info('Index cleaned up, removing invalid entries');
+        // Validate and clean up index entries
+        const validatedIndex: ChatSessionIndex = {};
+        let hasInvalidEntries = false;
+
+        for (const [sessionId, metadata] of Object.entries(rawIndex ?? {})) {
+            // Check if entry has required fields and valid values
+            if (this.isValidMetadata(metadata)) {
+                validatedIndex[sessionId] = metadata as ChatSessionMetadata;
+            } else {
+                hasInvalidEntries = true;
+                this.logger.warn('Removing invalid session metadata from index', {
+                    sessionId,
+                    metadata
+                });
+            }
+        }
+
+        // If we removed any entries, persist the cleaned index
+        if (hasInvalidEntries) {
+            this.logger.info('Index cleaned up, removing invalid entries');
+            try {
                 await this.fileService.writeFile(
                     indexFile,
                     BinaryBuffer.fromString(JSON.stringify(validatedIndex, undefined, 2))
                 );
+            } catch (e) {
+                this.logger.warn('Failed to write the cleaned up session index', e);
             }
-
-            this.indexCache = validatedIndex;
-            return this.indexCache;
-        } catch (e) {
-            this.indexCache = {};
-            return this.indexCache;
         }
+
+        this.indexCache = validatedIndex;
+        return this.indexCache;
+    }
+
+    /**
+     * Whether an error in reading the session index means that there is no usable index to load,
+     * in which case a new index is started. Any other error leaves the persisted index untouched.
+     */
+    protected isMissingOrCorruptIndexError(error: unknown): boolean {
+        return error instanceof SyntaxError
+            || (error instanceof FileOperationError && error.fileOperationResult === FileOperationResult.FILE_NOT_FOUND);
     }
 
     protected isValidMetadata(metadata: unknown): metadata is ChatSessionMetadata {

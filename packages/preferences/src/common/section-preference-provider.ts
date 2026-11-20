@@ -64,9 +64,9 @@ export abstract class SectionPreferenceProvider extends AbstractResourcePreferen
         }
     }
 
-    protected override getPath(preferenceName: string): string[] | undefined {
+    protected override getPath(preferenceName: string, overrideIdentifier?: string): string[] | undefined {
         if (!this.isSection) {
-            return super.getPath(preferenceName);
+            return super.getPath(preferenceName, overrideIdentifier);
         }
         if (preferenceName === this.section) {
             return [];

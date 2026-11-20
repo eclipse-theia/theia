@@ -35,38 +35,34 @@ export class NotificationComponent extends React.Component<NotificationComponent
     }
 
     protected onClear = (event: React.MouseEvent) => {
-        if (event.target instanceof HTMLElement) {
-            const messageId = event.target.dataset.messageId;
-            if (messageId) {
-                this.props.manager.clear(messageId);
-            }
+        const messageId = (event.target as HTMLElement)?.dataset?.messageId;
+        if (messageId) {
+            this.props.manager.clear(messageId);
         }
     };
 
     protected onToggleExpansion = (event: React.MouseEvent) => {
-        if (event.target instanceof HTMLElement) {
-            const messageId = event.target.dataset.messageId;
-            if (messageId) {
-                this.props.manager.toggleExpansion(messageId);
-            }
+        const messageId = (event.target as HTMLElement)?.dataset?.messageId;
+        if (messageId) {
+            this.props.manager.toggleExpansion(messageId);
         }
     };
 
     protected onAction = (event: React.MouseEvent) => {
-        if (event.target instanceof HTMLElement) {
-            const messageId = event.target.dataset.messageId;
-            const action = event.target.dataset.action;
-            if (messageId && action) {
-                this.props.manager.accept(messageId, action);
-            }
+        const target = event.target as HTMLElement;
+        const messageId = target?.dataset?.messageId;
+        const action = target?.dataset?.action;
+        if (messageId && action) {
+            this.props.manager.accept(messageId, action);
         }
     };
 
     protected onMessageClick = (event: React.MouseEvent) => {
-        if (event.target instanceof HTMLAnchorElement) {
+        const target = event.target as HTMLElement;
+        if (target?.tagName === 'A') {
             event.stopPropagation();
             event.preventDefault();
-            const link = event.target.href;
+            const link = (target as HTMLAnchorElement).href;
             this.props.manager.openLink(link);
         }
     };

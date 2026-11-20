@@ -37,6 +37,13 @@ export class DialogProps {
      * Default value is undefined, which would result in the css property 'word-wrap' not being applied to the dialog.
      */
     wordWrap?: 'normal' | 'break-word' | 'initial' | 'inherit';
+    /**
+     * The window in which the dialog should be opened.
+     * When set, the dialog's root node is created in the target window's document,
+     * ensuring the dialog appears in the correct window (e.g. a secondary window).
+     * If not set, the dialog opens in the main window.
+     */
+    targetWindow?: Window;
 }
 
 export type DialogMode = 'open' | 'preview';
@@ -159,6 +166,9 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         @unmanaged() protected readonly props: DialogProps,
         @unmanaged() options?: Widget.IOptions
     ) {
+        if (props.targetWindow && !options?.node) {
+            options = { ...options, node: props.targetWindow.document.createElement('div') };
+        }
         super(options);
         this.id = 'theia-dialog-shell';
         this.addClass('dialogOverlay');
@@ -226,7 +236,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     }
 
     protected createButton(text: string): HTMLButtonElement {
-        const button = document.createElement('button');
+        const button = this.node.ownerDocument.createElement('button');
         button.classList.add('theia-button');
         button.textContent = text;
         return button;
@@ -477,7 +487,7 @@ export class ConfirmSaveDialog extends AbstractDialog<boolean | undefined> {
 
     protected createMessageNode(msg: string | HTMLElement): HTMLElement {
         if (typeof msg === 'string') {
-            const messageNode = document.createElement('div');
+            const messageNode = this.node.ownerDocument.createElement('div');
             messageNode.textContent = msg;
             return messageNode;
         }
@@ -517,7 +527,7 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
     ) {
         super(props);
 
-        this.inputField = document.createElement('input');
+        this.inputField = this.node.ownerDocument.createElement('input');
         this.inputField.type = 'text';
         this.inputField.className = 'theia-input';
         this.inputField.spellcheck = false;

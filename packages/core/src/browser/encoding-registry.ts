@@ -77,7 +77,7 @@ export class EncodingRegistry {
     protected getEncodingOverride(resource: URI): string | undefined {
         if (this.encodingOverrides && this.encodingOverrides.length) {
             for (const override of this.encodingOverrides) {
-                if (override.parent && resource.isEqualOrParent(override.parent)) {
+                if (override.parent && override.parent.isEqualOrParent(resource)) {
                     return override.encoding;
                 }
 

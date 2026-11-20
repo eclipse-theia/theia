@@ -111,6 +111,6 @@ export class RegistryAutoUpdatePolicyImpl implements RegistryAutoUpdatePolicy {
     }
 
     protected readOverrides(): Overrides {
-        return this.preferenceService.get<Overrides>(AUTO_UPDATE_OVERRIDES_PREF, {}) ?? {};
+        return this.preferenceService.get<Overrides>(AUTO_UPDATE_OVERRIDES_PREF, {fallback: {}}) ?? {};
     }
 }

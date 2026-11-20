@@ -20,6 +20,7 @@ import { expect } from 'chai';
 
 import { Widget } from '@lumino/widgets';
 import { PreferenceService } from '../../common/index.js';
+import { MockPreferenceService } from '../preferences/test/mock-preference-service.js';
 // load the shell first, loading it through the secondary window handler hits a circular import
 import { ApplicationShell } from '../shell/application-shell.js';
 import { ExtractableWidget } from '../widgets/index.js';
@@ -39,7 +40,7 @@ describe('DefaultSecondaryWindowService', () => {
 
     it('should return undefined when the browser blocks the window', () => {
         const service = new DefaultSecondaryWindowService();
-        (service as unknown as { preferenceService: Partial<PreferenceService> }).preferenceService = { get: () => undefined };
+        (service as unknown as { preferenceService: PreferenceService }).preferenceService = new MockPreferenceService();
         const open = window.open;
         window.open = () => null; // eslint-disable-line no-null/no-null
         try {

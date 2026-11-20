@@ -18,6 +18,10 @@ export namespace PluginPaths {
     export const PLUGINS_LOGS_DIR = 'logs';
     export const PLUGINS_GLOBAL_STORAGE_DIR = 'plugin-storage';
     export const PLUGINS_WORKSPACE_STORAGE_DIR = 'workspace-storage';
+    /** Holds `ExtensionContext.globalState`, in {@link PLUGINS_GLOBAL_STORAGE_DIR}. */
+    export const PLUGINS_GLOBAL_STATE_FILE = 'global-state.json';
+    /** Holds `ExtensionContext.workspaceState`, in the workspace's host storage directory. */
+    export const PLUGINS_WORKSPACE_STATE_FILE = 'workspace-state.json';
     /**
      * Default number of per-session plugin log folders to retain. Shared between the backend's
      * `--plugin-max-session-logs-folders` CLI option and the browser-only frontend, which has no

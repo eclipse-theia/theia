@@ -28,8 +28,7 @@
           "title": "Képesség-felülírások"
         },
         "completionNotification": {
-          "mdDescription": "Értesítési viselkedés, amikor ez az ügynök a figyelmedet igényli, azaz befejezett egy feladatot, vagy bevitelt kér tőled.                     Ha nincs beállítva, a globális alapértelmezett értesítési beállítás kerül alkalmazásra.\n                    - `os-notification`: Operációs rendszer/rendszer értesítések megjelenítése\n                    - `message`: Értesítések megjelenítése az állapotsorban/üzenetmezőben\n                    - `blink`: A felhasználói felület villogtatása vagy kiemelése\n                    - `off`: Az értesítések letiltása ehhez az ügynökhöz",
-          "title": "Értesítés"
+          "mdDescription": "Értesítési viselkedés, amikor ez az ügynök a figyelmedet igényli, azaz befejezett egy feladatot, vagy bevitelt kér tőled.                     Ha nincs beállítva, a globális alapértelmezett értesítési beállítás kerül alkalmazásra.\n                    - `os-notification`: Operációs rendszer/rendszer értesítések megjelenítése\n                    - `message`: Értesítések megjelenítése az állapotsorban/üzenetmezőben\n                    - `blink`: A felhasználói felület villogtatása vagy kiemelése\n                    - `off`: Az értesítések letiltása ehhez az ügynökhöz"
         },
         "enable": {
           "mdDescription": "Meghatározza, hogy az ügynököt engedélyezni kell-e (true) vagy letiltani kell-e (false).",
@@ -206,6 +205,15 @@
           "label": "Képfájl"
         },
         "imagePickerPlaceholder": "Válasszon ki egy képfájlt, vagy keressen név szerint",
+        "networkError": {
+          "dns": "Nem sikerült feloldani az AI-szolgáltató gazdagépét. Ellenőrizze a modell/végpont URL-jét, valamint a DNS-beállításait vagy az internetkapcsolatát.",
+          "generic": "Nem sikerült kapcsolatba lépni az AI-szolgáltatóval. Ellenőrizze az internetkapcsolatát, a beállított végpont URL-jét, valamint az esetleges proxy- vagy tűzfalbeállításokat.",
+          "refused": "Az AI-szolgáltató végpontja elutasította a kapcsolatot. Ellenőrizze a gazdagépet és a portot, valamint azt, hogy bármely helyi modellszerver (pl. Ollama) fut-e.",
+          "reset": "Az AI-szolgáltatóval való kapcsolat visszaállt, mielőtt válasz érkezett volna. Ez gyakran átmeneti jelenség – kérjük, próbálja meg újra.",
+          "timeout": "A kapcsolat az AI-szolgáltatóval időtúllépés miatt megszakadt. Ellenőrizze a hálózati, VPN- vagy proxy-beállításait.",
+          "tls": "Az AI-szolgáltató végpontjának TLS-tanúsítványa nem ellenőrizhető. Ha egyéni vagy önaláírt végpontot használ, ellenőrizze annak tanúsítványát vagy proxy-beállításait.",
+          "unreachable": "Az AI-szolgáltató gazdagépe nem érhető el. Ellenőrizze a hálózati kapcsolatot, a VPN-t vagy a proxy-beállításokat."
+        },
         "orchestrator": {
           "description": "Ez az ügynök elemzi a felhasználói kérést az összes rendelkezésre álló csevegőügynök leírása alapján, és kiválasztja a kérés megválaszolásához legalkalmasabb ügynököt (AI segítségével). A felhasználói kérés további megerősítés nélkül közvetlenül a kiválasztott ügynökhöz kerül.",
           "vars": {
@@ -278,7 +286,6 @@
           "generating": "Létrehozás",
           "noRenderer": "Hiba: Nem található renderelő",
           "scrollToBottom": "Ugrás a legújabb üzenetre",
-          "waitingForInput": "Várakozás a bevitelre",
           "you": "Te"
         },
         "chatInput": {
@@ -298,6 +305,7 @@
         },
         "collapseAll": "Összecsukás",
         "collapseChangeSet": "Összecsukás Változáskészlet",
+        "collapseMessage": "Üzenet összecsukása",
         "command-part-renderer": {
           "commandNotExecutable": "A parancs azonosítója „{0}”, de a Csevegés ablakból nem futtatható."
         },
@@ -308,6 +316,7 @@
         "couldNotSendRequestToSession": "Nem sikerült elküldeni a „{0}” kérést a {1} munkamenethez.",
         "delegatedSession": "Delegált",
         "delegation-response-renderer": {
+          "cancel": "Delegálás visszavonása",
           "interactionNeeded": "Felhasználói beavatkozás szükséges",
           "prompt": {
             "label": "Delegált prompt:"
@@ -331,6 +340,7 @@
         "enterChatName": "Írja be a csevegés nevét",
         "errorChatInvocation": "Hiba történt a csevegőszolgáltatás meghívása közben.",
         "expandChangeSet": "Bővítés Változáskészlet",
+        "expandMessage": "Üzenet kibontása",
         "failedToDeleteSession": "A csevegési munkamenet törlése sikertelen",
         "failedToLoadChats": "A csevegési munkamenetek betöltése sikertelen",
         "failedToRestoreSession": "A csevegési munkamenet visszaállítása sikertelen",
@@ -355,7 +365,6 @@
           "wheelZoomHint": "{0} + Görgessen"
         },
         "modelBadgeTooltip": "A válaszhoz használt nyelvi modell: {0}",
-        "modelUnavailable": "nem elérhető",
         "noChatAgentsAvailable": "Nincs elérhető csevegő ügynök.",
         "noMatchingCapabilities": "Nincs megfelelő képesség",
         "openImage": "Kép megnyitása",
@@ -445,6 +454,45 @@
         "variantTooltip": "Prompt változat: {0}",
         "yourMessage": "Az üzeneted"
       },
+      "chatgpt": {
+        "category": "ChatGPT",
+        "codePrompt": "Illessze be a böngészőjéből az engedélyezési kódot vagy a teljes átirányítási URL-címet",
+        "commands": {
+          "signIn": "Bejelentkezés",
+          "signOut": "Kijelentkezés"
+        },
+        "compaction": {
+          "default": "Kövesse a globális csevegő szerveroldali tömörítési beállítását.",
+          "description": "A ChatGPT-modellek esetében felülírja a szolgáltató natív, szerveroldali tömörítését. A „default” érték a globális csevegési beállítást követi ({0}). Ha ez ténylegesen engedélyezve van, a Response API-t arra kérik, hogy összefoglalja a régebbi beszélgetési köröket, amint a beszélgetés túllépi a szolgáltató által meghatározott küszöbértéket.",
+          "disabled": "Soha ne kérjen szerveroldali tömörítést a ChatGPT-modellek esetében.",
+          "enabled": "A ChatGPT-modellek esetében mindig kérje a szerveroldali tömörítést."
+        },
+        "compactionTokenThreshold": {
+          "description": "A ChatGPT-modellek szerveroldali tömörítéséhez használt globális bemeneti tokenküszöb felülírása. Ha nincs beállítva, akkor a globális beállítás vagy a szolgáltató alapértelmezett értéke érvényesül. Ha be van állítva, az értéknek legalább 50 000 tokennek kell lennie."
+        },
+        "discovery": {
+          "overridden": "A modellek listája manuálisan konfigurálható. Törölje ki, hogy a ChatGPT-csomagja által engedélyezett modellek jelenjenek meg.",
+          "signedOut": "Nincs bejelentkezve a ChatGPT-be. Jelentkezzen be, hogy használhassa a ChatGPT-csomagjához tartozó modelleket."
+        },
+        "enabled": {
+          "mdDescription": "Engedélyezze a ChatGPT szolgáltatót. Engedélyezés után megjelenik egy állapotsor-bejegyzés a hitelesítéshez, és a rendszer felismeri a ChatGPT-előfizetésében elérhető modelleket."
+        },
+        "enterCode": "Kód kézi beírása",
+        "models": {
+          "mdDescription": "A ChatGPT-előfizetésén keresztül elérhető modellek. Ezek csak bejelentkezés után érhetők el. Ha ezt a mezőt üresen hagyja, akkor a ChatGPT-csomagja által ténylegesen biztosított modellek lesznek elérhetők, amelyek lekérdezése a bejelentkezés után történik.",
+          "signIn": "Jelentkezzen be a ChatGPT-vel"
+        },
+        "signInFailed": "A ChatGPT-be való bejelentkezés sikertelen volt: {0}",
+        "signOutConfirm": "Biztosan ki szeretne jelentkezni a ChatGPT-ből?",
+        "signOutTitle": "Jelentkezzen ki a ChatGPT-ből",
+        "signedIn": "Bejelentkeztem a ChatGPT-be.",
+        "signedInAs": "{0} néven jelentkezett be a ChatGPT-be.",
+        "statusBar": {
+          "signedIn": "{0} néven jelentkezett be a ChatGPT-be. Kattintson a kijelentkezéshez.",
+          "signedOut": "Nincs bejelentkezve a ChatGPT-be. Kattintson a bejelentkezéshez."
+        },
+        "waiting": "Végezze el a ChatGPT-bejelentkezést a böngészőjében."
+      },
       "claude-code": {
         "agentDescription": "Anthropic kódoló ügynöke",
         "allowSession": "Engedélyezés erre a munkamenetre",
@@ -466,7 +514,6 @@
         "currentDirectory": "aktuális könyvtár",
         "differentAgentRequestWarning": "Az előző csevegési kérést egy másik ügynök kezelte. Claude Code nem látja ezeket a többi üzeneteket.",
         "editAutomatically": "Automatikus szerkesztés",
-        "editing": "Szerkesztés",
         "editsCount": "{0} szerkesztések",
         "emptyTodoList": "Nincs elérhető",
         "entireFile": "Teljes fájl",
@@ -493,6 +540,7 @@
         "findMatchingFiles": "Keresse meg a glob mintához „{0}” illeszkedő fájlokat az aktuális könyvtárban.",
         "findMatchingFilesWithPath": "Keresse meg a „{0}” glob mintához illeszkedő fájlokat a {1} mappában.",
         "finding": "Találás",
+        "from": "Forrás:",
         "globPattern": "glob minta",
         "grepOptions": {
           "caseInsensitive": "kis- és nagybetűk közötti különbséget nem tesz",
@@ -535,7 +583,6 @@
         "project": "projekt",
         "projectRoot": "projektgyökér",
         "readMode": "Olvasási mód",
-        "reading": "Olvasás",
         "replaceAllCount": "{0} replace-all",
         "replaceAllOccurrences": "Cserélje ki az összes előfordulást",
         "resumeCommand": {
@@ -545,10 +592,10 @@
           "description": "Kódfelülvizsgálat kérése"
         },
         "searchPath": "Keresési út",
-        "searching": "Keresés",
         "startingLine": "Kezdővonal",
         "timeout": "Időkorlát",
         "timeoutInMs": "Időkorlát: {0} ms",
+        "to": "Hogy",
         "todoList": "Minden lista",
         "todoPriority": {
           "high": "magas",
@@ -580,8 +627,6 @@
         "itemCount": "{0} elemek",
         "noItems": "Nincs elem",
         "oneItem": "1 elem",
-        "searched": "Keresett",
-        "searching": "Keresés",
         "todoList": "Minden lista"
       },
       "completion": {
@@ -706,6 +751,28 @@
           "usedGlobalVariables": "Használt globális változók",
           "usedTools": "Használt eszközök"
         },
+        "agentsMd": {
+          "inactiveOverride": "Inaktív",
+          "legacyOverrides": "Ezek a project-info parancssori felugró ablakok felülírásai nem kerülnek automatikusan átvitelre, és már nem érhetők el az AGENTS.md fájlt használó beépített ügynökök számára. A megőrzendő utasításokat helyezze át a megfelelő projekt AGENTS.md fájljába. Ezek továbbra is érvényesek a project-info-ra hivatkozó parancssori felugró ablakokra: {0}",
+          "migrationResult": {
+            "backedUp": "Az előző projekt adatai `{0}` formában lettek megőrzve.",
+            "backupFailed": "A {0} nem nevezhető át `{1}`-re, ezért továbbra is a helyén marad, és elsőbbséget élvez a {2}-vel szemben. Nevezze át vagy távolítsa el, hogy elkezdhesse használni a {2}-t.",
+            "empty": "AGENTS.md migráció: nincs mit migrálni.",
+            "promptSyntax": "{0} átvitt fájl még mindig tartalmaz parancssori sablon szintaxist, amelyet a {1} már nem értelmez. Ellenőrizze és távolítsa el azokat.",
+            "untrusted": "AGENTS.md migráció: a munkaterület nem megbízható, ezért nem kerültek átvitelre a projektadatok."
+          },
+          "openOverrideSources": "Nyílt forráskódú fájlok",
+          "rerunMigration": "Az AGENTS.md migráció újbóli futtatása"
+        },
+        "agentsMdAutoLoadedVariable": {
+          "description": "Visszaadja a munkaterület gyökérkönyvtárában található AGENTS.md fájl tartalmát, ha a munkaterületnek egyetlen gyökérkönyvtára van, így az mindig kontextusban van."
+        },
+        "agentsMdContentVariable": {
+          "description": "Visszaadja a munkaterület AGENTS.md fájljainak teljes tartalmát"
+        },
+        "agentsMdVariable": {
+          "description": "Felsorolja azokat az AGENTS.md fájlokat, amelyeket egy ügynöknek igény szerint el kell olvasnia, azaz azokat, amelyek még nincsenek betöltve."
+        },
         "agentsVariable": {
           "description": "Visszaadja a rendszerben elérhető ügynökök listáját."
         },
@@ -729,7 +796,11 @@
           },
           "scopeBanner": "A „{0}” hatókör szerkesztése.",
           "searchPlaceholder": "AI-beállítások keresése",
-          "selectCategory": "Válasszon ki egy kategóriát a beállításhoz."
+          "selectCategory": "Válasszon ki egy kategóriát a beállításhoz.",
+          "sessionOverride": {
+            "tooltip": "A --session-preference paranccsal állítható be az adott munkamenethez. Ha itt módosítja vagy visszaállítja, a munkamenet értéke törlődik, amíg az ablak újra nem töltődik be.",
+            "tooltipWithValue": "A jelen munkamenethez a --session-preference: {0} paranccsal állítható be. Ha itt módosítja vagy visszaállítja, a munkamenet értéke törlődik, amíg az ablak újra nem töltődik be."
+          }
         },
         "blinkTitle": {
           "agentCompleted": "{0} - Ügynök befejezte",
@@ -745,6 +816,7 @@
           },
           "description": "Feltételesen feloldja a prompt fragmenseket az alapértelmezett be-/kikapcsolási beállítás alapján."
         },
+        "category": "AI",
         "changeSetSummaryVariable": {
           "description": "Összefoglalja a változáskészletben található fájlokat és azok tartalmát."
         },
@@ -836,10 +908,10 @@
           "windowBlink": "Ablak villogása"
         },
         "openEditorsShortVariable": {
-          "description": "Rövid hivatkozás az összes jelenleg megnyitott fájlra (relatív útvonalak, vesszővel elválasztva)"
+          "description": "Rövid hivatkozás az összes jelenleg megnyitott szerkesztőre (relatív elérési útvonalak az állapotukkal együtt, vesszővel elválasztva)"
         },
         "openEditorsVariable": {
-          "description": "Az összes jelenleg megnyitott fájl vesszővel elválasztott listája, munkaterülethez viszonyított elérési útvonalakkal (pl. my-project/src/index.ts)."
+          "description": "Az összes jelenleg megnyitott szerkesztő munkaterülethez viszonyított elérési útjainak vesszővel elválasztott listája, amelyeket adott esetben az állapotuk követ (pl. „my-project/src/index.ts” (aktív, mentetlen módosítások))."
         },
         "preference": {
           "languageModelAliases": {
@@ -879,7 +951,9 @@
           "category": "AI prompt sablonok"
         },
         "reasoning": {
-          "mdDescription": "A csevegőbeviteli mező érvelés-választójának alapértelmezett értéke, amely az érvelést támogató modellekre vonatkozik.\n\nEz egy felhasználói felület szintű beállítás: a kiválasztott szintet a kéréskor lefordítják a szolgáltató natív API-paramétereire (pl. Anthropic `thinking` / `output_config.effort`, OpenAI `reasoning.effort`, Gemini `thinkingConfig`), és ez elsőbbséget élvez az ugyanazon mezők számára a `#ai-features.modelSettings.requestSettings#`-en keresztül megadott nyers értékekkel szemben.\n\nMinden bejegyzés a következőkből áll:\n- `scope`: Meghatározza, mikor érvényes a beállítás (`modelId`, `providerId`, `agentId`).\n- `reasoning.level`: Az `off`, `minimal`, `low`, `medium`, `high`, `auto` értékek egyike.\n\nElsőbbség futásidőben (a legmagasabb az első): a szelektoron keresztüli munkamenet-felülírás → ez a beállítás → a modell deklarált alapértelmezése. Amit a szelektor megjeleníti, az kerül elküldésre. Ha egy szolgáltató reasoning mezőjét manuálisan szeretné felülírni a `#ai-features.modelSettings.requestSettings#` segítségével, állítsa itt a `reasoning.level` értéket `off`-ra, így a szintalapú átalakítás le lesz tiltva.\n\nA bejegyzések a hatókör specifikussága alapján kerülnek összehangolásra (ügynök: 100, modell: 10, szolgáltató: 1 pont).\n\nPélda:\n```json\n[\n  { \"scope\": { \"providerId\": \"anthropic\" }, \"reasoning\": { \"level\": \"medium\" } },\n  { \"scope\": { \"modelId\": \"openai/gpt-5\" }, \"reasoning\": { \"level\": \"high\" } },\n  { \"scope\": { \"agentId\": \"Coder\" }, \"reasoning\": { \"level\": \"off\" } }\n]\n```",
+          "mdDescription": "A csevegőmező érvelés-választójának alapértelmezett értéke, amely az érvelést támogató modellekre vonatkozik.\n\nEz egy felhasználói felület szintű beállítás: a kiválasztott szint a kéréskor lefordításra kerül a szolgáltató natív API-paramétereire (pl. Anthropic `thinking` / `output_config.effort`, OpenAI `reasoning.effort`, Gemini `thinkingConfig`), és elsőbbséget élvez az ugyanazon mezőkhez a `#ai-features.modelSettings.requestSettings#`-en keresztül megadott nyers értékekkel szemben.\n\nMinden bejegyzés a következőkből áll:\n- `scope`: Meghatározza, mikor érvényes a beállítás (`modelId`, `providerId`, `agentId`).\n- `reasoning.level`: Az `off`, `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`, `auto` értékek egyike.\nA támogatott szintek a modelltől függenek. A `none` kifejezetten nem igényel következtetést; az `off` letiltja a gondolkodást az Ollama-n. Más szolgáltatók esetében az `off` elhagyja a kifejezett következtetési erőfeszítést, lehetővé téve a szolgáltató alapértelmezett beállításainak vagy a nyers kérésbeállításoknak az alkalmazását. Az `auto` a szolgáltató alapértelmezett beállításait használja.\n\nForrás: futásidejű prioritás (a legmagasabbtól kezdve): a szelektoron keresztüli munkamenet-felülírás → ez a beállítás → a modell deklarált alapértelmezése. Amit a szelektor megjelenít, az kerül elküldésre. Ha a szolgáltató érvelési mezőjét manuálisan szeretné felülírni a `#ai-features.modelSettings.requestSettings#` segítségével, állítsa itt a `reasoning.level` értéket `off`-ra, így a szintalapú fordítás letiltásra kerül (kivéve az Ollama esetében).\n\nA bejegyzések a hatókör specifikussága alapján kerülnek összehasonlításra (ügynök: 100, modell: 10, szolgáltató: 1 pont).\n\nPélda:\n```json\n[\n  { \"scope\": { \"providerId\": \"anthropic\" }, \"reasoning\": { \"level\": \"medium\" } },\n  { \"scope\": { \"modelId\": \"openai/gpt-5\" }, \"reasoning\": { \"level\": \"high\" } },\n  { \"scope\": { \"agentId\": \"Coder\" }, \"reasoning\": { \"level\": \"off\" } }\n]\n```",
+          "noneDescription": "Kifejezetten nem igényel indoklást.",
+          "offDescription": "Kihagyja a kifejezett érvelési erőfeszítést, lehetővé téve a szolgáltató alapértelmezett beállításainak vagy a nyers kérésbeállításoknak az alkalmazását; az Ollama-n letiltja a gondolkodást.",
           "title": "Alapértelmezett értékek"
         },
         "requestSettings": {
@@ -936,10 +1010,10 @@
           "builtInVariable": "{0} Beépített változó",
           "currentAbsoluteFilePath": "Az éppen megnyitott fájl abszolút elérési útja.",
           "currentFileContent": "Az éppen megnyitott fájl egyszerű tartalma. Ez nem tartalmazza azokat az információkat, amelyek a tartalom eredetére vonatkoznak.",
-          "currentRelativeDirPath": "A jelenleg megnyitott fájlt tartalmazó könyvtár munkaterülethez viszonyított elérési útja (pl. my-project/src).",
-          "currentRelativeFilePath": "Az éppen megnyitott fájl munkaterülethez viszonyított elérési útja (pl.: my-project/src/index.ts).",
+          "currentRelativeDirPath": "Az éppen megnyitott fájlt tartalmazó könyvtár elérési útja a munkaterület gyökérkönyvtárához viszonyítva, a gyökérnév (pl. src) nélkül.",
+          "currentRelativeFilePath": "Az éppen megnyitott fájl elérési útja a munkaterület gyökérkönyvtárához viszonyítva, a gyökérnév nélkül (pl. src/index.ts).",
           "currentSelectedText": "A megnyitott fájlban jelenleg kijelölt egyszerű szöveg. Ez nem tartalmazza azt az információt, hogy honnan származik a tartalom.",
-          "dotRelativePath": "Rövid hivatkozás az éppen megnyitott fájl munkaterülethez viszonyított elérési útjára („currentRelativeFilePath”)."
+          "dotRelativePath": "Rövid hivatkozás az éppen megnyitott fájl elérési útjára a munkaterület gyökérkönyvtárához viszonyítva, a gyökérnév nélkül („currentRelativeFilePath”)."
         },
         "variantSet": {
           "unavailableVariant": "{0} (nem elérhető)",
@@ -1039,6 +1113,7 @@
         "agentConfiguration": {
           "agentMode": "A Coder ügynökmódja",
           "behavior": "Viselkedés",
+          "closeGenericCapabilitiesEditor": "Zárja be az általános képességek szerkesztőjét",
           "customAgentLocationQuickPick": {
             "placeholder": "Válassza ki, hová szeretné létrehozni az agents/<id>/agent.md fájlt",
             "title": "Válassza ki az új egyéni ügynök helyét"
@@ -1047,6 +1122,7 @@
           "defaultChatAgentNone": "Beépített alapértelmezett",
           "defaultChatAgentNoneDescription": "Nincs kifejezett alapértelmezett beállítás; a Theia az alapértelmezett csevegőügynököt választja.",
           "defaults": "Alapértelmezett beállítások",
+          "editGenericCapabilities": "Általános funkciók szerkesztése",
           "genericCapabilitiesSettings": "Általános képességek",
           "genericCapabilityType": {
             "agentDelegation": "Ügynökdelegálás",
@@ -1183,7 +1259,7 @@
           "mdDescription": "Ez a beállítás lehetővé teszi a legújabb AI-funkciók elérését.            \n            Fontos tudni, hogy ezek a funkciók folyamatos kéréseket generálhatnak az Ön által hozzáférhetővé tett nyelvi modellekhez (LLM-ek). Ez olyan költségeket eredményezhet, amelyeket szorosan figyelnie kell. Ennek az opciónak az engedélyezésével Ön tudomásul veszi ezeket a kockázatokat.            \n            **Kérjük, vegye figyelembe! Az alábbi beállítások csak akkor lépnek hatályba,\n            ha a fő funkció beállítása engedélyezve van. A funkció engedélyezése után legalább egy LLM-szolgáltatót kell konfigurálnia az alábbiak közül. Lásd még [a dokumentációt](https://theia-ide.org/docs/user_ai/)**."
         },
         "exploreAgent": {
-          "description": "Kódbázis-felfedező asszisztens, amely kivonja és összefoglalja a kódbázisból származó információkat.         Jelentéseket készít a meglévő elemekről, kódrészleteket nyújt, és leírja a megfigyelt mintákat."
+          "description": "Egy kódbázis-felfedező asszisztens, amely információkat nyer ki és sűrít a kódbázisból.         Tényeket jelent arról, hogy mi létezik, kódrészleteket nyújt, és leírja a megfigyelt mintákat.         Bízzuk rá a feladatot, amikor a tervezés egyértelmű, de a fájlok között tényeket kell összegyűjteni: hívási helyek, adatáramlás, minták, láncreakció-ellenőrzések.         Nem tervez. 1–2 ismert fájl vagy egyetlen célzott keresés esetén inkább közvetlenül használja az eszközöket."
         },
         "generalConfiguration": {
           "aboutCosts": "A költségekről és az adatforgalomról",
@@ -1252,7 +1328,6 @@
           "noModels": "Még nem találtunk modelleket.",
           "noProviders": "Nincs telepítve nyelvi modellszolgáltató.",
           "providers": "Szolgáltatók",
-          "ready": "Kész",
           "refresh": "A modell lista frissítése",
           "refreshUnavailable": "Nincs mit frissíteni, amíg a szolgáltató nem rendelkezik hitelesítő adatokkal",
           "released": "{0} kiadás",
@@ -1295,8 +1370,7 @@
               "description": "Helyileg ellenőrzi a pull requestet, és védi a meglévő munkatér változásait."
             },
             "localValidation": {
-              "description": "Helyi telepítési, összeállítási, lint, tesztelési vagy hasonló érvényesítési feladatokat futtat a pull requesthez.",
-              "name": "Build"
+              "description": "Helyi telepítési, összeállítási, lint, tesztelési vagy hasonló érvényesítési feladatokat futtat a pull requesthez."
             },
             "pendingGitHubReview": {
               "description": "A GitHub-ügynökre ruházza át a feladatot, hogy a felhasználó kifejezett megerősítése után létrehozza vagy frissítse a függőben lévő pull request-felülvizsgálatot előre elkészített beágyazott megjegyzésekkel.",
@@ -1410,6 +1484,10 @@
             "title": "Az összes eszköz visszaállításának megerősítési módjai"
           },
           "resetAllTooltip": "Az összes eszköz alapértelmezett értékre állítása",
+          "sessionOverride": {
+            "tooltip": "A --session-preference paranccsal állítható be az adott munkamenethez. Ha itt bármelyik eszköz módját megváltoztatja, vagy az összes eszközt visszaállítja, az ablak újratöltéséig minden eszköz munkameneti értéke törlődik.",
+            "tooltipWithValue": "A --session-preference: {0} paranccsal állítható be az aktuális munkamenethez. Ha itt bármelyik eszköz módját megváltoztatja, vagy az összes eszközt visszaállítja, az ablak újratöltéséig minden eszköz munkamenet-értéke törlődik."
+          },
           "shellExecution": "Shell-parancsok végrehajtása",
           "toolOptions": {
             "confirm": {
@@ -1616,8 +1694,7 @@
             "title": "Hitelesítési fejléc neve"
           },
           "serverUrl": {
-            "mdDescription": "A távoli MCP-kiszolgáló URL-je. Ha megadja, a kiszolgáló ehhez az URL-hez csatlakozik, ahelyett, hogy helyi folyamatot indítana.",
-            "title": "Szerver URL"
+            "mdDescription": "A távoli MCP-kiszolgáló URL-je. Ha megadja, a kiszolgáló ehhez az URL-hez csatlakozik, ahelyett, hogy helyi folyamatot indítana."
           },
           "title": "MCP szerver konfiguráció"
         },
@@ -1665,7 +1742,6 @@
         "deleteServerDialogMsg": "Biztosan törölni szeretné a „{0}” szervert?",
         "deleteServerDialogTitle": "MCP szerver törlése",
         "deleteServerError": "Az MCP-kiszolgáló törlése sikertelen: {0}",
-        "environmentVariables": "Környezeti változók",
         "form": {
           "argsPlaceholder": "Szóközzel elválasztva, pl. -y @modelcontextprotocol/server-brave-search",
           "authHeaderPlaceholder": "Alapértelmezett: Engedélyezés hordozóval",
@@ -1710,8 +1786,6 @@
         "saveServerError": "Az MCP szerver konfigurációjának mentése sikertelen: {0}",
         "serverAuthToken": "Hitelesítési token",
         "serverAuthTokenHeader": "Auth fejléc neve",
-        "serverTypeLabel": "MCP-kiszolgáló",
-        "serverUrl": "Szerver URL",
         "serversListTitle": "Szerverek",
         "showToolSettings": "Eszköz megjelenítése",
         "signInServerFailed": "Nem sikerült bejelentkezni az „{0}” MCP-kiszolgálóra.",
@@ -1762,7 +1836,7 @@
           "id": {
             "title": "Egyedi azonosító, amelyet a felhasználói felületen használnak az egyéni modell azonosítására."
           },
-          "mdDescription": "Integráljon az OpenAI API-val kompatibilis egyéni modelleket, például a `vllm` segítségével. A kötelező attribútumok a `model` és az `url`.            \n            Opcionálisan megadhatja            \n            - egy egyedi `id`-t az egyéni modell azonosításához a felhasználói felületen. Ha nem ad meg ilyet, akkor a `model` értéke lesz az `id`.            \n            - adjon meg egy `apiKey`-t a megadott URL-en elérhető API-hoz való hozzáféréshez. A `true` értékkel jelezze a globális OpenAI API-kulcs használatát.            \n            - Adjon meg egy `apiVersion` értéket az Azure-ban a megadott URL-en elérhető API eléréséhez. A `true` értékkel jelölje meg a globális OpenAI API-verzió használatát.            \n            - Adjon meg egy `deployment` nevet az Azure-telepítéséhez.            \n            - Állítsa be a `developerMessageSettings` értéket `user`, `system`, `developer`, `mergeWithFollowingUserMessage` vagy `skip` értékre a fejlesztői üzenet beillesztésének szabályozásához            (ahol a `user`, `system` és `developer` szerepkörként kerül felhasználásra, a `mergeWithFollowingUserMessage` a következő felhasználói üzenet elé a rendszerüzenetet illeszti, vagy a rendszerüzenetet felhasználói üzenetté alakítja, ha (ahol a `user`, `system` és `developer` szerepkörként kerülnek felhasználásra, a `mergeWithFollowingUserMessage` a következő felhasználói üzenet elé illeszti a rendszerüzenetet,            vagy a rendszerüzenetet felhasználói üzenetté alakítja át, ha a következő üzenet nem felhasználói üzenet. A `skip` egyszerűen eltávolítja a rendszerüzenetet).            Alapértelmezés szerint `developer`.            \n            - adja meg a `supportsStructuredOutput: false` értéket, ha nem kívánja használni a strukturált kimenetet.            \n            - adja meg az `enableStreaming: false` értéket, ha nem kívánja használni a streaminget.            \n            - Adja meg a `useResponseApi: true` értéket, ha a Chat Completion API helyett az újabb OpenAI Response API-t szeretné használni (ehhez kompatibilis végpont szükséges).            \n            - Adja meg a `reasoningSupport` értéket, ha bekapcsolja a csevegési érvelés-szelektort. Adjon meg egy objektumot, amely tartalmazza a            `supportedLevels` tulajdonságot (pl. `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`) és egy opcionális `defaultLevel` tulajdonságot.            \n            - Adja meg a `headers` paramétert, ha minden, a végponthoz küldött kéréshez további HTTP-fejléceket szeretne csatolni, pl. az API előtt lévő átjáró által megkövetelt fejléceket.            \n            További információkért lásd [a dokumentációnkat](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm).",
+          "mdDescription": "Integráljon az OpenAI API-val kompatibilis egyéni modelleket, például a `vllm` segítségével. A kötelező attribútumok a `model` és az `url`.            \n            Opcionálisan megadhatja            \n            - egy egyedi `id`-t az egyéni modell azonosításához a felhasználói felületen. Ha nem ad meg ilyet, akkor a `model` értéke lesz az `id`.            \n            - adjon meg egy `apiKey`-t a megadott URL-en elérhető API-hoz való hozzáféréshez. A `true` értékkel jelölje, hogy a globális OpenAI API-kulcsot használja.            \n            - Adjon meg egy `apiVersion` értéket az Azure-ban a megadott URL-en elérhető API eléréséhez. A `true` értékkel jelölje, hogy a globális OpenAI API-verziót használja.            \n            - Adjon meg egy `deployment` nevet az Azure-telepítéséhez.            \n            - Állítsa be a `developerMessageSettings` értéket `user`, `system`, `developer`, `mergeWithFollowingUserMessage` vagy `skip` értékre, hogy szabályozza, hogyan kerül be a fejlesztői üzenet             (ahol a `user`, `system` és `developer` szerepkörként kerülnek felhasználásra; a `mergeWithFollowingUserMessage` a következő felhasználói üzenet elé illeszti a rendszerüzenetet,            vagy a rendszerüzenetet felhasználói üzenetté alakítja, ha a következő üzenet nem felhasználói üzenet. A `skip` egyszerűen eltávolítja a rendszerüzenetet).            Alapértelmezés szerint `developer`.            \n            - Adja meg a `supportsStructuredOutput: false` értéket, ha nem kívánja használni a strukturált kimenetet.            \n            - Adja meg az `enableStreaming: false` értéket, ha nem kívánja használni a streaminget.            \n            - Adja meg a `useResponseApi: true` értéket, ha a Chat Completion API helyett az újabb OpenAI Response API-t szeretné használni (ehhez kompatibilis végpont szükséges).            \n            - Adja meg a `reasoningSupport` értéket, ha bekapcsolja a csevegési érvelés-szelektort. Adjon meg egy objektumot, amely tartalmazza a            `supportedLevels` paramétert (lehetséges értékek: `off`, `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`, `auto`) és egy opcionális `defaultLevel` paramétert.            A `none` érték kifejezetten ésszerűsítés nélküli erőfeszítést küld; az `off` elhagyja a generált érvelési beállításokat; az `auto` a szolgáltató alapértelmezett szintjét használja.            Csak az Ön végpontja által támogatott szinteket adja meg.            \n            - Adja meg a `headers` paramétert, hogy minden, a végponthoz küldött kéréshez további HTTP-fejléceket küldjön, pl. az API előtt lévő átjáró által megkövetelt fejléceket.            \n            További információkért lásd [a dokumentációnkat](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm).",
           "modelId": {
             "title": "Modellazonosító"
           },
@@ -1810,6 +1884,9 @@
           "description": "A jelenlegi munkaterületen található, prompt sablonként használható fájlok relatív elérési útjainak listája. Ha ugyanazon azonosítóval (fájlnévvel) rendelkező sablonok több helyen is megtalálhatók, a konfliktusokat prioritás szerint oldják meg: konkrét sablonfájlok (legmagasabb) > munkaterületi könyvtárak > globális könyvtárak (legalacsonyabb).",
           "title": "Munkaterület-specifikus prompt sablonfájlok"
         }
+      },
+      "registry": {
+        "from": "Forrás:"
       },
       "scanoss": {
         "changeSet": {
@@ -1896,52 +1973,15 @@
         "failedToGetTokenUsageData": "A tokenhasználati adatok lekérésének sikertelensége: {0}",
         "inputTokens": "Bemeneti tokenek",
         "label": "Token használata",
-        "lastUsed": "Utoljára használt",
         "noData": "Még nem állnak rendelkezésre tokenhasználati adatok.",
         "note": "A tokenek használatát az alkalmazás indításától kezdve nyomon követik, és nem tárolják.",
         "outputTokens": "Kimeneti tokenek",
         "readCachedInputTokens": "A gyorsítótárból olvasott bemeneti tokenek"
       },
-      "vercelai": {
-        "anthropicApiKey": {
-          "mdDescription": "Adja meg a Vercel AI SDK által használt Anthropic modellek API-kulcsát. **Kérjük, vegye figyelembe:** Ezen beállítás használatával az API-kulcs szöveges formában kerül tárolásra a Theia futtatására használt gépen. A kulcs biztonságos beállításához használja az `ANTHROPIC_API_KEY` környezeti változót."
-        },
-        "customEndpoints": {
-          "apiKey": {
-            "title": "Vagy a megadott URL-en elérhető API-hoz való hozzáférés kulcsa, vagy `true` a globális API-kulcs használatához."
-          },
-          "enableStreaming": {
-            "title": "Jelzi, hogy a streaming API-t kell-e használni. Alapértelmezés szerint `true`."
-          },
-          "id": {
-            "title": "Egyedi azonosító, amelyet a felhasználói felületen használnak az egyéni modell azonosítására."
-          },
-          "mdDescription": "Integrálja a Vercel AI SDK-val kompatibilis egyéni modelleket. A szükséges attribútumok a `model` és az `url`.            \n            Opcionálisan megadhatja a következőket:            \n            - egy egyedi `id` azonosítót az egyéni modell azonosításához a felhasználói felületen. Ha nem ad meg ilyet, akkor a `model` lesz az `id`.            \n            - egy `apiKey` kulcsot a megadott url-en elérhető API eléréséhez. A globális API-kulcs használatát a `true` értékkel jelölje.            \n            - Adja meg a `supportsStructuredOutput: false` értéket, ha jelzi, hogy strukturált kimenetet nem kíván használni.            \n            - Adja meg az `enableStreaming: false` értéket, ha jelzi, hogy streaminget nem kíván használni.            \n            - Adja meg a `provider` értéket, ha jelzi, hogy a modell melyik szolgáltatótól származik (openai, anthropic).",
-          "modelId": {
-            "title": "Modellazonosító"
-          },
-          "supportsStructuredOutput": {
-            "title": "Jelzi, hogy a modell támogatja-e a strukturált kimenetet. Alapértelmezés szerint `true`."
-          },
-          "url": {
-            "title": "Az API végpont, ahol a modell található"
-          }
-        },
-        "models": {
-          "description": "A Vercel AI SDK-val használható hivatalos modellek",
-          "id": {
-            "title": "Modellazonosító"
-          },
-          "model": {
-            "provider": "Szolgáltató",
-            "title": "Modell neve"
-          }
-        },
-        "openaiApiKey": {
-          "mdDescription": "Adja meg az API kulcsot a Vercel AI SDK által használt OpenAI modellekhez. **Kérjük, vegye figyelembe:** ennek a beállításnak a használatával az API kulcs szöveges formában kerül tárolásra a Theia futtatására használt gépen. Az `OPENAI_API_KEY` környezeti változó használatával biztonságosan állíthatja be a kulcsot."
-        }
-      },
       "workspace": {
+        "agentsMdAgent": {
+          "description": "Egy AI-asszisztens a projektkontextus kezelésére, amelyet más AI-ügynökök használnak. Ez az ügynök segít létrehozni, frissíteni és felülvizsgálni a munkaterület gyökérkönyvtárában található AGENTS.md fájlt, az open AGENTS.md szabványnak megfelelően, amelyet más ügynöki eszközök is olvasnak. Képes elemezni a munkaterületedet, hogy projektinformációkat javasoljon, összevonja a meglévő utasításfájlokat, például a CLAUDE.md vagy a copilot-instructions.md fájlokat, illetve frissítse a fájlt az igényeidnek megfelelően."
+        },
         "allowedExternalPaths": {
           "description": "A munkaterületen kívüli abszolút elérési utak vagy fájl-URI-k (könyvtárak vagy fájlok) listája, amelyekhez az AI-eszközök hozzáférhetnek. Támogatja a `~` karaktert a felhasználói otthoni könyvtárra való hivatkozáshoz. Alapértelmezés szerint üres; csak kifejezett engedélyezés esetén használható. Minden olyan eszköz figyelembe veszi, amely elérési utat fogad el, beleértve a fájlokat író eszközöket is. A munkaterület hatókörébe tartozó értékeket a rendszer figyelmen kívül hagyja, ha a munkaterület nem megbízható. A megengedett listán szereplő könyvtárakban található szimbolikus linkeket a rendszer követi, és azok a megengedett listán kívüli fájlokra is mutathatnak; csak olyan könyvtárakat adjon hozzá, amelyek tartalmát megbízhatónak tartja.",
           "title": "Megengedett külső útvonalak"
@@ -1964,15 +2004,16 @@
           "description": "A getFileContent eszköz által visszaadott tartalom maximális mérete kilobájtban. Teljes fájl olvasásakor (offset/limit nélkül) az ezt a határt meghaladó fájlok hibaüzenetet adnak vissza. Offset és limit használata esetén csak a kért tartományt ellenőrzik a határértékkel szemben.",
           "title": "Fájl tartalmának maximális mérete (KB)"
         },
-        "projectInfoAgent": {
-          "description": "Mesterséges intelligencia asszisztens projektinformációs sablonok kezeléséhez. Ez az ügynök segít létrehozni, frissíteni és felülvizsgálni a .prompts/project-info.prompttemplate fájlt, amely kontextust nyújt a projektről más mesterséges intelligencia ügynökök számára. Elemezheti a munkaterületet, hogy projektinformációkat javasoljon, vagy a követelmények alapján frissítse a meglévő sablonokat."
-        },
         "searchMaxResults": {
           "description": "A munkaterület keresési funkciója által visszaküldött keresési eredmények maximális száma.",
           "title": "Maximális keresési eredmények"
         },
         "workspaceAgent": {
-          "description": "A Theia IDE-be integrált AI-asszisztens, amelynek célja a szoftverfejlesztők segítése. Ez az ügynök hozzáférhet a felhasználók munkaterületéhez, lekérheti az összes elérhető fájl és mappa listáját, és letöltheti azok tartalmát. Fájlokat nem módosíthat. Ezért válaszolhat a munkaterületen található aktuális projektre, projektfájlokra és forráskódra vonatkozó kérdésekre, például hogy hogyan kell összeállítani a projektet, hova kell tenni a forráskódot, hol találhatók bizonyos kódok vagy konfigurációk stb."
+          "description": "{0}-ba integrált mesterséges intelligencia-asszisztens, amelyet szoftverfejlesztők támogatására terveztek. Ez az ügynök hozzáférhet a felhasználó munkaterületéhez, lekérheti az összes elérhető fájl és mappa listáját, valamint azok tartalmát. Fájlokat nem módosíthat. Ezért a munkaterületen található aktuális projekttel, projektfájlokkal és forráskóddal kapcsolatos kérdésekre tud válaszolni, például arra, hogy hogyan kell összeállítani a projektet, hová kell elhelyezni a forráskódot, hol találhatók meg bizonyos kódok vagy konfigurációk stb. Feltérképezi a feladatot, és elkészíti a megvalósítási tervet (feladatkontextust). Bízza rá a feladatot, ha maga a „mit kell megváltoztatni?” kérdés is nyitott: tervezési döntések, 3 vagy több fájlt vagy 2 vagy több csomagot érintő változtatások, illetve az architektúra rétegeit átívelő módosítások esetén."
+        },
+        "writeContentMaxSizeKB": {
+          "description": "A teljes fájl írására szolgáló eszközök (writeFileContent és suggestFileContent) által elfogadott tartalom maximális mérete kilobájtban kifejezve. A nagyobb méretű írási műveleteket elutasítja a rendszer, és azt javasolja, hogy inkább a cserealapú eszközöket használja.",
+          "title": "Tartalom maximális mérete (KB)"
         }
       }
     },
@@ -2018,8 +2059,7 @@
         "description": "Az AI-beállítások átkerültek az AI-konfigurációs nézetbe. Nyissa meg azt a szolgáltatók, modellek, ügynökök és egyéb elemek konfigurálásához."
       },
       "preferences": {
-        "linuxEnvHint": "Linux rendszeren győződjön meg arról, hogy a változó a `~/.profile` fájlban van definiálva (nem csak a `~/.bashrc` fájlban), ha az alkalmazást asztali parancsikonról indítja. A részleteket lásd a [dokumentációban](https://theia-ide.org/docs/user_ai/#setting-api-keys).",
-        "title": "AI funkciók"
+        "linuxEnvHint": "Linux rendszeren győződjön meg arról, hogy a változó a `~/.profile` fájlban van definiálva (nem csak a `~/.bashrc` fájlban), ha az alkalmazást asztali parancsikonról indítja. A részleteket lásd a [dokumentációban](https://theia-ide.org/docs/user_ai/#setting-api-keys)."
       },
       "showChat": "Csevegés megjelenítése"
     },
@@ -2149,6 +2189,7 @@
         "mdDescription": "Az `#ai-features.registry.autoUpdate#` beállítások artefaktumonkénti felülírásai, `skill:<skillId>`, `mcp:<serverId>` vagy `plugin:<pluginId>` kulcsokkal. A bejegyzéseket általában a Bővítmények nézet fogaskerék-menüjén keresztül lehet kezelni; a bejegyzés nélküli artefaktumok az alapértelmezett beállításokat követik."
       },
       "mcp": {
+        "registryLatestVersion": "MCP-nyilvántartás: {0}",
         "updated": "Frissített MCP-kiszolgáló: „{0}”."
       },
       "plugin": {
@@ -2296,7 +2337,6 @@
       "configurePermissions": "A shell parancsok engedélyeinek konfigurálása",
       "confirmExecution": "Shell parancs megerősítése",
       "denialReason": "Ok",
-      "executionDenied": "Elutasítva",
       "executionDeniedWithReason": "Elutasítva indokkal",
       "partialOutput": "Részleges kimenet",
       "shellCommandAllowlist": {
@@ -2305,8 +2345,7 @@
       "shellCommandDenylist": {
         "description": "A mindig elutasítandó shell parancsminták listája. Az ezeknek a mintáknak megfelelő parancsok megerősítés nélkül automatikusan elutasításra kerülnek. Mintaszintaxist használ: „git push” (pontos egyezés) vagy „git push *” (bármilyen argumentummal). Veszélyes parancsok (eval, exec, sudo, rm -rf stb.) alapértelmezett mintáival együtt szállítják."
       },
-      "timeout": "Időkorlát",
-      "workingDirectory": "Munkakönyvtár"
+      "timeout": "Időkorlát"
     },
     "ai-tool-sketchpad": {
       "addItemProperty": "Elem tulajdonság hozzáadása",
@@ -2385,7 +2424,6 @@
       "optional": "opcionális",
       "selectAuth": "Hitelesítési módszer kiválasztása",
       "selectCollaboration": "Válassza ki az együttműködési lehetőséget",
-      "serverUrl": "Szerver URL",
       "serverUrlDescription": "Az Open Collaboration Tools Server példányának URL-je élő együttműködési munkamenetekhez",
       "sharedSession": "Megosztott együttműködési munkamenet",
       "startSession": "Együttműködési munkamenet indítása vagy csatlakozás hozzá",
@@ -2412,6 +2450,9 @@
         "collapseLeftPanel": "Bal oldali panel váltása",
         "collapseRightPanel": "Jobb oldali panel váltása",
         "collapseTab": "Oldalsó panel összecsukása",
+        "hideSidePanelItem": "Elrejtés az oldalsávból",
+        "keepSidePanelItem": "Tartsa az oldalsávban",
+        "resetHiddenSidePanelItems": "A rejtett oldalsáv elemeinek visszaállítása",
         "showNextTabGroup": "Váltás a következő fülcsoportra",
         "showNextTabInGroup": "Váltás a csoport következő lapjára",
         "showPreviousTabGroup": "Váltás az előző lapcsoporthoz",
@@ -2427,10 +2468,23 @@
         "visual": "A lap vizuális előnézetének megjelenítése."
       },
       "highlightModifiedTabs": "Szabályozza, hogy a módosított (piszkos) szerkesztőfülek felső szélén megjelenik-e a keret.",
+      "http": {
+        "proxy": "A használni kívánt proxy-beállítás. Ha nincs megadva, akkor a `http_proxy` és `https_proxy` környezeti változókból öröklődik.",
+        "proxyAuthorization": "Az a érték, amelyet minden hálózati kérésnél `Proxy-Authorization` fejlécben kell elküldeni.",
+        "proxyStrictSSL": "Meghatározza, hogy a proxy szerver tanúsítványát ellenőrizni kell-e a megadott hitelesítő központok listája alapján.",
+        "proxySupport": "Használja a bővítmények proxy-támogatását.",
+        "systemCertificates": "Meghatározza, hogy a CA-tanúsítványokat az operációs rendszerből kell-e betölteni. Windows és macOS rendszereken az opció kikapcsolása után az ablak újratöltése szükséges."
+      },
       "jumpListName": "Legutóbbi munkaterületek",
       "keybinding": {
+        "characterRequiresCodeDispatch": "A karakterbillentyű-kombinációk használatához a „keyboard.dispatch” beállítást „code”-ra kell állítani.",
+        "commandModifierAltGraphCharacterUnavailable": "A logikai karakter és a {0} parancsmódosító a jelenlegi billentyűzetkiosztáson nem használható együtt.",
         "duplicateModifierError": "Nem lehet értelmezni a billentyűkombinációt {0} Duplikált módosítók",
+        "invalidCharacter": "Érvénytelen Unicode-karakter {0}.",
         "metaError": "A billentyűkombinációk elemzése nem lehetséges {0} meta csak OSX-hez használható",
+        "shiftedAltGraphCharacterUnavailable": "A logikai karakter és a Shift parancsmódosító gomb a jelenlegi billentyűzetkiosztáson nem használható együtt.",
+        "unavailableCharacter": "A billentyű a jelenlegi billentyűzetkiosztáson nem elérhető.",
+        "unknownScanCode": "Ismeretlen szkennelési kód {0}. Használjon támogatott KeyboardEvent.code nevet.",
         "unrecognizedKeyError": "{1} felismerhetetlen kulcs {0}"
       },
       "keybindingStatus": "{0} lenyomva, további billentyűk lenyomására vár",
@@ -2464,10 +2518,15 @@
       },
       "secondaryWindow": {
         "alwaysOnTop": "Ha engedélyezve van, a másodlagos ablak minden más ablak felett marad, beleértve a különböző alkalmazások ablakait is.",
+        "closeBehavior": {
+          "close": "A másodlagos ablak nézetei bezáródnak. Azok a nézetek, amelyek állapotukat elveszítenék – pl. a mentetlen módosításokat tartalmazó szerkesztők –, visszakerülnek a főablakba.",
+          "moveToMainWindow": "A másodlagos ablak összes nézete visszakerül a főablakba."
+        },
         "description": "Beállítja a kivont másodlagos ablak kezdeti pozícióját és méretét.",
         "fullSize": "A kivont widget helyzete és mérete megegyezik a futó Theia alkalmazáséval.",
         "halfWidth": "A kivont widget helyzete és mérete a futó Theia alkalmazás szélességének fele lesz.",
-        "originalSize": "A kivont widget helyzete és mérete megegyezik az eredeti widgetével."
+        "originalSize": "A kivont widget helyzete és mérete megegyezik az eredeti widgetével.",
+        "restore": "Meghatározza, hogy az indításkor visszaállnak-e a másodlagos ablakok. Ha le van tiltva, a tartalmuk a főablakban jelenik meg."
       },
       "severity": {
         "log": "Napló"
@@ -2526,6 +2585,8 @@
       "missingConfiguration": "A „{0}: {1}” dinamikus konfiguráció hiányzik vagy nem alkalmazható.",
       "pause": "szünet",
       "pauseAll": "Minden szüneteltetése",
+      "restartFrameFailed": "A keret újraindítása nem sikerült.",
+      "restartFrameNotSupported": "A hibakereső adapter nem támogatja a keretek újraindítását.",
       "step": "lépés",
       "taskTerminatedBySignal": "A „{0}” feladatot a {1} jelzés szakította meg.",
       "taskTerminatedForUnknownReason": "A „{0}” feladat ismeretlen okból leállt.",
@@ -2562,6 +2623,10 @@
       "editor.inlineSuggest.edits.experimental.useInterleavedLinesDiff": "Ellenőrzi, hogy engedélyezze-e a kísérleti interleaved lines diff funkciót az inline javaslatokban.",
       "editor.inlineSuggest.edits.experimental.useMixedLinesDiff": "Ellenőrzi, hogy engedélyezve legyen-e a kísérleti szerkesztés az inline javaslatokban.",
       "editor.insertSpaces": "Szóközök beszúrása a `Tab` billentyű lenyomásával. Ez a beállítás felülírható a fájl tartalma alapján, ha a `#editor.detectIndentation#` be van kapcsolva.",
+      "editor.multiCursorPaste": {
+        "description": "Szabályozza a beillesztést, ha a beillesztett szöveg sorainak száma megegyezik a kurzor pozíciójának számával.",
+        "spread": "Minden kurzormozgatás a szöveg egy sorát illeszti be."
+      },
       "editor.quickSuggestions": "Szabályozza, hogy a javaslatok automatikusan megjelenjenek-e gépelés közben. Ez beállítható megjegyzések, karakterláncok és más kódok gépelése esetén. A gyors javaslatok úgy konfigurálhatók, hogy szellem szövegként vagy a javaslat widget segítségével jelenjenek meg. Ne feledkezzen meg a `#editor.suggestOnTriggerCharacters#` beállításról sem, amely szabályozza, hogy a javaslatok speciális karakterek által aktiválódnak-e.",
       "editor.suggestFontSize": "A javaslat widget betűméret. Ha `0`-ra van állítva, akkor a `#editor.fontSize#` értéke kerül felhasználásra.",
       "editor.suggestLineHeight": "A javaslat widget sor magassága. Ha `0`-ra van állítva, akkor a `#editor.lineHeight#` értéke kerül felhasználásra. A minimális érték 8.",
@@ -2611,6 +2676,7 @@
       "cwd": "Válassza ki az új külső terminál aktuális munkakönyvtárát"
     },
     "file-search": {
+      "placeholder": "Fájlok keresése név szerint ({0} hozzáadásával a sorhoz, {1} hozzáadásával a szimbólumhoz juthat)",
       "toggleExcludedFiles": " (A kizárt fájlok megjelenítéséhez/elrejtéséhez nyomja meg az {0} gombot)"
     },
     "fileDialog": {
@@ -2672,6 +2738,8 @@
       "editKeybindingTitle": "{0} billentyűkombinációk szerkesztése",
       "editWhenExpression": "Szerkesztés amikor kifejezés...",
       "editWhenExpressionTitle": "{0} kifejezés szerkesztése",
+      "inactiveKeybinding": "Az aktuális billentyűzetkiosztáson inaktív",
+      "interpretationShadowing": "A parancs-módosítók értelmezése elsőbbséget élvez ezzel a billentyűkombinációval szemben.",
       "keybinding": {
         "copy": "Billentyűkombináció másolása",
         "copyCommandId": "Másolás Billentyűkombináció Parancsazonosító",
@@ -2680,10 +2748,13 @@
         "editWhenExpression": "Edit Keybinding When Expression..."
       },
       "keybindingCollidesValidation": "A billentyűkombinációk jelenleg ütköznek egymással.",
+      "keybindingDescription": "Szóközzel elválasztott logikai gomb vagy gombkombináció. Fizikai gombok esetén használja a [ScanCode] jelölést, a fenntartott Unicode-karakterek esetén pedig a [char:0x...] jelölést.",
+      "physicalRealizationUnavailable": "Fizikai megvalósítás nem elérhető",
       "requiredKeybindingValidation": "A billentyűkombináció értéke kötelező.",
       "resetKeybindingConfirmation": "Tényleg vissza szeretné állítani ezt a billentyűkombinációt az alapértelmezett értékre?",
       "resetKeybindingTitle": "{0} billentyűkombinációjának visszaállítása",
-      "resetMultipleKeybindingsWarning": "Ha több billentyűkombináció létezik ehhez a parancshoz, akkor mindegyik visszaáll."
+      "resetMultipleKeybindingsWarning": "Ha több billentyűkombináció létezik ehhez a parancshoz, akkor mindegyik visszaáll.",
+      "windowsRecorderGuidance": "Nyomja meg a kívánt billentyűkombinációt, majd nyomja meg az ENTER gombot. Az AltGr-kombinációk a logikai karakterükként kerülnek mentésre."
     },
     "localize": {
       "offlineTooltip": "Nem lehet csatlakozni a háttérrendszerhez."
@@ -2849,11 +2920,16 @@
       "webviewWarnIfUnsecure": "Figyelmezteti a felhasználókat, hogy a webnézetek jelenleg nem biztonságosan vannak telepítve."
     },
     "preferences": {
-      "ai-features": "AI funkciók",
-      "hostedPlugin": "Tároló plugin",
-      "input": {
-        "browse": "Tallózás"
+      "ai-features": {
+        "ai-enable": "AI-támogatás",
+        "code-completion": "Kódkiegészítés",
+        "model-settings": "Modellbeállítások",
+        "open-ai-custom": "{0} Egyéni modellek",
+        "open-ai-official": "{0} Hivatalos modellek",
+        "promptTemplates": "Parancssori sablonok",
+        "workspace-functions": "Munkaterületi funkciók"
       },
+      "hostedPlugin": "Tároló plugin",
       "sessionOverride": {
         "suffix": "A munkamenet felülírja",
         "suffixTooltip": "Ennek a beállításnak van egy --session-preference paranccsal beállítható munkamenet-értéke. Ha itt szerkeszted, az a munkamenet hátralévő részére törli a munkamenet-felülírás hatályát."
@@ -2862,9 +2938,7 @@
         "statusBar": "Munkamenet-beállítások ({0})",
         "tooltipBody": "Ezeket a --session-preference paraméterrel adták meg, és csak a memóriában léteznek. Kattintson egy beállítás nevére, hogy a Beállítások nézetben oda ugorjon.",
         "tooltipChangeNote": "Ezek bármelyikének szerkesztése törli a munkamenet felülírását az aktuális futtatás során. Ahhoz, hogy a mentett értékeket a következő indítástól kezdve használhassa, indítsa újra a programot a --session-preference argumentumok nélkül.",
-        "tooltipHeader": "Ezek a beállítások ebben a munkamenetben felülíródnak",
-        "valueOff": "ki",
-        "valueOn": "on"
+        "tooltipHeader": "Ezek a beállítások ebben a munkamenetben felülíródnak"
       },
       "toolbar": "Eszköztár"
     },
@@ -2945,13 +3019,14 @@
       "mergeEditor": {
         "resetConfirmationTitle": "Tényleg vissza szeretné állítani az egyesítés eredményét ebben a szerkesztőben?"
       },
+      "multiDiffEditor": {
+        "loadFailed": "A diff betöltése nem sikerült: {0}"
+      },
       "noChanges": "Nincs módosított fájl.",
       "noHistory": "Nincs elérhető forráskód-kezelési előzmény.",
-      "noHistoryForError": "{0} esetében nincs elérhető előzmény.",
       "openCommit": "Open Commit",
       "pickHistoryItemRefs": "Válassza a „Előzmények” menüpontot...",
       "pickHistoryItemRefsPlaceholder": "Válasszon ki egy vagy több előzményelem-hivatkozást",
-      "prepositionIn": "és",
       "refPickerBranches": "ágak",
       "refPickerRemoteBranches": "távoli ágak",
       "refPickerTags": "címkék",
@@ -2966,7 +3041,9 @@
       "searchOnEditorModification": "Módosítás esetén keresse meg az aktív szerkesztőt."
     },
     "secondary-window": {
-      "extract-widget": "Nézet áthelyezése másodlagos ablakba"
+      "extract-widget": "Nézet áthelyezése másodlagos ablakba",
+      "restore-all-widgets": "Az összes nézet áthelyezése a főablakba",
+      "restore-widget": "Nézet áthelyezése a főablakba"
     },
     "shell-area": {
       "secondary": "Másodlagos ablak"
@@ -3151,7 +3228,10 @@
       "restrictedModeFeatures": "Az olyan funkciók, mint a feladatvégrehajtás, a hibakeresés, a bővítmények és a mesterséges intelligencia, le vannak tiltva a potenciálisan káros kódok elleni védelem érdekében.",
       "schema": {
         "folders": {
-          "description": "Gyökérmappák a munkaterületen"
+          "description": "Gyökérmappák a munkaterületen",
+          "name": {
+            "description": "A mappa opcionális neve, amely a mappa neve helyett jelenik meg"
+          }
         },
         "title": "Munkaterületi fájl"
       },

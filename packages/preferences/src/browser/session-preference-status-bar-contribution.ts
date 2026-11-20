@@ -132,8 +132,8 @@ export class SessionPreferenceStatusBarContribution implements FrontendApplicati
         }
         if (typeof value === 'boolean') {
             return value
-                ? nls.localize('theia/preferences/sessionPreferences/valueOn', 'on')
-                : nls.localize('theia/preferences/sessionPreferences/valueOff', 'off');
+                ? nls.localizeByDefault('on')
+                : nls.localizeByDefault('off');
         }
         if (value === undefined) {
             return '(unset)';

@@ -100,19 +100,48 @@ function load(container, jsModule) {
         .then(containerModule => container.load(containerModule.default));
 }
 
+function reportError(message, reason) {
+    console.error(message);
+    if (reason) {
+        console.error(reason);
+    }
+}
+
+/**
+ * Loads the \`frontendPreload\` modules and runs the \`Preloader\`.
+ * Resolves to \`false\` if the frontend cannot start.
+ */
 async function preload(container) {
+    let preloadModulesLoaded = false;
     try {
 ${Array.from(frontendPreloadModules.values(), jsModulePath => `\
         await load(container, import('${jsModulePath}'));`).join(EOL)}
-        const { Preloader } = await import('@theia/core/lib/browser/preload/preloader');
-        const preloader = container.get(Preloader);
-        await preloader.initialize();
+        preloadModulesLoaded = true;
     } catch (reason) {
-        console.error('Failed to run preload scripts.');
-        if (reason) {
-            console.error(reason);
+        reportError('Failed to run preload scripts.', reason);
+    }
+${this.ifElectron(`
+    // The window loads while the backend is still starting, and the Preloader makes the first connection to it.
+    // The port is resolved once the preload modules are loaded, so that they can rebind the resolver.
+    try {
+        const { ElectronBackendPortResolver } = await import('@theia/core/lib/electron-browser/messaging/electron-backend-port-resolver');
+        await container.get(ElectronBackendPortResolver).resolve();
+        ${this.emitStartupLog('backend port resolved')}
+    } catch (reason) {
+        reportError('Failed to resolve the backend port.', reason);
+        return false;
+    }
+`)}
+    if (preloadModulesLoaded) {
+        try {
+            const { Preloader } = await import('@theia/core/lib/browser/preload/preloader');
+            const preloader = container.get(Preloader);
+            await preloader.initialize();
+        } catch (reason) {
+            reportError('Failed to run preload scripts.', reason);
         }
     }
+    return true;
 }
 
 export default (async () => {
@@ -126,7 +155,9 @@ export default (async () => {
 
     ${this.emitStartupLog('container created')}
 
-    await preload(container);
+    if (!await preload(container)) {
+        return;
+    }
     ${this.emitStartupLog('preloaded')}
 
     ${this.ifMonaco(() => `
@@ -189,21 +220,42 @@ ${Array.from(frontendModules.values(), jsModulePath => `\
 
     body {
         margin: 0;
+        display: flex;
+        flex-direction: column;
     }
 
     html,
     head,
-    body,
-    .secondary-widget-root,
+    body {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    #theia-top-panel {
+        flex: 0 0 auto;
+    }
+
+    #theia-top-panel:empty {
+        display: none;
+    }
+
     #widget-host {
+        width: 100% !important;
+        flex: 1 1 auto;
+        overflow: hidden;
+    }
+
+    .secondary-widget-root {
         width: 100% !important;
         height: 100% !important;
     }
     </style>
+    <link rel="stylesheet" href="./bundle.css">
     <link rel="stylesheet" href="./secondary-window.css">
 </head>
 
 <body>
+    <div id="theia-top-panel"></div>
     <div id="widget-host"></div>
 </body>
 

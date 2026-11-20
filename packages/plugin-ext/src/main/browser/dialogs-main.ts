@@ -25,6 +25,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { nls } from '@theia/core';
+import { WindowFocusService } from '@theia/core/lib/browser/window/window-focus-service';
 
 export class DialogsMainImpl implements DialogsMain {
 
@@ -34,6 +35,7 @@ export class DialogsMainImpl implements DialogsMain {
 
     private fileDialogService: FileDialogService;
     private uploadService: FileUploadService;
+    private windowFocusService: WindowFocusService;
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.workspaceService = container.get(WorkspaceService);
@@ -41,6 +43,7 @@ export class DialogsMainImpl implements DialogsMain {
         this.environments = container.get(EnvVariablesServer);
         this.fileDialogService = container.get(FileDialogService);
         this.uploadService = container.get(FileUploadService);
+        this.windowFocusService = container.get(WindowFocusService);
     }
 
     protected async getRootStat(defaultUri: string | undefined): Promise<FileStat | undefined> {
@@ -113,7 +116,8 @@ export class DialogsMainImpl implements DialogsMain {
                 canSelectFiles: options.canSelectFiles,
                 canSelectFolders: options.canSelectFolders,
                 canSelectMany: options.canSelectMany,
-                filters: options.filters
+                filters: options.filters,
+                targetWindow: this.windowFocusService.focusedWindow ?? window
             } as OpenFileDialogProps;
 
             const result = await this.fileDialogService.showOpenDialog(dialogProps, rootStat);
@@ -150,7 +154,8 @@ export class DialogsMainImpl implements DialogsMain {
                 title: options.title ?? nls.localizeByDefault('Save'),
                 saveLabel: options.saveLabel,
                 filters: options.filters,
-                inputValue: fileNameValue
+                inputValue: fileNameValue,
+                targetWindow: this.windowFocusService.focusedWindow ?? window
             } as SaveFileDialogProps;
 
             const result = await this.fileDialogService.showSaveDialog(dialogProps, rootStat);

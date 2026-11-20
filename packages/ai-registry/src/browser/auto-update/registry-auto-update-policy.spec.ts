@@ -36,7 +36,16 @@ class TestPolicy extends RegistryAutoUpdatePolicyImpl {
         // on the base class, so it can only be assigned in that class's own constructor.
         Object.assign(this, {
             preferenceService: {
-                get: (name: string, defaultValue: unknown) => this.values[name] ?? defaultValue,
+                get: (name: string, optionsOrFallback: unknown) => {
+                    if (this.values[name] !== undefined) {
+                        return this.values[name];
+                    }
+                    if (optionsOrFallback && typeof optionsOrFallback === 'object' && !Array.isArray(optionsOrFallback)
+                        && 'fallback' in optionsOrFallback) {
+                        return (optionsOrFallback as { fallback?: unknown }).fallback;
+                    }
+                    return optionsOrFallback;
+                },
                 // Mirrors the real service: `globalValue` is only set once someone has written
                 // the preference, which is what distinguishes a chosen default from the schema one.
                 inspect: (name: string) => ({ globalValue: this.values[name] }),

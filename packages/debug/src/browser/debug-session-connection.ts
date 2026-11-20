@@ -241,7 +241,10 @@ export class DebugSessionConnection implements Disposable {
                         pendingRequest.reject(error);
                     }
                 }, timeout);
-                result.promise.finally(() => clearTimeout(handle));
+                result.promise.then(
+                    () => clearTimeout(handle),
+                    () => clearTimeout(handle)
+                );
             }
             this.send(request);
         }

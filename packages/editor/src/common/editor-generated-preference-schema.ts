@@ -1667,10 +1667,10 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     },
     "editor.multiCursorPaste": {
         "markdownEnumDescriptions": [
-            nls.localizeByDefault("Each cursor pastes a single line of the text."),
+            nls.localize("theia/editor/editor.multiCursorPaste/spread", "Each cursor pastes a single line of the text."),
             nls.localizeByDefault("Each cursor pastes the full text.")
         ],
-        "markdownDescription": nls.localizeByDefault("Controls pasting when the line count of the pasted text matches the cursor count."),
+        "markdownDescription": nls.localize("theia/editor/editor.multiCursorPaste/description", "Controls pasting when the line count of the pasted text matches the cursor count."),
         "type": "string",
         "enum": [
             "spread",

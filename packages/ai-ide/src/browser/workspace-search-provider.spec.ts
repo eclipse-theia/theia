@@ -62,7 +62,8 @@ describe('Workspace Search Provider Cancellation Tests', () => {
         const mockWorkspaceScope = {
             getRootMapping: () => new Map([['workspace', new URI('file:///workspace')]]),
             getContainingRoot: () => new URI('file:///workspace'),
-            resolveAccessiblePath: async (path: string) => new URI(`file:///workspace/${path}`)
+            resolveAccessiblePath: async (path: string) => new URI(`file:///workspace/${path}`),
+            toWorkspaceRelativePath: (uri: URI) => uri.path.base
         } as unknown as WorkspaceFunctionScope;
 
         const mockPreferenceService = {
@@ -198,6 +199,56 @@ describe('Workspace Search Provider Cancellation Tests', () => {
         const jsonResponse = JSON.parse(result as string);
         expect(jsonResponse.error).to.equal(undefined);
         expect(capturedOptions?.include).to.deep.equal(['**/*.ts', '**/*.js']);
+    });
+
+    /** Rebinds the search service to report one file per entry of `matchesPerFile` with that many matches. */
+    function bindSearchResults(matchesPerFile: number[]): { options?: SearchInWorkspaceOptions } {
+        const search: { options?: SearchInWorkspaceOptions } = {};
+        container.rebind(SearchInWorkspaceService).toConstantValue({
+            searchWithCallback: async (
+                query: string,
+                rootUris: string[],
+                callbacks: SearchInWorkspaceCallbacks,
+                options: SearchInWorkspaceOptions
+            ) => {
+                search.options = options;
+                matchesPerFile.forEach((count, index) => callbacks.onResult(1, {
+                    root: 'file:///workspace',
+                    fileUri: `file:///workspace/file${index}.ts`,
+                    matches: Array.from({ length: count }, (_, line) => ({ line: line + 1, character: 1, length: 4, lineText: 'test' }))
+                }));
+                callbacks.onDone(1);
+                return 1;
+            },
+            cancel: () => { }
+        } as unknown as SearchInWorkspaceService);
+        return search;
+    }
+
+    it('should report the number of matches and return only the first matches when the limit is exceeded', async () => {
+        // ripgrep can report a file without matches, e.g. for `$` on a last line without a line break, which must not be returned
+        const search = bindSearchResults([20, 0, 20]);
+
+        const searchProvider = container.get(WorkspaceSearchProvider);
+        const handler = searchProvider.getTool().handler;
+        const result = await handler(JSON.stringify({ query: 'test', useRegExp: false }), mockCtx);
+
+        const jsonResponse = JSON.parse(result as string);
+        expect(search.options?.maxResults).to.equal(301);
+        expect(jsonResponse.info).to.contain('Found 40 results, showing the first 30.');
+        expect(jsonResponse.incompleteResults.map((file: { matches: unknown[] }) => file.matches.length)).to.deep.equal([20, 10]);
+    });
+
+    it('should report more than ten times the limit when the search stops at its bound', async () => {
+        bindSearchResults([200, 101]);
+
+        const searchProvider = container.get(WorkspaceSearchProvider);
+        const handler = searchProvider.getTool().handler;
+        const result = await handler(JSON.stringify({ query: 'test', useRegExp: false }), mockCtx);
+
+        const jsonResponse = JSON.parse(result as string);
+        expect(jsonResponse.info).to.contain('Found more than 300 results, showing the first 30.');
+        expect(jsonResponse.incompleteResults.map((file: { matches: unknown[] }) => file.matches.length)).to.deep.equal([30]);
     });
 
 });

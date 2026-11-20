@@ -16,15 +16,17 @@
 
 import { CancellationError, Listener, ListenerList, MaybePromise, MessageService, nls, ILogger } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { inject, injectable, interfaces, postConstruct, named } from '@theia/core/shared/inversify';
+import { inject, injectable, interfaces, postConstruct, named, optional } from '@theia/core/shared/inversify';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
+import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import URI from '@theia/core/lib/common/uri';
-import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { Mutex, MutexInterface } from 'async-mutex';
-import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
-import { MonacoJSONCEditor } from './monaco-jsonc-editor.js';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
-import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle.js';
+import { TextEditorDocument } from '@theia/editor/lib/browser/editor';
+import { TextEditorDocumentService } from '@theia/editor/lib/browser/text-editor-document-service';
+import { JSONCEditor } from '@theia/core/lib/common/jsonc-editor';
 
 @injectable()
 /**
@@ -177,15 +179,41 @@ export const PreferenceContext = Symbol('PreferenceContext');
 export const PreferenceTransactionPreludeProvider = Symbol('PreferenceTransactionPreludeProvider');
 export type PreferenceTransactionPreludeProvider = () => Promise<unknown>;
 
+/** An edit of a {@link PreferenceTransaction}: the value to set at the path of a preference. */
+export interface PreferenceEdit {
+    path: string[];
+    value: JSONValue;
+}
+
+/** The state of the preference file that a {@link PreferenceTransaction} edits. */
+export interface PreferenceFileState {
+    /** The content as read from the file. */
+    readonly original: string;
+    /** The content with the edits of the transaction applied. */
+    current: string;
+    readonly encoding?: string;
+    readonly etag?: string;
+    readonly mtime?: number;
+    /** Whether the file existed when it was read. */
+    readonly exists: boolean;
+}
+
 @injectable()
-export class PreferenceTransaction extends Transaction<[string, string[], unknown], boolean, boolean> {
-    reference: IReference<MonacoEditorModel> | undefined;
+export class PreferenceTransaction extends Transaction<[string, string[], JSONValue], boolean, boolean> {
+    /**
+     * How often the edits are reapplied when the file is modified by someone else while the transaction is running.
+     */
+    protected static readonly MAX_WRITE_ATTEMPTS = 3;
+
+    protected file: PreferenceFileState | undefined;
+    protected readonly edits: PreferenceEdit[] = [];
     @inject(PreferenceContext) protected readonly context: PreferenceContext;
     @inject(PreferenceTransactionPreludeProvider) protected readonly prelude?: PreferenceTransactionPreludeProvider;
-    @inject(MonacoTextModelService) protected readonly textModelService: MonacoTextModelService;
-    @inject(MonacoJSONCEditor) protected readonly jsoncEditor: MonacoJSONCEditor;
+    @inject(FileService) protected readonly fileService: FileService;
+    @inject(JSONCEditor) protected readonly jsoncEditor: JSONCEditor;
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
+    @inject(TextEditorDocumentService) @optional() protected readonly documentService?: TextEditorDocumentService;
     @inject(ILogger) @named('preferences:PreferenceTransaction')
     protected readonly logger: ILogger;
 
@@ -195,21 +223,31 @@ export class PreferenceTransaction extends Transaction<[string, string[], unknow
     }
 
     protected async setUp(): Promise<boolean> {
-        const reference = await this.textModelService.createModelReference(this.context.getConfigUri()!);
-        if (this._open) {
-            this.reference = reference;
-        } else {
-            reference.dispose();
-            return false;
-        }
-        if (reference.object.dirty) {
+        if (this.findDirtyDocument()) {
             const shouldContinue = await this.handleDirtyEditor();
             if (!shouldContinue) {
                 this.dispose();
                 return false;
             }
         }
+        const file = await this.readFile();
+        if (!this._open) {
+            return false;
+        }
+        this.file = file;
         return true;
+    }
+
+    /**
+     * @returns the document with unsaved changes to the preference file, if any.
+     * Without a {@link TextEditorDocumentService}, only documents shown in an editor are found.
+     */
+    protected findDirtyDocument(): TextEditorDocument | undefined {
+        const uri = this.context.getConfigUri();
+        const document = this.documentService
+            ? this.documentService.getDocument(uri)
+            : this.editorManager.all.find(widget => widget.editor.uri.isEqual(uri))?.editor.document;
+        return document?.dirty ? document : undefined;
     }
 
     /**
@@ -225,22 +263,38 @@ export class PreferenceTransaction extends Transaction<[string, string[], unknow
             ),
             saveAndRetry, open);
 
-        if (this.reference?.object) {
-            if (msg === open) {
-                this.editorManager.open(new URI(this.reference.object.uri));
-            } else if (msg === saveAndRetry) {
-                await this.reference.object.save();
-                return true;
+        if (msg === open) {
+            this.editorManager.open(this.context.getConfigUri());
+        } else if (msg === saveAndRetry) {
+            const document = this.findDirtyDocument();
+            await document?.save();
+            if (document?.dirty) {
+                // Saving can fail without an error, e.g. if the file was changed on disk in the meantime.
+                this.messageService.error(nls.localize('theia/preferences/saveFailed', 'Could not save {0}.', this.context.getConfigUri().path.base));
+                return false;
             }
+            return true;
         }
         return false;
     }
 
-    protected async act(key: string, path: string[], value: unknown): Promise<boolean> {
-        const model = this.reference?.object;
+    protected async readFile(): Promise<PreferenceFileState> {
         try {
-            if (model) {
-                await this.jsoncEditor.setValue(model, path, value);
+            const { value, encoding, etag, mtime } = await this.fileService.read(this.context.getConfigUri());
+            return { original: value, current: this.applyEdits(value), encoding, etag, mtime, exists: true };
+        } catch (e) {
+            if (e instanceof FileOperationError && e.fileOperationResult === FileOperationResult.FILE_NOT_FOUND) {
+                return { original: '', current: this.applyEdits(''), exists: false };
+            }
+            throw e;
+        }
+    }
+
+    protected async act(key: string, path: string[], value: JSONValue): Promise<boolean> {
+        try {
+            if (this.file) {
+                this.file.current = this.jsoncEditor.setValue(this.file.current, path, value);
+                this.edits.push({ path, value });
                 return this.result;
             }
             return false;
@@ -252,19 +306,67 @@ export class PreferenceTransaction extends Transaction<[string, string[], unknow
         }
     }
 
+    /**
+     * @returns the content with the edits of the transaction applied.
+     */
+    protected applyEdits(content: string): string {
+        for (const edit of this.edits) {
+            content = this.jsoncEditor.setValue(content, edit.path, edit.value);
+        }
+        return content;
+    }
+
     protected async tearDown(): Promise<boolean> {
+        if (!this.file || this.status.state !== 'resolved' || !await this.status.promise) {
+            return false;
+        }
         try {
-            const model = this.reference?.object;
-            if (model) {
-                if (this.status.state === 'resolved' && await this.status.promise) {
-                    await model.save();
-                    return true;
+            return await this.writeFile(this.file);
+        } catch (e) {
+            const message = `Failed to write preferences to '${this.context.getConfigUri()}'.`;
+            this.messageService.error(nls.localize('theia/preferences/writeFailed', 'Failed to write the settings to {0}.', this.context.getConfigUri().path.base));
+            this.logger.error(message, e);
+            return false;
+        }
+    }
+
+    /**
+     * Writes the edits of the transaction, reapplying them if the file was modified by someone else in the meantime.
+     * @returns whether the edits were written, `false` if the user did not save unsaved changes to the file.
+     */
+    protected async writeFile(file: PreferenceFileState): Promise<boolean> {
+        // Only retries after concurrent modifications count as attempts, not saving unsaved changes.
+        for (let attempt = 1; ;) {
+            if (file.current === file.original) {
+                return true;
+            }
+            // The user may have edited the file since the transaction was set up.
+            if (this.findDirtyDocument()) {
+                if (!await this.handleDirtyEditor()) {
+                    return false;
+                }
+                file = await this.readFile();
+                continue;
+            }
+            try {
+                const uri = this.context.getConfigUri();
+                const { encoding, etag, mtime } = file;
+                if (file.exists) {
+                    await this.fileService.write(uri, file.current, { encoding, etag, mtime });
+                } else {
+                    // Fails with `FILE_MODIFIED_SINCE` if someone else created the file in the meantime.
+                    await this.fileService.create(uri, file.current, { overwrite: false, fromUserGesture: false });
+                }
+                return true;
+            } catch (e) {
+                if (attempt < PreferenceTransaction.MAX_WRITE_ATTEMPTS && e instanceof FileOperationError
+                    && e.fileOperationResult === FileOperationResult.FILE_MODIFIED_SINCE) {
+                    attempt++;
+                    file = await this.readFile();
+                } else {
+                    throw e;
                 }
             }
-            return false;
-        } finally {
-            this.reference?.dispose();
-            this.reference = undefined;
         }
     }
 }

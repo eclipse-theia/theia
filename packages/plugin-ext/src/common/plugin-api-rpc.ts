@@ -1561,23 +1561,25 @@ export interface PreferenceRegistryMain {
         key: string,
         value: any,
         resource?: string,
-        withLanguageOverride?: boolean
+        withLanguageOverride?: boolean,
+        overrideIdentifier?: string
     ): PromiseLike<void>;
     $removeConfigurationOption(
         target: boolean | ConfigurationTarget | undefined,
         key: string,
         resource?: string,
         withLanguageOverride?: boolean,
+        overrideIdentifier?: string
     ): PromiseLike<void>;
 }
 
 export interface PreferenceChangeExt {
     preferenceName: string,
-    newValue: any,
     /**
      * The URI the folder affected, or undefined if User scope.
      */
     scope?: string;
+    affectedOverrides: readonly string[];
 }
 
 export interface TerminalOptionsExt {
@@ -1788,6 +1790,10 @@ export interface TaskPresentationOptionsDTO {
 export interface TaskExecutionDto {
     id: number;
     task: TaskDto;
+    /**
+     * The id passed to `TasksMain.$executeTask` by the plugin host, if the execution was started by that request.
+     */
+    executeRequestId?: number;
 }
 
 export interface ProcessTaskDto extends TaskDto, CommandProperties {
@@ -2250,7 +2256,7 @@ export interface CommentsMain {
 
 // #region
 
-export const enum TabInputKind {
+export enum TabInputKind {
     UnknownInput,
     TextInput,
     TextDiffInput,
@@ -2330,7 +2336,7 @@ export interface TabGroupDto {
     groupId: number;
 }
 
-export const enum TabModelOperationKind {
+export enum TabModelOperationKind {
     TAB_OPEN,
     TAB_CLOSE,
     TAB_UPDATE,
@@ -2384,7 +2390,7 @@ export interface TelemetryExt {
 // endregion
 
 // based from https://github.com/microsoft/vscode/blob/1.72.2/src/vs/workbench/api/common/extHostTesting.ts
-export const enum TestingResourceExt {
+export enum TestingResourceExt {
     Workspace,
     TextDocument
 }
@@ -2561,7 +2567,7 @@ export interface TasksExt {
 export interface TasksMain {
     $registerTaskProvider(handle: number, type: string): void;
     $fetchTasks(taskVersion: string | undefined, taskType: string | undefined): Promise<TaskDto[]>;
-    $executeTask(taskDto: TaskDto): Promise<TaskExecutionDto | undefined>;
+    $executeTask(taskDto: TaskDto, executeRequestId: number): Promise<TaskExecutionDto | undefined>;
     $taskExecutions(): Promise<TaskExecutionDto[]>;
     $unregister(handle: number): void;
     $terminateTask(id: number): void;

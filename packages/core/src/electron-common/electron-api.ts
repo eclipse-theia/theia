@@ -80,6 +80,11 @@ export interface TheiaCoreAPI {
     }
     getSecurityToken: () => string;
     attachSecurityToken: (endpoint: string) => Promise<void>;
+    /**
+     * The port of the backend that serves this window. The main process forks the backend while the window
+     * loads, so the promise resolves once the backend is listening and the security token cookie for it is set.
+     */
+    getBackendPort(): Promise<number>;
 
     setMenuBarVisible(visible: boolean, windowName?: string): void;
     setAutoHideMenuBar(enabled: boolean, windowName?: string): void;
@@ -103,12 +108,13 @@ export interface TheiaCoreAPI {
     setTitleBarStyle(style: string): void;
     setBackgroundColor(backgroundColor: string): void;
     setTheme(theme: ThemeMode): void;
-    minimize(): void;
-    isMaximized(): boolean; // TODO: this should really be async, since it blocks the renderer process
-    maximize(): void;
-    unMaximize(): void;
-    close(): void;
+    minimize(windowName?: string): void;
+    isMaximized(windowName?: string): boolean; // TODO: this should really be async, since it blocks the renderer process
+    maximize(windowName?: string): void;
+    unMaximize(windowName?: string): void;
+    close(windowName?: string): void;
     onWindowEvent(event: WindowEvent, handler: () => void): Disposable;
+    onSecondaryWindowEvent(windowName: string, event: WindowEvent, handler: () => void): Disposable;
     onAboutToClose(handler: () => void): Disposable;
     setCloseRequestHandler(handler: (reason: StopReason) => Promise<boolean>): void;
 
@@ -148,7 +154,13 @@ declare global {
     }
 }
 
+/**
+ * The parameter of the window URL that carries the port of the backend to which the window connects.
+ */
+export const BACKEND_PORT_PARAM = 'port';
+
 export const CHANNEL_WC_METADATA = 'WebContentMetadata';
+export const CHANNEL_GET_BACKEND_PORT = 'GetBackendPort';
 export const CHANNEL_SET_MENU = 'SetMenu';
 export const CHANNEL_SET_MENU_BAR_VISIBLE = 'SetMenuBarVisible';
 export const CHANNEL_SET_AUTO_HIDE_MENU_BAR = 'SetAutoHideMenuBar';
@@ -187,6 +199,8 @@ export const CHANNEL_IS_FULL_SCREEN = 'IsFullScreen';
 export const CHANNEL_TOGGLE_FULL_SCREEN = 'ToggleFullScreen';
 
 export const CHANNEL_REQUEST_SECONDARY_CLOSE = 'RequestSecondaryClose';
+export const CHANNEL_ON_SECONDARY_WINDOW_EVENT = 'OnSecondaryWindowEvent';
+export const CHANNEL_SUBSCRIBE_SECONDARY_WINDOW_EVENT = 'SubscribeSecondaryWindowEvent';
 
 export const CHANNEL_REQUEST_CLOSE = 'RequestClose';
 export const CHANNEL_REQUEST_RELOAD = 'RequestReload';

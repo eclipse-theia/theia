@@ -77,6 +77,10 @@ done for a final validation. There are usually pre-defined tasks for all these o
 **Important:** Building a package only compiles TypeScript. Before any UI testing, you must also rebuild the browser example application (`examples/browser`),
 which bundles the frontend. Bundling runs via `theia build`, which uses esbuild and the generated `esbuild.mjs` config of the application. Without this step, the running browser app will not include the latest code changes.
 
+## Updating Dependencies
+
+For the dependency update after a release (NPM upgrade, reducing dependency vulnerabilities from npm audit and Dependabot, Electron) and for single updates of frequently updated dependencies (Electron, Monaco, TypeScript, Node.js, React, AI SDKs), follow the skill in `.agents/skills/update-dependency/SKILL.md`.
+
 ## Start Theia
 
 To start Theia as a browser app to show something to the user or for UI testing use the launch config "Start Theia Default (Browser backend, no debug)"
@@ -146,3 +150,11 @@ When implementing browser-side services that need to read files from user-config
 4. Document that users should configure paths within their workspace or config directory
 
 **Reference implementation:** `packages/ai-core/src/browser/skill-service.ts` and `packages/ai-core/src/browser/frontend-prompt-customization-service.ts`
+
+## Reviewing Pull Requests
+
+Reviews of pull requests follow [the pull request rules](doc/pull-requests.md):
+
+- Check the PR against the [review checklist](doc/pull-requests.md#review-checklist)
+- Do not report personal preferences or style questions, see [no nitpicking](doc/pull-requests.md#changes-no-nit)
+- Report issues outside the scope of the PR as follow-ups. They need no fix in the PR and do not block the [AI approval](doc/pull-requests.md#ai-review-approval).

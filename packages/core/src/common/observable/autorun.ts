@@ -227,7 +227,7 @@ export namespace Autorun {
         willHandleChange?: <T, TChange>(context: Observable.ChangeContext<T, TChange>, changeSummary: TChangeSummary | undefined) => boolean;
     }
 
-    export const enum State {
+    export enum State {
         /**
          * Dependencies might have changed. Need to check if at least one dependency has actually changed.
          */

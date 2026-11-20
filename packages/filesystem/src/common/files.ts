@@ -29,7 +29,7 @@ import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { isObject } from '@theia/core/lib/common';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
-export const enum FileOperation {
+export enum FileOperation {
     CREATE,
     DELETE,
     MOVE,
@@ -52,7 +52,7 @@ export class FileOperationEvent {
 /**
  * Possible changes that can occur to a file.
  */
-export const enum FileChangeType {
+export enum FileChangeType {
     UPDATED = 0,
     ADDED = 1,
     DELETED = 2
@@ -417,7 +417,7 @@ export class FileOperationError extends Error {
     }
 }
 
-export const enum FileOperationResult {
+export enum FileOperationResult {
     FILE_IS_DIRECTORY,
     FILE_NOT_FOUND,
     FILE_NOT_MODIFIED_SINCE,
@@ -524,7 +524,7 @@ export interface WatchOptions {
     excludes: string[];
 }
 
-export const enum FileSystemProviderCapabilities {
+export enum FileSystemProviderCapabilities {
     None = 0,
     FileReadWrite = 1 << 1,
     FileOpenReadWriteClose = 1 << 2,

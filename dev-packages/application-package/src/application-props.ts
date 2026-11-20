@@ -64,6 +64,14 @@ export namespace ElectronFrontendApplicationConfig {
          * Mandatory attribute.
          */
         content?: string;
+        /**
+         * The platforms on which the splash screen is shown, as values of `process.platform`,
+         * e.g. `["win32", "linux"]` for an application that follows the macOS convention of
+         * not showing a splash window there.
+         *
+         * Defaults to all platforms.
+         */
+        platforms?: ('darwin' | 'linux' | 'win32')[];
     }
     export interface Partial {
 
@@ -227,7 +235,7 @@ export namespace BackendApplicationConfig {
 
         /**
          * When `true`, proxy-related user preferences (`http.proxy`, `http.proxyStrictSSL`,
-         * `http.proxyAuthorization`) will be read from the backend PreferenceService and applied
+         * `http.proxyAuthorization`, `http.systemCertificates`) will be read from the backend PreferenceService and applied
          * to the backend's NodeRequestService. When `false` (the default), proxy settings can only
          * be configured via CLI flags (`--proxy-url`, etc.) or environment variables (`HTTP_PROXY`,
          * `HTTPS_PROXY`).

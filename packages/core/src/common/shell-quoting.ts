@@ -27,7 +27,7 @@
  * Defines how an argument should be quoted if it contains
  * spaces or unsupported characters.
  */
-export const enum ShellQuoting {
+export enum ShellQuoting {
 
     /**
      * Character escaping should be used. This for example

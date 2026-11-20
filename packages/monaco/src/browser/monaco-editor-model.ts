@@ -445,6 +445,8 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
             ignoreDirty: true,
             ignoreContentChanges: true
         });
+        // The model matches the resource again, so undoing the sync must make it dirty.
+        this.updateSavedVersionId();
         this.trace(log => log('MonacoEditorModel.doSync - exit'));
     }
     protected async readContents(): Promise<string | ITextBufferFactory | undefined> {
@@ -577,7 +579,12 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
             this.updateContentEncoding();
             this.setValid(true);
 
-            if (token.isCancellationRequested && this.model.getAlternativeVersionId() !== currentToSaveVersion) {
+            if (this.model.getAlternativeVersionId() !== currentToSaveVersion) {
+                // Edited while the content was being written: the model stays dirty, and what was written is the saved version.
+                if (!token.isCancellationRequested) {
+                    this.bufferSavedVersionId = currentToSaveVersion;
+                    this.fireDidSaveModel();
+                }
                 return;
             }
 

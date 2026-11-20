@@ -64,7 +64,7 @@ export const WEBVIEW_CONTEXT_MENU: MenuPath = ['webview-context-menu'];
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-export const enum WebviewMessageChannels {
+export enum WebviewMessageChannels {
     onmessage = 'onmessage',
     didClickLink = 'did-click-link',
     didFocus = 'did-focus',
@@ -553,6 +553,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
                         return this.doSend('did-load-resource', {
                             status: 200,
                             path: requestPath,
+                            query: requestQuery,
                             mime: mime.getType(normalizedUri.path.toString()) || 'application/octet-stream',
                             data
                         });
@@ -566,7 +567,8 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
         this.resourceCache.delete(cacheUrl);
         return this.doSend('did-load-resource', {
             status: 404,
-            path: requestPath
+            path: requestPath,
+            query: requestQuery
         });
     }
 

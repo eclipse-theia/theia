@@ -26,10 +26,11 @@ import {
     CHANNEL_IS_FULL_SCREEN, CHANNEL_SET_MENU_BAR_VISIBLE, CHANNEL_REQUEST_CLOSE, CHANNEL_SET_TITLE_STYLE, CHANNEL_RESTART,
     CHANNEL_REQUEST_RELOAD, CHANNEL_APP_STATE_CHANGED, CHANNEL_SHOW_ITEM_IN_FOLDER, CHANNEL_READ_CLIPBOARD, CHANNEL_WRITE_CLIPBOARD,
     CHANNEL_KEYBOARD_LAYOUT_CHANGED, CHANNEL_IPC_CONNECTION, InternalMenuDto, CHANNEL_REQUEST_SECONDARY_CLOSE, CHANNEL_SET_BACKGROUND_COLOR,
-    CHANNEL_WC_METADATA, CHANNEL_ABOUT_TO_CLOSE, CHANNEL_OPEN_WITH_SYSTEM_APP,
+    CHANNEL_WC_METADATA, CHANNEL_ABOUT_TO_CLOSE, CHANNEL_OPEN_WITH_SYSTEM_APP, CHANNEL_GET_BACKEND_PORT, BACKEND_PORT_PARAM,
     CHANNEL_OPEN_URL, CHANNEL_SET_THEME, CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW,
     CHANNEL_UPDATE_RECENT_WORKSPACES,
-    CHANNEL_SET_AUTO_HIDE_MENU_BAR
+    CHANNEL_SET_AUTO_HIDE_MENU_BAR,
+    CHANNEL_ON_SECONDARY_WINDOW_EVENT, CHANNEL_SUBSCRIBE_SECONDARY_WINDOW_EVENT
 } from '../electron-common/electron-api.js';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { ipcRenderer, contextBridge } from 'electron';
@@ -41,6 +42,23 @@ const mainMenuId = 1;
 let nextMenuId = mainMenuId + 1;
 
 let openUrlHandler: ((url: string) => Promise<boolean>) | undefined;
+
+const subscribedSecondaryWindows = new Set<string>();
+
+let backendPort: Promise<number> | undefined;
+
+/**
+ * Requests the port of the backend from the main process once, as the main process answers only when the
+ * backend is listening.
+ */
+function getBackendPort(): Promise<number> {
+    if (!backendPort) {
+        backendPort = ipcRenderer.invoke(CHANNEL_GET_BACKEND_PORT);
+        // A rejection is reported where the frontend awaits the port.
+        backendPort.catch(() => { });
+    }
+    return backendPort;
+}
 
 ipcRenderer.on(CHANNEL_OPEN_URL, async (event: Electron.IpcRendererEvent, url: string, replyChannel: string) => {
     if (openUrlHandler) {
@@ -98,6 +116,7 @@ const api: TheiaCoreAPI = {
         ipcRenderer.send(CHANNEL_OPEN_WITH_SYSTEM_APP, location);
     },
     attachSecurityToken: (endpoint: string) => ipcRenderer.invoke(CHANNEL_ATTACH_SECURITY_TOKEN, endpoint),
+    getBackendPort,
 
     popup: async function (menu: MenuDto[], x: number, y: number, onClosed: () => void, windowName?: string): Promise<number> {
         const menuId = nextMenuId++;
@@ -127,20 +146,20 @@ const api: TheiaCoreAPI = {
     setTheme: function (theme): void {
         ipcRenderer.send(CHANNEL_SET_THEME, theme);
     },
-    minimize: function (): void {
-        ipcRenderer.send(CHANNEL_MINIMIZE);
+    minimize: function (windowName?: string): void {
+        ipcRenderer.send(CHANNEL_MINIMIZE, windowName);
     },
-    isMaximized: function (): boolean {
-        return ipcRenderer.sendSync(CHANNEL_IS_MAXIMIZED);
+    isMaximized: function (windowName?: string): boolean {
+        return ipcRenderer.sendSync(CHANNEL_IS_MAXIMIZED, windowName);
     },
-    maximize: function (): void {
-        ipcRenderer.send(CHANNEL_MAXIMIZE);
+    maximize: function (windowName?: string): void {
+        ipcRenderer.send(CHANNEL_MAXIMIZE, windowName);
     },
-    unMaximize: function (): void {
-        ipcRenderer.send(CHANNEL_UNMAXIMIZE);
+    unMaximize: function (windowName?: string): void {
+        ipcRenderer.send(CHANNEL_UNMAXIMIZE, windowName);
     },
-    close: function (): void {
-        ipcRenderer.send(CHANNEL_CLOSE);
+    close: function (windowName?: string): void {
+        ipcRenderer.send(CHANNEL_CLOSE, windowName);
     },
 
     onAboutToClose(handler: () => void): Disposable {
@@ -165,6 +184,19 @@ const api: TheiaCoreAPI = {
         };
         ipcRenderer.on(CHANNEL_ON_WINDOW_EVENT, h);
         return Disposable.create(() => ipcRenderer.off(CHANNEL_ON_WINDOW_EVENT, h));
+    },
+    onSecondaryWindowEvent: function (windowName: string, event: WindowEvent, handler: () => void): Disposable {
+        if (!subscribedSecondaryWindows.has(windowName)) {
+            subscribedSecondaryWindows.add(windowName);
+            ipcRenderer.send(CHANNEL_SUBSCRIBE_SECONDARY_WINDOW_EVENT, windowName);
+        }
+        const h = (_event: unknown, name: string, evt: WindowEvent) => {
+            if (name === windowName && event === evt) {
+                handler();
+            }
+        };
+        ipcRenderer.on(CHANNEL_ON_SECONDARY_WINDOW_EVENT, h);
+        return Disposable.create(() => ipcRenderer.off(CHANNEL_ON_SECONDARY_WINDOW_EVENT, h));
     },
     setCloseRequestHandler: function (handler: (stopReason: StopReason) => Promise<boolean>): void {
         ipcRenderer.on(CHANNEL_REQUEST_CLOSE, async (event: Electron.IpcRendererEvent, stopReason: StopReason, confirmChannel: string, cancelChannel: string) => {
@@ -273,6 +305,12 @@ export function preload(): void {
     // Synchronous, so the metadata (including the parsed options of a forwarded launch) is in place
     // before any frontend code runs.
     api.WindowMetadata = ipcRenderer.sendSync(CHANNEL_WC_METADATA);
+    // Request the backend port while the frontend loads, so that the `ElectronBackendPortResolver` finds it on its way.
+    // Not for a window that connects to a remote backend, whose port the URL carries, nor for a secondary window,
+    // which another window opens and which does not connect to a backend.
+    if (!new URLSearchParams(location.search).get(BACKEND_PORT_PARAM) && !window.opener) {
+        getBackendPort();
+    }
 
     contextBridge.exposeInMainWorld('electronTheiaCore', api);
 }

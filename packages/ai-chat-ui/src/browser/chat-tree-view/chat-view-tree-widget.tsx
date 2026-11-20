@@ -714,7 +714,7 @@ export class ChatViewTreeWidget extends TreeWidget {
                 {inProgress && waitingForInput &&
                     <span className='theia-ChatContentInProgress' role='status' aria-live='polite'>
                         <span className={`${codicon('loading')} codicon-modifier-spin`} aria-hidden={true}></span>
-                        {nls.localize('theia/ai/chat-ui/chat-view-tree-widget/waitingForInput', 'Waiting for input')}
+                        {nls.localizeByDefault('Waiting for input')}
                     </span>}
                 {!inProgress &&
                     <div className='theia-ChatNodeToolbar'>

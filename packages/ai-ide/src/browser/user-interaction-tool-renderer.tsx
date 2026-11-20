@@ -281,7 +281,7 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
                     }
                     return (
                         <span className='user-interaction-tool status waiting' role='status' aria-live='polite'>
-                            {nls.localize('theia/ai/chat-ui/chat-view-tree-widget/waitingForInput', 'Waiting for input')}
+                            {nls.localizeByDefault('Waiting for input')}
                         </span>
                     );
                 })()}

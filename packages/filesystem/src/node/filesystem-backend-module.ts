@@ -33,6 +33,7 @@ import { BackendApplicationContribution, IPCConnectionProvider } from '@theia/co
 import { RpcProxyFactory, ConnectionErrorHandler } from '@theia/core';
 import { FileSystemWatcherServiceDispatcher } from './filesystem-watcher-dispatcher.js';
 import { bindFileSystemPreferences } from '../common/index.js';
+import { ArchiveExtractor, ArchiveExtractorImpl } from './archive/archive-extractor.js';
 
 export const WATCHER_SINGLE_THREADED = process.argv.includes('--no-cluster');
 export const WATCHER_VERBOSE = process.argv.includes('--watcher-verbose');
@@ -61,11 +62,13 @@ export default new ContainerModule(bind => {
             server.setClient(client);
             client.onDidCloseConnection(() => server.dispose());
             return server;
-        }, RemoteFileSystemProxyFactory)
+        }, { factoryConstructor: RemoteFileSystemProxyFactory, independentOfShellEnvironment: true })
     ).inSingletonScope();
     bind(NodeFileUploadService).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(NodeFileUploadService);
     bindFileSystemPreferences(bind);
+    bind(ArchiveExtractorImpl).toSelf().inSingletonScope();
+    bind(ArchiveExtractor).toService(ArchiveExtractorImpl);
 });
 
 export function bindFileSystemWatcherServer(bind: interfaces.Bind): void {

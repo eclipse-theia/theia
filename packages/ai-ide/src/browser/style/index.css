@@ -1164,6 +1164,22 @@ button.agent-chip:focus-visible {
   align-items: center;
 }
 
+.theia-chat-session-item-status-icon .theia-tool-confirmation-countdown {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 2px;
+  border: 1px solid var(--theia-editorWarning-foreground);
+  border-radius: 3px;
+  color: var(--theia-editorWarning-foreground);
+  font-size: var(--theia-ui-font-size0);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  opacity: 1;
+}
+
 .theia-chat-session-item-unread-dot,
 .theia-chat-session-item-attention-dot {
   position: absolute;
@@ -1721,7 +1737,7 @@ button.agent-chip:focus-visible {
 }
 
 /* A second action sits right next to the first instead of splitting the free space with it. */
-.ai-agent-section-header .ai-agent-section-header-action + .ai-configuration-icon-button {
+.ai-agent-section-header .ai-agent-section-header-action+.ai-configuration-icon-button {
   margin-left: 0;
 }
 

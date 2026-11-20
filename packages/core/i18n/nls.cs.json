@@ -28,8 +28,7 @@
           "title": "Přepsání funkcí"
         },
         "completionNotification": {
-          "mdDescription": "Chování oznámení, když tento agent vyžaduje vaši pozornost, tj. dokončil úkol nebo žádá o váš vstup.                     Pokud není nastaveno, použije se globální výchozí nastavení oznámení.\n                    - `os-notification`: Zobrazovat oznámení operačního systému/systému\n                    - `message`: Zobrazovat oznámení ve stavovém řádku/oblasti zpráv\n                    - `blink`: Blikání nebo zvýraznění uživatelského rozhraní\n                    - `off`: Zakázat oznámení pro tento agent",
-          "title": "Oznámení"
+          "mdDescription": "Chování oznámení, když tento agent vyžaduje vaši pozornost, tj. dokončil úkol nebo žádá o váš vstup.                     Pokud není nastaveno, použije se globální výchozí nastavení oznámení.\n                    - `os-notification`: Zobrazovat oznámení operačního systému/systému\n                    - `message`: Zobrazovat oznámení ve stavovém řádku/oblasti zpráv\n                    - `blink`: Blikání nebo zvýraznění uživatelského rozhraní\n                    - `off`: Zakázat oznámení pro tento agent"
         },
         "enable": {
           "mdDescription": "Určuje, zda má být agent povolen (true) nebo zakázán (false).",
@@ -206,6 +205,15 @@
           "label": "Obrázkový soubor"
         },
         "imagePickerPlaceholder": "Vyberte soubor obrázku nebo vyhledejte podle názvu",
+        "networkError": {
+          "dns": "Nepodařilo se vyřešit hostitele poskytovatele AI. Zkontrolujte URL modelu/koncového bodu a své nastavení DNS nebo připojení k internetu.",
+          "generic": "Nelze se spojit s poskytovatelem AI. Zkontrolujte připojení k internetu, nakonfigurovanou adresu URL koncového bodu a případná nastavení proxy nebo brány firewall.",
+          "refused": "Připojení bylo odmítnuto koncovým bodem poskytovatele AI. Ověřte hostitele a port a ujistěte se, že je spuštěn jakýkoli lokální modelový server (např. Ollama).",
+          "reset": "Připojení k poskytovateli AI bylo resetováno před přijetím odpovědi. Často se jedná o dočasný jev – zkuste to prosím znovu.",
+          "timeout": "Došlo k vypršení časového limitu připojení k poskytovateli AI. Zkontrolujte nastavení sítě, VPN nebo proxy.",
+          "tls": "Nebylo možné ověřit certifikát TLS koncového bodu poskytovatele AI. Pokud používáte vlastní nebo samopodepsaný koncový bod, zkontrolujte jeho certifikát nebo konfiguraci proxy.",
+          "unreachable": "Hostitel poskytovatele AI je nedostupný. Zkontrolujte síťové připojení, nastavení VPN nebo proxy."
+        },
         "orchestrator": {
           "description": "Tento agent analyzuje požadavek uživatele na základě popisu všech dostupných chatových agentů a vybere nejvhodnějšího agenta, který na požadavek odpoví (pomocí AI). Požadavek uživatele bude bez dalšího potvrzení přímo předán vybranému agentovi.",
           "vars": {
@@ -278,7 +286,6 @@
           "generating": "Generování",
           "noRenderer": "Chyba: Nebylo nalezeno žádné renderovací zařízení",
           "scrollToBottom": "Přejít na nejnovější zprávu",
-          "waitingForInput": "Čekání na vstup",
           "you": "Vy"
         },
         "chatInput": {
@@ -298,6 +305,7 @@
         },
         "collapseAll": "Sbalit vše",
         "collapseChangeSet": "Sbalit sadu změn",
+        "collapseMessage": "Sbalit zprávu",
         "command-part-renderer": {
           "commandNotExecutable": "Příkaz má identifikátor „{0}“, ale nelze jej spustit z okna chatu."
         },
@@ -308,6 +316,7 @@
         "couldNotSendRequestToSession": "Nebylo možné odeslat požadavek „{0}“ do relace {1}",
         "delegatedSession": "Delegované",
         "delegation-response-renderer": {
+          "cancel": "Zrušit delegování",
           "interactionNeeded": "Je nutná interakce uživatele",
           "prompt": {
             "label": "Delegované výzvy:"
@@ -331,6 +340,7 @@
         "enterChatName": "Zadejte název chatu",
         "errorChatInvocation": "Při vyvolání chatové služby došlo k chybě.",
         "expandChangeSet": "Rozbalit sadu změn",
+        "expandMessage": "Rozbalit zprávu",
         "failedToDeleteSession": "Nepodařilo se smazat chatovou relaci",
         "failedToLoadChats": "Nepodařilo se načíst chatové relace",
         "failedToRestoreSession": "Obnovení chatové relace se nezdařilo",
@@ -355,7 +365,6 @@
           "wheelZoomHint": "{0} + Posunout"
         },
         "modelBadgeTooltip": "Jazykový model použitý pro tuto odpověď: {0}",
-        "modelUnavailable": "nedostupné",
         "noChatAgentsAvailable": "Žádní chatovací agenti nejsou k dispozici.",
         "noMatchingCapabilities": "Žádné odpovídající funkce",
         "openImage": "Otevřít obrázek",
@@ -445,6 +454,45 @@
         "variantTooltip": "Varianta výzvy: {0}",
         "yourMessage": "Vaše zpráva"
       },
+      "chatgpt": {
+        "category": "ChatGPT",
+        "codePrompt": "Vložte autorizační kód nebo úplnou přesměrovací URL adresu z vašeho prohlížeče",
+        "commands": {
+          "signIn": "Přihlásit se",
+          "signOut": "Odhlásit se"
+        },
+        "compaction": {
+          "default": "Řiďte se globálním nastavením komprimace na straně serveru chatu.",
+          "description": "Přepsání nativní komprimace na straně serveru poskytovatele pro modely ChatGPT. Hodnota „default“ se řídí globálním nastavením chatu ({0}). Je-li tato funkce účinně povolena, je Response API požádáno o shrnutí starších příspěvků, jakmile konverzace překročí prahovou hodnotu stanovenou poskytovatelem.",
+          "disabled": "Nikdy nepožadujte kompakci na straně serveru pro modely ChatGPT.",
+          "enabled": "U modelů ChatGPT vždy požadujte kompaktaci na straně serveru."
+        },
+        "compactionTokenThreshold": {
+          "description": "Přepíše globální prahovou hodnotu počtu tokenů pro kompakci na straně serveru u modelů ChatGPT. Pokud není nastaveno, platí globální nastavení nebo výchozí hodnota poskytovatele. Pokud je nastaveno, musí být hodnota alespoň 50 000 tokenů."
+        },
+        "discovery": {
+          "overridden": "Seznam modelů se konfiguruje ručně. Vymazáním se zobrazí modely, které umožňuje váš tarif ChatGPT.",
+          "signedOut": "Nejste přihlášeni do ChatGPT. Přihlaste se, abyste mohli využívat modely svého tarifu ChatGPT."
+        },
+        "enabled": {
+          "mdDescription": "Povolte poskytovatele ChatGPT. Po povolení se ve stavovém řádku zobrazí položka pro ověření a z vašeho předplatného ChatGPT se načtou dostupné modely."
+        },
+        "enterCode": "Zadejte kód ručně",
+        "models": {
+          "mdDescription": "Modely, které chcete poskytovat prostřednictvím svého předplatného ChatGPT. Jsou k dispozici pouze tehdy, když jste přihlášeni. Nechte toto pole prázdné, chcete-li nabídnout modely, které váš tarif ChatGPT skutečně umožňuje, a které se načtou po přihlášení.",
+          "signIn": "Přihlaste se pomocí ChatGPT"
+        },
+        "signInFailed": "Přihlášení do ChatGPT se nezdařilo: {0}",
+        "signOutConfirm": "Opravdu se chcete odhlásit z ChatGPT?",
+        "signOutTitle": "Odhlasit se z ChatGPT",
+        "signedIn": "Přihlášeno do ChatGPT.",
+        "signedInAs": "Přihlášeno do ChatGPT jako {0}.",
+        "statusBar": {
+          "signedIn": "Jste přihlášeni do ChatGPT jako {0}. Kliknutím se odhlásíte.",
+          "signedOut": "Nejste přihlášeni do ChatGPT. Kliknutím se přihlaste."
+        },
+        "waiting": "Dokončete přihlášení do ChatGPT ve svém prohlížeči."
+      },
       "claude-code": {
         "agentDescription": "Kódovací agent společnosti Anthropic",
         "allowSession": "Povolit pro tuto relaci",
@@ -466,7 +514,6 @@
         "currentDirectory": "aktuální adresář",
         "differentAgentRequestWarning": "Předchozí požadavek na chat byl vyřízen jiným agentem. Claude Code tyto ostatní zprávy nevidí.",
         "editAutomatically": "Automaticky upravit",
-        "editing": "Úpravy",
         "editsCount": "{0} úpravy",
         "emptyTodoList": "No todos available",
         "entireFile": "Celý soubor",
@@ -493,6 +540,7 @@
         "findMatchingFiles": "Najít soubory odpovídající globálnímu vzoru „{0}“ v aktuálním adresáři",
         "findMatchingFilesWithPath": "Najděte soubory odpovídající globálnímu vzoru „{0}“ v adresáři {1}.",
         "finding": "Hledání",
+        "from": "Z",
         "globPattern": "globový vzor",
         "grepOptions": {
           "caseInsensitive": "bez rozlišení velkých a malých písmen",
@@ -535,7 +583,6 @@
         "project": "projekt",
         "projectRoot": "kořen projektu",
         "readMode": "Režim čtení",
-        "reading": "Čtení",
         "replaceAllCount": "{0} nahradit-vše",
         "replaceAllOccurrences": "Nahradit všechny výskyty",
         "resumeCommand": {
@@ -545,10 +592,10 @@
           "description": "Požádat o kontrolu kódu"
         },
         "searchPath": "Vyhledávací cesta",
-        "searching": "Vyhledávání",
         "startingLine": "Startovní čára",
         "timeout": "Časový limit",
         "timeoutInMs": "Časový limit: {0} ms",
+        "to": "K",
         "todoList": "Seznam úkolů",
         "todoPriority": {
           "high": "vysoký",
@@ -580,8 +627,6 @@
         "itemCount": "{0} položky",
         "noItems": "Žádné položky",
         "oneItem": "1 položka",
-        "searched": "Hledáno",
-        "searching": "Vyhledávání",
         "todoList": "Seznam úkolů"
       },
       "completion": {
@@ -706,6 +751,28 @@
           "usedGlobalVariables": "Použité globální proměnné",
           "usedTools": "Použité nástroje"
         },
+        "agentsMd": {
+          "inactiveOverride": "Neaktivní",
+          "legacyOverrides": "Tyto přepsané výzvy pro project-info se nepřevádějí automaticky a již se nedostanou k vestavěným agentům, kteří používají soubor AGENTS.md. Přesuňte pokyny, které chcete zachovat, do souboru AGENTS.md příslušného projektu. Stále se vztahují na výzvy, které odkazují na project-info: {0}",
+          "migrationResult": {
+            "backedUp": "Informace o předchozím projektu byly zachovány jako `{0}`.",
+            "backupFailed": "{0} nebylo možné přejmenovat na `{1}`, takže zůstává na svém místě a má přednost před {2}. Přejmenujte jej nebo odstraňte, abyste mohli začít používat {2}.",
+            "empty": "Migrace souboru AGENTS.md: není co migrovat.",
+            "promptSyntax": "{0} z migrovaných souborů stále obsahuje syntaxi šablony příkazového řádku, kterou {1} již nerozpoznává. Zkontrolujte a odstraňte ji.",
+            "untrusted": "Migrace souboru AGENTS.md: pracovní prostor není důvěryhodný, proto nebyly migrovány žádné informace o projektu."
+          },
+          "openOverrideSources": "Soubory s otevřeným zdrojovým kódem",
+          "rerunMigration": "Znovu spusťte migraci AGENTS.md"
+        },
+        "agentsMdAutoLoadedVariable": {
+          "description": "Vrací obsah souboru AGENTS.md v kořenovém adresáři pracovního prostoru, pokud má pracovní prostor jediný kořen, takže je vždy v kontextu"
+        },
+        "agentsMdContentVariable": {
+          "description": "Vrátí celý obsah souborů AGENTS.md v pracovním prostoru"
+        },
+        "agentsMdVariable": {
+          "description": "Obsahuje seznam souborů AGENTS.md, které musí agent načíst na vyžádání, tj. těch, které ještě nejsou načteny."
+        },
         "agentsVariable": {
           "description": "Vrátí seznam agentů dostupných v systému."
         },
@@ -729,7 +796,11 @@
           },
           "scopeBanner": "Úprava rozsahu „{0}“.",
           "searchPlaceholder": "Nastavení vyhledávacího AI",
-          "selectCategory": "Vyberte kategorii, kterou chcete konfigurovat."
+          "selectCategory": "Vyberte kategorii, kterou chcete konfigurovat.",
+          "sessionOverride": {
+            "tooltip": "Nastavuje se pro danou relaci pomocí --session-preference. Změna nebo resetování této hodnoty zde vymaže hodnotu relace až do opětovného načtení okna.",
+            "tooltipWithValue": "Nastaveno pro tuto relaci pomocí --session-preference: {0}. Změna nebo resetování této hodnoty zde vymaže hodnotu relace až do opětovného načtení okna."
+          }
         },
         "blinkTitle": {
           "agentCompleted": "{0} - Agent dokončil",
@@ -745,6 +816,7 @@
           },
           "description": "Podmíněně vyřeší fragmenty výzvy na základě výchozího nastavení zapnuto/vypnuto."
         },
+        "category": "AI",
         "changeSetSummaryVariable": {
           "description": "Poskytuje souhrn souborů v sadě změn a jejich obsahu."
         },
@@ -836,10 +908,10 @@
           "windowBlink": "Blikání okna"
         },
         "openEditorsShortVariable": {
-          "description": "Krátký odkaz na všechny aktuálně otevřené soubory (relativní cesty, oddělené čárkami)"
+          "description": "Stručný přehled všech aktuálně otevřených editorů (relativní cesty s jejich stavem, oddělené čárkami)"
         },
         "openEditorsVariable": {
-          "description": "Seznam všech aktuálně otevřených souborů oddělených čárkami jako cesty relativní k pracovnímu prostoru (např. my-project/src/index.ts)."
+          "description": "Seznam všech aktuálně otevřených editorů oddělený čárkami, uvedený jako cesty relativní k pracovnímu prostoru, přičemž za každým následuje jeho stav, pokud existuje (např. „my-project/src/index.ts“ (aktivní, neuložené změny))."
         },
         "preference": {
           "languageModelAliases": {
@@ -879,7 +951,9 @@
           "category": "Šablony AI Prompt"
         },
         "reasoning": {
-          "mdDescription": "Výchozí hodnota pro volič uvažování v chatovém vstupu, použitá u modelů, které podporují uvažování.\n\nJedná se o nastavení na úrovni uživatelského rozhraní: zvolená úroveň se v okamžiku požadavku převede na nativní parametry API poskytovatele (např. Anthropic `thinking` / `output_config.effort`, OpenAI `reasoning.effort`, Gemini `thinkingConfig`) a má přednost před jakýmikoli surovými hodnotami dodanými prostřednictvím `#ai-features.modelSettings.requestSettings#` pro stejná pole.\n\nKaždý záznam se skládá z:\n- `scope`: Definuje, kdy se nastavení použije (`modelId`, `providerId`, `agentId`).\n- `reasoning.level`: Jedna z hodnot `off`, `minimal`, `low`, `medium`, `high`, `auto`.\n\nPriorita při běhu (nejvyšší jako první): přepsání relace pomocí selektoru → tato preference → deklarované výchozí nastavení modelu. Odesláno bude to, co zobrazí selektor. Chcete-li ručně přepsat pole reasoning poskytovatele pomocí `#ai-features.modelSettings.requestSettings#`, nastavte zde `reasoning.level` na `off`, aby byl překlad založený na úrovni deaktivován.\n\nZáznamy se porovnávají na základě specifikace rozsahu (agent: 100, model: 10, poskytovatel: 1 bod).\n\nPříklad:\n```json\n[\n  { \"scope\": { \"providerId\": \"anthropic\" }, \"reasoning\": { \"level\": \"medium\" } },\n  { \"scope\": { \"modelId\": \"openai/gpt-5\" }, \"reasoning\": { \"level\": \"high\" } },\n  { \"scope\": { \"agentId\": \"Coder\" }, \"reasoning\": { \"level\": \"off\" } }\n]\n```",
+          "mdDescription": "Výchozí hodnota pro volič uvažování v chatovém vstupu, která se použije u modelů podporujících uvažování.\n\nJedná se o nastavení na úrovni uživatelského rozhraní: zvolená úroveň se v okamžiku odeslání požadavku převede na nativní parametry API poskytovatele (např. Anthropic `thinking` / `output_config.effort`, OpenAI `reasoning.effort`, Gemini `thinkingConfig`) a má přednost před jakýmikoli surovými hodnotami dodanými přes `#ai-features.modelSettings.requestSettings#` pro stejná pole.\n\nKaždý záznam se skládá z:\n- `scope`: Definuje, kdy se nastavení uplatní (`modelId`, `providerId`, `agentId`).\n- `reasoning.level`: Jedna z hodnot `off`, `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`, `auto`.\nPodporované úrovně závisí na modelu. `none` explicitně požaduje žádné uvažování; `off` zakáže uvažování na Ollamě. U ostatních poskytovatelů `off` vynechá explicitní úsilí o uvažování, což umožní použití výchozích nastavení poskytovatele nebo surových nastavení požadavku. `auto` použije výchozí nastavení poskytovatele.\n\nPriorita při běhu (nejvyšší jako první): přepsání relace prostřednictvím selektoru → toto nastavení → deklarované výchozí nastavení modelu. Odesláno bude to, co zobrazí selektor. Chcete-li ručně přepsat pole uvažování poskytovatele pomocí `#ai-features.modelSettings.requestSettings#`, nastavte zde `reasoning.level` na `off`, aby byl překlad založený na úrovni deaktivován (kromě Ollamy).\n\nPoložky se přiřazují na základě specifičnosti rozsahu (agent: 100, model: 10, poskytovatel: 1 bod).\n\nPříklad:\n```json\n[\n  { \"scope\": { \"providerId\": \"anthropic\" }, \"reasoning\": { \"level\": \"medium\" } },\n  { \"scope\": { \"modelId\": \"openai/gpt-5\" }, \"reasoning\": { \"level\": \"high\" } },\n  { \"scope\": { \"agentId\": \"Coder\" }, \"reasoning\": { \"level\": \"off\" } }\n]\n```",
+          "noneDescription": "Výslovně se nevyžaduje žádné odůvodnění.",
+          "offDescription": "Vynechává explicitní úsilí o uvažování, což umožňuje použití výchozích nastavení poskytovatele nebo nastavení z původního požadavku; v Ollamě deaktivuje uvažování.",
           "title": "Výchozí nastavení"
         },
         "requestSettings": {
@@ -936,10 +1010,10 @@
           "builtInVariable": "{0} Vestavěná proměnná",
           "currentAbsoluteFilePath": "Absolutní cesta k aktuálně otevřenému souboru.",
           "currentFileContent": "Čistý obsah aktuálně otevřeného souboru. Nezahrnuje informace o tom, odkud obsah pochází.",
-          "currentRelativeDirPath": "Cesta relativní k pracovnímu prostoru k adresáři obsahujícímu aktuálně otevřený soubor (např. my-project/src).",
-          "currentRelativeFilePath": "Cesta k aktuálně otevřenému souboru relativní k pracovnímu prostoru (např. my-project/src/index.ts).",
+          "currentRelativeDirPath": "Cesta k adresáři obsahujícímu aktuálně otevřený soubor relativně ke kořenovému adresáři pracovního prostoru, bez názvu kořenového adresáře (např. src).",
+          "currentRelativeFilePath": "Cesta k aktuálně otevřenému souboru relativně ke kořenovému adresáři pracovního prostoru, bez názvu kořenového adresáře (např. src/index.ts).",
           "currentSelectedText": "Prostý text, který je aktuálně vybrán v otevřeném souboru. Nezahrnuje informace o tom, odkud obsah pochází.",
-          "dotRelativePath": "Krátký odkaz na relativní cestu k aktuálně otevřenému souboru v rámci pracovního prostoru („currentRelativeFilePath“)."
+          "dotRelativePath": "Krátký odkaz na cestu k aktuálně otevřenému souboru relativně ke kořenu pracovního prostoru, bez názvu kořenového adresáře („currentRelativeFilePath“)."
         },
         "variantSet": {
           "unavailableVariant": "{0} (není k dispozici)",
@@ -1039,6 +1113,7 @@
         "agentConfiguration": {
           "agentMode": "Režim agenta pro Coder",
           "behavior": "Chování",
+          "closeGenericCapabilitiesEditor": "Zavřít editor obecných funkcí",
           "customAgentLocationQuickPick": {
             "placeholder": "Vyberte, kam chcete vytvořit soubor agents/<id>/agent.md",
             "title": "Vyberte umístění pro nového vlastního agenta"
@@ -1047,6 +1122,7 @@
           "defaultChatAgentNone": "Vestavěné výchozí nastavení",
           "defaultChatAgentNoneDescription": "Není stanoveno žádné výslovné výchozí nastavení; Theia vybere výchozího chatového agenta.",
           "defaults": "Výchozí nastavení",
+          "editGenericCapabilities": "Upravit obecné funkce",
           "genericCapabilitiesSettings": "Obecné funkce",
           "genericCapabilityType": {
             "agentDelegation": "Delegování agenta",
@@ -1183,7 +1259,7 @@
           "mdDescription": "Toto nastavení vám umožňuje přístup k nejnovějším funkcím AI.            \n            Je důležité si uvědomit, že tyto funkce mohou generovat            kontinuální požadavky na jazykové modely (LLM), ke kterým poskytujete přístup. To může znamenat náklady, které            musíte pečlivě sledovat. Povolením této možnosti potvrzujete, že jste si těchto rizik vědomi.            \n            **Upozornění! Níže uvedená nastavení v této sekci se projeví až\n            po povolení hlavního nastavení funkce. Po povolení funkce je třeba nakonfigurovat alespoň jednoho            poskytovatele LLM níže. Viz také [dokumentace](https://theia-ide.org/docs/user_ai/)**."
         },
         "exploreAgent": {
-          "description": "Asistent pro prozkoumávání kódové základny, který extrahuje a zpracovává informace z kódové základny.         Podává zprávy o tom, co existuje, poskytuje úryvky kódu a popisuje pozorované vzorce."
+          "description": "Asistent pro prozkoumávání kódové základny, který extrahuje a zpracovává informace z kódové základny.         Podává informace o tom, co existuje, poskytuje úryvky kódu a popisuje pozorované vzory.         Svěřte mu úkoly, když je návrh jasný, ale je třeba shromáždit fakta napříč soubory: místa volání, tok dat, vzory, kontroly dopadů.         Neprovádí plánování. V případě 1–2 známých souborů nebo jediného cíleného vyhledávání raději použijte přímo příslušné nástroje."
         },
         "generalConfiguration": {
           "aboutCosts": "Informace o nákladech a využití dat",
@@ -1252,7 +1328,6 @@
           "noModels": "Zatím nebyly nalezeny žádné modely.",
           "noProviders": "Nejsou nainstalováni žádní poskytovatelé jazykových modelů.",
           "providers": "Poskytovatelé",
-          "ready": "Připraveno",
           "refresh": "Obnovit seznam modelů",
           "refreshUnavailable": "Není co aktualizovat, dokud poskytovatel neobdrží přihlašovací údaje",
           "released": "vydáno {0}",
@@ -1295,8 +1370,7 @@
               "description": "Lokálně zkontroluje žádost o stažení a chrání stávající změny ve stromu práce."
             },
             "localValidation": {
-              "description": "Spouští lokální instalaci, sestavení, kontrolu kódu, testování nebo srovnatelné validační úlohy pro pull request.",
-              "name": "Sestavení"
+              "description": "Spouští lokální instalaci, sestavení, kontrolu kódu, testování nebo srovnatelné validační úlohy pro pull request."
             },
             "pendingGitHubReview": {
               "description": "Deleguje na agenta GitHubu vytvoření nebo aktualizaci čekající revize žádosti o stažení s připravenými vloženými komentáři po výslovném potvrzení uživatelem.",
@@ -1410,6 +1484,10 @@
             "title": "Resetovat všechny režimy potvrzení nástroje"
           },
           "resetAllTooltip": "Obnovit všechny nástroje na výchozí nastavení",
+          "sessionOverride": {
+            "tooltip": "Nastavuje se pro danou relaci pomocí --session-preference. Změna režimu libovolného nástroje v tomto nastavení nebo resetování všech nástrojů vymaže hodnotu relace pro každý nástroj, dokud se okno znovu nenačte.",
+            "tooltipWithValue": "Nastavení pro tuto relaci pomocí --session-preference: {0}. Změna režimu jakéhokoli nástroje zde nebo resetování všech nástrojů vymaže hodnotu relace pro každý nástroj, dokud se okno znovu nenačte."
+          },
           "shellExecution": "Spouštění příkazů v shellu",
           "toolOptions": {
             "confirm": {
@@ -1616,8 +1694,7 @@
             "title": "Název hlavičky ověřování"
           },
           "serverUrl": {
-            "mdDescription": "URL vzdáleného serveru MCP. Pokud je zadána, server se připojí k této URL místo spuštění lokálního procesu.",
-            "title": "URL serveru"
+            "mdDescription": "URL vzdáleného serveru MCP. Pokud je zadána, server se připojí k této URL místo spuštění lokálního procesu."
           },
           "title": "Konfigurace serveru MCP"
         },
@@ -1665,7 +1742,6 @@
         "deleteServerDialogMsg": "Opravdu chcete odstranit server „{0}“?",
         "deleteServerDialogTitle": "Odstranit server MCP",
         "deleteServerError": "Nepodařilo se odstranit server MCP: {0}",
-        "environmentVariables": "Proměnné prostředí",
         "form": {
           "argsPlaceholder": "Oddělené mezerami, např. -y @modelcontextprotocol/server-brave-search",
           "authHeaderPlaceholder": "Výchozí: Autorizace s nositelem",
@@ -1710,8 +1786,6 @@
         "saveServerError": "Nepodařilo se uložit konfiguraci serveru MCP: {0}",
         "serverAuthToken": "Autorizační token",
         "serverAuthTokenHeader": "Název záhlaví Auth",
-        "serverTypeLabel": "Server MCP",
-        "serverUrl": "URL serveru",
         "serversListTitle": "Servery",
         "showToolSettings": "Zobrazit nástroj",
         "signInServerFailed": "Nepodařilo se přihlásit k serveru MCP „{0}“.",
@@ -1762,7 +1836,7 @@
           "id": {
             "title": "Jedinečný identifikátor, který se používá v uživatelském rozhraní k identifikaci vlastního modelu."
           },
-          "mdDescription": "Integrujte vlastní modely kompatibilní s OpenAI API, například pomocí `vllm`. Povinné atributy jsou `model` a `url`.            \n            Volitelně můžete            \n            - zadat jedinečné `id` pro identifikaci vlastního modelu v uživatelském rozhraní. Pokud není zadán žádný, použije se jako `id` hodnota `model`.            \n            - zadejte `apiKey` pro přístup k API poskytovanému na zadané adrese URL. Použijte hodnotu `true`, chcete-li označit použití globálního klíče API OpenAI.            \n            - zadejte `apiVersion` pro přístup k API poskytovanému na dané adrese URL v Azure. Použijte `true`, chcete-li označit použití globální verze API OpenAI.            \n            - zadejte název `deployment` pro vaše nasazení v Azure.            \n            - Nastavte `developerMessageSettings` na jednu z hodnot `user`, `system`, `developer`, `mergeWithFollowingUserMessage` nebo `skip`, abyste určili, jak bude zpráva pro vývojáře            zahrnuta (kde `user`, `system` a `developer` budou použity jako role, `mergeWithFollowingUserMessage` připojí systémovou zprávu na začátek následující uživatelské zprávy            nebo převede systémovou zprávu na uživatelskou, pokud následující zpráva není uživatelská. `skip` systémovou zprávu jednoduše odstraní).            Výchozí hodnota je `developer`.            \n            - zadejte `supportsStructuredOutput: false`, chcete-li určit, že se nemá používat strukturovaný výstup.            \n            - zadejte `enableStreaming: false`, chcete-li určit, že se nemá používat streamování.            \n            - Zadejte `useResponseApi: true`, chcete-li místo rozhraní Chat Completion API používat novější rozhraní OpenAI Response API (vyžaduje kompatibilní koncový bod).            \n            - Zadejte `reasoningSupport`, chcete-li povolit selektor odůvodnění v chatu. Zadejte objekt s            `supportedLevels` (např. `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`) a volitelným `defaultLevel`.            \n            - Zadejte `headers`, chcete-li s každým požadavkem na koncový bod odesílat další HTTP hlavičky, např. hlavičky vyžadované bránou před API.            \n            Další informace najdete v [naší dokumentaci](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm).",
+          "mdDescription": "Integrujte vlastní modely kompatibilní s rozhraním API OpenAI, například pomocí `vllm`. Povinné atributy jsou `model` a `url`.            \n            Volitelně můžete            \n            - zadat jedinečné `id` pro identifikaci vlastního modelu v uživatelském rozhraní. Pokud není zadán žádný, použije se jako `id` hodnota `model`.            \n            - zadejte `apiKey` pro přístup k API poskytovanému na zadané adrese URL. Použijte hodnotu `true`, chcete-li označit použití globálního klíče API OpenAI.            \n            - zadejte `apiVersion` pro přístup k API poskytovanému na zadané adrese URL v Azure. Použijte `true`, chcete-li označit použití globální verze API OpenAI.            \n            - zadejte název `deployment` pro vaše nasazení v Azure.            \n            - Nastavte `developerMessageSettings` na jednu z hodnot `user`, `system`, `developer`, `mergeWithFollowingUserMessage` nebo `skip`, abyste určili, jak bude zpráva pro vývojáře            zahrnuta (kde `user`, `system` a `developer` budou použity jako role, `mergeWithFollowingUserMessage` připojí systémovou zprávu na začátek následující uživatelské zprávy            nebo převede systémovou zprávu na uživatelskou, pokud následující zpráva není uživatelská. `skip` systémovou zprávu jednoduše odstraní).            Výchozí hodnota je `developer`.            \n            - zadejte `supportsStructuredOutput: false`, chcete-li určit, že se nemá používat strukturovaný výstup.            \n            - zadejte `enableStreaming: false`, chcete-li určit, že se nemá používat streamování.            \n            - Zadejte `useResponseApi: true`, chcete-li místo rozhraní Chat Completion API používat novější rozhraní OpenAI Response API (vyžaduje kompatibilní koncový bod).            \n            - Zadejte `reasoningSupport`, chcete-li povolit selektor odůvodnění v chatu. Zadejte objekt s            `supportedLevels` (možnosti: `off`, `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`, `auto`) a volitelným `defaultLevel`.            `none` odešle explicitní požadavek bez úsilí o zdůvodnění; `off` vynechá generovaná nastavení odůvodnění; `auto` použije výchozí úroveň úsilí poskytovatele.            Deklarujte pouze úrovně podporované vaším koncovým bodem.            \n            - zadejte `headers`, chcete-li s každým požadavkem na koncový bod odesílat další HTTP hlavičky, např. hlavičky vyžadované bránou před API.            \n            Další informace najdete v [naší dokumentaci](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm).",
           "modelId": {
             "title": "ID modelu"
           },
@@ -1810,6 +1884,9 @@
           "description": "Seznam relativních cest ke konkrétním souborům v aktuálním pracovním prostoru, které se mají použít jako šablony výzev. Pokud existují šablony se stejným ID (názvem souboru) na více místech, konflikty se řeší podle priority: konkrétní soubory šablon (nejvyšší) > adresáře pracovního prostoru > globální adresáře (nejnižší).",
           "title": "Soubory šablon výzev specifické pro pracovní prostor"
         }
+      },
+      "registry": {
+        "from": "Z"
       },
       "scanoss": {
         "changeSet": {
@@ -1896,52 +1973,15 @@
         "failedToGetTokenUsageData": "Nepodařilo se načíst údaje o použití tokenu: {0}",
         "inputTokens": "Vstupní tokeny",
         "label": "Použití tokenů",
-        "lastUsed": "Naposledy použito",
         "noData": "Zatím nejsou k dispozici žádné údaje o použití tokenů.",
         "note": "Použití tokenů je sledováno od spuštění aplikace a není trvale uchováváno.",
         "outputTokens": "Výstupní tokeny",
         "readCachedInputTokens": "Vstupní tokeny načtené z mezipaměti"
       },
-      "vercelai": {
-        "anthropicApiKey": {
-          "mdDescription": "Zadejte klíč API pro modely Anthropic používané sadou Vercel AI SDK. **Upozornění:** Použitím této předvolby bude klíč API uložen v čitelném textu na počítači, na kterém běží Theia. K bezpečné nastavení klíče použijte proměnnou prostředí `ANTHROPIC_API_KEY`."
-        },
-        "customEndpoints": {
-          "apiKey": {
-            "title": "Buď klíč pro přístup k API poskytovanému na dané adrese URL, nebo „true“ pro použití globálního klíče API."
-          },
-          "enableStreaming": {
-            "title": "Označuje, zda má být použito streamovací API. Výchozí hodnota je „true“."
-          },
-          "id": {
-            "title": "Jedinečný identifikátor, který se používá v uživatelském rozhraní k identifikaci vlastního modelu."
-          },
-          "mdDescription": "Integrujte vlastní modely kompatibilní s Vercel AI SDK. Požadované atributy jsou „model“ a „url“.            \n            Volitelně můžete            \n            - zadat jedinečné „id“ pro identifikaci vlastního modelu v uživatelském rozhraní. Pokud není zadáno žádné, bude jako „id“ použito „model“.            \n            - poskytnout „apiKey“ pro přístup k API poskytovanému na dané adrese URL. Použijte `true` k označení použití globálního klíče API.            \n            - zadejte `supportsStructuredOutput: false` k označení, že strukturovaný výstup nebude použit.            \n            - zadejte `enableStreaming: false` k označení, že streamování nebude použito.            \n            - zadejte `provider` k označení, od kterého poskytovatele model pochází (openai, anthropic).",
-          "modelId": {
-            "title": "ID modelu"
-          },
-          "supportsStructuredOutput": {
-            "title": "Označuje, zda model podporuje strukturovaný výstup. Výchozí hodnota je „true“."
-          },
-          "url": {
-            "title": "Koncový bod API, kde je model hostován"
-          }
-        },
-        "models": {
-          "description": "Oficiální modely pro použití s Vercel AI SDK",
-          "id": {
-            "title": "ID modelu"
-          },
-          "model": {
-            "provider": "Poskytovatel",
-            "title": "Název modelu"
-          }
-        },
-        "openaiApiKey": {
-          "mdDescription": "Zadejte klíč API pro modely OpenAI používané sadou Vercel AI SDK. **Upozornění:** Použitím této předvolby bude klíč API uložen v čitelném textu na počítači, na kterém běží Theia. K bezpečnému nastavení klíče použijte proměnnou prostředí `OPENAI_API_KEY`."
-        }
-      },
       "workspace": {
+        "agentsMdAgent": {
+          "description": "AI asistent pro správu kontextu projektu, který využívají ostatní AI agenti. Tento agent pomáhá vytvářet, aktualizovat a revidovat soubor AGENTS.md v kořenovém adresáři vašeho pracovního prostoru v souladu s otevřeným standardem AGENTS.md, který čtou i ostatní agentní nástroje. Umí analyzovat váš pracovní prostor a navrhnout informace o projektu, sjednotit stávající soubory s pokyny, jako jsou CLAUDE.md nebo copilot-instructions.md, nebo aktualizovat soubor podle vašich požadavků."
+        },
         "allowedExternalPaths": {
           "description": "Seznam absolutních cest nebo URI souborů (adresářů nebo souborů) mimo pracovní prostor, ke kterým mohou mít přístup nástroje AI. Podporuje znak `~` pro odkaz na domovský adresář uživatele. Ve výchozím nastavení je prázdný; pouze na základě výslovného souhlasu. Respektováno všemi nástroji, které přijímají cestu, včetně nástrojů, které zapisují soubory. Hodnoty v rozsahu pracovního prostoru jsou ignorovány, pokud není pracovní prostor důvěryhodný. Symbolické odkazy uvnitř adresářů na seznamu povolených jsou sledovány a mohou směřovat na soubory mimo tento seznam; přidávejte pouze adresáře, jejichž obsahu důvěřujete.",
           "title": "Povolené externí cesty"
@@ -1964,15 +2004,16 @@
           "description": "Maximální velikost v kilobajtech obsahu vráceného nástrojem getFileContent. Při čtení celého souboru (bez offsetu/limitu) soubory překračující tento limit vrátí chybu. Při použití offsetu a limitu se proti tomuto limitu porovnává pouze požadovaný rozsah.",
           "title": "Maximální velikost obsahu souboru (KB)"
         },
-        "projectInfoAgent": {
-          "description": "AI asistent pro správu šablon informací o projektu. Tento agent pomáhá vytvářet, aktualizovat a kontrolovat soubor .prompts/project-info.prompttemplate, který poskytuje kontext o vašem projektu ostatním AI agentům. Může analyzovat váš pracovní prostor a navrhovat informace o projektu nebo aktualizovat stávající šablony na základě vašich požadavků."
-        },
         "searchMaxResults": {
           "description": "Maximální počet výsledků vyhledávání vrácených funkcí vyhledávání v pracovním prostoru.",
           "title": "Maximální počet výsledků vyhledávání"
         },
         "workspaceAgent": {
-          "description": "AI asistent integrovaný do Theia IDE, navržený pro pomoc softwarovým vývojářům. Tento agent má přístup k pracovnímu prostoru uživatele, může získat seznam všech dostupných souborů a složek a načíst jejich obsah. Nemůže však soubory upravovat. Může proto odpovídat na otázky týkající se aktuálního projektu, projektových souborů a zdrojového kódu v pracovním prostoru, například jak sestavit projekt, kam umístit zdrojový kód, kde najít konkrétní kód nebo konfigurace atd."
+          "description": "AI asistent integrovaný do {0}, určený k pomoci softwarovým vývojářům. Tento agent má přístup do pracovního prostoru uživatele, může získat seznam všech dostupných souborů a složek a načíst jejich obsah. Soubory však nemůže upravovat. Může proto odpovídat na otázky týkající se aktuálního projektu, projektových souborů a zdrojového kódu v pracovním prostoru, například jak projekt sestavit, kam umístit zdrojový kód, kde najít konkrétní kód nebo konfigurace atd. Prozkoumává situaci a vytváří plán implementace (kontext úkolu). Přeneste na něj úkoly, u nichž je otázka „co by se mělo změnit?“ sama o sobě otevřená: rozhodnutí o návrhu, změny ve 3 a více souborech nebo 2 a více balíčcích, případně změny přesahující architektonické vrstvy."
+        },
+        "writeContentMaxSizeKB": {
+          "description": "Maximální velikost obsahu v kilobajtech, kterou přijímají nástroje pro zápis celého souboru (writeFileContent a suggestFileContent). Větší zápisy jsou odmítnuty s doporučením použít místo nich nástroje založené na nahrazování.",
+          "title": "Maximální velikost obsahu (KB)"
         }
       }
     },
@@ -2018,8 +2059,7 @@
         "description": "Nastavení AI byla přesunuta do okna Konfigurace AI. Otevřete jej a nakonfigurujte poskytovatele, modely, agenty a další položky."
       },
       "preferences": {
-        "linuxEnvHint": "V systému Linux se ujistěte, že je proměnná definována v `~/.profile` (nejen v `~/.bashrc`), pokud spouštíte aplikaci z ikony na ploše. Podrobnosti najdete v [dokumentaci](https://theia-ide.org/docs/user_ai/#setting-api-keys).",
-        "title": "Funkce AI"
+        "linuxEnvHint": "V systému Linux se ujistěte, že je proměnná definována v `~/.profile` (nejen v `~/.bashrc`), pokud spouštíte aplikaci z ikony na ploše. Podrobnosti najdete v [dokumentaci](https://theia-ide.org/docs/user_ai/#setting-api-keys)."
       },
       "showChat": "Zobrazit chat"
     },
@@ -2149,6 +2189,7 @@
         "mdDescription": "Přepsání nastavení `#ai-features.registry.autoUpdate#` pro jednotlivé artefakty, indexované podle `skill:<skillId>`, `mcp:<serverId>` nebo `plugin:<pluginId>`. Záznamy se obvykle spravují prostřednictvím nabídky ozubeného kolečka v zobrazení Rozšíření; artefakt bez záznamu se řídí výchozím nastavením."
       },
       "mcp": {
+        "registryLatestVersion": "Registr MCP: {0}",
         "updated": "Aktualizován server MCP „{0}“."
       },
       "plugin": {
@@ -2296,7 +2337,6 @@
       "configurePermissions": "Konfigurace oprávnění příkazů shellu",
       "confirmExecution": "Potvrdit příkaz shellu",
       "denialReason": "Důvod",
-      "executionDenied": "Odmítnuto",
       "executionDeniedWithReason": "Odmítnuto s odůvodněním",
       "partialOutput": "Částečný výstup",
       "shellCommandAllowlist": {
@@ -2305,8 +2345,7 @@
       "shellCommandDenylist": {
         "description": "Seznam vzorů příkazů shellu, které by měly být vždy zamítnuty. Příkazy odpovídající těmto vzorům budou automaticky zamítnuty bez potvrzení. Používá syntaxi vzoru: „git push“ (přesná shoda) nebo „git push *“ (s libovolnými argumenty). Dodává se s výchozími vzory pro nebezpečné příkazy (eval, exec, sudo, rm -rf atd.)."
       },
-      "timeout": "Časový limit",
-      "workingDirectory": "Pracovní adresář"
+      "timeout": "Časový limit"
     },
     "ai-tool-sketchpad": {
       "addItemProperty": "Přidat vlastnost položky",
@@ -2385,7 +2424,6 @@
       "optional": "volitelné",
       "selectAuth": "Vyberte metodu ověřování",
       "selectCollaboration": "Vyberte možnost spolupráce",
-      "serverUrl": "URL serveru",
       "serverUrlDescription": "URL instance serveru Open Collaboration Tools Server pro živé kolaborační relace",
       "sharedSession": "Sdílená relace spolupráce",
       "startSession": "Spustit nebo se připojit ke spolupráci",
@@ -2412,6 +2450,9 @@
         "collapseLeftPanel": "Přepnout levý panel",
         "collapseRightPanel": "Přepnout pravý panel",
         "collapseTab": "Sbalit postranní panel",
+        "hideSidePanelItem": "Skrýt z postranní lišty",
+        "keepSidePanelItem": "Zobrazit v postranním panelu",
+        "resetHiddenSidePanelItems": "Obnovit skryté položky postranního panelu",
         "showNextTabGroup": "Přepnout na další skupinu karet",
         "showNextTabInGroup": "Přepnout na další kartu ve skupině",
         "showPreviousTabGroup": "Přepnout na předchozí skupinu karet",
@@ -2427,10 +2468,23 @@
         "visual": "Zobrazit vizuální náhled karty."
       },
       "highlightModifiedTabs": "Ovládá, zda se na upravených (znečištěných) záložkách editoru vykreslí horní okraj.",
+      "http": {
+        "proxy": "Nastavení proxy, které se má použít. Pokud není nastaveno, bude převzato z proměnných prostředí `http_proxy` a `https_proxy`.",
+        "proxyAuthorization": "Hodnota, která se má odeslat jako záhlaví `Proxy-Authorization` u každého síťového požadavku.",
+        "proxyStrictSSL": "Určuje, zda má být certifikát proxy serveru ověřen podle seznamu zadaných certifikačních autorit.",
+        "proxySupport": "Využijte podporu proxy pro rozšíření.",
+        "systemCertificates": "Určuje, zda se mají načítat certifikáty CA z operačního systému. Ve Windows a macOS je po vypnutí této funkce nutné okno znovu načíst."
+      },
       "jumpListName": "Poslední pracovní prostory",
       "keybinding": {
+        "characterRequiresCodeDispatch": "Pro klávesové zkratky je nutné nastavit předvolbu „keyboard.dispatch“ na hodnotu „code“.",
+        "commandModifierAltGraphCharacterUnavailable": "Logický znak a modifikátor příkazu {0} nelze v aktuálním rozložení klávesnice zadat současně.",
         "duplicateModifierError": "Nelze analyzovat klávesovou zkratku {0} Duplicitní modifikátory",
+        "invalidCharacter": "Neplatný znak Unicode {0}.",
         "metaError": "Nelze analyzovat klávesovou zkratku {0} meta je pouze pro OSX",
+        "shiftedAltGraphCharacterUnavailable": "Logický znak a modifikátor Shift nelze v aktuálním rozložení klávesnice zadat současně.",
+        "unavailableCharacter": "Tlačítko není v aktuálním rozložení klávesnice k dispozici.",
+        "unknownScanCode": "Neznámý skenovací kód {0}. Použijte podporovaný název KeyboardEvent.code.",
         "unrecognizedKeyError": "Neznámý klíč {0} v {1}"
       },
       "keybindingStatus": "{0} bylo stisknuto, čeká se na další klávesy",
@@ -2464,10 +2518,15 @@
       },
       "secondaryWindow": {
         "alwaysOnTop": "Pokud je tato funkce povolena, sekundární okno zůstává nad všemi ostatními okny, včetně oken jiných aplikací.",
+        "closeBehavior": {
+          "close": "Zobrazení sekundárního okna jsou zavřena. Zobrazení, u nichž by došlo ke ztrátě stavu, např. editory s neuloženými změnami, jsou přesunuta zpět do hlavního okna.",
+          "moveToMainWindow": "Všechny pohledy sekundárního okna se přesunou zpět do hlavního okna."
+        },
         "description": "Nastavuje počáteční polohu a velikost extrahovaného sekundárního okna.",
         "fullSize": "Poloha a velikost extrahovaného widgetu budou stejné jako u spuštěné aplikace Theia.",
         "halfWidth": "Poloha a velikost extrahovaného widgetu bude poloviční šířky spuštěné aplikace Theia.",
-        "originalSize": "Poloha a velikost extrahovaného widgetu budou stejné jako u původního widgetu."
+        "originalSize": "Poloha a velikost extrahovaného widgetu budou stejné jako u původního widgetu.",
+        "restore": "Určuje, zda se při spuštění obnoví sekundární okna. Je-li tato funkce deaktivována, jejich obsah se místo toho obnoví v hlavním okně."
       },
       "severity": {
         "log": "Protokol"
@@ -2526,6 +2585,8 @@
       "missingConfiguration": "Chybí nebo není použitelné dynamické nastavení „{0}: {1}“.",
       "pause": "pause",
       "pauseAll": "Pozastavit vše",
+      "restartFrameFailed": "Nepodařilo se restartovat rámec.",
+      "restartFrameNotSupported": "Ladicí adaptér nepodporuje restartování rámců.",
       "step": "krok",
       "taskTerminatedBySignal": "Úloha „{0}“ byla ukončena signálem {1}.",
       "taskTerminatedForUnknownReason": "Úloha „{0}“ byla ukončena z neznámého důvodu.",
@@ -2562,6 +2623,10 @@
       "editor.inlineSuggest.edits.experimental.useInterleavedLinesDiff": "Ovládá, zda povolit experimentální prokládání řádků v inline návrzích.",
       "editor.inlineSuggest.edits.experimental.useMixedLinesDiff": "Ovládá, zda povolit experimentální úpravy v inline návrzích.",
       "editor.insertSpaces": "Vložte mezery při stisknutí klávesy `Tab`. Toto nastavení je přepsáno na základě obsahu souboru, pokud je zapnuta funkce `#editor.detectIndentation#`.",
+      "editor.multiCursorPaste": {
+        "description": "Řídí vkládání, když počet řádků vloženého textu odpovídá počtu řádků na pozici kurzoru.",
+        "spread": "Každým pohybem kurzoru se vloží jeden řádek textu."
+      },
       "editor.quickSuggestions": "Ovládá, zda se mají při psaní automaticky zobrazovat návrhy. Toto lze ovládat pro psaní komentářů, řetězců a jiného kódu. Rychlé návrhy lze nakonfigurovat tak, aby se zobrazovaly jako duchový text nebo pomocí widgetu návrhů. Vezměte také na vědomí nastavení `#editor.suggestOnTriggerCharacters#`, které ovládá, zda jsou návrhy spouštěny speciálními znaky.",
       "editor.suggestFontSize": "Velikost písma pro widget návrhů. Pokud je nastavena na „0“, použije se hodnota „#editor.fontSize#“.",
       "editor.suggestLineHeight": "Výška řádku pro widget návrhů. Při nastavení na hodnotu „0“ se použije hodnota „#editor.lineHeight#“. Minimální hodnota je 8.",
@@ -2611,6 +2676,7 @@
       "cwd": "Vyberte aktuální pracovní adresář pro nový externí terminál"
     },
     "file-search": {
+      "placeholder": "Vyhledávání souborů podle názvu (přidejte {0} pro přechod na řádek nebo {1} pro přechod na symbol)",
       "toggleExcludedFiles": " (Stisknutím kláves {0} zobrazíte/skryjete vyloučené soubory)"
     },
     "fileDialog": {
@@ -2672,6 +2738,8 @@
       "editKeybindingTitle": "Upravit klávesové zkratky pro {0}",
       "editWhenExpression": "Upravit při výrazu...",
       "editWhenExpressionTitle": "Upravit výraz pro {0}",
+      "inactiveKeybinding": "Neaktivní v aktuálním rozložení klávesnice",
+      "interpretationShadowing": "Interpretace modifikátoru příkazu má přednost před touto klávesovou zkratkou.",
       "keybinding": {
         "copy": "Kopírování klávesových zkratek",
         "copyCommandId": "Kopírovat ID příkazu klávesové zkratky",
@@ -2680,10 +2748,13 @@
         "editWhenExpression": "Upravit klávesovou zkratku při výrazu..."
       },
       "keybindingCollidesValidation": "klávesová zkratka v současné době koliduje",
+      "keybindingDescription": "Logická klávesa nebo sekvence kláves oddělená mezerami. Pro fyzickou klávesu použijte [ScanCode] a pro vyhrazené znaky Unicode [char:0x...].",
+      "physicalRealizationUnavailable": "Fyzická realizace není k dispozici",
       "requiredKeybindingValidation": "Hodnota klávesové zkratky je povinná.",
       "resetKeybindingConfirmation": "Opravdu chcete resetovat tuto klávesovou zkratku na výchozí hodnotu?",
       "resetKeybindingTitle": "Obnovit klávesové zkratky pro {0}",
-      "resetMultipleKeybindingsWarning": "Pokud pro tento příkaz existuje více klávesových zkratek, všechny budou resetovány."
+      "resetMultipleKeybindingsWarning": "Pokud pro tento příkaz existuje více klávesových zkratek, všechny budou resetovány.",
+      "windowsRecorderGuidance": "Stiskněte požadovanou kombinaci kláves a poté stiskněte klávesu ENTER. Kombinace s klávesou AltGr se ukládají jako jejich logický znak."
     },
     "localize": {
       "offlineTooltip": "Nelze se připojit k backendu."
@@ -2849,11 +2920,16 @@
       "webviewWarnIfUnsecure": "Upozorňuje uživatele, že webové zobrazení je v současné době nasazeno nezabezpečeným způsobem."
     },
     "preferences": {
-      "ai-features": "Funkce AI",
-      "hostedPlugin": "Hostovaný plugin",
-      "input": {
-        "browse": "Procházet"
+      "ai-features": {
+        "ai-enable": "Podpora AI",
+        "code-completion": "Doplňování kódu",
+        "model-settings": "Nastavení modelu",
+        "open-ai-custom": "{0} Vlastní modely",
+        "open-ai-official": "{0} Oficiální modely",
+        "promptTemplates": "Šablony výzev",
+        "workspace-functions": "Funkce pracovního prostoru"
       },
+      "hostedPlugin": "Hostovaný plugin",
       "sessionOverride": {
         "suffix": "Přepsáno relací",
         "suffixTooltip": "Toto nastavení má hodnotu pro danou relaci nastavenou pomocí --session-preference. Jeho úprava zde vymaže přepsání nastavení pro zbytek této relace."
@@ -2862,9 +2938,7 @@
         "statusBar": "Předvolby relace ({0})",
         "tooltipBody": "Byly předány pomocí parametru --session-preference a existují pouze v paměti. Kliknutím na název nastavení se k němu přesunete v zobrazení Nastavení.",
         "tooltipChangeNote": "Úprava kterékoli z těchto položek vymaže její přepsání pro aktuální relaci. Chcete-li od dalšího spuštění používat uložené hodnoty, restartujte aplikaci bez argumentů --session-preference.",
-        "tooltipHeader": "Tato nastavení jsou pro tuto relaci přepsána",
-        "valueOff": "vypnuto",
-        "valueOn": "je"
+        "tooltipHeader": "Tato nastavení jsou pro tuto relaci přepsána"
       },
       "toolbar": "Nástrojová lišta"
     },
@@ -2945,13 +3019,14 @@
       "mergeEditor": {
         "resetConfirmationTitle": "Opravdu chcete resetovat výsledek sloučení v tomto editoru?"
       },
+      "multiDiffEditor": {
+        "loadFailed": "Nepodařilo se načíst diff: {0}"
+      },
       "noChanges": "Žádné změněné soubory.",
       "noHistory": "Historie správy zdrojů není k dispozici.",
-      "noHistoryForError": "Pro {0} není k dispozici žádná historie.",
       "openCommit": "Otevřít Commit",
       "pickHistoryItemRefs": "Vybrat položku z historie...",
       "pickHistoryItemRefsPlaceholder": "Vyberte jednu nebo více položek historie",
-      "prepositionIn": "v",
       "refPickerBranches": "větve",
       "refPickerRemoteBranches": "vzdálené větve",
       "refPickerTags": "tagy",
@@ -2966,7 +3041,9 @@
       "searchOnEditorModification": "Prohledávejte aktivní editor při změnách."
     },
     "secondary-window": {
-      "extract-widget": "Přesunout zobrazení do sekundárního okna"
+      "extract-widget": "Přesunout zobrazení do sekundárního okna",
+      "restore-all-widgets": "Přesunout všechna zobrazení do hlavního okna",
+      "restore-widget": "Přesunout zobrazení do hlavního okna"
     },
     "shell-area": {
       "secondary": "Sekundární okno"
@@ -3151,7 +3228,10 @@
       "restrictedModeFeatures": "Funkce jako provádění úloh, ladění, rozšíření a AI jsou zakázány z důvodu ochrany před potenciálně škodlivým kódem.",
       "schema": {
         "folders": {
-          "description": "Kořenové složky v pracovním prostoru"
+          "description": "Kořenové složky v pracovním prostoru",
+          "name": {
+            "description": "Volitelný název složky, který se zobrazuje namísto názvu složky"
+          }
         },
         "title": "Pracovní prostor Soubor"
       },

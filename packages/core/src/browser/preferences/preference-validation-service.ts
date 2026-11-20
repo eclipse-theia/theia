@@ -122,11 +122,7 @@ export class PreferenceValidationService {
 
     protected getSchema(name: string): IJSONSchema | undefined {
         const combinedSchema = this.schemaService.getJSONSchema(PreferenceScope.Folder).properties!;
-        if (combinedSchema[name]) {
-            return combinedSchema[name];
-        }
-        const baseName = this.languageOverrideService.overriddenPreferenceName(name)?.preferenceName;
-        return baseName !== undefined ? combinedSchema[baseName] : undefined;
+        return combinedSchema[name];
     }
 
     protected validateMultiple(key: string, value: JSONValue, schema: IJSONSchema & { type: JsonType[] }): JSONValue {

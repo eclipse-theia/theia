@@ -68,7 +68,7 @@ export class PluginInstallDialog extends ReactDialog<boolean> {
         return (
             <div className="theia-plugin-dialog">
                 <div className="theia-plugin-dialog-field">
-                    <label>{nls.localizeByDefault('From')}:</label>
+                    <label>{nls.localize('theia/ai/registry/from', 'From')}:</label>
                     <span className="theia-plugin-dialog-value">{this.renderSource(entry)}</span>
                 </div>
                 <div className="theia-plugin-dialog-field">

@@ -373,7 +373,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
         return {
             preferredEncoding,
-            guessEncoding: this.preferenceService.get('files.autoGuessEncoding', false, resource ? resource.toString() : undefined)
+            guessEncoding: this.preferenceService.get('files.autoGuessEncoding', { fallback: false, resource: resource ? resource.toString() : undefined })
         };
     }
 
@@ -409,7 +409,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
             }
         } else if (typeof detectedEncoding === 'string') {
             preferredEncoding = detectedEncoding;
-        } else if (this.preferenceService.get('files.encoding', undefined, uri ? URI.fromComponents(uri).toString() : undefined) === UTF8_with_bom) {
+        } else if (this.preferenceService.get('files.encoding', { resource: uri ? URI.fromComponents(uri).toString() : undefined }) === UTF8_with_bom) {
             preferredEncoding = UTF8; // if we did not detect UTF 8 BOM before, this can only be UTF 8 then
         }
         let encoding;

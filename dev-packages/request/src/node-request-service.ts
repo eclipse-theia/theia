@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as tls from 'tls';
 import type { Dispatcher } from 'undici';
 import { getProxyAgent } from './proxy';
 import { Headers, RequestConfiguration, RequestContext, RequestOptions, RequestService, CancellationToken } from './common-request-service';
@@ -27,6 +28,8 @@ export class NodeRequestService implements RequestService {
     protected proxyUrl?: string;
     protected strictSSL?: boolean;
     protected authorization?: string;
+    protected systemCertificates?: boolean;
+    protected caCertificates?: readonly string[];
 
     protected async getProxyUrl(url: string): Promise<string | undefined> {
         return this.proxyUrl;
@@ -42,27 +45,62 @@ export class NodeRequestService implements RequestService {
         if (config.proxyAuthorization !== undefined) {
             this.authorization = config.proxyAuthorization;
         }
+        if (config.systemCertificates !== undefined) {
+            this.systemCertificates = config.systemCertificates;
+        }
+    }
+
+    /**
+     * Returns Node's default CA certificates together with the CA certificates of the operating system.
+     * They are read on first use and cached.
+     */
+    protected getCACertificates(): readonly string[] {
+        if (!this.caCertificates) {
+            this.caCertificates = [...new Set([...tls.getCACertificates('default'), ...this.getSystemCertificates()])];
+        }
+        return this.caCertificates;
+    }
+
+    protected getSystemCertificates(): string[] {
+        return tls.getCACertificates('system');
     }
 
     protected async processOptions(options: NodeRequestOptions): Promise<NodeRequestOptions> {
         const { strictSSL } = this;
         options.strictSSL = options.strictSSL ?? strictSSL;
+        const headerAuthorization = this.takeProxyAuthorizationHeader(options);
         if (!options.dispatcher) {
+            // undici's ProxyAgent rejects a Proxy-Authorization request header, so the authorization goes to the agent
             options.dispatcher = getProxyAgent(options.url || '', process.env, {
                 proxyUrl: await this.getProxyUrl(options.url),
-                strictSSL: options.strictSSL
+                strictSSL: options.strictSSL,
+                ca: this.systemCertificates ? this.getCACertificates() : undefined,
+                proxyAuthorization: options.proxyAuthorization || headerAuthorization || this.authorization
             });
         }
 
-        const authorization = options.proxyAuthorization || this.authorization;
-        if (authorization) {
-            options.headers = {
-                ...(options.headers || {}),
-                'Proxy-Authorization': authorization
-            };
-        }
-
         return options;
+    }
+
+    /**
+     * Removes a `Proxy-Authorization` header from the request options and returns its value.
+     * The header must not be sent: undici's `ProxyAgent` rejects it, and without a proxy it would reach the target server.
+     */
+    protected takeProxyAuthorizationHeader(options: NodeRequestOptions): string | undefined {
+        if (!options.headers) {
+            return undefined;
+        }
+        let authorization: string | undefined;
+        const headers: Headers = {};
+        for (const [name, value] of Object.entries(options.headers)) {
+            if (name.toLowerCase() === 'proxy-authorization') {
+                authorization = value;
+            } else {
+                headers[name] = value;
+            }
+        }
+        options.headers = headers;
+        return authorization;
     }
 
     async request(options: NodeRequestOptions, token?: CancellationToken): Promise<RequestContext> {

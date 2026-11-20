@@ -28,8 +28,7 @@
           "title": "功能覆寫"
         },
         "completionNotification": {
-          "mdDescription": "當此代理程式需要您注意時(例如完成任務或要求您輸入)的通知行為。                     若未設定,將採用全域預設的通知設定。\n                    - `os-notification`:顯示作業系統／系統通知\n                    - `message`:在狀態列／訊息區域顯示通知\n                    - `blink`:讓使用者介面閃爍或突出顯示\n                    - `off`:停用此代理程式的通知",
-          "title": "通知"
+          "mdDescription": "當此代理程式需要您注意時(例如完成任務或要求您輸入)的通知行為。                     若未設定,將採用全域預設的通知設定。\n                    - `os-notification`:顯示作業系統／系統通知\n                    - `message`:在狀態列／訊息區域顯示通知\n                    - `blink`:讓使用者介面閃爍或突出顯示\n                    - `off`:停用此代理程式的通知"
         },
         "enable": {
           "mdDescription": "指定代理程式應啟用(true)或停用(false)。",
@@ -206,6 +205,15 @@
           "label": "圖像檔案"
         },
         "imagePickerPlaceholder": "選擇影像檔案或依名稱搜尋",
+        "networkError": {
+          "dns": "無法解析 AI 提供者主機。請檢查模型／端點 URL 以及您的 DNS 或網際網路連線。",
+          "generic": "無法連線至 AI 服務提供者。請檢查您的網路連線、已設定的端點 URL,以及任何代理伺服器或防火牆設定。",
+          "refused": "AI 提供者端點拒絕連線。請確認主機與埠號,並確保任何本地模型伺服器(例如 Ollama)正在運行。",
+          "reset": "在收到回應之前,與 AI 服務提供者的連線已重置。此情況通常屬暫時性 — 請重新嘗試。",
+          "timeout": "與 AI 服務提供者的連線已超時。請檢查您的網路、VPN 或代理伺服器設定。",
+          "tls": "無法驗證 AI 提供者端點的 TLS 憑證。若使用自訂或自簽名端點,請檢查其憑證或代理伺服器設定。",
+          "unreachable": "無法連線至 AI 服務提供者主機。請檢查您的網路連線、VPN 或代理伺服器設定。"
+        },
         "orchestrator": {
           "description": "此代理程式會根據所有可用聊天代理的描述分析用戶請求,並選取最符合的代理來回應請求(透過人工智慧實現)。用戶請求將直接委派給選定的代理,無需進一步確認。",
           "vars": {
@@ -278,7 +286,6 @@
           "generating": "生成",
           "noRenderer": "錯誤:未找到渲染器",
           "scrollToBottom": "跳至最新訊息",
-          "waitingForInput": "等待輸入",
           "you": "您"
         },
         "chatInput": {
@@ -298,6 +305,7 @@
         },
         "collapseAll": "收起所有",
         "collapseChangeSet": "收合變更集",
+        "collapseMessage": "收起訊息",
         "command-part-renderer": {
           "commandNotExecutable": "該指令的識別碼為「{0}」,但無法從聊天視窗執行。"
         },
@@ -308,6 +316,7 @@
         "couldNotSendRequestToSession": "無法向會話 {1} 發送請求 \"{0}\"",
         "delegatedSession": "委派",
         "delegation-response-renderer": {
+          "cancel": "取消委派",
           "interactionNeeded": "需要使用者互動",
           "prompt": {
             "label": "委派提示:"
@@ -331,6 +340,7 @@
         "enterChatName": "輸入聊天名稱",
         "errorChatInvocation": "在呼叫聊天服務時發生錯誤。",
         "expandChangeSet": "展開變更集",
+        "expandMessage": "展開訊息",
         "failedToDeleteSession": "刪除聊天會話失敗",
         "failedToLoadChats": "載入聊天會話失敗",
         "failedToRestoreSession": "無法還原聊天會話",
@@ -355,7 +365,6 @@
           "wheelZoomHint": "{0} + 捲動"
         },
         "modelBadgeTooltip": "此回應所使用的語言模型:{0}",
-        "modelUnavailable": "不可用",
         "noChatAgentsAvailable": "目前沒有可用的聊天代理程式。",
         "noMatchingCapabilities": "無匹配功能",
         "openImage": "開啟圖片",
@@ -445,6 +454,45 @@
         "variantTooltip": "提示變體:{0}",
         "yourMessage": "您的訊息"
       },
+      "chatgpt": {
+        "category": "ChatGPT",
+        "codePrompt": "請從您的瀏覽器貼上授權碼或完整的重定向網址",
+        "commands": {
+          "signIn": "登入",
+          "signOut": "登出"
+        },
+        "compaction": {
+          "default": "遵循全域聊天伺服器端的壓縮設定。",
+          "description": "覆寫 ChatGPT 模型的供應商原生伺服器端壓縮功能。「default」將遵循全域聊天設定({0})。當此功能實際啟用時,一旦對話長度超過供應商的閾值,系統便會要求 Response API 對較早的對話輪次進行摘要。",
+          "disabled": "切勿針對 ChatGPT 模型請求伺服器端的壓縮處理。",
+          "enabled": "針對 ChatGPT 模型,請務必請求執行伺服器端的壓縮處理。"
+        },
+        "compactionTokenThreshold": {
+          "description": "覆寫 ChatGPT 模型伺服器端壓縮的全球輸入標記閾值。若未設定,則套用全球設定或提供者預設值。若已設定,該值必須至少為 50,000 個標記。"
+        },
+        "discovery": {
+          "overridden": "模型清單需手動設定。清除該清單即可顯示您的 ChatGPT 方案所授權的模型。",
+          "signedOut": "尚未登入 ChatGPT。請登入以使用您 ChatGPT 方案中的模型。"
+        },
+        "enabled": {
+          "mdDescription": "啟用 ChatGPT 提供者。啟用後,狀態列會出現一個項目以進行驗證,並從您的 ChatGPT 訂閱中偵測到可用的模型。"
+        },
+        "enterCode": "手動輸入程式碼",
+        "models": {
+          "mdDescription": "透過您的 ChatGPT 訂閱提供的模型。這些模型僅在您登入時才可使用。若留空,系統將提供您的 ChatGPT 方案實際授權的模型,這些模型會在您登入後進行查詢。",
+          "signIn": "使用 ChatGPT 登入"
+        },
+        "signInFailed": "ChatGPT 登入失敗:{0}",
+        "signOutConfirm": "您確定要從 ChatGPT 登出嗎?",
+        "signOutTitle": "從 ChatGPT 登出",
+        "signedIn": "已登入 ChatGPT。",
+        "signedInAs": "已以 {0} 的身分登入 ChatGPT。",
+        "statusBar": {
+          "signedIn": "已以 {0} 身分登入 ChatGPT。點擊此處登出。",
+          "signedOut": "尚未登入 ChatGPT。點擊此處登入。"
+        },
+        "waiting": "請在您的瀏覽器中完成 ChatGPT 的登入程序。"
+      },
       "claude-code": {
         "agentDescription": "Anthropic 的編碼代理程式",
         "allowSession": "允許本次會話",
@@ -466,7 +514,6 @@
         "currentDirectory": "當前目錄",
         "differentAgentRequestWarning": "先前對話請求由其他客服人員處理。Claude Code 無法查看該對話內容。",
         "editAutomatically": "自動編輯",
-        "editing": "編輯",
         "editsCount": "{0} 編輯",
         "emptyTodoList": "無可用翻譯",
         "entireFile": "整個檔案",
@@ -493,6 +540,7 @@
         "findMatchingFiles": "在當前目錄中尋找符合通配符模式「{0}」的檔案",
         "findMatchingFilesWithPath": "在 {1} 目錄中尋找符合通配符模式 \"{0}\" 的檔案",
         "finding": "尋找",
+        "from": "來源:",
         "globPattern": "glob 模式",
         "grepOptions": {
           "caseInsensitive": "不區分大小寫",
@@ -535,7 +583,6 @@
         "project": "專案",
         "projectRoot": "專案根目錄",
         "readMode": "閱讀模式",
-        "reading": "閱讀",
         "replaceAllCount": "{0} 全數替換",
         "replaceAllOccurrences": "替換所有出現處",
         "resumeCommand": {
@@ -545,10 +592,10 @@
           "description": "請求程式碼審查"
         },
         "searchPath": "搜尋路徑",
-        "searching": "搜尋",
         "startingLine": "起始行",
         "timeout": "超時",
         "timeoutInMs": "超時:{0}毫秒",
+        "to": "至",
         "todoList": "待辦事項清單",
         "todoPriority": {
           "high": "高",
@@ -580,8 +627,6 @@
         "itemCount": "{0} 項目",
         "noItems": "無項目",
         "oneItem": "1 項",
-        "searched": "搜尋",
-        "searching": "搜尋",
         "todoList": "待辦事項清單"
       },
       "completion": {
@@ -706,6 +751,28 @@
           "usedGlobalVariables": "已使用的全域變數",
           "usedTools": "使用的工具"
         },
+        "agentsMd": {
+          "inactiveOverride": "非活躍狀態",
+          "legacyOverrides": "這些 project-info 提示的覆寫設定不會自動遷移,且不再傳遞給使用 AGENTS.md 的內建代理程式。請將您想保留的指示移至相關專案的 AGENTS.md 檔案中。這些設定仍適用於引用 project-info: {0} 的提示。",
+          "migrationResult": {
+            "backedUp": "先前專案的資訊已保留為 `{0}`。",
+            "backupFailed": "無法將 {0} 重新命名為 `{1}`,因此它仍保留原位,且優先於 {2}。請重新命名或移除它,才能開始使用 {2}。",
+            "empty": "AGENTS.md 遷移:無需遷移的內容。",
+            "promptSyntax": "已遷移的檔案中有 {0} 個仍包含提示字元範本語法,而 {1} 已不再解析此語法。請檢視並移除此類內容。",
+            "untrusted": "AGENTS.md 遷移:由於工作區未被視為可信,因此未遷移任何專案資訊。"
+          },
+          "openOverrideSources": "開源檔案",
+          "rerunMigration": "重新執行 AGENTS.md 遷移作業"
+        },
+        "agentsMdAutoLoadedVariable": {
+          "description": "當工作區僅有一個根目錄時,會返回工作區根目錄下 AGENTS.md 檔案的內容,以確保其始終符合當前上下文"
+        },
+        "agentsMdContentVariable": {
+          "description": "返回工作區中 AGENTS.md 檔案的完整內容"
+        },
+        "agentsMdVariable": {
+          "description": "列出代理程式必須按需讀取的 AGENTS.md 檔案,即尚未載入的檔案"
+        },
         "agentsVariable": {
           "description": "返回系統中可用的代理程式清單"
         },
@@ -729,7 +796,11 @@
           },
           "scopeBanner": "編輯{0}的範圍。",
           "searchPlaceholder": "搜尋 AI 設定",
-          "selectCategory": "請選擇要設定的類別。"
+          "selectCategory": "請選擇要設定的類別。",
+          "sessionOverride": {
+            "tooltip": "此設定透過 --session-preference 為當前工作階段設定。在此處變更或重設該設定,將清除工作階段的值,直至視窗重新載入為止。",
+            "tooltipWithValue": "透過 --session-preference: {0} 為本次工作階段設定。在此處變更或重設此設定,將清除工作階段的值,直至視窗重新載入為止。"
+          }
         },
         "blinkTitle": {
           "agentCompleted": "{0} - 代理程式已完成",
@@ -745,6 +816,7 @@
           },
           "description": "根據預設啟用/停用設定,條件性解析提示片段"
         },
+        "category": "AI",
         "changeSetSummaryVariable": {
           "description": "提供變更集內檔案及其內容的摘要。"
         },
@@ -836,10 +908,10 @@
           "windowBlink": "視窗閃爍"
         },
         "openEditorsShortVariable": {
-          "description": "所有當前開啟檔案的簡短參考(相對路徑,以逗號分隔)"
+          "description": "所有目前開啟的編輯器的簡要參考(包含其狀態的相對路徑,以逗號分隔)"
         },
         "openEditorsVariable": {
-          "description": "以逗號分隔的清單,列出所有目前開啟的檔案,格式為工作區相對路徑(例如:my-project/src/index.ts)。"
+          "description": "以逗號分隔的清單,列出所有目前開啟的編輯器,以工作區相對路徑表示,每個路徑後方會跟上其狀態(如有)(例如:「my-project/src/index.ts」(活躍,有未儲存的變更))。"
         },
         "preference": {
           "languageModelAliases": {
@@ -879,7 +951,9 @@
           "category": "AI 提示詞範本"
         },
         "reasoning": {
-          "mdDescription": "聊天輸入欄位中「推理選項」的預設值,適用於支援推理功能的模型。\n\n此為 UI 層級設定:所選等級會在請求時轉換為供應商的原生 API 參數(例如 Anthropic 的 `thinking` / `output_config.effort`、OpenAI 的 `reasoning.effort`、Gemini 的 `thinkingConfig`),且優先於透過 `#ai-features.modelSettings.requestSettings#` 針對相同欄位提供的任何原始值。\n\n每個條目包含:\n- `scope`:定義設定的適用時機(`modelId`、`providerId`、`agentId`)。\n- `reasoning.level`:取值為 `off`、`minimal`、`low`、`medium`、`high` 或 `auto`。\n\n執行時的優先順序(由高至低):透過選擇器進行的會話覆寫 → 本設定 → 模型宣告的預設值。選擇器顯示的值即為實際傳送的值。若要透過 `#ai-features.modelSettings.requestSettings#` 手動覆寫供應商的推理欄位,請在此處將 `reasoning.level` 設為 `off`,以停用基於層級的轉換。\n\n條目會根據作用域的特定性進行匹配(代理:100,模型:10,供應商:1 分)。\n\n範例:\n```json\n[\n  { \"scope\": { \"providerId\": \"anthropic\" }, \"reasoning\": { \"level\": \"medium\" } },\n  { \"scope\": { \"modelId\": \"openai/gpt-5\" }, \"reasoning\": { \"level\": \"high\" } },\n  { \"scope\": { \"agentId\": \"Coder\" }, \"reasoning\": { \"level\": \"off\" } }\n]\n```",
+          "mdDescription": "聊天輸入欄位中「推理選項」的預設值,適用於支援推理功能的模型。\n\n此為 UI 層級的設定:所選的層級會在請求時轉換為供應商的原生 API 參數(例如 Anthropic 的 `thinking` / `output_config.effort`、OpenAI 的 `reasoning.effort`、Gemini 的 `thinkingConfig`),且優先於透過 `#ai-features.modelSettings.requestSettings#` 針對相同欄位提供的任何原始值。\n\n每個條目包含:\n- `scope`:定義設定適用的時機(`modelId`、`providerId`、`agentId`)。\n- `reasoning.level`:可選值為 `off`、`none`、`minimal`、`low`、`medium`、`high`、`xhigh`、`max`、`auto`。\n支援的層級取決於模型。`none` 明確要求不進行推理;`off` 則會停用 Ollama 上的推理功能。對於其他供應商,`off` 會省略明確的推理作業,允許套用供應商的預設值或原始請求設定。`auto` 則採用供應商的預設值。\n\n執行時的優先順序(由高至低):透過選擇器進行的會話覆寫 → 此偏好設定 → 模型宣告的預設值。選擇器顯示的值即為實際傳送的內容。 若要透過 `#ai-features.modelSettings.requestSettings#` 手動覆寫提供者的推理欄位,請在此處將 `reasoning.level` 設為 `off`,以停用基於層級的轉換(Ollama 除外)。\n\n條目會根據作用域的特定性進行匹配(agent: 100, model: 10, provider: 1 點)。\n\n範例:\n```json\n[\n  { \"scope\": { \"providerId\": \"anthropic\" }, \"reasoning\": { \"level\": \"medium\" } },\n  { \"scope\": { \"modelId\": \"openai/gpt-5\" }, \"reasoning\": { \"level\": \"high\" } },\n  { \"scope\": { \"agentId\": \"Coder\" }, \"reasoning\": { \"level\": \"off\" } }\n]\n```",
+          "noneDescription": "明確要求不提供任何理由。",
+          "offDescription": "省略明確的推理過程,允許採用服務提供者的預設值或原始請求設定;在 Ollama 上,此設定會停用推理功能。",
           "title": "預設值邏輯"
         },
         "requestSettings": {
@@ -936,10 +1010,10 @@
           "builtInVariable": "{0} 內建變數",
           "currentAbsoluteFilePath": "目前開啟檔案的絕對路徑。",
           "currentFileContent": "目前開啟檔案的純文字內容。此處不包含內容來源相關的資訊。",
-          "currentRelativeDirPath": "包含目前開啟之檔案的目錄,以工作區為基準的相對路徑(例如:my-project/src)。",
-          "currentRelativeFilePath": "目前開啟檔案的「工作區相對路徑」(例如:my-project/src/index.ts)。",
+          "currentRelativeDirPath": "包含目前開啟之檔案的目錄路徑,以工作區根目錄為基準,且不包含根目錄名稱(例如:src)。",
+          "currentRelativeFilePath": "目前開啟的檔案相對於其工作區根目錄的路徑,不包含根目錄名稱(例如:src/index.ts)。",
           "currentSelectedText": "目前在已開啟檔案中被選取的純文字。此處不包含內容來源的相關資訊。",
-          "dotRelativePath": "關於目前開啟之檔案('currentRelativeFilePath')相對於工作區的路徑之簡要說明。"
+          "dotRelativePath": "指當前開啟檔案相對於其工作區根目錄的路徑簡稱,不包含根目錄名稱('currentRelativeFilePath')。"
         },
         "variantSet": {
           "unavailableVariant": "{0} (不可用)",
@@ -1039,6 +1113,7 @@
         "agentConfiguration": {
           "agentMode": "Coder 的代理模式",
           "behavior": "行為",
+          "closeGenericCapabilitiesEditor": "關閉通用功能編輯器",
           "customAgentLocationQuickPick": {
             "placeholder": "選擇要建立 agents/<id>/agent.md 檔案的位置",
             "title": "選擇新自訂代理程式的位置"
@@ -1047,6 +1122,7 @@
           "defaultChatAgentNone": "內建預設值",
           "defaultChatAgentNoneDescription": "無明確預設值;Theia 會選用預設的 Chat Agent。",
           "defaults": "預設值",
+          "editGenericCapabilities": "編輯通用功能",
           "genericCapabilitiesSettings": "通用功能",
           "genericCapabilityType": {
             "agentDelegation": "代理委派",
@@ -1183,7 +1259,7 @@
           "mdDescription": "此設定可讓您存取最新的人工智慧功能。            \n            請務必知悉,這些功能可能對您授權存取的語言模型(LLMs)產生持續性請求,可能產生相關費用,需密切監控。 啟用此選項即表示您已知悉相關風險。            \n            **請注意！本節下方設定僅在主功能啟用後生效。啟用功能後,您需於下方至少設定一組            LLM供應商。詳見[官方文件](https://theia-ide.org/docs/user_ai/)**。"
         },
         "exploreAgent": {
-          "description": "一款從程式碼庫中提取並提煉資訊的程式碼庫探索助手。         報告現有內容的相關事實、提供程式碼片段,並描述觀察到的模式。"
+          "description": "一款從程式碼庫中提取並提煉資訊的程式碼庫探索助手。         報告現有內容的相關事實、提供程式碼片段,並描述觀察到的模式。         當設計清晰但必須跨檔案蒐集事實時,可將任務委派給它:呼叫位置、資料流、模式、漣漪檢查。         它不負責規劃。 若僅涉及 1 至 2 個已知檔案,或進行單一針對性搜尋,請直接使用相關工具。"
         },
         "generalConfiguration": {
           "aboutCosts": "關於費用與資料用量",
@@ -1252,7 +1328,6 @@
           "noModels": "尚未發現任何範本。",
           "noProviders": "目前未安裝任何語言模型提供者。",
           "providers": "供應商",
-          "ready": "準備就緒",
           "refresh": "重新整理模型清單",
           "refreshUnavailable": "在提供者取得憑證之前,無需重新整理",
           "released": "已發布 {0}",
@@ -1295,8 +1370,7 @@
               "description": "將拉取請求(pull request)檢出至本地端,並保護現有工作樹的變更。"
             },
             "localValidation": {
-              "description": "針對拉取請求執行本機安裝、建置、語法檢查、測試或類似的驗證任務。",
-              "name": "建置"
+              "description": "針對拉取請求執行本機安裝、建置、語法檢查、測試或類似的驗證任務。"
             },
             "pendingGitHubReview": {
               "description": "在獲得使用者明確確認後,將任務委派給 GitHub 代理程式,以預先準備好的內嵌評論來建立或更新待審查的拉取請求。",
@@ -1410,6 +1484,10 @@
             "title": "重置所有工具確認模式"
           },
           "resetAllTooltip": "將所有工具重設為預設值",
+          "sessionOverride": {
+            "tooltip": "透過 --session-preference 設定本工作階段的參數。在此處變更任何工具的模式,或重設所有工具,都會清除每個工具的工作階段值,直到視窗重新載入為止。",
+            "tooltipWithValue": "透過 --session-preference: {0} 為本次工作階段設定。在此變更任何工具的模式,或重設所有工具,都會清除每個工具的工作階段值,直到視窗重新載入為止。"
+          },
           "shellExecution": "Shell 指令執行",
           "toolOptions": {
             "confirm": {
@@ -1616,8 +1694,7 @@
             "title": "驗證標頭名稱"
           },
           "serverUrl": {
-            "mdDescription": "遠端 MCP 伺服器的 URL。若提供此網址,伺服器將連接至該 URL 而非啟動本地程序。",
-            "title": "伺服器網址"
+            "mdDescription": "遠端 MCP 伺服器的 URL。若提供此網址,伺服器將連接至該 URL 而非啟動本地程序。"
           },
           "title": "MCP 伺服器設定"
         },
@@ -1665,7 +1742,6 @@
         "deleteServerDialogMsg": "您確定要刪除伺服器「{0}」嗎?",
         "deleteServerDialogTitle": "刪除 MCP 伺服器",
         "deleteServerError": "刪除 MCP 伺服器失敗:{0}",
-        "environmentVariables": "環境變數",
         "form": {
           "argsPlaceholder": "以空格分隔,例如:-y @modelcontextprotocol/server-brave-search",
           "authHeaderPlaceholder": "預設值:使用 Bearer 進行授權",
@@ -1710,8 +1786,6 @@
         "saveServerError": "儲存 MCP 伺服器設定失敗:{0}",
         "serverAuthToken": "授權憑證",
         "serverAuthTokenHeader": "驗證標頭名稱",
-        "serverTypeLabel": "MCP 伺服器",
-        "serverUrl": "伺服器網址",
         "serversListTitle": "伺服器",
         "showToolSettings": "顯示工具",
         "signInServerFailed": "無法登入 MCP 伺服器「{0}」。",
@@ -1762,7 +1836,7 @@
           "id": {
             "title": "用於介面中識別自訂模型的唯一識別碼"
           },
-          "mdDescription": "整合與 OpenAI API 相容的自訂模型,例如透過 `vllm`。必填屬性為 `model` 和 `url`。            \n            您可選擇            \n            - 指定一個唯一的 `id`,以便在使用者介面中識別該自訂模型。 若未指定,則會將 `model` 作為 `id` 使用。            \n            - 提供一個 `apiKey` 以存取指定 URL 所提供的 API。若要使用全球性的 OpenAI API 金鑰,請設定為 `true`。            \n            - 提供 `apiVersion` 以存取 Azure 中指定 URL 所提供的 API。若設定為 `true`,表示使用全域 OpenAI API 版本。            \n            - 為您的 Azure 部署提供一個 `deployment` 名稱。            \n            - 將 `developerMessageSettings` 設定為 `user`、`system`、`developer`、`mergeWithFollowingUserMessage` 或 `skip` 之一,以控制開發者訊息的            包含方式 (其中 `user`、`system` 和 `developer` 將作為角色使用;`mergeWithFollowingUserMessage` 會將系統訊息作為前綴附加至後續的使用者訊息,            或在下一則訊息非使用者訊息時,將系統訊息轉換為使用者訊息;`skip` 則僅會移除系統訊息)。            預設值為 `developer`。            \n            - 指定 `supportsStructuredOutput: false` 以表示不應使用結構化輸出。            \n            - 指定 `enableStreaming: false` 以表示不應使用串流功能。            \n            - 指定 `useResponseApi: true` 以使用較新的 OpenAI Response API 取代 Chat Completion API(需相容的端點)。            \n            - 指定 `reasoningSupport` 以啟用對話推理選擇器。 提供一個包含            `supportedLevels`(例如 `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`)及可選的 `defaultLevel` 的物件。            \n            - 指定 `headers` 以在每次向端點發送請求時附加額外的 HTTP 標頭,例如 API 前端閘道所需的標頭。            \n            更多資訊請參閱 [我們的文件](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm)。",
+          "mdDescription": "整合與 OpenAI API 相容的自訂模型,例如透過 `vllm`。必填屬性為 `model` 和 `url`。            \n            您可選擇            \n            - 指定一個唯一的 `id`,用以在使用者介面中識別該自訂模型。 若未指定,則會將 `model` 作為 `id` 使用。            \n            - 提供一個 `apiKey` 以存取指定 URL 所提供的 API。使用 `true` 表示使用全球 OpenAI API 金鑰。            \n            - 提供 `apiVersion` 以存取 Azure 中指定網址所提供的 API。若設定為 `true`,表示使用全域 OpenAI API 版本。            \n            - 為您的 Azure 部署提供一個 `deployment` 名稱。            \n            - 將 `developerMessageSettings` 設定為 `user`、`system`、`developer`、`mergeWithFollowingUserMessage` 或 `skip` 之一,以控制開發者訊息的            包含方式 (其中 `user`、`system` 和 `developer` 將作為角色使用;`mergeWithFollowingUserMessage` 會將系統訊息作為前綴附加於後續的使用者訊息前,            或在後續訊息非使用者訊息時,將系統訊息轉換為使用者訊息;`skip` 則僅會移除系統訊息)。            預設值為 `developer`。            \n            - 指定 `supportsStructuredOutput: false` 以表示不應使用結構化輸出。            \n            - 指定 `enableStreaming: false` 以表示不應使用串流功能。            \n            - 指定 `useResponseApi: true` 以使用較新的 OpenAI Response API 取代 Chat Completion API(需相容的端點)。            \n            - 指定 `reasoningSupport` 以啟用對話推理選擇器。 提供一個包含            `supportedLevels`(選項:`off`、`none`、`minimal`、`low`、`medium`、`high`、`xhigh`、`max`、`auto`)及可選的 `defaultLevel` 的物件。            `none` 會傳送明確的「無推理」努力等級; `off` 將省略生成的推理設定;`auto` 則採用提供者的預設處理方式。            僅應宣告您的端點所支援的層級。            \n            - 指定 `headers` 以在每次向端點發送請求時附加額外的 HTTP 標頭,例如 API 前端閘道所需的標頭。            \n            更多資訊請參閱 [我們的文件](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm)。",
           "modelId": {
             "title": "模型 ID"
           },
@@ -1810,6 +1884,9 @@
           "description": "用作提示模板的當前工作區中特定檔案之相對路徑清單。當多個位置存在相同ID(檔案名稱)的模板時,衝突依優先順序解決:特定模板檔案(最高)＞工作區目錄 ＞全域目錄(最低)。",
           "title": "工作區專屬提示模板檔案"
         }
+      },
+      "registry": {
+        "from": "來源:"
       },
       "scanoss": {
         "changeSet": {
@@ -1896,52 +1973,15 @@
         "failedToGetTokenUsageData": "無法取得代幣使用資料:{0}",
         "inputTokens": "輸入令牌",
         "label": "代幣使用",
-        "lastUsed": "最後使用",
         "noData": "目前尚無可用代幣使用數據。",
         "note": "代幣使用情況自應用程式啟動時起進行追蹤,且不會持久化儲存。",
         "outputTokens": "輸出代幣",
         "readCachedInputTokens": "從快取讀取輸入代幣"
       },
-      "vercelai": {
-        "anthropicApiKey": {
-          "mdDescription": "請輸入 Vercel AI SDK 所使用的 Anthropic 模型 API 金鑰。                 **請注意:** 採用此設定時,API 金鑰將以明文形式儲存於 Theia 運行機器上。請使用環境變數 `ANTHROPIC_API_KEY` 進行安全設定。"
-        },
-        "customEndpoints": {
-          "apiKey": {
-            "title": "請提供以下任一項:- 存取指定網址所提供 API 的專用金鑰- 或傳遞 `true` 以啟用全域 API 金鑰"
-          },
-          "enableStreaming": {
-            "title": "指示是否使用串流 API。預設值為 `true`。"
-          },
-          "id": {
-            "title": "用於介面中識別自訂模型的唯一識別碼"
-          },
-          "mdDescription": "整合與 Vercel AI SDK 相容的自訂模型。必填屬性為 `model` 與 `url`。            \n            可選設定:            \n            - 指定唯一 `id` 以在介面中識別自訂模型。若未提供則將使用 `model` 作為 `id`。            \n            - 提供 `apiKey` 以存取指定網址所服務的 API。 使用 `true` 表示採用全域 API 金鑰。            \n            - 設定 `supportsStructuredOutput: false` 表示不使用結構化輸出。            \n            - 設定 `enableStreaming: false` 表示不使用串流處理。            \n            - 設定 `provider` 標示模型來源供應商(openai、anthropic)。",
-          "modelId": {
-            "title": "模型 ID"
-          },
-          "supportsStructuredOutput": {
-            "title": "指示模型是否支援結構化輸出。預設值為 `true`。"
-          },
-          "url": {
-            "title": "模型託管的 API 端點"
-          }
-        },
-        "models": {
-          "description": "適用於 Vercel AI SDK 的官方模型",
-          "id": {
-            "title": "模型 ID"
-          },
-          "model": {
-            "provider": "提供者",
-            "title": "模型名稱"
-          }
-        },
-        "openaiApiKey": {
-          "mdDescription": "輸入 Vercel AI SDK 所使用的 OpenAI 模型 API 金鑰。                 **請注意:** 採用此設定時,API 金鑰將以明文形式儲存於執行 Theia 的機器上。請使用環境變數 `OPENAI_API_KEY` 進行安全設定。"
-        }
-      },
       "workspace": {
+        "agentsMdAgent": {
+          "description": "一個用於管理其他 AI 代理所使用之專案上下文的 AI 助理。此代理可協助建立、更新及檢視工作區根目錄下的 AGENTS.md 檔案,並遵循開放的 AGENTS.md 標準,該標準亦為其他代理工具所採用。 它能分析您的工作區以提供專案資訊建議、整合現有的指令檔案(例如 CLAUDE.md 或 copilot-instructions.md),或根據您的需求更新該檔案。"
+        },
         "allowedExternalPaths": {
           "description": "AI 工具可能存取的工作區外絕對路徑或檔案 URI(目錄或檔案)清單。支援使用 `~` 指稱使用者家目錄。預設為空;僅限主動啟用。 所有接受路徑參數的工具(包括寫入檔案的工具)均會遵循此設定。當工作區未被視為可信時,工作區範圍內的值將被忽略。白名單目錄內的符號連結會被追蹤,且可能指向白名單外的檔案;請僅新增內容可信的目錄。",
           "title": "允許的外部路徑"
@@ -1964,15 +2004,16 @@
           "description": "getFileContent 工具所返回內容的最大大小(以千位元組為單位)。當讀取完整檔案(未指定偏移量/限制)時,若檔案超過此限制,系統將返回錯誤。當使用偏移量和限制時,僅針對所請求的範圍進行此限制檢查。",
           "title": "檔案內容最大大小 (KB)"
         },
-        "projectInfoAgent": {
-          "description": "一款管理專案資訊模板的人工智慧助理。此代理程式協助建立、更新及審閱 .prompts/project-info.prompttemplate 檔案,該檔案為其他 AI 代理程式提供專案背景資訊。它能分析您的工作區以建議專案資訊,或根據需求更新現有模板。"
-        },
         "searchMaxResults": {
           "description": "工作區搜尋功能所能返回的最大搜尋結果數量。",
           "title": "最大搜尋結果"
         },
         "workspaceAgent": {
-          "description": "整合於 Theia IDE 的人工智慧助理,專為協助軟體開發者設計。此代理程式可存取使用者工作區,能取得所有可用檔案與資料夾清單並檢索其內容,但無法修改檔案。因此可回答關於當前專案、專案檔案及工作區內原始碼的相關問題,例如如何建置專案、原始碼存放位置、特定程式碼或設定檔所在位置等。"
+          "description": "{0} 內建的人工智慧助理,旨在協助軟體開發人員。此代理程式可存取使用者的工作區,能取得所有可用檔案與資料夾的清單,並擷取其內容。 它無法修改檔案。因此,它能回答關於當前專案、專案檔案以及工作區內原始碼的問題,例如如何建置專案、原始碼應存放於何處、如何查找特定程式碼或設定等。它會進行探索並產出實作計畫(任務脈絡)。 當「應進行哪些變更?」這個問題本身尚無定論時,可將任務委派給它:例如設計決策、涉及 3 個以上檔案或 2 個以上套件的變更,或是跨越架構層級的變更。"
+        },
+        "writeContentMaxSizeKB": {
+          "description": "整檔寫入工具(writeFileContent 和 suggestFileContent)所接受的內容最大大小(以千位元組為單位)。若寫入內容超過此限制,系統將拒絕該操作,並提示使用者改用基於替換的工具。",
+          "title": "內容最大長度 (KB)"
         }
       }
     },
@@ -2018,8 +2059,7 @@
         "description": "AI 設定已移至「AI 設定」視圖。請開啟該視圖以設定提供者、模型、代理程式等項目。"
       },
       "preferences": {
-        "linuxEnvHint": "在 Linux 系統上,若您是透過桌面捷徑啟動應用程式,請確保該變數已定義在 `~/.profile` 檔案中(而非僅在 `~/.bashrc`)。詳情請參閱 [文件](https://theia-ide.org/docs/user_ai/#setting-api-keys)。",
-        "title": "AI 功能"
+        "linuxEnvHint": "在 Linux 系統上,若您是透過桌面捷徑啟動應用程式,請確保該變數已定義在 `~/.profile` 檔案中(而非僅在 `~/.bashrc`)。詳情請參閱 [文件](https://theia-ide.org/docs/user_ai/#setting-api-keys)。"
       },
       "showChat": "顯示聊天"
     },
@@ -2149,6 +2189,7 @@
         "mdDescription": "針對各構建產物的 `#ai-features.registry.autoUpdate#` 覆寫設定,其鍵值為 `skill:<skillId>`、`mcp:<serverId>` 或 `plugin:<pluginId>`。 相關設定通常透過「擴充功能」視窗中的齒輪選單進行管理;若某個元件未設定相關項目,則會遵循預設值。"
       },
       "mcp": {
+        "registryLatestVersion": "MCP 登錄檔:{0}",
         "updated": "已更新 MCP 伺服器「{0}」。"
       },
       "plugin": {
@@ -2296,7 +2337,6 @@
       "configurePermissions": "設定殼層指令權限",
       "confirmExecution": "確認 Shell 指令",
       "denialReason": "原因",
-      "executionDenied": "拒絕",
       "executionDeniedWithReason": "拒絕並附理由",
       "partialOutput": "部分輸出",
       "shellCommandAllowlist": {
@@ -2305,8 +2345,7 @@
       "shellCommandDenylist": {
         "description": "應永久拒絕的殼層指令模式清單。符合這些模式的指令將自動拒絕且不需確認。採用模式語法:\"git push\"(精確匹配)或 \"git push *\"(含任意參數)。預設內建危險指令模式(eval、exec、sudo、rm -rf 等)。"
       },
-      "timeout": "超時",
-      "workingDirectory": "工作目錄"
+      "timeout": "超時"
     },
     "ai-tool-sketchpad": {
       "addItemProperty": "新增項目屬性",
@@ -2385,7 +2424,6 @@
       "optional": "可選",
       "selectAuth": "選擇驗證方法",
       "selectCollaboration": "選擇協作選項",
-      "serverUrl": "伺服器網址",
       "serverUrlDescription": "用於即時協作會話的開放協作工具伺服器實例網址",
       "sharedSession": "共享協作會話",
       "startSession": "啟動或加入協作會話",
@@ -2412,6 +2450,9 @@
         "collapseLeftPanel": "切換左側面板",
         "collapseRightPanel": "切換右側面板",
         "collapseTab": "收合側邊面板",
+        "hideSidePanelItem": "從側邊欄隱藏",
+        "keepSidePanelItem": "保留在側邊欄中",
+        "resetHiddenSidePanelItems": "重設隱藏的側邊欄項目",
         "showNextTabGroup": "切換至下一個分頁組",
         "showNextTabInGroup": "切換至群組中的下一個分頁",
         "showPreviousTabGroup": "切換至上一個分頁群組",
@@ -2427,10 +2468,23 @@
         "visual": "顯示標籤頁的視覺預覽。"
       },
       "highlightModifiedTabs": "控制是否在已修改(髒污狀態)的編輯器標籤頁上繪製頂部邊框。",
+      "http": {
+        "proxy": "要使用的代理伺服器設定。若未設定,將繼承自 `http_proxy` 和 `https_proxy` 環境變數。",
+        "proxyAuthorization": "每次網路請求時,作為 `Proxy-Authorization` 標頭傳送的值。",
+        "proxyStrictSSL": "控制是否應根據提供的 CA 清單來驗證代理伺服器的憑證。",
+        "proxySupport": "請使用擴充功能所提供的代理伺服器支援功能。",
+        "systemCertificates": "控制是否應從作業系統載入 CA 憑證。在 Windows 和 macOS 上,關閉此設定後需重新載入視窗。"
+      },
       "jumpListName": "最近的工作區",
       "keybinding": {
+        "characterRequiresCodeDispatch": "若要使用字元鍵盤快捷鍵,需將「keyboard.dispatch」偏好設定設為「code」。",
+        "commandModifierAltGraphCharacterUnavailable": "在當前的鍵盤佈局中,無法同時輸入邏輯字元與{0}命令修飾符。",
         "duplicateModifierError": "無法解析鍵盤快捷鍵 {0} 重複修飾符",
+        "invalidCharacter": "無效的 Unicode 字元 {0}。",
         "metaError": "無法解析鍵盤快捷鍵 {0} meta 僅適用於 OSX",
+        "shiftedAltGraphCharacterUnavailable": "在當前的鍵盤佈局中,無法同時輸入邏輯字元與 Shift 指令修飾鍵。",
+        "unavailableCharacter": "此鍵在當前的鍵盤佈局中不可用。",
+        "unknownScanCode": "未知掃描碼 {0}。請使用受支援的 KeyboardEvent.code 名稱。",
         "unrecognizedKeyError": "在 {1} 中未識別鍵值 {0}"
       },
       "keybindingStatus": "{0} 按下後,等待更多按鍵輸入",
@@ -2464,10 +2518,15 @@
       },
       "secondaryWindow": {
         "alwaysOnTop": "啟用時,次要視窗將始終置於所有其他視窗之上,包含不同應用程式的視窗。",
+        "closeBehavior": {
+          "close": "次要視窗中的視圖已關閉。那些會遺失狀態的視圖(例如含有未儲存變更的編輯器),將被移回主視窗。",
+          "moveToMainWindow": "次要視窗的所有視圖均已移回主視窗。"
+        },
         "description": "設定提取的次級視窗初始位置與大小。",
         "fullSize": "提取元件的位置與尺寸將與運行中的 Theia 應用程式保持一致。",
         "halfWidth": "提取的小部件位置與尺寸將佔據運行中 Theia 應用程式寬度的一半。",
-        "originalSize": "提取的小工具位置與尺寸將與原始小工具完全一致。"
+        "originalSize": "提取的小工具位置與尺寸將與原始小工具完全一致。",
+        "restore": "控制是否在啟動時還原次要視窗。若此功能已停用,其內容將改在主視窗中還原。"
       },
       "severity": {
         "log": "日誌"
@@ -2526,6 +2585,8 @@
       "missingConfiguration": "動態配置「{0}:{1}」遺失或不適用",
       "pause": "暫停",
       "pauseAll": "暫停所有",
+      "restartFrameFailed": "無法重新啟動框架。",
+      "restartFrameNotSupported": "除錯轉接器不支援重新啟動框架。",
       "step": "步驟",
       "taskTerminatedBySignal": "任務 '{0}' 因訊號 {1} 而終止。",
       "taskTerminatedForUnknownReason": "任務「{0}」因未知原因終止。",
@@ -2562,6 +2623,10 @@
       "editor.inlineSuggest.edits.experimental.useInterleavedLinesDiff": "控制是否啟用實驗性交錯行差異顯示功能於內嵌建議中。",
       "editor.inlineSuggest.edits.experimental.useMixedLinesDiff": "控制是否啟用內嵌建議中的實驗性編輯功能。",
       "editor.insertSpaces": "按下 `Tab` 時插入空格。當 `#editor.detectIndentation#` 啟用時,此設定會根據檔案內容覆寫。",
+      "editor.multiCursorPaste": {
+        "description": "當貼上文字的行數與游標所在行的行數相同時,控制貼上操作。",
+        "spread": "游標每次移動一次,即會貼上一行文字。"
+      },
       "editor.quickSuggestions": "控制輸入時是否自動顯示建議內容。此設定可分別針對註解、字串及其他程式碼輸入情境進行調整。快速建議功能可設定為以半透明文字顯示,或透過建議小工具呈現。另請注意 `#editor.suggestOnTriggerCharacters#` 設定項,該設定控制是否透過特殊字元觸發建議功能。",
       "editor.suggestFontSize": "建議小工具的字型大小。設定為 `0` 時,將使用 `#editor.fontSize#` 的值。",
       "editor.suggestLineHeight": "建議小工具的行高設定。當設定為 `0` 時,將採用 `#editor.lineHeight#` 的值。最小值為 8。",
@@ -2611,6 +2676,7 @@
       "cwd": "為新外部終端機選取當前工作目錄"
     },
     "file-search": {
+      "placeholder": "依檔案名稱搜尋(輸入 {0} 可跳至該行,或輸入 {1} 可跳至該符號)",
       "toggleExcludedFiles": " (按下 {0} 可顯示/隱藏排除的檔案)"
     },
     "fileDialog": {
@@ -2672,6 +2738,8 @@
       "editKeybindingTitle": "編輯{0}的鍵盤快捷鍵",
       "editWhenExpression": "編輯當表達式...",
       "editWhenExpressionTitle": "編輯時表達式(適用於{0})",
+      "inactiveKeybinding": "在當前鍵盤佈局下處於非活躍狀態",
+      "interpretationShadowing": "若存在命令修飾符的解釋,則該解釋將優先於此鍵盤快捷鍵設定。",
       "keybinding": {
         "copy": "複製鍵盤快捷鍵",
         "copyCommandId": "複製鍵盤快捷鍵指令 ID",
@@ -2680,10 +2748,13 @@
         "editWhenExpression": "編輯鍵盤快捷鍵時,當表達式..."
       },
       "keybindingCollidesValidation": "鍵盤快捷鍵目前發生衝突",
+      "keybindingDescription": "以空格分隔的邏輯鍵或鍵盤序列。若為實體鍵,請使用 [ScanCode];若為保留的 Unicode 字元,請使用 [char:0x...]。",
+      "physicalRealizationUnavailable": "無實體實現",
       "requiredKeybindingValidation": "需提供鍵盤快捷鍵值",
       "resetKeybindingConfirmation": "您確定要將此鍵盤快捷鍵重設為預設值嗎?",
       "resetKeybindingTitle": "重設{0}的鍵盤快捷鍵",
-      "resetMultipleKeybindingsWarning": "若此指令存在多個鍵盤快捷鍵,所有設定皆將重置。"
+      "resetMultipleKeybindingsWarning": "若此指令存在多個鍵盤快捷鍵,所有設定皆將重置。",
+      "windowsRecorderGuidance": "按下所需的鍵盤組合,然後按下 ENTER 鍵。AltGr 組合會以對應的邏輯字元儲存。"
     },
     "localize": {
       "offlineTooltip": "無法連接到後端。"
@@ -2849,11 +2920,16 @@
       "webviewWarnIfUnsecure": "警告使用者當前部署的網頁檢視器存在安全性風險。"
     },
     "preferences": {
-      "ai-features": "AI 功能",
-      "hostedPlugin": "託管外掛程式",
-      "input": {
-        "browse": "瀏覽"
+      "ai-features": {
+        "ai-enable": "AI 啟用功能",
+        "code-completion": "程式碼自動完成",
+        "model-settings": "模型設定",
+        "open-ai-custom": "{0} 自訂模型",
+        "open-ai-official": "{0} 官方型號",
+        "promptTemplates": "提示範本",
+        "workspace-functions": "工作區功能"
       },
+      "hostedPlugin": "託管外掛程式",
       "sessionOverride": {
         "suffix": "由工作階段覆寫",
         "suffixTooltip": "此偏好設定具有透過 --session-preference 設定的會話值。在此處編輯該設定,將清除本會話剩餘時間內的會話覆寫設定。"
@@ -2862,9 +2938,7 @@
         "statusBar": "工作階段偏好設定({0})",
         "tooltipBody": "這些設定是透過 --session-preference 參數傳入的,僅存在於記憶體中。點擊設定名稱即可跳轉至「設定」視圖中的對應項目。",
         "tooltipChangeNote": "編輯其中任何一項,都會清除本次執行階段的設定覆寫。若要在下次啟動時使用已儲存的值,請勿使用 --session-preference 參數重新啟動程式。",
-        "tooltipHeader": "這些設定在本次工作階段中已被覆寫",
-        "valueOff": "關閉",
-        "valueOn": "on"
+        "tooltipHeader": "這些設定在本次工作階段中已被覆寫"
       },
       "toolbar": "工具列"
     },
@@ -2945,13 +3019,14 @@
       "mergeEditor": {
         "resetConfirmationTitle": "您確定要重置此編輯器中的合併結果嗎?"
       },
+      "multiDiffEditor": {
+        "loadFailed": "無法載入差異:{0}"
+      },
       "noChanges": "沒有修改過的檔案。",
       "noHistory": "無版本控制歷史紀錄。",
-      "noHistoryForError": "{0} 目前沒有可用歷史紀錄",
       "openCommit": "開啟提交",
       "pickHistoryItemRefs": "選取歷史紀錄項目參考...",
       "pickHistoryItemRefsPlaceholder": "選取一個或多個歷史紀錄項目參考",
-      "prepositionIn": "以及",
       "refPickerBranches": "分支",
       "refPickerRemoteBranches": "遠端分支",
       "refPickerTags": "標籤",
@@ -2966,7 +3041,9 @@
       "searchOnEditorModification": "當編輯器內容被修改時,自動搜尋當前編輯器。"
     },
     "secondary-window": {
-      "extract-widget": "將檢視窗格移至次要視窗"
+      "extract-widget": "將檢視窗格移至次要視窗",
+      "restore-all-widgets": "將所有檢視移至主視窗",
+      "restore-widget": "將視圖移至主視窗"
     },
     "shell-area": {
       "secondary": "次要視窗"
@@ -3151,7 +3228,10 @@
       "restrictedModeFeatures": "為防範潛在有害程式碼,任務執行、除錯、擴充功能及 AI 等功能已停用。",
       "schema": {
         "folders": {
-          "description": "工作區中的根目錄"
+          "description": "工作區中的根目錄",
+          "name": {
+            "description": "資料夾的可選名稱,將取代原始資料夾名稱顯示"
+          }
         },
         "title": "工作區檔案"
       },

@@ -27,7 +27,7 @@ import {
 import { ReasoningSettings, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM } from './language-model.js';
 import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 
-export const AI_CORE_PREFERENCES_TITLE = nls.localize('theia/ai-core/preferences/title', 'AI Features');
+export const AI_CORE_PREFERENCES_TITLE = nls.localizeByDefault('AI Features');
 
 /**
  * Key under a preference's schema `typeDetails` where a language-model provider declares the

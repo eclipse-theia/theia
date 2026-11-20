@@ -171,7 +171,8 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
         this.toDispose.push(this.model.onDidOpenFile(() => this.accept()));
         this.toDispose.push(this.model.onSelectionChanged(() => this.update()));
 
-        const navigationPanel = document.createElement('div');
+        const doc = this.node.ownerDocument;
+        const navigationPanel = doc.createElement('div');
         navigationPanel.classList.add(NAVIGATION_PANEL_CLASS);
         this.contentNode.appendChild(navigationPanel);
 
@@ -191,7 +192,7 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
         this.up.classList.add(NAVIGATION_UP_CLASS);
         this.up.title = nls.localize('theia/filesystem/dialog/navigateUp', 'Navigate Up One Directory');
 
-        const locationListRendererHost = document.createElement('div');
+        const locationListRendererHost = doc.createElement('div');
         this.locationListRenderer = this.locationListFactory({ model: this.model, host: locationListRendererHost });
         this.toDispose.push(this.locationListRenderer);
         this.locationListRenderer.host.classList.add(NAVIGATION_LOCATION_LIST_PANEL_CLASS);
@@ -267,11 +268,12 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
 
     protected appendFiltersPanel(): void {
         if (this.treeFiltersRenderer) {
-            const filtersPanel = document.createElement('div');
+            const doc = this.node.ownerDocument;
+            const filtersPanel = doc.createElement('div');
             filtersPanel.classList.add(FILTERS_PANEL_CLASS);
             this.contentNode.appendChild(filtersPanel);
 
-            const titlePanel = document.createElement('div');
+            const titlePanel = doc.createElement('div');
             titlePanel.innerHTML = DOMPurify.sanitize(nls.localize('theia/filesystem/format', 'Format:'));
             titlePanel.classList.add(FILTERS_LABEL_CLASS);
             filtersPanel.appendChild(titlePanel);
@@ -445,16 +447,17 @@ export class SaveFileDialog extends FileDialog<URI | undefined> {
     protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
 
-        const fileNamePanel = document.createElement('div');
+        const doc = this.node.ownerDocument;
+        const fileNamePanel = doc.createElement('div');
         fileNamePanel.classList.add(FILENAME_PANEL_CLASS);
         this.contentNode.appendChild(fileNamePanel);
 
-        const titlePanel = document.createElement('div');
+        const titlePanel = doc.createElement('div');
         titlePanel.innerHTML = DOMPurify.sanitize(nls.localizeByDefault('Name:'));
         titlePanel.classList.add(FILENAME_LABEL_CLASS);
         fileNamePanel.appendChild(titlePanel);
 
-        this.fileNameField = document.createElement('input');
+        this.fileNameField = doc.createElement('input');
         this.fileNameField.type = 'text';
         this.fileNameField.spellcheck = false;
         this.fileNameField.classList.add('theia-input', FILENAME_TEXTFIELD_CLASS);
