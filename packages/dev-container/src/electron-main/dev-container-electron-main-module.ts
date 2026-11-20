@@ -16,9 +16,11 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ElectronMainApplicationContribution } from '@theia/core/lib/electron-main/electron-main-application';
+import { LaunchArgvParser } from '@theia/core/lib/electron-main/launch-argv-parser';
 import { DevContainerClaimContribution } from './dev-container-claim-contribution.js';
 
 export default new ContainerModule(bind => {
+    bind(LaunchArgvParser.BooleanOption).toConstantValue('dev-json');
     bind(DevContainerClaimContribution).toSelf().inSingletonScope();
     bind(ElectronMainApplicationContribution).toService(DevContainerClaimContribution);
 });

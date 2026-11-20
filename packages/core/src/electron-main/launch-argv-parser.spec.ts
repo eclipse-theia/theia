@@ -30,6 +30,33 @@ describe('LaunchArgvParser', () => {
         expect(LaunchArguments.lastValue(args, 'attach-container')).to.equal('B');
     });
 
+    it('accepts the same camel-case option as the backend CLI', () => {
+        const args = LaunchArgvParser.parse(['--attachContainer=X']);
+        expect(LaunchArguments.lastValue(args, 'attach-container')).to.equal('X');
+    });
+
+    it('collects mixed spellings of an extension option in argument order', () => {
+        const args = LaunchArgvParser.parse(['--extensionValue=0x10', '--extension-value', 'with spaces', '--extensionValue=end=here']);
+        for (const name of ['extension-value', 'extensionValue']) {
+            expect(LaunchArguments.values(args, name)).to.deep.equal(['0x10', 'with spaces', 'end=here']);
+        }
+    });
+
+    it('keeps dotted extension option names and explicit empty values', () => {
+        const args = LaunchArgvParser.parse(['--extension.setting=']);
+        expect(LaunchArguments.values(args, 'extension.setting')).to.deep.equal(['']);
+    });
+
+    it('keeps a literal false string supplied to an extension', () => {
+        const args = LaunchArgvParser.parse(['--extension-name=false']);
+        expect(LaunchArguments.lastValue(args, 'extension-name')).to.equal('false');
+    });
+
+    it('forwards only options before the end-of-options separator', () => {
+        const args = LaunchArgvParser.parse(['workspace with spaces', '--before=ok', '--', '--after=ignored', '--no-dev-json']);
+        expect(args).to.deep.equal({ values: { before: ['ok'] }, negated: [] });
+    });
+
     it('keeps a value that itself contains "="', () => {
         const args = LaunchArgvParser.parse(['--session-preference=a=1']);
         expect(LaunchArguments.values(args, 'session-preference')).to.deep.equal(['a=1']);
