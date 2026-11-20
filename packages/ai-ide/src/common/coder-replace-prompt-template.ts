@@ -38,6 +38,15 @@ import { GET_TASK_CONTEXT_FUNCTION_ID } from './task-context-function-ids.js';
 import { ArchitectAgentId, ExploreAgentId } from './agent-ids.js';
 import { OPEN_EDITORS_HINT_FRAGMENT_ID } from './open-editors-hint-fragment-id.js';
 
+/**
+ * Keeps the agent from running commands through task definitions or launch configurations it wrote itself,
+ * which would bypass the confirmation of shell execution.
+ */
+const EXECUTABLE_CONFIGURATION_RULES = 'Only run tasks and launch configurations that already existed or that the user asked for. \
+Never create or modify task definitions (`tasks.json`) or launch configurations (`launch.json`, `.code-workspace` files) in order to run a command; \
+edit them only when the user explicitly asks you to. \
+If you need to run a command and shell execution is unavailable or was denied, stop and tell the user instead of working around it.';
+
 export const CODER_SYSTEM_PROMPT_ID = 'coder-system';
 
 export const CODER_EDIT_TEMPLATE_ID = 'coder-system-edit';
@@ -149,6 +158,8 @@ or switch to ~{${WRITE_FILE_CONTENT_ID}}
 - ~{${LIST_TASKS_FUNCTION_ID}} — discover available test, lint, and build tasks
 - ~{${RUN_TASK_FUNCTION_ID}} — execute linting, building, or test suites
 
+${EXECUTABLE_CONFIGURATION_RULES}
+
 ## Test Authoring
 If no relevant tests exist for your changes:
 - Find existing test patterns using ~{${FIND_FILES_BY_PATTERN_FUNCTION_ID}} with \`**/*.spec.ts\` or \`**/*.test.ts\`
@@ -163,7 +174,7 @@ or an agent can test it or interact with it continuously, use launch configurati
 - ~{${RUN_LAUNCH_CONFIGURATION_FUNCTION_ID}} — start a launch configuration (returns immediately, app runs in background)
 - ~{${STOP_LAUNCH_CONFIGURATION_FUNCTION_ID}} — stop a running launch configuration
 
-Launch configurations are defined in \`.vscode/launch.json\`. If none exist or you need to inspect/modify them, read or create this file.
+Launch configurations are defined in \`.vscode/launch.json\`. Read this file to inspect them; create or modify it only when the user asks you to.
 
 ## Progress Tracking
 - ~{${TODO_WRITE_FUNCTION_ID}} — track task progress with a todo list visible to the user
@@ -385,6 +396,8 @@ When changing a function signature, exported type, constant, or import path, fin
 
 ~{${GET_FILE_DIAGNOSTICS_ID}} (fast, single file) during implementation; ~{${LIST_TASKS_FUNCTION_ID}} / ~{${RUN_TASK_FUNCTION_ID}} for build, lint,
 and test tasks. If no tests exist for your changes, follow existing patterns from \`**/*.spec.ts\` / \`**/*.test.ts\`. New tests must validate the new behavior.
+
+${EXECUTABLE_CONFIGURATION_RULES}
 
 ## Running Applications
 
@@ -620,6 +633,7 @@ changes beeing applied, you must wait for the user to review and accept the chan
 The user might want you to execute some task. You can find tasks using ~{${LIST_TASKS_FUNCTION_ID}} and execute them using ~{${RUN_TASK_FUNCTION_ID}}.
 Be aware that tasks operate on the workspace. If the user has not accepted any changes before, they will operate on the original states of files without your proposed changes.
 Never execute a task without confirming with the user whether this is wanted!
+${EXECUTABLE_CONFIGURATION_RULES}
 
 ## File Validation
 

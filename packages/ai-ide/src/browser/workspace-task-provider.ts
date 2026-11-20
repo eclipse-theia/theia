@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
-import { CancellationToken } from '@theia/core';
+import { CancellationToken, nls } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { TaskService } from '@theia/task/lib/browser/task-service';
 import { TaskConfiguration, TaskScope } from '@theia/task/lib/common/task-protocol';
@@ -147,6 +147,8 @@ export class TaskRunnerProvider implements ToolProvider {
         return {
             id: RUN_TASK_FUNCTION_ID,
             name: RUN_TASK_FUNCTION_ID,
+            confirmAlwaysAllow: nls.localize('theia/ai/ide/runTask/confirmAlwaysAllow', 'This tool runs workspace tasks, which can execute any command. ' +
+                'Agents can write task definitions themselves, so always allowing it is like always allowing shell execution.'),
             description: 'Executes a specified task by name and waits for completion. Returns the terminal output ' +
                 '(first and last 50 lines if output exceeds this limit). The task must exist in the workspace ' +
                 '(use listTasks to discover available tasks). Common task types include: build tasks ' +
@@ -156,7 +158,9 @@ export class TaskRunnerProvider implements ToolProvider {
                 'Because it blocks until the task ends, do NOT use it for long-running processes (dev servers, watch tasks, ' +
                 'applications under test) - use runLaunchConfiguration for those. ' +
                 'If multiple tasks share the same label, specify the workspaceRoot parameter to disambiguate. ' +
-                'Do NOT use this for tasks you haven\'t discovered via listTasks first.',
+                'Do NOT use this for tasks you haven\'t discovered via listTasks first. ' +
+                'Only run tasks that already existed or that the user asked for: never create or modify a task definition in order to run a command, ' +
+                'and if shell execution is unavailable or was denied, stop and tell the user instead of using a task as a workaround.',
             parameters: {
                 type: 'object',
                 properties: {
