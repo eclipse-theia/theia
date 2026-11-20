@@ -106,6 +106,7 @@ import { CredentialsService, CredentialsServiceImpl } from './credentials-servic
 import { ContributionFilterRegistry, ContributionFilterRegistryImpl } from '../common/contribution-filter/index.js';
 import { QuickCommandFrontendContribution } from './quick-input/quick-command-frontend-contribution.js';
 import { QuickPickService, quickPickServicePath } from '../common/quick-pick-service.js';
+import { StartupSkeletonContribution } from './startup-skeleton.js';
 import {
     QuickPickServiceImpl,
     QuickInputFrontendContribution,
@@ -175,6 +176,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bindRootContributionProvider(bind, ColorContribution);
     bind(ColorApplicationContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(ColorApplicationContribution);
+    bind(StartupSkeletonContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(StartupSkeletonContribution);
 
     bind(FrontendApplication).toSelf().inSingletonScope();
     bind(FrontendApplicationStateService).toSelf().inSingletonScope();
