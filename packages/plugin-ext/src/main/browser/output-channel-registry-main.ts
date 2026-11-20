@@ -14,16 +14,50 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { CommandService } from '@theia/core/lib/common/command';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { OutputCommands } from '@theia/output/lib/browser/output-commands';
-import { OutputChannelRegistryMain, PluginInfo } from '../../common/plugin-api-rpc.js';
+import { OutputChannelManager } from '@theia/output/lib/browser/output-channel';
+import { MAIN_RPC_CONTEXT, OutputChannelRegistryExt, OutputChannelRegistryMain, PluginInfo } from '../../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
 
 @injectable()
-export class OutputChannelRegistryMainImpl implements OutputChannelRegistryMain {
+export class OutputChannelRegistryMainImpl implements OutputChannelRegistryMain, Disposable {
 
     @inject(CommandService)
     protected readonly commandService: CommandService;
+
+    @inject(OutputChannelManager)
+    protected readonly outputChannelManager: OutputChannelManager;
+
+    @inject(RPCProtocol)
+    protected readonly rpc: RPCProtocol;
+
+    protected proxy: OutputChannelRegistryExt;
+
+    /**
+     * The names of the log channels created by the plugin host, whose log level changes are forwarded to it.
+     */
+    protected readonly logChannelNames = new Set<string>();
+
+    protected readonly toDispose = new DisposableCollection();
+
+    @postConstruct()
+    protected init(): void {
+        this.proxy = this.rpc.getProxy(MAIN_RPC_CONTEXT.OUTPUT_CHANNEL_REGISTRY_EXT);
+        this.proxy.$setGlobalLogLevel(this.outputChannelManager.globalLogLevel);
+        this.toDispose.push(this.outputChannelManager.onDidChangeGlobalLogLevel(logLevel => this.proxy.$setGlobalLogLevel(logLevel)));
+        this.toDispose.push(this.outputChannelManager.onDidChangeChannelLogLevel(channel => {
+            if (this.logChannelNames.has(channel.name)) {
+                this.proxy.$setLogLevel(channel.name, this.outputChannelManager.getLogLevel(channel));
+            }
+        }));
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
+    }
 
     $append(name: string, text: string, pluginInfo: PluginInfo): PromiseLike<void> {
         this.commandService.executeCommand(OutputCommands.APPEND.id, { name, text });
@@ -36,7 +70,8 @@ export class OutputChannelRegistryMainImpl implements OutputChannelRegistryMain 
     }
 
     $dispose(name: string): PromiseLike<void> {
-        this.commandService.executeCommand(OutputCommands.DISPOSE.id, { name });
+        this.logChannelNames.delete(name);
+        this.outputChannelManager.deleteChannel(name);
         return Promise.resolve();
     }
 
@@ -48,6 +83,16 @@ export class OutputChannelRegistryMainImpl implements OutputChannelRegistryMain 
     $close(name: string): PromiseLike<void> {
         this.commandService.executeCommand(OutputCommands.HIDE.id, { name });
         return Promise.resolve();
+    }
+
+    async $registerLogChannel(name: string): Promise<void> {
+        const channel = this.outputChannelManager.getChannel(name);
+        channel.markAsLogChannel();
+        this.logChannelNames.add(name);
+        if (channel.logLevel !== undefined) {
+            // the channel already existed with its own log level
+            this.proxy.$setLogLevel(name, channel.logLevel);
+        }
     }
 
 }

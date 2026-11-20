@@ -97,4 +97,10 @@ export namespace OutputCommands {
         id: 'output:copy-all',
     };
 
+    export const SET_LOG_LEVEL = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.setLogLevel',
+        category: 'Developer',
+        label: 'Set Log Level...'
+    });
+
 }

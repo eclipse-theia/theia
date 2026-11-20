@@ -44,6 +44,16 @@ export class OutputChannelManager implements Disposable, ResourceResolver {
     protected readonly channels = new Map<string, OutputChannel>();
     protected readonly resources = new Map<string, OutputResource>();
     protected _selectedChannel: OutputChannel | undefined;
+    protected _globalLogLevel = OutputChannelLogLevel.Info;
+
+    protected readonly globalLogLevelChangeEmitter = new Emitter<OutputChannelLogLevel>();
+    readonly onDidChangeGlobalLogLevel = this.globalLogLevelChangeEmitter.event;
+
+    protected readonly channelLogLevelChangeEmitter = new Emitter<OutputChannel>();
+    /**
+     * Fires when the log level a channel uses changes, either its own level or the global level it follows.
+     */
+    readonly onDidChangeChannelLogLevel = this.channelLogLevelChangeEmitter.event;
 
     protected readonly channelAddedEmitter = new Emitter<{ name: string }>();
     protected readonly channelDeletedEmitter = new Emitter<{ name: string }>();
@@ -101,6 +111,7 @@ export class OutputChannelManager implements Disposable, ResourceResolver {
                 }
             }),
             channel.onDisposed(() => this.deleteChannel(name)),
+            channel.onDidChangeLogLevel(() => this.channelLogLevelChangeEmitter.fire(channel)),
             Disposable.create(() => {
                 const resource = this.resources.get(name);
                 if (resource) {
@@ -189,6 +200,26 @@ export class OutputChannelManager implements Disposable, ResourceResolver {
         return new OutputChannel(resource, this.preferences);
     }
 
+    get globalLogLevel(): OutputChannelLogLevel {
+        return this._globalLogLevel;
+    }
+
+    set globalLogLevel(logLevel: OutputChannelLogLevel) {
+        if (this._globalLogLevel !== logLevel) {
+            this._globalLogLevel = logLevel;
+            this.globalLogLevelChangeEmitter.fire(logLevel);
+            for (const channel of this.channels.values()) {
+                if (channel.isLogChannel && channel.logLevel === undefined) {
+                    this.channelLogLevelChangeEmitter.fire(channel);
+                }
+            }
+        }
+    }
+
+    getLogLevel(channel: OutputChannel): OutputChannelLogLevel {
+        return channel.logLevel ?? this._globalLogLevel;
+    }
+
 }
 
 export enum OutputChannelSeverity {
@@ -197,28 +228,45 @@ export enum OutputChannelSeverity {
     Info = 3
 }
 
+/**
+ * The log level of a log output channel. The values match VS Code's `LogLevel`, so they can be passed to and from plugins unchanged.
+ */
+export enum OutputChannelLogLevel {
+    Off = 0,
+    Trace = 1,
+    Debug = 2,
+    Info = 3,
+    Warning = 4,
+    Error = 5
+}
+
 export class OutputChannel implements Disposable {
 
     protected readonly contentChangeEmitter = new Emitter<void>();
     protected readonly visibilityChangeEmitter = new Emitter<{ isVisible: boolean, preserveFocus?: boolean }>();
     protected readonly disposedEmitter = new Emitter<void>();
+    protected readonly logLevelChangeEmitter = new Emitter<OutputChannelLogLevel | undefined>();
     protected readonly textModifyQueue: PQueue = new PQueue({ autoStart: true, concurrency: 1 });
     protected readonly toDispose = new DisposableCollection(
         Disposable.create(() => this.textModifyQueue.clear()),
         this.contentChangeEmitter,
         this.visibilityChangeEmitter,
-        this.disposedEmitter
+        this.disposedEmitter,
+        this.logLevelChangeEmitter
     );
 
     protected disposed = false;
     protected visible = true;
     protected _maxLineNumber: number;
+    protected logChannel = false;
+    protected _logLevel: OutputChannelLogLevel | undefined;
     protected decorationIds = new Set<string>();
     protected ansiState: AnsiState = {};
 
     readonly onVisibilityChange: Event<{ isVisible: boolean, preserveFocus?: boolean }> = this.visibilityChangeEmitter.event;
     readonly onContentChange: Event<void> = this.contentChangeEmitter.event;
     readonly onDisposed: Event<void> = this.disposedEmitter.event;
+    readonly onDidChangeLogLevel: Event<OutputChannelLogLevel | undefined> = this.logLevelChangeEmitter.event;
 
     constructor(protected readonly resource: OutputResource, protected readonly preferences: OutputPreferences) {
         this._maxLineNumber = this.preferences['output.maxChannelHistory'];
@@ -262,6 +310,32 @@ export class OutputChannel implements Disposable {
      */
     get isVisible(): boolean {
         return this.visible;
+    }
+
+    /**
+     * `true` if this is a log output channel whose level can be changed.
+     */
+    get isLogChannel(): boolean {
+        return this.logChannel;
+    }
+
+    markAsLogChannel(): void {
+        this.logChannel = true;
+    }
+
+    /**
+     * The own log level of a log output channel, `undefined` if the channel follows the global log level.
+     * Use `OutputChannelManager#getLogLevel` to get the level the channel actually uses.
+     */
+    get logLevel(): OutputChannelLogLevel | undefined {
+        return this._logLevel;
+    }
+
+    set logLevel(logLevel: OutputChannelLogLevel | undefined) {
+        if (this._logLevel !== logLevel) {
+            this._logLevel = logLevel;
+            this.logLevelChangeEmitter.fire(logLevel);
+        }
     }
 
     clear(): void {
