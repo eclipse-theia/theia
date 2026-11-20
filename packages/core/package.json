@@ -51,7 +51,7 @@
     "./*": "./*"
   },
   "dependencies": {
-    "@babel/runtime": "^7.29.10",
+    "@babel/runtime": "^7.29.14",
     "@lumino/algorithm": "^2.0.5",
     "@lumino/commands": "^2.3.4",
     "@lumino/coreutils": "^2.2.3",
@@ -79,9 +79,9 @@
     "@vscode/codicons": "0.0.45",
     "ajv": "^6.15.0",
     "async-mutex": "^0.4.1",
-    "body-parser": "^1.20.8",
+    "body-parser": "^1.20.9",
     "cookie": "^1.1.1",
-    "dompurify": "^3.4.16",
+    "dompurify": "^3.4.18",
     "drivelist": "^12.0.2",
     "express": "^4.22.3",
     "fast-json-stable-stringify": "^2.1.0",
@@ -98,7 +98,7 @@
     "keytar": "7.9.0",
     "lodash.debounce": "^4.0.8",
     "lodash.throttle": "^4.1.1",
-    "markdown-it": "^14.3.2",
+    "markdown-it": "^14.3.3",
     "markdown-it-anchor": "^9.2.1",
     "markdown-it-emoji": "^3.1.0",
     "msgpackr": "^1.12.1",
@@ -111,11 +111,11 @@
     "safer-buffer": "^2.1.2",
     "socket.io": "^4.8.4",
     "socket.io-client": "^4.8.4",
-    "tslib": "^2.8.1",
+    "tslib": "^2.9.1",
     "uuid": "^11.1.1",
     "vscode-languageserver-protocol": "3.17.5",
     "vscode-uri": "3.0.8",
-    "ws": "^8.22.0",
+    "ws": "^8.23.0",
     "yargs": "^17.7.3"
   },
   "peerDependencies": {
@@ -277,8 +277,8 @@
     "@types/react-dom": "^19.3.0",
     "minimist": "^1.2.8",
     "nodejs-file-downloader": "4.13.0",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

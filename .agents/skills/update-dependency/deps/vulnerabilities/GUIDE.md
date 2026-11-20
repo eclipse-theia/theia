@@ -54,9 +54,17 @@ Advisories of published npm packages are public; the last PRs name them like thi
 
 ## Known issues
 
-### `decompress` (critical) cannot be fixed by a bump
+### `opfs-worker` stays flagged after overriding `minimatch`
 
-Every published release is affected and the package is unmaintained; it needs a replacement. Listed as not fixable in #17909, #18005, #18149.
+`opfs-worker` bundles `minimatch` into its `dist` (the import is only visible in the source maps); its declared `minimatch` dependency does not affect the shipped code, so an override changes nothing. Every release is in the range (checked with 2.3.1); wait for an upstream release built against minimatch 11. (after 1.77.0)
+
+### `nx` and the lerna chain have no fixed release
+
+The `minimatch` advisory range covers every `nx` release since 17.3 and the `@npmcli/*`, `sigstore`, `tuf-js` copies pulled by lerna 9; lerna 10 does not help. `npm audit` suggests lerna 8.1.4 as "fix", which is a downgrade; ignore it. (after 1.77.0)
+
+### Overriding nested `minimatch` 9/10 to 11 breaks nx and typedoc
+
+minimatch 11 removed `makeRe` and internal `Minimatch` members (`matchOne`, `regexp`, ...). typedoc fails with `mini.matchOne is not a function`, nx calls `minimatch.makeRe`. glob 14 is export-compatible with 10/11/13, but the version-keyed overrides needed (`glob@^13`) were rejected as too fragile. Leave the minimatch/glob tooling advisories to upstream releases. (after 1.77.0)
 
 ### `scanoss` pulls a vulnerable `stream-json`
 
@@ -76,6 +84,7 @@ Newest first. One entry per run. Record what is left open (severity and package)
 
 | Date | Branch | Left open | PR | Notes |
 |---|---|---|---|---|
+| 2026-11-17 | master | moderate: `minimatch`/`glob` in tooling (lerna/nx, mocha, nyc, typedoc), `opfs-worker` (bundled), `stream-json` (scanoss); low: `diff`, `katex` (mermaid 11); no critical or high | #18420 | Range alignment; puppeteer 25.17.0 (zod 4 for chromium-bidi), minimatch 11 in our packages, rimraf 6, override `follow-redirects` (nx); `jsondiffpatch` override removed; `decompress` gone since #18207. |
 | 2026-10-12 | master | critical: `decompress` | #18149 | Overrides `axios` (nx), `basic-ftp`. |
 | 2026-09-15 | master | critical: `decompress`; no high | #18005 | Overrides `pacote`, `smol-toml`, `jsondiffpatch`, `qs`, `@tootallnate/once`; `@vscode/vsce` dropped. |
 | 2026-08-12 | master | critical: `decompress`; no high | #17909 | Overrides `tar`, `adm-zip`, `uuid`, `serialize-javascript`, `js-yaml`, `dompurify`; `less` removed. |

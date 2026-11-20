@@ -27,9 +27,12 @@ import {
 } from '../common/index.js';
 import { ChatGptAuthServiceImpl, createRemoteAuthService } from './chatgpt-auth-service-impl.js';
 import { ChatGptAuthServiceConfig, ChatGptBackendAuthService, DEFAULT_CHATGPT_AUTH_SERVICE_CONFIG } from './chatgpt-auth-service.js';
+import { ChatGptAuthServiceRouter } from './chatgpt-auth-service-router.js';
+import { ChatGptCodexAuthService, ChatGptCodexAuthServiceConfig } from './chatgpt-codex-auth-service.js';
+import { CHATGPT_CLIENT_ID as CODEX_CLIENT_ID } from './chatgpt-codex-oauth.js';
 import { ChatGptLanguageModelsManagerImpl } from './chatgpt-language-models-manager-impl.js';
 import { ChatGptModelCatalog } from './chatgpt-model-catalog.js';
-import { ChatGptResponseApiUtils } from './chatgpt-response-api-utils.js';
+import { ChatGptCodexResponseApiUtils, ChatGptResponseApiUtils } from './chatgpt-response-api-utils.js';
 
 // The language model registry is scoped to a frontend connection, hence so is the manager driving it.
 const chatGptConnectionModule = ConnectionContainerModule.create(({ bind }) => {
@@ -53,11 +56,18 @@ export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: ChatGptPreferencesSchema });
     bind(ChatGptAuthServiceConfig).toConstantValue(DEFAULT_CHATGPT_AUTH_SERVICE_CONFIG);
     bind(ChatGptAuthServiceImpl).toSelf().inSingletonScope();
-    bind(ChatGptBackendAuthService).toService(ChatGptAuthServiceImpl);
+    bind(ChatGptCodexAuthServiceConfig).toDynamicValue(ctx => {
+        const config = ctx.container.get<ChatGptAuthServiceConfig>(ChatGptAuthServiceConfig);
+        return { ...config, clientId: CODEX_CLIENT_ID, callbackHost: 'localhost', keyStoreAccount: `${config.keyStoreAccount}:codex` };
+    }).inSingletonScope();
+    bind(ChatGptCodexAuthService).toSelf().inSingletonScope();
+    bind(ChatGptAuthServiceRouter).toSelf().inSingletonScope();
+    bind(ChatGptBackendAuthService).toService(ChatGptAuthServiceRouter);
     bind(ChatGptAuthService).toService(ChatGptBackendAuthService);
     // Owned by the backend container as well, so all frontends share one listing of the account's models.
     bind(ChatGptModelCatalog).toSelf().inSingletonScope();
     // Bound under its own symbol so that the OpenAI models keep using the unmodified `OpenAiResponseApiUtils`.
     bind(ChatGptResponseApiUtils).toSelf().inSingletonScope();
+    bind(ChatGptCodexResponseApiUtils).toSelf().inSingletonScope();
     bind(ConnectionContainerModule).toConstantValue(chatGptConnectionModule);
 });

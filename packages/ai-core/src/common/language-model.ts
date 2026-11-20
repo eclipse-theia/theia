@@ -494,6 +494,8 @@ export interface UserRequest extends LanguageModelRequest {
      * Identifier of the Ai/ChatSession
      */
     sessionId: string;
+    /** Identifier of the immediate parent chat session, when delegated. Providers may use it for cache affinity. */
+    parentSessionId?: string;
     /**
      * Identifier of the request or overall exchange. Corresponds to request id in Chat sessions
      */

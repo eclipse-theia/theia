@@ -171,6 +171,23 @@ If you worked around the ripgrep problem by overriding the `@vscode/ripgrep` rep
 
 ### v1.78.0
 
+#### ChatGPT authentication modes [#18156](https://github.com/eclipse-theia/theia/pull/18156)
+
+`ChatGptAuthServiceConfig` now configures OSS authentication and requires `agentName` instead of a fixed `clientId`.
+Applications that previously supplied a custom Codex client ID or callback host through that binding must move those overrides
+to `ChatGptCodexAuthServiceConfig`. The default Codex configuration inherits shared fields, such as key-store identifiers,
+from `ChatGptAuthServiceConfig`.
+Codex OAuth constants and helpers previously exported by `chatgpt-oauth` now live in `chatgpt-codex-oauth`;
+`chatgpt-oauth` describes the OSS protocol instead.
+
+Custom auth implementations must support parameterless `startLogin` and login operations bound to its returned `loginId`.
+Signing out forgets the current session and registration; there are no account-list or account-selection RPC methods.
+Backend implementations also implement `setAuthenticationMode`, signing out the previous mode on changes;
+individual protocol sessions use `ChatGptBackendAuthSession` instead.
+Backend credentials include the mode's OAuth `clientId` (fixed for Codex, issued by OpenAI for OSS) and a session identity
+that remains stable through refresh and changes on reconnect. The frontend does not select accounts or client IDs.
+`ChatGptModel` takes separate `oss` and `codex` Responses utility instances; its `initializeOpenAi` hook receives the selected credentials.
+
 #### Electron: the backend resolves the login shell environment [#18204](https://github.com/eclipse-theia/theia/pull/18204)
 
 The generated `electron-main.js` no longer runs `fix-path` before the Electron main process starts, which blocked the start for as long as the user's interactive login shell took to initialize. Instead, the backend runs the login shell once it has started, in parallel with the window and the frontend bundle, and applies the shell's `PATH` to its own `process.env`, from where every process it spawns inherits it.
@@ -230,6 +247,7 @@ Set `"keyboard.dispatch": "keyCode"` to restore positional key-code dispatch glo
 - Review `KeyCode` consumers: `equals()` requires the same physical key and `dispatchString()`, character-only values are not modifier-only, and `toString()` preserves authored spelling. Use `dispatchString()` when a runtime match identity is required.
 - Update `KeybindingRegistry.matchKeybinding()` consumers from `match.binding` to `match.runtime.binding`; the resolved sequence is available as `match.runtime.sequence`. Pass resolved sequences (`resolveKeybinding(binding)`) or runtime interpretations to `matchKeybinding()`; raw `KeySequence.parse()` output is no longer guaranteed to match under `keyboard.dispatch: 'code'`. Subclasses that override chord handling must replace the protected `keySequence` field with `keySequenceCandidates`. Protected keybinding-tree values are runtime records containing the original scoped binding and its resolved sequence, rather than `ScopedKeybinding[]`.
 - Pass an explicit `'logical'` or `'physical'` form to `AcceleratorSource.getAccelerator`. Browser UI uses logical labels, while Electron native menus require physical accelerators.
+
 #### Theia packages are ES modules
 
 The runtime packages (`packages/*`) are now published as ES modules: their `package.json` declares `"type": "module"` and an `exports` map, and `lib` contains ES modules.
