@@ -31,9 +31,11 @@ import { FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
 
 export namespace ChatViewWidget {
+    export type SessionScrollState = ChatViewTreeWidget.SessionScrollState;
     export interface State {
         locked?: boolean;
         temporaryLocked?: boolean;
+        sessionStates?: Record<string, SessionScrollState>;
     }
 }
 
@@ -71,6 +73,8 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     protected readonly logger: ILogger;
 
     protected chatSession: ChatSession;
+
+    protected readonly sessionStates = new Map<string, ChatViewWidget.SessionScrollState>();
 
     protected _state: ChatViewWidget.State = { locked: false, temporaryLocked: false };
     protected readonly onStateChangedEmitter = new Emitter<ChatViewWidget.State>();
@@ -187,15 +191,16 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     protected initListeners(): void {
         this.toDispose.pushAll([
             this.chatService.onSessionEvent(event => {
+                if (event.type === 'deleted') {
+                    this.deleteSessionState(event.sessionId);
+                    return;
+                }
                 if (!isActiveSessionChangedEvent(event)) {
                     return;
                 }
                 const session = event.sessionId ? this.chatService.getSession(event.sessionId) : this.chatService.createSession();
                 if (session) {
-                    this.chatSession = session;
-                    this.treeWidget.trackChatModel(this.chatSession.model);
-                    this.inputWidget.chatModel = this.chatSession.model;
-                    this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
+                    this.switchSession(session);
                 } else {
                     this.logger.warn(`Session with ${event.sessionId} not found.`);
                 }
@@ -207,13 +212,76 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         ]);
     }
 
+    protected switchSession(session: ChatSession): void {
+        if (this.chatSession && this.chatSession.id === session.id) {
+            return;
+        }
+        this.saveCurrentSessionState();
+
+        this.chatSession = session;
+
+        const savedState = this.getSessionState(session.id);
+        const locked = savedState?.locked ?? false;
+        const temporaryLocked = savedState?.temporaryLocked ?? false;
+
+        this.state = {
+            ...this.state,
+            locked,
+            temporaryLocked
+        };
+
+        this.treeWidget.trackChatModel(this.chatSession.model, savedState);
+        this.inputWidget.chatModel = this.chatSession.model;
+        this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
+    }
+
+    protected saveCurrentSessionState(): void {
+        if (!this.chatSession) {
+            return;
+        }
+        const currentScrollState = this.treeWidget.getScrollState();
+        this.saveSessionState(this.chatSession.id, {
+            locked: this.state.locked,
+            temporaryLocked: this.state.temporaryLocked,
+            topVisibleRowIndex: currentScrollState.topVisibleRowIndex,
+            scrollTop: currentScrollState.scrollTop,
+            atBottom: currentScrollState.atBottom
+        });
+    }
+
+    saveSessionState(sessionId: string, state: ChatViewWidget.SessionScrollState): void {
+        this.sessionStates.set(sessionId, state);
+    }
+
+    getSessionState(sessionId: string): ChatViewWidget.SessionScrollState | undefined {
+        return this.sessionStates.get(sessionId);
+    }
+
+    deleteSessionState(sessionId: string): void {
+        this.sessionStates.delete(sessionId);
+    }
+
     protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.inputWidget.activate();
     }
 
     storeState(): object {
-        return this.state;
+        this.saveCurrentSessionState();
+        const existingSessionIds = new Set(this.chatService.getSessions().map(s => s.id));
+        for (const id of Array.from(this.sessionStates.keys())) {
+            if (!existingSessionIds.has(id)) {
+                this.sessionStates.delete(id);
+            }
+        }
+        const sessionStatesObj: Record<string, ChatViewWidget.SessionScrollState> = {};
+        this.sessionStates.forEach((val, key) => {
+            sessionStatesObj[key] = val;
+        });
+        return {
+            ...this.state,
+            sessionStates: sessionStatesObj
+        };
     }
 
     restoreState(oldState: object & Partial<ChatViewWidget.State>): void {
@@ -221,8 +289,13 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         if (oldState.locked) {
             copy.locked = oldState.locked;
         }
-        // Don't restore temporary lock state as it should reset on restart
         copy.temporaryLocked = false;
+        if (oldState.sessionStates) {
+            this.sessionStates.clear();
+            for (const [key, val] of Object.entries(oldState.sessionStates)) {
+                this.sessionStates.set(key, val);
+            }
+        }
         this.state = copy;
     }
 
@@ -318,16 +391,19 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     lock(): void {
         this.state = { ...deepClone(this.state), locked: true, temporaryLocked: false };
+        this.saveCurrentSessionState();
     }
 
     unlock(): void {
         this.state = { ...deepClone(this.state), locked: false, temporaryLocked: false };
+        this.saveCurrentSessionState();
     }
 
     setTemporaryLock(locked: boolean): void {
         // Only set temporary lock if not permanently locked
         if (!this.state.locked) {
             this.state = { ...deepClone(this.state), temporaryLocked: locked };
+            this.saveCurrentSessionState();
         }
     }
 
