@@ -24,6 +24,7 @@ export class MockWindowService implements WindowService {
     closeWindow(): void { }
     focus(): void { }
     reload(): void { }
+    quit(): void { }
     isSafeToShutDown(): Promise<boolean> { return Promise.resolve(true); }
     setSafeToShutDown(): void { }
     get onUnload(): Event<void> { return Event.None; }

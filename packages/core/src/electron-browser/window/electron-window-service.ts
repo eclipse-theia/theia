@@ -68,6 +68,10 @@ export class ElectronWindowService extends DefaultWindowService {
     override focus(): void {
         window.electronTheiaCore.focusWindow();
     }
+
+    override quit(): void {
+        window.electronTheiaCore.quit();
+    }
     @postConstruct()
     protected init(): void {
         // Update the default zoom level on startup when the preferences event is fired.

@@ -83,4 +83,11 @@ export interface WindowService {
      * Reloads the window according to platform.
      */
     reload(params?: WindowReloadOptions): void;
+
+    /**
+     * Quits the whole application. Only supported in Electron, where all windows are closed;
+     * there is no application to quit in the browser, so this does nothing there.
+     * Windows can still veto the shutdown, e.g. because of unsaved changes.
+     */
+    quit(): void;
 }

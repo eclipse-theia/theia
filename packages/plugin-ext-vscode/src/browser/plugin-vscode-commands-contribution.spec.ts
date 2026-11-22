@@ -288,4 +288,16 @@ describe('PluginVscodeCommandsContribution', () => {
             expect(shell.saved).to.deep.equal(['a', 'b', 'c', 'd', 'e']);
         });
     });
+    describe('workbench.action.quit', () => {
+        it('should quit the application through the window service', async () => {
+            const quit = sinon.stub();
+            Object.assign(contribution, { windowService: { quit } });
+            const commands = new CommandRegistry({ getContributions: () => [] });
+            contribution.registerCommands(commands);
+
+            await commands.executeCommand('workbench.action.quit');
+
+            expect(quit.calledOnce).to.be.true;
+        });
+    });
 });
