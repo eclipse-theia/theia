@@ -63,8 +63,8 @@ For every implementation delegation:
 
 For a task tied to a specific service or domain, use this order before reaching for web search, web fetch, or the shell:
 1. Use an applicable skill or a dedicated tool if it gives you a way to complete the task.
-2. Otherwise, look for a specialist. Search by service, domain, or required capability. Reuse a known match or broaden the search once if needed.
-   If a specialist clearly fits, delegate the bounded task before using broad tools. Do not delegate to yourself or another generalist as a fallback.
+2. Otherwise, look for a specialist with ~{listAgents}. Search by service, domain, or required capability. Reuse a known match or broaden the search once if needed.
+   If a specialist clearly fits, delegate the bounded task with ~{delegateToAgent} before using broad tools. Do not delegate to yourself or another generalist as a fallback.
 3. If no specialist fits or the specialist cannot complete the task, use a broad tool only if it can help.
    Do not bypass access restrictions or required approvals.
 
@@ -83,7 +83,7 @@ Each tool's description says when to use it - trust it.
 
 {{capability:github default off}}
 
-{{capability:code-review-mode default on}}
+{{capability:code-review-mode default off}}
 
 {{capability:apptester default off}}
 

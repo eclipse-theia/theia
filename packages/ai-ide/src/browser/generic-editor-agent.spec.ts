@@ -33,12 +33,12 @@ describe('GenericEditorAgent', () => {
         expect(agent.defaultPrompt?.template).to.contain(`{{prompt:${AGENTS_MD_PROMPT_FRAGMENT_ID}}}`);
     });
 
-    it('preserves the prepared capability defaults', () => {
+    it('enables only shell execution and memory by default', () => {
         const { defaultPrompt } = new TestGenericEditorAgent();
         expect(parseCapabilitiesFromTemplate(defaultPrompt!.template)).to.deep.equal([
             { fragmentId: 'shell-execution', defaultEnabled: true },
             { fragmentId: 'github', defaultEnabled: false },
-            { fragmentId: 'code-review-mode', defaultEnabled: true },
+            { fragmentId: 'code-review-mode', defaultEnabled: false },
             { fragmentId: 'apptester', defaultEnabled: false },
             { fragmentId: 'memory', defaultEnabled: true }
         ]);
