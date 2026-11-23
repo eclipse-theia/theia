@@ -979,16 +979,17 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
         return taskDto;
     }
 
+    // Before the shell check, which matches any object with a `command`, including CustomExecution subclasses.
+    if (types.CustomExecution.is(execution)) {
+        return fromCustomExecution(execution, taskDto);
+    }
+
     if (types.ShellExecution.is(execution)) {
         return fromShellExecution(execution, taskDto);
     }
 
     if (types.ProcessExecution.is(execution)) {
         return fromProcessExecution(execution, taskDto);
-    }
-
-    if (types.CustomExecution.is(execution)) {
-        return fromCustomExecution(execution, taskDto);
     }
 
     return taskDto;
@@ -1112,13 +1113,11 @@ export function fromShellExecution(execution: theia.ShellExecution, taskDto: Tas
 
 export function fromCustomExecution(execution: types.CustomExecution, taskDto: TaskDto): TaskDto {
     taskDto.executionType = 'customExecution';
-    const callback = execution.callback;
-    if (callback) {
-        taskDto.callback = callback;
-        return taskDto;
-    } else {
+    if (!execution.callback) {
         throw new Error('Converting CustomExecution callback is not implemented');
     }
+    taskDto.customExecution = execution;
+    return taskDto;
 }
 
 export function getProcessExecution(taskDto: TaskDto): theia.ProcessExecution {
@@ -1141,7 +1140,7 @@ export function getShellExecution(taskDto: TaskDto): theia.ShellExecution {
 }
 
 export function getCustomExecution(taskDto: TaskDto): theia.CustomExecution {
-    return new types.CustomExecution(taskDto.callback);
+    return new types.CustomExecution(taskDto.customExecution?.callback);
 }
 
 export function getShellArgs(args: undefined | (string | theia.ShellQuotedString)[]): string[] {
