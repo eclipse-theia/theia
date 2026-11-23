@@ -344,15 +344,19 @@ describe('Tasks with a CustomExecution subclass', () => {
     });
 
     describe('provided by a task provider', () => {
+        let ext: TasksExtImpl;
 
-        it('gives onDidStartTask the execution object the provider returned', async () => {
+        beforeEach(() => {
             const proxy: Partial<TasksMain> = { $registerTaskProvider: () => { }, $customExecutionComplete: async () => { } };
             const rpc = {
                 getProxy<T>(_proxyId: ProxyIdentifier<T>): T {
                     return proxy as unknown as T;
                 }
             } as RPCProtocol;
-            const ext = new TasksExtImpl(rpc, { attachPtyToTerminal: () => { } } as unknown as TerminalServiceExtImpl, NO_WORKSPACE);
+            ext = new TasksExtImpl(rpc, { attachPtyToTerminal: () => { } } as unknown as TerminalServiceExtImpl, NO_WORKSPACE);
+        });
+
+        it('gives onDidStartTask the execution object the provider returned', async () => {
             const execution = new CommandCustomExecution('make', ['build']);
             ext.registerTaskProvider('test', { provideTasks: () => [createCustomTask(execution)], resolveTask: () => undefined });
             const [dto] = await ext.$provideTasks(0);
@@ -367,13 +371,6 @@ describe('Tasks with a CustomExecution subclass', () => {
         });
 
         it('gives onDidStartTask the execution object a resolved task returned', async () => {
-            const proxy: Partial<TasksMain> = { $registerTaskProvider: () => { }, $customExecutionComplete: async () => { } };
-            const rpc = {
-                getProxy<T>(_proxyId: ProxyIdentifier<T>): T {
-                    return proxy as unknown as T;
-                }
-            } as RPCProtocol;
-            const ext = new TasksExtImpl(rpc, { attachPtyToTerminal: () => { } } as unknown as TerminalServiceExtImpl, NO_WORKSPACE);
             const execution = new CommandCustomExecution('make', ['build']);
             ext.registerTaskProvider('test', { provideTasks: () => [], resolveTask: task => ({ ...task, execution }) });
             const unresolved = Converter.fromTask({ ...createCustomTask(execution), execution: undefined })!;
@@ -389,13 +386,6 @@ describe('Tasks with a CustomExecution subclass', () => {
         });
 
         it('runs the callback of the task that started', async () => {
-            const proxy: Partial<TasksMain> = { $registerTaskProvider: () => { }, $customExecutionComplete: async () => { } };
-            const rpc = {
-                getProxy<T>(_proxyId: ProxyIdentifier<T>): T {
-                    return proxy as unknown as T;
-                }
-            } as RPCProtocol;
-            const ext = new TasksExtImpl(rpc, { attachPtyToTerminal: () => { } } as unknown as TerminalServiceExtImpl, NO_WORKSPACE);
             const ran: string[] = [];
             const recording = (name: string) => new CustomExecution(async () => {
                 ran.push(name);
@@ -410,13 +400,6 @@ describe('Tasks with a CustomExecution subclass', () => {
         });
 
         it('gives onDidStartTask the execution object of each provided task that shares a callback', async () => {
-            const proxy: Partial<TasksMain> = { $registerTaskProvider: () => { }, $customExecutionComplete: async () => { } };
-            const rpc = {
-                getProxy<T>(_proxyId: ProxyIdentifier<T>): T {
-                    return proxy as unknown as T;
-                }
-            } as RPCProtocol;
-            const ext = new TasksExtImpl(rpc, { attachPtyToTerminal: () => { } } as unknown as TerminalServiceExtImpl, NO_WORKSPACE);
             const build = new CommandCustomExecution('make', ['build']);
             const clean = new CommandCustomExecution('make', ['clean']);
             clean.callback = build.callback;
@@ -433,13 +416,6 @@ describe('Tasks with a CustomExecution subclass', () => {
         });
 
         it('keeps the id of an execution the provider returns again, and runs its current callback', async () => {
-            const proxy: Partial<TasksMain> = { $registerTaskProvider: () => { }, $customExecutionComplete: async () => { } };
-            const rpc = {
-                getProxy<T>(_proxyId: ProxyIdentifier<T>): T {
-                    return proxy as unknown as T;
-                }
-            } as RPCProtocol;
-            const ext = new TasksExtImpl(rpc, { attachPtyToTerminal: () => { } } as unknown as TerminalServiceExtImpl, NO_WORKSPACE);
             const ran: string[] = [];
             const recording = (name: string) => async () => {
                 ran.push(name);
