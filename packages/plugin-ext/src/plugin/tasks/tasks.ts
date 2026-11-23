@@ -224,7 +224,6 @@ export class TasksExtImpl implements TasksExt {
         if (execution) {
             task.executionId = this.addCustomExecution(execution);
         }
-        delete task.callback;
         delete task.customExecution;
     }
 

@@ -218,9 +218,11 @@ function createCustomTask(execution: theia.CustomExecution): theia.Task {
 describe('Tasks with a CustomExecution subclass', () => {
 
     it('converts to a custom execution even when the execution has a command', () => {
-        const dto = Converter.fromTask(createCustomTask(new CommandCustomExecution('make', ['build'])));
+        const execution = new CommandCustomExecution('make', ['build']);
+        const dto = Converter.fromTask(createCustomTask(execution));
         expect(dto?.executionType).to.equal('customExecution');
-        expect(dto?.callback).to.be.a('function');
+        expect(dto?.customExecution).to.equal(execution);
+        expect(dto).to.not.have.property('callback');
     });
 
     describe('started with executeTask', () => {
@@ -276,6 +278,7 @@ describe('Tasks with a CustomExecution subclass', () => {
 
             expect(sent).to.have.length(1);
             expect(sent[0]).to.not.have.property('customExecution');
+            expect(sent[0]).to.not.have.property('callback');
         });
 
         it('runs the task again when Rerun Last Task starts it after it ended', async () => {
