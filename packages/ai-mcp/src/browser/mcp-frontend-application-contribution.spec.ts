@@ -38,6 +38,8 @@ import {
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { Deferred } from '@theia/core/lib/common/promise-util';
+import { AiConfigurationService } from '@theia/ai-core/lib/common/ai-configuration-service';
 
 disableJSDOM();
 
@@ -86,9 +88,11 @@ describe('McpFrontendApplicationContribution', () => {
     let contribution: TestableContribution;
     let mockFrontendMCPService: MockFrontendMCPService;
     let mockManager: MockMCPServerManager;
+    let aiConfigurationReady: Deferred<void>;
 
     beforeEach(() => {
         const container = new Container();
+        aiConfigurationReady = new Deferred();
 
         mockFrontendMCPService = {
             startServer: sinon.stub().resolves(),
@@ -123,7 +127,7 @@ describe('McpFrontendApplicationContribution', () => {
 
         const mockPreferenceService = {
             ready: Promise.resolve(),
-            get: sinon.stub().returns({}),
+            get: sinon.stub().returns({ 'test-server': { command: 'node', args: ['server.js'], autostart: false } }),
             onPreferenceChanged: sinon.stub().returns({ dispose: () => { } }),
         };
 
@@ -150,6 +154,7 @@ describe('McpFrontendApplicationContribution', () => {
         container.bind(MCPFrontendService).toConstantValue(mockFrontendMCPService as unknown as MCPFrontendService);
         container.bind(WorkspaceTrustService).toConstantValue(mockWorkspaceTrustService as unknown as WorkspaceTrustService);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService as unknown as WorkspaceService);
+        container.bind<Pick<AiConfigurationService, 'ready'>>(AiConfigurationService).toConstantValue({ ready: aiConfigurationReady.promise });
         container.bind(ILogger).to(MockLogger).inSingletonScope();
         container.bind(MessageService).toConstantValue(mockMessageService as unknown as MessageService);
         container.bind(MCPOAuthFrontendDelegate).toConstantValue({
@@ -165,6 +170,20 @@ describe('McpFrontendApplicationContribution', () => {
 
     afterEach(() => {
         sinon.restore();
+    });
+
+    describe('onStart', () => {
+
+        it('reads the configured servers only once the AI configuration is ready, which includes the workspace trust state', async () => {
+            contribution.onStart();
+            await new Promise(resolve => setTimeout(resolve));
+            expect(mockManager.addOrUpdateServer.called).to.be.false;
+
+            aiConfigurationReady.resolve();
+            await new Promise(resolve => setTimeout(resolve));
+            expect(mockManager.addOrUpdateServer.calledOnce).to.be.true;
+            expect(mockManager.addOrUpdateServer.firstCall.args[0].name).to.equal('test-server');
+        });
     });
 
     describe('handleServerChanges', () => {

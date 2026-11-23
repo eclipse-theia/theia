@@ -20,6 +20,7 @@ import { nls, PreferenceSchema } from '@theia/core';
 export const SCANOSS_MODE_PREF = 'ai-features.SCANOSS.mode';
 
 export const AIScanOSSPreferencesSchema: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [SCANOSS_MODE_PREF]: {
             type: 'string',

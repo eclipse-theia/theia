@@ -39,6 +39,8 @@ import { PreferenceStorageFactory } from '../common/abstract-resource-preference
 import { FrontendPreferenceStorage } from './frontend-preference-storage.js';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { PreferenceScope, URI } from '@theia/core';
+import { WorkspaceRestrictionContribution } from '@theia/workspace/lib/browser/workspace-trust-service';
+import { RestrictedPreferencesContribution } from './restricted-preferences-contribution.js';
 
 export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind): void {
     bindPreferenceProviders(bind, unbind);
@@ -74,6 +76,10 @@ export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind
     bind(RemoteCliArgsContribution).toService(SessionPreferenceRemoteCliContribution);
     bind(SessionPreferenceStatusBarContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(SessionPreferenceStatusBarContribution);
+
+    bind(RestrictedPreferencesContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(RestrictedPreferencesContribution);
+    bind(WorkspaceRestrictionContribution).toService(RestrictedPreferencesContribution);
 
     bind(WidgetStatusBarContribution).toConstantValue(noopWidgetStatusBarContribution(PreferencesWidget));
 }

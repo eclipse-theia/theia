@@ -23,6 +23,7 @@ import { COPILOT_ENABLED_PREF, COPILOT_ENTERPRISE_URL_PREF, COPILOT_EXECUTABLE_P
 import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { CopilotCommands } from './copilot-command-contribution.js';
 import { ModelDiscoveryStatusService } from '@theia/ai-core/lib/browser';
+import { AiConfigurationService } from '@theia/ai-core/lib/common/ai-configuration-service';
 
 const COPILOT_PROVIDER_LABEL = 'GitHub Copilot';
 
@@ -47,6 +48,9 @@ export class CopilotFrontendApplicationContribution implements FrontendApplicati
     @inject(CommandService)
     protected readonly commandService: CommandService;
 
+    @inject(AiConfigurationService)
+    protected readonly aiConfigurationService: AiConfigurationService;
+
     @inject(ModelDiscoveryStatusService)
     protected readonly discoveryStatus: ModelDiscoveryStatusService;
 
@@ -54,7 +58,8 @@ export class CopilotFrontendApplicationContribution implements FrontendApplicati
     protected useAutoDiscovery = false;
 
     onStart(): void {
-        this.preferenceService.ready.then(async () => {
+        // Workspace settings apply to the executable path only once the workspace trust state is known.
+        this.aiConfigurationService.ready.then(async () => {
             this.discoveryStatus.registerProvider({
                 providerId: COPILOT_PROVIDER_ID,
                 label: COPILOT_PROVIDER_LABEL,

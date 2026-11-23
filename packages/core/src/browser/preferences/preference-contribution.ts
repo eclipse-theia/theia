@@ -26,6 +26,7 @@ import { SessionPreferenceProvider } from '../../common/preferences/session-pref
 import { PreferenceLanguageOverrideService } from '../../common/preferences/preference-language-override-service.js';
 import { FrontendConfigPreferenceContribution } from './frontend-config-preference-contributions.js';
 import { bindPreferenceConfigurations } from '../../common/preferences/preference-configurations.js';
+import { PreferenceExclusionPolicy, PreferenceExclusionService, PreferenceExclusionServiceImpl } from '../../common/preferences/preference-exclusion.js';
 
 export function bindPreferenceSchemaProvider(bind: interfaces.Bind): void {
     bindPreferenceConfigurations(bind);
@@ -38,6 +39,9 @@ export function bindPreferenceSchemaProvider(bind: interfaces.Bind): void {
     ]);
     bind(PreferenceSchemaServiceImpl).toSelf().inSingletonScope();
     bind(PreferenceSchemaService).toService(PreferenceSchemaServiceImpl);
+    bindRootContributionProvider(bind, PreferenceExclusionPolicy);
+    bind(PreferenceExclusionServiceImpl).toSelf().inSingletonScope();
+    bind(PreferenceExclusionService).toService(PreferenceExclusionServiceImpl);
     bind(PreferenceProvider).to(DefaultsPreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Default);
     bind(PreferenceProvider).to(SessionPreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Session);
     bind(PreferenceLanguageOverrideService).toSelf().inSingletonScope();

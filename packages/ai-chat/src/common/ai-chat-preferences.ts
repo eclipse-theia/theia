@@ -27,6 +27,7 @@ export const WELCOME_SCREEN_SESSIONS_PREF = 'ai-features.chat.welcomeScreenSessi
 export type SessionStorageScope = 'workspace' | 'global';
 
 export const aiChatPreferences: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [DEFAULT_CHAT_AGENT_PREF]: {
             type: 'string',

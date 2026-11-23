@@ -22,6 +22,7 @@ export const PREFERENCE_NAME_ENABLE_AI = 'ai-features.AiEnable.enableAI';
 export const PREFERENCE_NAME_ORCHESTRATOR_EXCLUSION_LIST = 'ai-features.orchestrator.excludedAgents';
 export const PREFERENCE_NAME_AGENT_MODE_ENABLED = 'ai-features.agentMode.enabled';
 export const aiIdePreferenceSchema: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [PREFERENCE_NAME_ENABLE_AI]: {
             title: AI_CORE_PREFERENCES_TITLE,

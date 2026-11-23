@@ -71,22 +71,17 @@ export namespace AiConfigurationInspection {
  */
 export interface AiConfigurationChange {
     /**
-     * The preference key that changed. When the change is caused by a workspace-trust transition
-     * (which can change the effective value of any trust-gated key) this is `undefined` and
-     * {@link affects} returns `true` for every resource. Listeners tracking a specific key should
-     * re-query the value when `preferenceName` is `undefined` or equals their key.
+     * The preference key that changed. A workspace-trust transition fires one change for each key whose
+     * workspace or folder value starts or stops applying.
      */
-    readonly preferenceName?: string;
+    readonly preferenceName: string;
     /**
      * Tests whether the given resource is affected by the change.
      * @param resourceUri the uri of the resource to test.
      */
     affects(resourceUri?: string): boolean;
     /**
-     * Tests whether the given preference key is affected by this change, treating a workspace-trust
-     * transition (where {@link preferenceName} is `undefined`) as affecting every trust-gated key.
-     * Prefer this over comparing {@link preferenceName} directly so listeners do not silently miss
-     * trust transitions.
+     * Tests whether the given preference key is affected by this change.
      * @param preferenceName the preference key to test.
      */
     affectsPreference(preferenceName: string): boolean;
@@ -100,11 +95,11 @@ export interface AiConfigurationChange {
  * `PreferenceService` directly for `ai-features.*` keys. Routing all AI configuration through this
  * seam keeps consumers insulated from future changes to how AI preferences are stored.
  *
- * Reads ({@link get}, {@link inspect}) are **workspace-trust-aware**: workspace and folder scope
- * values are suppressed while the workspace is untrusted (failing closed until the trust state
- * resolves), matching how AI features read preferences today. Session values (set via
- * `--session-preference`) apply regardless of trust. Writes ({@link set}, {@link update})
- * are never gated by trust.
+ * AI preferences are `restricted`, so reads ({@link get}, {@link inspect}) are **workspace-trust-aware**:
+ * the preference providers leave workspace and folder scope values out while the workspace is untrusted
+ * (failing closed until the trust state resolves). The same holds for a read through `PreferenceService`.
+ * Session values (set via `--session-preference`) apply regardless of trust. Writes ({@link set},
+ * {@link update}) are never gated by trust.
  */
 export interface AiConfigurationService {
     /**
