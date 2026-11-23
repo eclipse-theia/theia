@@ -80,7 +80,10 @@ export class AgentDelegationTool implements ToolProvider {
                         description:
                             'The task, question, or prompt to pass to the specified agent. Include the overall goal, the specific question, ' +
                             'and relevant file paths. Keep the question narrow (e.g. "list every call site of X with surrounding lines"); ' +
-                            'vague prompts produce slow, generic reports.',
+                            'vague prompts produce slow, generic reports. ' +
+                            'To pass a skill, include /<qualified-skill-name> so the delegated agent can load it. ' +
+                            'To invoke a registered slash command in the delegated request, include /command arguments. ' +
+                            'Put each on its own line, separate from the task instructions.',
                     },
                     taskContextId: {
                         type: 'string',
