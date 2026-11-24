@@ -16,15 +16,33 @@
 
 import { Emitter, Event } from '@theia/core';
 import { injectable, unmanaged } from '@theia/core/shared/inversify';
-import { TerminalWidget } from './base/terminal-widget.js';
+import { TerminalLocationOptions, TerminalWidget } from './base/terminal-widget.js';
 import { ShellTerminalProfile } from './shell-terminal-profile.js';
 
 export const TerminalProfileService = Symbol('TerminalProfileService');
 export const ContributedTerminalProfileStore = Symbol('ContributedTerminalProfileStore');
 export const UserTerminalProfileStore = Symbol('UserTerminalProfileStore');
 
+/**
+ * Options for starting a terminal from a {@link TerminalProfile}.
+ */
+export interface TerminalProfileStartOptions {
+    /**
+     * Where to place the terminal, e.g. as a split of another terminal.
+     */
+    readonly location?: TerminalLocationOptions;
+}
+
 export interface TerminalProfile {
-    start(): Promise<TerminalWidget>;
+    /**
+     * A human-readable name to present the profile to the user. Defaults to the ID of the profile.
+     */
+    readonly label?: string;
+    /**
+     * Creates and starts a terminal. The terminal is placed according to its location when it is opened, which may happen
+     * before this promise resolves, e.g. if an extension providing the profile shows the terminal.
+     */
+    start(options?: TerminalProfileStartOptions): Promise<TerminalWidget>;
 }
 
 export const NULL_PROFILE: TerminalProfile = {
@@ -83,7 +101,10 @@ export class DefaultProfileStore implements TerminalProfileStore {
 
 @injectable()
 export class DefaultTerminalProfileService implements TerminalProfileService {
-    protected defaultProfileIndex = 0;
+    /** The ID of the default profile. The first profile is the default if it is not set or not available. */
+    protected defaultProfileId: string | undefined;
+    /** The default profile last reported by `onDidChangeDefaultShell`, to detect changes of the effective default. */
+    protected lastDefaultProfile: TerminalProfile | undefined;
     protected order: string[] = [];
     protected readonly stores: TerminalProfileStore[];
 
@@ -121,8 +142,8 @@ export class DefaultTerminalProfileService implements TerminalProfileService {
         if (index >= 0 && !this.getProfile(id)) {
             // the profile was removed, but it's still in the `order` array
             this.order.splice(index, 1);
-            this.defaultProfileIndex = Math.max(0, Math.min(this.order.length - 1, index));
             this.onRemovedEmitter.fire(id);
+            this.checkDefaultProfileChanged();
         }
     }
 
@@ -131,29 +152,40 @@ export class DefaultTerminalProfileService implements TerminalProfileService {
         if (index < 0) {
             this.order.push(id);
             this.onAddedEmitter.fire(id);
+            this.checkDefaultProfileChanged();
         }
     }
 
     get defaultProfile(): TerminalProfile | undefined {
-        const id = this.order[this.defaultProfileIndex];
-        if (id) {
-            return this.getProfile(id);
+        const defaultProfile = this.defaultProfileId !== undefined ? this.getProfile(this.defaultProfileId) : undefined;
+        if (defaultProfile) {
+            return defaultProfile;
         }
-        return undefined;
+        const firstId = this.order[0];
+        return firstId !== undefined ? this.getProfile(firstId) : undefined;
     }
 
     setDefaultProfile(id: string): void {
-        const profile = this.getProfile(id);
-        if (!profile) {
+        if (!this.getProfile(id)) {
             throw new Error(`Cannot set default to unknown profile '${id}' `);
         }
-        this.defaultProfileIndex = this.order.indexOf(id);
+        this.defaultProfileId = id;
+        this.fireDefaultShellChanged();
+    }
 
-        if (profile instanceof ShellTerminalProfile && profile.shellPath) {
-            this.onDidChangeDefaultShellEmitter.fire(profile.shellPath);
-        } else {
-            this.onDidChangeDefaultShellEmitter.fire('');
+    /**
+     * Fires `onDidChangeDefaultShell` if the effective default profile changed, e.g. because the first profile was removed while no default is set.
+     */
+    protected checkDefaultProfileChanged(): void {
+        if (this.defaultProfile !== this.lastDefaultProfile) {
+            this.fireDefaultShellChanged();
         }
+    }
+
+    protected fireDefaultShellChanged(): void {
+        const profile = this.defaultProfile;
+        this.lastDefaultProfile = profile;
+        this.onDidChangeDefaultShellEmitter.fire(profile instanceof ShellTerminalProfile && profile.shellPath ? profile.shellPath : '');
     }
 
     getProfile(id: string): TerminalProfile | undefined {
