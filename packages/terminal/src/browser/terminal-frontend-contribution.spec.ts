@@ -42,6 +42,8 @@ describe('TerminalFrontendContribution', () => {
         const added: unknown[] = [];
         Object.assign(contribution, {
             preferenceService: { ready: Promise.resolve(), get: () => undefined },
+            workspaceTrustService: { getWorkspaceTrust: async () => true },
+            mergePreferences: async () => { },
             shell: { addWidget: (candidate: unknown) => { added.push(candidate); } },
             logger: new MockLogger(),
             newTerminal: async () => widget
@@ -49,5 +51,32 @@ describe('TerminalFrontendContribution', () => {
         await contribution.initializeLayout();
         expect(added).to.deep.equal([widget]);
         started.resolve();
+    });
+
+    it('starts the terminal of the default layout once the workspace trust is known and the profiles are merged', async () => {
+        const contribution = new TerminalFrontendContribution();
+        const trust = new Deferred<boolean>();
+        const started = new Deferred<void>();
+        const events: string[] = [];
+        const widget = {
+            start: async () => {
+                events.push('started');
+                started.resolve();
+            }
+        } as unknown as TerminalWidget;
+        Object.assign(contribution, {
+            preferenceService: { ready: Promise.resolve(), get: () => undefined },
+            workspaceTrustService: { getWorkspaceTrust: () => trust.promise },
+            mergePreferences: async () => { events.push('merged'); },
+            shell: { addWidget: () => { events.push('added'); } },
+            logger: new MockLogger(),
+            newTerminal: async () => widget
+        });
+        // the layout does not wait for the trust of the workspace
+        await contribution.initializeLayout();
+        expect(events).to.deep.equal(['added']);
+        trust.resolve(true);
+        await started.promise;
+        expect(events).to.deep.equal(['added', 'merged', 'started']);
     });
 });

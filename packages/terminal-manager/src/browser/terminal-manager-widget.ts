@@ -161,6 +161,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     async populateLayout(force?: boolean): Promise<void> {
+        await this.terminalFrontendContribution.whenShellSettingsApplied();
         if ((!this.stateIsSet && this.terminalWidgets.size === 0) || force) {
             const terminalWidget = await this.createTerminalWidget();
             this.addTerminalPage(terminalWidget);

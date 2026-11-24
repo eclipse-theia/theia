@@ -309,6 +309,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
             default: 1
         },
         'terminal.integrated.shell.windows': {
+            restricted: true,
             type: ['string', 'null'],
             typeDetails: { isFilepath: true },
             markdownDescription: nls.localize('theia/terminal/shellWindows', 'The path of the shell that the terminal uses on Windows. (default: \'{0}\').', 'C:\\Windows\\System32\\cmd.exe'),
@@ -316,24 +317,28 @@ export const TerminalConfigSchema: PreferenceSchema = {
             deprecationMessage: shellArgsDeprecatedMessage(OS.Type.Windows),
         },
         'terminal.integrated.shell.osx': {
+            restricted: true,
             type: ['string', 'null'],
             markdownDescription: nls.localize('theia/terminal/shellOsx', 'The path of the shell that the terminal uses on macOS (default: \'{0}\'}).', '/bin/bash'),
             default: undefined,
             deprecationMessage: shellArgsDeprecatedMessage(OS.Type.OSX),
         },
         'terminal.integrated.shell.linux': {
+            restricted: true,
             type: ['string', 'null'],
             markdownDescription: nls.localize('theia/terminal/shellLinux', 'The path of the shell that the terminal uses on Linux (default: \'{0}\'}).', '/bin/bash'),
             default: undefined,
             deprecationMessage: shellArgsDeprecatedMessage(OS.Type.Linux),
         },
         'terminal.integrated.shellArgs.windows': {
+            restricted: true,
             type: 'array',
             markdownDescription: nls.localize('theia/terminal/shellArgsWindows', 'The command line arguments to use when on the Windows terminal.'),
             default: [],
             deprecationMessage: shellArgsDeprecatedMessage(OS.Type.Windows),
         },
         'terminal.integrated.shellArgs.osx': {
+            restricted: true,
             type: 'array',
             markdownDescription: nls.localize('theia/terminal/shellArgsOsx', 'The command line arguments to use when on the macOS terminal.'),
             default: [
@@ -342,6 +347,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
             deprecationMessage: shellArgsDeprecatedMessage(OS.Type.OSX),
         },
         'terminal.integrated.shellArgs.linux': {
+            restricted: true,
             type: 'array',
             markdownDescription: nls.localize('theia/terminal/shellArgsLinux', 'The command line arguments to use when on the Linux terminal.'),
             default: [],
@@ -385,20 +391,24 @@ export const TerminalConfigSchema: PreferenceSchema = {
             tags: ['experimental']
         },
         'terminal.integrated.defaultProfile.windows': {
+            restricted: true,
             type: 'string',
             description: nls.localize('theia/terminal/defaultProfile', 'The default profile used on {0}', OS.Type.Windows.toString())
 
         },
         'terminal.integrated.defaultProfile.linux': {
+            restricted: true,
             type: 'string',
             description: nls.localize('theia/terminal/defaultProfile', 'The default profile used on {0}', OS.Type.Linux.toString())
 
         },
         'terminal.integrated.defaultProfile.osx': {
+            restricted: true,
             type: 'string',
             description: nls.localize('theia/terminal/defaultProfile', 'The default profile used on {0}', OS.Type.OSX.toString())
         },
         'terminal.integrated.profiles.windows': {
+            restricted: true,
             markdownDescription: nls.localize('theia/terminal/profiles', 'The profiles to present when creating a new terminal. Set the path property manually with optional args.\nSet an existing profile to `null` to hide the profile from the list, for example: `"{0}": null`.', 'cmd'),
             anyOf: [
                 {
@@ -454,6 +464,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
             ]
         },
         'terminal.integrated.profiles.linux': {
+            restricted: true,
             markdownDescription: nls.localize('theia/terminal/profiles', 'The profiles to present when creating a new terminal. Set the path property manually with optional args.\nSet an existing profile to `null` to hide the profile from the list, for example: `"{0}": null`.', 'bash'),
             anyOf: [{
                 type: 'object',
@@ -488,6 +499,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
             ]
         },
         'terminal.integrated.profiles.osx': {
+            restricted: true,
             markdownDescription: nls.localize('theia/terminal/profiles', 'The profiles to present when creating a new terminal. Set the path property manually with optional args.\nSet an existing profile to `null` to hide the profile from the list, for example: `"{0}": null`.', 'zsh'),
             anyOf: [{
                 type: 'object',

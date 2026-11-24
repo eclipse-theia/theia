@@ -37,7 +37,7 @@ import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { PreferenceService } from '@theia/core/lib/common';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { WorkspaceService, WorkspaceTrustService } from '@theia/workspace/lib/browser';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { TerminalService } from '../browser/base/terminal-service.js';
 import { TerminalFrontendContribution } from '../browser/terminal-frontend-contribution.js';
@@ -83,6 +83,7 @@ function bindTerminalTestDependencies(container: Container, onError: (message: s
     container.bind(SelectionService).toConstantValue(inert());
     container.bind(LabelProvider).toConstantValue(inert());
     container.bind(WorkspaceService).toConstantValue(inert());
+    container.bind(WorkspaceTrustService).toConstantValue(inert());
     container.bind(TerminalProfileService).toConstantValue(inert());
     container.bind(UserTerminalProfileStore).toConstantValue(inert());
     container.bind(ContributedTerminalProfileStore).toConstantValue(inert());

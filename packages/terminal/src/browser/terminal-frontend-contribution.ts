@@ -48,7 +48,7 @@ import {
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol.js';
 import URI from '@theia/core/lib/common/uri';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { WorkspaceService, WorkspaceTrustService } from '@theia/workspace/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
@@ -216,6 +216,9 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
+    @inject(WorkspaceTrustService)
+    protected readonly workspaceTrustService: WorkspaceTrustService;
+
     @inject(TerminalProfileService)
     protected readonly profileService: TerminalProfileService;
 
@@ -350,11 +353,27 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             // Use shell.addWidget directly (not this.open()) to add the terminal
             // to the bottom panel without expanding it on startup.
             this.shell.addWidget(termWidget, { area: 'bottom' });
-            // The backend starts the terminal's process once the login shell environment is known;
-            // the layout does not wait for that.
-            termWidget.start().catch(error => this.logger.error('Failed to start the terminal of the default layout', error));
+            // The terminal's process starts once the shell settings apply, which can wait for the trust of the workspace,
+            // and the backend starts it once the login shell environment is known. The layout does not wait for either.
+            this.whenShellSettingsApplied()
+                .then(() => termWidget.start())
+                .catch(error => this.logger.error('Failed to start the terminal of the default layout', error));
         } catch (error) {
             this.logger.error('Failed to initialize terminal in default layout', error);
+        }
+    }
+
+    /**
+     * Resolves once the shell and profile settings apply, including those of the workspace.
+     * The workspace values of these settings apply once the trust of the workspace is known.
+     */
+    async whenShellSettingsApplied(): Promise<void> {
+        await this.workspaceTrustService.getWorkspaceTrust();
+        this.mergePreferencesPromise = this.mergePreferencesPromise.finally(() => this.mergePreferences());
+        try {
+            await this.mergePreferencesPromise;
+        } catch (error) {
+            this.logger.error('Failed to apply the terminal profile settings', error);
         }
     }
 
