@@ -271,14 +271,31 @@ export const ToolConfirmationActions: React.FC<ToolConfirmationActionsProps> = (
 
     const SCOPES: ConfirmationScope[] = ['once', 'session', 'forever'];
 
+    // The loop-guard "continue?" prompt reuses this Allow/Deny UI but reads better as Continue/Stop.
+    const isLoopGuard = toolName === LOOP_GUARD_CONTINUE_TOOL_ID;
+
     const scopeLabel = (type: 'allow' | 'deny', scope: ConfirmationScope): string => {
         if (type === 'allow') {
+            if (isLoopGuard) {
+                switch (scope) {
+                    case 'once': return nls.localizeByDefault('Continue');
+                    case 'session': return nls.localize('theia/ai/chat-ui/toolconfirmation/loopguard/continue-session', 'Continue, don\'t ask again this chat');
+                    case 'forever': return nls.localize('theia/ai/chat-ui/toolconfirmation/loopguard/continue-forever', 'Continue, never ask again');
+                }
+            }
             switch (scope) {
                 case 'once': return nls.localizeByDefault('Allow');
                 case 'session': return nls.localize('theia/ai/chat-ui/toolconfirmation/allow-session', 'Allow for this Chat');
                 case 'forever': return nls.localizeByDefault('Always Allow');
             }
         } else {
+            if (isLoopGuard) {
+                switch (scope) {
+                    case 'once': return nls.localizeByDefault('Stop');
+                    case 'session': return nls.localize('theia/ai/chat-ui/toolconfirmation/loopguard/stop-session', 'Stop, don\'t ask again this chat');
+                    case 'forever': return nls.localize('theia/ai/chat-ui/toolconfirmation/loopguard/stop-forever', 'Stop, never ask again');
+                }
+            }
             switch (scope) {
                 case 'once': return nls.localizeByDefault('Deny');
                 case 'session': return nls.localize('theia/ai/chat-ui/toolconfirmation/deny-session', 'Deny for this Chat');
@@ -461,6 +478,13 @@ export interface ToolConfirmationProps extends Pick<ToolConfirmationCallbacks, '
  */
 const OPEN_TOOLS_CONFIGURATION_COMMAND_ID = 'aiConfiguration:openTools';
 
+/**
+ * Synthetic tool id used by the loop-guard "continue?" prompt (see `FrontendChatToolRequestService`).
+ * Duplicated here as a string constant so the confirmation UI can show a loop-specific prompt without
+ * ai-chat-ui depending on that backend module. Keep in sync with `LOOP_GUARD_CONTINUE_TOOL_ID`.
+ */
+const LOOP_GUARD_CONTINUE_TOOL_ID = '__loopGuardContinue__';
+
 const ToolConfirmationIntro: React.FC<{ markdownRenderer: MarkdownRenderer }> = ({ markdownRenderer }) => (
     <div className="theia-tool-confirmation-intro">
         <LocalizedMarkdown
@@ -540,6 +564,50 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({
             <span className="value">{response.name}</span>
         </>
     );
+
+    const isLoopGuardPrompt = response.name === LOOP_GUARD_CONTINUE_TOOL_ID;
+    if (isLoopGuardPrompt) {
+        // A different kind of confirmation: the agent keeps repeating the same failing tool call. Ask the
+        // user whether to continue, reusing the Allow(=continue)/Deny(=stop) actions and their
+        // remember-my-decision scopes.
+        let repeatedTool: string | undefined;
+        let repeatedErrors: number | undefined;
+        try {
+            const parsed = JSON.parse(response.arguments ?? '{}');
+            repeatedTool = typeof parsed.tool === 'string' ? parsed.tool : undefined;
+            repeatedErrors = typeof parsed.repeatedErrors === 'number' ? parsed.repeatedErrors : undefined;
+        } catch {
+            // keep the generic message below
+        }
+        const message = repeatedTool && repeatedErrors !== undefined
+            ? nls.localize(
+                'theia/ai/chat-ui/toolconfirmation/loopguard/messageDetailed',
+                'The agent has called "{0}" with the same arguments and gotten the same error {1} times in a row. Continue retrying?',
+                repeatedTool, `${repeatedErrors}`)
+            : nls.localize(
+                'theia/ai/chat-ui/toolconfirmation/loopguard/message',
+                'The agent appears to be stuck repeating the same failing tool call. Continue retrying?');
+        return (
+            <div className="theia-tool-confirmation">
+                <div className="theia-tool-confirmation-header">
+                    <span className={codicon('sync')}></span> {nls.localize('theia/ai/chat-ui/toolconfirmation/loopguard/header', 'Possible loop detected')}
+                </div>
+                <div className="theia-tool-confirmation-info">
+                    <div className="theia-tool-confirmation-description">{message}</div>
+                </div>
+                <ToolConfirmationActions
+                    toolName={response.name ?? LOOP_GUARD_CONTINUE_TOOL_ID}
+                    toolRequest={toolRequest}
+                    onAllow={handleAllow}
+                    onDeny={handleDeny}
+                    contextMenuRenderer={contextMenuRenderer}
+                    autoFocus={true}
+                    keybindingHints={keybindingHints}
+                />
+                <CountdownTimer response={response} />
+            </div>
+        );
+    }
 
     return (
         <>

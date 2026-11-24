@@ -409,7 +409,8 @@ describe('AbstractChatAgent.appendExternalFileChangeNotice', () => {
         agent.setFileReadTracker({
             recordRead: async () => { },
             isStale: async () => false,
-            getChangedFiles
+            getChangedFiles,
+            forceRefresh: async () => []
         });
         return agent;
     }
