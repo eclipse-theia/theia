@@ -1314,11 +1314,11 @@ describe('node-directory-watcher', function (): void {
             box.host.caseInsensitive = true;
             await box.watching(box.root, box.directory());
             const readsBefore = box.host.reads;
+            const fileNames = ['a.txt', 'b.txt', 'c.txt'];
 
-            ['a.txt', 'b.txt', 'c.txt'].forEach(fileName => {
-                box.write(fileName);
-                box.fire('rename', fileName);
-            });
+            // Written before any event, so that a slow write cannot spread the events over two batches.
+            fileNames.forEach(fileName => box.write(fileName));
+            fileNames.forEach(fileName => box.fire('rename', fileName));
 
             await box.expect(1, 'added a.txt', 'added b.txt', 'added c.txt');
             assert.strictEqual(box.host.reads - readsBefore, 1);
@@ -1331,10 +1331,9 @@ describe('node-directory-watcher', function (): void {
             await box.watching(box.root, box.directory());
             const readsBefore = box.host.reads;
 
-            fileNames.forEach(fileName => {
-                box.remove(fileName);
-                box.fire('rename', fileName);
-            });
+            // Removed before any event, so that a slow removal cannot spread the events over two batches.
+            fileNames.forEach(fileName => box.remove(fileName));
+            fileNames.forEach(fileName => box.fire('rename', fileName));
 
             await box.expect(1, 'deleted a.txt', 'deleted b.txt', 'deleted c.txt');
             // One read resolves the batch, one confirms its deletions.
