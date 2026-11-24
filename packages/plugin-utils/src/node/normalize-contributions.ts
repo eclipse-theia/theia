@@ -196,15 +196,15 @@ export async function normalizeContributions<TContrib extends object>(
     try {
         if (contributes.configuration) {
             const configurations = Array.isArray(contributes.configuration) ? contributes.configuration : [contributes.configuration];
-            const extensionInfo = {
+            const owner = {
                 id: getUnversionedPluginId(rawPlugin),
-                displayName: rawPlugin.displayName ?? rawPlugin.name
+                label: rawPlugin.displayName ?? rawPlugin.name
             };
             output.configuration = [];
             for (const c of configurations) {
                 const config = readConfigurationFn(c as IConfigurationNode, rawPlugin.packagePath);
                 if (config) {
-                    config.extensionInfo = extensionInfo;
+                    config.owner = owner;
                     output.configuration.push(config);
                 }
             }

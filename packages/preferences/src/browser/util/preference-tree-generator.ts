@@ -16,9 +16,7 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { CompositeTreeNode } from '@theia/core/lib/browser';
-import {
-    Emitter, OVERRIDE_PROPERTY_PATTERN, PreferenceConfigurations, PreferenceDataProperty, PreferenceSchema, PreferenceSchemaExtensionInfo, PreferenceSchemaService
-} from '@theia/core';
+import { Emitter, OVERRIDE_PROPERTY_PATTERN, PreferenceConfigurations, PreferenceDataProperty, PreferenceOwner, PreferenceSchemaService } from '@theia/core';
 import debounce from '@theia/core/shared/lodash.debounce';
 import { Preference } from './preference-types.js';
 import { COMMONLY_USED_SECTION_PREFIX, PreferenceLayoutProvider } from './preference-layout.js';
@@ -94,33 +92,31 @@ export class PreferenceTreeGenerator {
         const visibleProperties = Array.from(properties.entries()).filter(([propertyName, property]) =>
             !property.hidden && !property.deprecationMessage && !this.preferenceConfigs.isSectionName(propertyName) && !OVERRIDE_PROPERTY_PATTERN.test(propertyName)
         );
-        const extensionProperties = new Map<string, Array<{ propertyName: string, property: PreferenceDataProperty, schema: PreferenceSchema }>>();
+        const ownedProperties = new Map<string, Array<[string, PreferenceDataProperty]>>();
         for (const [propertyName, property] of visibleProperties) {
-            const schema = this.schemaProvider.getSchemaForProperty(propertyName);
-            if (schema?.extensionInfo) {
-                let properties = extensionProperties.get(schema.extensionInfo.id);
+            if (property.owner) {
+                let properties = ownedProperties.get(property.owner.id);
                 if (!properties) {
                     properties = [];
-                    extensionProperties.set(schema.extensionInfo.id, properties);
+                    ownedProperties.set(property.owner.id, properties);
                 }
-                properties.push({ propertyName, property, schema });
+                properties.push([propertyName, property]);
             } else {
                 this.createBuiltinLeafNode(propertyName, property, root, groups);
             }
         }
-        for (const properties of extensionProperties.values()) {
-            // Every configuration contributed by an extension is a category, identified by its title.
-            const hasCategories = new Set(properties.map(({ schema }) => this.getCategoryName(schema, schema.extensionInfo!))).size > 1;
-            for (const { propertyName, property, schema } of properties) {
-                this.createPluginLeafNode(propertyName, property, schema, hasCategories, root, groups);
+        for (const properties of ownedProperties.values()) {
+            const hasCategories = new Set(properties.map(([, property]) => this.getCategoryName(property, property.owner!))).size > 1;
+            for (const [propertyName, property] of properties) {
+                this.createPluginLeafNode(propertyName, property, hasCategories, root, groups);
             }
         }
 
-        const extensionsGroupId = `${this.defaultTopLevelCategory}@${this.defaultTopLevelCategory}`;
+        const ownersGroupId = `${this.defaultTopLevelCategory}@${this.defaultTopLevelCategory}`;
         for (const group of groups.values()) {
             if (group.id !== `${COMMONLY_USED_SECTION_PREFIX}@${COMMONLY_USED_SECTION_PREFIX}`) {
-                // Extensions are identified by ID, but should be listed by name.
-                const sortByLabel = group.id === extensionsGroupId;
+                // Owners are identified by ID, but should be listed by name.
+                const sortByLabel = group.id === ownersGroupId;
                 (group.children as Preference.TreeNode[]).sort((a, b) => {
                     const aIsComposite = CompositeTreeNode.is(a);
                     const bIsComposite = CompositeTreeNode.is(b);
@@ -147,50 +143,51 @@ export class PreferenceTreeGenerator {
         this.createLeafNode(name, immediateParent || topLevelParent, property);
     }
 
-    protected getCategoryName(schema: PreferenceSchema, extensionInfo: PreferenceSchemaExtensionInfo): string {
-        return schema.title || extensionInfo.displayName;
+    protected getCategoryName(property: PreferenceDataProperty, owner: PreferenceOwner): string {
+        return property.category || owner.label;
     }
 
     /**
-     * Places a preference contributed by an extension under the node of that extension in the {@link defaultTopLevelCategory}.
-     * If the extension contributes more than one category, the preference is placed under the node of its category,
-     * unless the category is named like the extension.
+     * Places a preference that has an {@link PreferenceDataProperty.owner owner} under the node of that owner in the {@link defaultTopLevelCategory}.
+     * If the owner contributes more than one category, the preference is placed under the node of its category,
+     * unless the category is named like the owner.
      */
     protected createPluginLeafNode(
-        name: string, property: PreferenceDataProperty, schema: PreferenceSchema, hasCategories: boolean,
+        name: string, property: PreferenceDataProperty, hasCategories: boolean,
         root: CompositeTreeNode, groups: Map<string, Preference.CompositeTreeNode>
     ): void {
-        const { extensionInfo } = schema;
-        if (!extensionInfo) {
+        const { owner } = property;
+        if (!owner) {
             return;
         }
         const groupID = this.defaultTopLevelCategory;
-        const categoryName = this.getCategoryName(schema, extensionInfo);
+        const categoryName = this.getCategoryName(property, owner);
         const toplevelParent = this.getOrCreatePreferencesGroup({
             id: groupID,
             group: groupID,
             root,
             groups
         });
-        const extensionID = [groupID, extensionInfo.id].join('.');
-        const extensionParent = this.getOrCreatePreferencesGroup({
-            id: extensionID,
+        // The ID and the category are encoded, so that they cannot contain ':'
+        // and the ID of a category can be neither the ID of an owner nor of another category.
+        const ownerID = `${groupID}.${encodeURIComponent(owner.id)}`;
+        const ownerParent = this.getOrCreatePreferencesGroup({
+            id: ownerID,
             group: groupID,
             root: toplevelParent,
             groups,
             expanded: hasCategories,
-            label: hasCategories ? extensionInfo.displayName : categoryName
+            label: hasCategories ? owner.label : categoryName
         });
-        const categoryParent = hasCategories && categoryName !== extensionInfo.displayName ? this.getOrCreatePreferencesGroup({
-            // Extension IDs cannot contain ':', so that the ID of a category cannot be the ID of an extension or of another category.
-            id: `${extensionID}:${categoryName}`,
-            group: extensionID,
-            root: extensionParent,
+        const categoryParent = hasCategories && categoryName !== owner.label ? this.getOrCreatePreferencesGroup({
+            id: `${ownerID}:${encodeURIComponent(categoryName)}`,
+            group: ownerID,
+            root: ownerParent,
             groups,
             depth: 2,
             label: categoryName
         }) : undefined;
-        this.createLeafNode(name, categoryParent ?? extensionParent, property);
+        this.createLeafNode(name, categoryParent ?? ownerParent, property);
     }
 
     getNodeId(preferenceId: string): string {

@@ -61,13 +61,13 @@ export interface IndexedAccess<T> {
 }
 
 /**
- * Identifies the extension that contributed a {@link PreferenceSchema}.
+ * Identifies the component that contributed a {@link PreferenceSchema}, e.g. a plugin.
  */
-export interface PreferenceSchemaExtensionInfo {
-    /** The unversioned identifier of the extension, i.e. `publisher.name`. It must not contain `:`. */
+export interface PreferenceOwner {
+    /** The unique identifier of the owner */
     id: string;
-    /** The human-readable name of the extension */
-    displayName: string;
+    /** The human-readable name of the owner */
+    label: string;
 }
 
 export interface PreferenceSchema {
@@ -75,8 +75,8 @@ export interface PreferenceSchema {
     scope?: PreferenceScope,
     /** Optional title to be used in UI */
     title?: string,
-    /** The extension that contributed this schema, if any. Its preferences are listed under that extension in the UI. */
-    extensionInfo?: PreferenceSchemaExtensionInfo,
+    /** The component that contributed this schema, if any. The preferences UI lists the preferences of an owner together. */
+    owner?: PreferenceOwner,
     /** Whether properties in this schema are overridable by default. Defaults to false. */
     defaultOverridable?: boolean;
     /** Whether properties in this schema are {@link PreferenceDataProperty.restricted restricted} by default. Defaults to false. */
@@ -105,6 +105,10 @@ export interface PreferenceDataProperty extends IJSONSchema {
     typeDetails?: any;
     /** Tags can be searched for in the UI */
     tags?: string[]
+    /** The owner of the schema that registered this property. Set from {@link PreferenceSchema.owner} on registration. */
+    owner?: PreferenceOwner;
+    /** The title of the schema that registered this property. Set from {@link PreferenceSchema.title} on registration. */
+    category?: string;
 }
 
 export interface DefaultValueChangedEvent {
@@ -132,7 +136,9 @@ export interface PreferenceSchemaService {
     readonly overrideIdentifiers: ReadonlySet<string>;
 
     /**
-     * Add a preference schema. It is an error to register the same property in two different schemas
+     * Add a preference schema. If a property is already registered by another schema, the first registration is kept
+     * and a warning is logged. When the schema that registered a property is removed, the property passes to the
+     * earliest remaining schema that declares it.
      * @param schema The schema to add
      * @returns A disposable to remove the schema
      */
@@ -152,16 +158,6 @@ export interface PreferenceSchemaService {
     isValidInScope(preferenceName: string, scope: PreferenceScope): boolean;
     getSchemaProperty(key: string): PreferenceDataProperty | undefined;
     getSchemaProperties(): ReadonlyMap<string, PreferenceDataProperty>;
-    /**
-     * Get the schema that registered a property
-     * @param key The property key
-     * @returns The schema the property was registered with, or undefined if the property is not registered
-     */
-    getSchemaForProperty(key: string): PreferenceSchema | undefined;
-    /**
-     * Get all registered schemas
-     */
-    getSchemas(): ReadonlySet<PreferenceSchema>;
 
     /**
      * Update a property in the schema. The corresponding JSON Schemas, etc. will be updated

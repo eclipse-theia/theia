@@ -203,6 +203,10 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
             property.restricted = schema.defaultRestricted;
         }
 
+        // Ownership belongs to the schema, so that a property cannot claim another owner.
+        property.owner = schema.owner;
+        property.category = schema.title;
+
         this.properties.set(key, property);
         this.propertySchemas.set(key, schema);
         this.setJSONSchemasProperty(key, property);
@@ -234,14 +238,6 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
 
     getSchemaProperty(key: string): PreferenceDataProperty | undefined {
         return this.properties.get(key);
-    }
-
-    getSchemaForProperty(key: string): PreferenceSchema | undefined {
-        return this.propertySchemas.get(key);
-    }
-
-    getSchemas(): ReadonlySet<PreferenceSchema> {
-        return this.schemas;
     }
 
     updateSchemaProperty(key: string, property: PreferenceDataProperty): void {
@@ -427,6 +423,8 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         delete prop['scope'];
         delete prop['overridable'];
         delete prop['restricted'];
+        delete prop['owner'];
+        delete prop['category'];
         if (property.overridable) {
             for (const overrideIdentifier of this._overrideIdentifiers) {
                 const overrideSchema: IJSONSchema = schema.properties![`[${overrideIdentifier}]`] || {

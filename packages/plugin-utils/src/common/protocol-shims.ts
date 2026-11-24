@@ -119,15 +119,15 @@ export interface PreferenceDataProperty extends IJSONSchema {
     tags?: string[];
 }
 
-export interface PreferenceSchemaExtensionInfo {
+export interface PreferenceOwner {
     id: string;
-    displayName: string;
+    label: string;
 }
 
 export interface PreferenceSchema {
     scope?: PreferenceScope;
     title?: string;
-    extensionInfo?: PreferenceSchemaExtensionInfo;
+    owner?: PreferenceOwner;
     defaultOverridable?: boolean;
     properties: { [name: string]: PreferenceDataProperty };
 }

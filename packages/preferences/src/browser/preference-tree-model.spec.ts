@@ -24,7 +24,7 @@ FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { Emitter, ILogger, PreferenceSchemaService, PreferenceScope, PreferenceService } from '@theia/core';
+import { Emitter, ILogger, PreferenceDataProperty, PreferenceSchemaService, PreferenceScope, PreferenceService } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { CompositeTreeNode, createTreeContainer, LabelProvider } from '@theia/core/lib/browser';
 import { PreferenceTreeModel } from './preference-tree-model.js';
@@ -50,7 +50,12 @@ describe('PreferenceTreeModel', () => {
     let schemaEmitter: Emitter<CompositeTreeNode>;
     let scopeEmitter: Emitter<Preference.SelectedScopeDetails>;
     let isValidInScope: (preferenceId: string, scope: number) => boolean;
-    let extensionIds: Map<string, string>;
+    /** The data of the preferences in the fixture, shared by their nodes and the schema service */
+    let properties: Map<string, PreferenceDataProperty>;
+
+    function setOwner(preferenceId: string, ownerId: string): void {
+        properties.get(preferenceId)!.owner = { id: ownerId, label: ownerId };
+    }
 
     function createComposite(group: string, id: string, parent: CompositeTreeNode, depth: number, expandable: boolean): Preference.CompositeTreeNode {
         const node: Preference.CompositeTreeNode = {
@@ -75,14 +80,24 @@ describe('PreferenceTreeModel', () => {
             id: `${group}@${preferenceId}`,
             preferenceId,
             parent,
-            preference: { data: {} },
+            preference: { data: getPropertyData(preferenceId) },
             depth,
         };
         CompositeTreeNode.addChild(parent, node);
         return node;
     }
 
+    function getPropertyData(preferenceId: string): PreferenceDataProperty {
+        let data = properties.get(preferenceId);
+        if (!data) {
+            data = {};
+            properties.set(preferenceId, data);
+        }
+        return data;
+    }
+
     function createFixture(withCommonlyUsed: boolean = true): TreeFixture {
+        properties = new Map();
         const root: CompositeTreeNode = {
             id: 'root-node-id',
             name: '',
@@ -115,7 +130,6 @@ describe('PreferenceTreeModel', () => {
         schemaEmitter = new Emitter<CompositeTreeNode>();
         scopeEmitter = new Emitter<Preference.SelectedScopeDetails>();
         isValidInScope = () => true;
-        extensionIds = new Map();
         parent.bind(ILogger).to(MockLogger).inSingletonScope();
         parent.bind(LabelProvider).toConstantValue({
             getName: () => '',
@@ -123,13 +137,8 @@ describe('PreferenceTreeModel', () => {
             getLongName: () => '',
         } as any);
         parent.bind(PreferenceSchemaService).toConstantValue({
-            getSchemaProperties: () => new Map(),
+            getSchemaProperties: () => properties,
             isValidInScope: (preferenceId: string, scope: number) => isValidInScope(preferenceId, scope),
-            getSchemaForProperty: (preferenceId: string) => {
-                const id = extensionIds.get(preferenceId);
-                return id ? { extensionInfo: { id, displayName: id }, properties: {} } : undefined;
-            },
-            getSchemas: () => new Set(Array.from(new Set(extensionIds.values()), id => ({ extensionInfo: { id, displayName: id }, properties: {} }))),
         } as any);
         parent.bind(PreferenceService).toConstantValue({
             ready: Promise.resolve(),
@@ -355,8 +364,8 @@ describe('PreferenceTreeModel', () => {
 
         async function createExtensionModel(): Promise<PreferenceTreeModel> {
             const model = await createModel(createFixture());
-            extensionIds.set('editor.fontSize', 'acme.sample');
-            extensionIds.set('editor.cursorStyle', 'other.sample');
+            setOwner('editor.fontSize', 'acme.sample');
+            setOwner('editor.cursorStyle', 'other.sample');
             return model;
         }
 
@@ -388,7 +397,7 @@ describe('PreferenceTreeModel', () => {
 
         it('matches only the extension with a full ID', async () => {
             const model = await createExtensionModel();
-            extensionIds.set('editor.cursorStyle', 'acme.sample-nightly');
+            setOwner('editor.cursorStyle', 'acme.sample-nightly');
             searchbarEmitter.fire('@ext:acme.sample');
             expect(visiblePreferences(model)).to.deep.equal(['editor.fontSize']);
             searchbarEmitter.fire('@ext:acme.samp');
@@ -406,7 +415,7 @@ describe('PreferenceTreeModel', () => {
             const model = await createModel(fixture);
             searchbarEmitter.fire('@ext:acme');
             expect(visiblePreferences(model)).to.be.empty;
-            extensionIds.set('editor.fontSize', 'acme.sample');
+            setOwner('editor.fontSize', 'acme.sample');
             schemaEmitter.fire(fixture.root);
             expect(visiblePreferences(model)).to.deep.equal(['editor.fontSize']);
         });

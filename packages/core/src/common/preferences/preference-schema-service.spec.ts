@@ -41,48 +41,72 @@ describe('PreferenceSchemaServiceImpl', () => {
 
     afterEach(() => service.dispose());
 
-    it('should return the schema that registered a property until it is removed', () => {
-        const schema = { extensionInfo: { id: 'acme.sample', displayName: 'Sample' }, properties: { 'sample.value': { type: 'string' } } } as const;
-        const registration = service.addSchema(schema);
+    it('should set the owner and the title of the schema on its properties', () => {
+        const owner = { id: 'acme.sample', label: 'Sample' };
+        service.addSchema({ owner, title: 'General', properties: { 'sample.value': { type: 'string' } } });
 
-        expect(service.getSchemaForProperty('sample.value')).to.equal(schema);
-
-        registration.dispose();
-        expect(service.getSchemaForProperty('sample.value')).to.be.undefined;
+        expect(service.getSchemaProperty('sample.value')?.owner).to.equal(owner);
+        expect(service.getSchemaProperty('sample.value')?.category).to.equal('General');
     });
 
-    it('should keep the schema that registered a property first', () => {
-        const duplicate = { properties: { [KEY]: { type: 'string' } } } as const;
-        service.addSchema(duplicate);
+    it('should not write the owner and the category into the JSON schema', () => {
+        service.addSchema({ owner: { id: 'acme.sample', label: 'Sample' }, title: 'General', properties: { 'sample.value': { type: 'string' } } });
 
-        expect(service.getSchemaForProperty(KEY)).to.not.equal(duplicate);
+        const property = service.getJSONSchema(PreferenceScope.User).properties?.['sample.value'] as Record<string, unknown>;
+        expect(property).to.not.have.any.keys('owner', 'category');
+    });
+
+    it('should replace an owner and a category that a property declares itself', () => {
+        const owner = { id: 'acme.sample', label: 'Sample' };
+        const forged = { id: 'wasnt.me', label: 'Not Shaggy' };
+        service.addSchema({ owner, title: 'General', properties: { 'sample.value': { type: 'string', owner: forged, category: 'Advanced' } } });
+        service.addSchema({ properties: { 'sample.unowned': { type: 'string', owner: forged, category: 'Advanced' } } });
+
+        expect(service.getSchemaProperty('sample.value')?.owner).to.equal(owner);
+        expect(service.getSchemaProperty('sample.value')?.category).to.equal('General');
+        expect(service.getSchemaProperty('sample.unowned')?.owner).to.be.undefined;
+        expect(service.getSchemaProperty('sample.unowned')?.category).to.be.undefined;
+    });
+
+    it('should keep the property that was registered first', () => {
+        service.addSchema({ owner: { id: 'acme.sample', label: 'Sample' }, properties: { [KEY]: { type: 'number' } } });
+
+        expect(service.getSchemaProperty(KEY)?.type).to.equal('string');
+        expect(service.getSchemaProperty(KEY)?.owner).to.be.undefined;
     });
 
     it('should keep a property when a schema that also declared it is removed', () => {
-        const original = service.getSchemaForProperty(KEY);
         const duplicate = service.addSchema({ properties: { [KEY]: { type: 'number' } } });
 
         duplicate.dispose();
 
         expect(service.getSchemaProperty(KEY)?.type).to.equal('string');
-        expect(service.getSchemaForProperty(KEY)).to.equal(original);
         expect(service.getJSONSchema(PreferenceScope.User).properties?.[KEY]).to.not.be.undefined;
     });
 
     it('should hand a property over to the next schema that declares it when its schema is removed', () => {
-        const first = { properties: { 'sample.value': { type: 'string', default: 'first' } } } as const;
-        const second = { properties: { 'sample.value': { type: 'string', default: 'second' } } } as const;
-        const firstRegistration = service.addSchema(first);
-        service.addSchema(second);
+        const secondOwner = { id: 'acme.second', label: 'Second' };
+        const firstRegistration = service.addSchema({
+            owner: { id: 'acme.first', label: 'First' }, properties: { 'sample.value': { type: 'string', default: 'first' } }
+        });
+        service.addSchema({ owner: secondOwner, properties: { 'sample.value': { type: 'string', default: 'second' } } });
         const events: DefaultValueChangedEvent[] = [];
         service.onDidChangeDefaultValue(event => events.push(event));
 
         firstRegistration.dispose();
 
-        expect(service.getSchemaForProperty('sample.value')).to.equal(second);
+        expect(service.getSchemaProperty('sample.value')?.owner).to.equal(secondOwner);
         expect(service.getDefaultValue('sample.value', undefined)).to.equal('second');
         expect(service.getJSONSchema(PreferenceScope.User).properties?.['sample.value']).to.not.be.undefined;
         expect(events).to.deep.equal([{ key: 'sample.value', overrideIdentifier: undefined, oldValue: 'first', newValue: 'second' }]);
+    });
+
+    it('should remove a property when the only schema that declares it is removed', () => {
+        const registration = service.addSchema({ properties: { 'sample.value': { type: 'string' } } });
+
+        registration.dispose();
+
+        expect(service.getSchemaProperty('sample.value')).to.be.undefined;
     });
 
     it('should restore the previous default when the newest override is removed', () => {

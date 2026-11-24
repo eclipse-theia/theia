@@ -697,7 +697,7 @@ describe('normalize-contributions', () => {
             expect(configuration).to.have.lengthOf(2);
             expect(configuration.map(config => config.title)).to.deep.equal(['General', 'Advanced']);
             for (const config of configuration) {
-                expect(config.extensionInfo).to.deep.equal({ id: 'acme.orchestrator', displayName: 'Orchestrator Extension' });
+                expect(config.owner).to.deep.equal({ id: 'acme.orchestrator', label: 'Orchestrator Extension' });
             }
 
             expect(contributions.submenus).to.deep.equal([{

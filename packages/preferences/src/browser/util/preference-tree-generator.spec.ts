@@ -32,7 +32,7 @@ disableJSDOM();
 
 describe('preference-tree-generator', () => {
 
-    const extensionInfo = { id: 'acme.sample', displayName: 'Sample Extension' };
+    const owner = { id: 'acme.sample', label: 'Sample Extension' };
 
     let schemas: PreferenceSchema[];
     let generator: PreferenceTreeGenerator;
@@ -45,15 +45,16 @@ describe('preference-tree-generator', () => {
         container.bind(PreferenceConfigurations).toConstantValue({ isSectionName: () => false } as unknown as PreferenceConfigurations);
         container.bind(PreferenceSchemaService).toConstantValue({
             onDidChangeSchema: Event.None,
-            getSchemaProperties: () => new Map<string, PreferenceDataProperty>(schemas.flatMap(schema => Object.entries(schema.properties))),
-            getSchemaForProperty: (key: string) => schemas.find(schema => key in schema.properties)
+            getSchemaProperties: () => new Map<string, PreferenceDataProperty>(schemas.flatMap(schema => Object.entries(schema.properties)))
         } as unknown as PreferenceSchemaService);
         container.bind(PreferenceTreeGenerator).toSelf().inSingletonScope();
         generator = container.get(PreferenceTreeGenerator);
     });
 
+    /** Adds a schema whose properties carry its owner and title, as the {@link PreferenceSchemaService} sets them on registration */
     function addSchema(schema: Omit<PreferenceSchema, 'properties'>, ...keys: string[]): void {
-        schemas.push({ ...schema, properties: Object.fromEntries(keys.map(key => [key, { type: 'boolean' }])) });
+        const property: PreferenceDataProperty = { type: 'boolean', owner: schema.owner, category: schema.title };
+        schemas.push({ ...schema, properties: Object.fromEntries(keys.map(key => [key, { ...property }])) });
     }
 
     /** Returns the parent of the node of a preference outside of the 'Commonly Used' section */
@@ -74,8 +75,8 @@ describe('preference-tree-generator', () => {
         return find(root)?.parent;
     }
 
-    it('lists all preferences of an extension under that extension, whatever their prefix', () => {
-        addSchema({ extensionInfo }, 'sample.enabled', 'editor.sampleFeature', 'unrelated.setting');
+    it('lists all preferences of an owner under that owner, whatever their prefix', () => {
+        addSchema({ owner }, 'sample.enabled', 'editor.sampleFeature', 'unrelated.setting');
 
         for (const key of ['sample.enabled', 'editor.sampleFeature', 'unrelated.setting']) {
             const parent = parentOf(key);
@@ -84,40 +85,49 @@ describe('preference-tree-generator', () => {
         }
     });
 
-    it('uses the title of the only configuration as label of the extension', () => {
-        addSchema({ extensionInfo, title: 'Sample' }, 'sample.enabled');
+    it('uses the title of the only configuration as label of the owner', () => {
+        addSchema({ owner, title: 'Sample' }, 'sample.enabled');
 
         expect((parentOf('sample.enabled') as { label?: string }).label).to.equal('Sample');
     });
 
-    it('groups the configurations of an extension by title', () => {
-        addSchema({ extensionInfo, title: 'General' }, 'sample.enabled');
-        addSchema({ extensionInfo, title: 'Advanced' }, 'sample.count');
-        addSchema({ extensionInfo, title: 'Sample Extension' }, 'sample.root');
+    it('groups the configurations of an owner by title', () => {
+        addSchema({ owner, title: 'General' }, 'sample.enabled');
+        addSchema({ owner, title: 'Advanced' }, 'sample.count');
+        addSchema({ owner, title: 'Sample Extension' }, 'sample.root');
 
         expect(parentOf('sample.enabled')?.id).to.equal('extensions.acme.sample@extensions.acme.sample:General');
         expect(parentOf('sample.count')?.id).to.equal('extensions.acme.sample@extensions.acme.sample:Advanced');
         expect(parentOf('sample.root')?.id).to.equal('extensions@extensions.acme.sample');
     });
 
-    it('does not merge extensions with the same title', () => {
-        addSchema({ extensionInfo, title: 'General' }, 'sample.enabled');
-        addSchema({ extensionInfo: { id: 'other.sample', displayName: 'Other Extension' }, title: 'General' }, 'other.enabled');
+    it('does not merge owners with the same title', () => {
+        addSchema({ owner, title: 'General' }, 'sample.enabled');
+        addSchema({ owner: { id: 'other.sample', label: 'Other Extension' }, title: 'General' }, 'other.enabled');
 
         expect(parentOf('sample.enabled')?.id).to.equal('extensions@extensions.acme.sample');
         expect(parentOf('other.enabled')?.id).to.equal('extensions@extensions.other.sample');
     });
 
-    it('does not confuse a category with an extension whose ID ends in the title of the category', () => {
-        addSchema({ extensionInfo: { id: 'acme.tools', displayName: 'Tools' }, title: 'lint' }, 'tools.lint');
-        addSchema({ extensionInfo: { id: 'acme.tools', displayName: 'Tools' }, title: 'format' }, 'tools.format');
-        addSchema({ extensionInfo: { id: 'acme.tools.lint', displayName: 'Lint' } }, 'lint.enabled');
+    it('does not confuse a category with an owner whose ID ends in the title of the category', () => {
+        addSchema({ owner: { id: 'acme.tools', label: 'Tools' }, title: 'lint' }, 'tools.lint');
+        addSchema({ owner: { id: 'acme.tools', label: 'Tools' }, title: 'format' }, 'tools.format');
+        addSchema({ owner: { id: 'acme.tools.lint', label: 'Lint' } }, 'lint.enabled');
 
         expect(parentOf('tools.lint')?.id).to.equal('extensions.acme.tools@extensions.acme.tools:lint');
         expect(parentOf('lint.enabled')?.id).to.equal('extensions@extensions.acme.tools.lint');
     });
 
-    it('places preferences without an extension according to the layout', () => {
+    it('does not confuse a category with an owner whose ID contains the separator of categories', () => {
+        addSchema({ owner: { id: 'tools', label: 'Tools' }, title: 'lint' }, 'tools.lint');
+        addSchema({ owner: { id: 'tools', label: 'Tools' }, title: 'format' }, 'tools.format');
+        addSchema({ owner: { id: 'tools:lint', label: 'Lint' } }, 'lint.enabled');
+
+        expect(parentOf('tools.lint')?.id).to.equal('extensions.tools@extensions.tools:lint');
+        expect(parentOf('lint.enabled')?.id).to.equal('extensions@extensions.tools%3Alint');
+    });
+
+    it('places preferences without an owner according to the layout', () => {
         addSchema({}, 'editor.fontLigatures');
 
         expect(parentOf('editor.fontLigatures')?.id).to.equal('editor@editor.font');

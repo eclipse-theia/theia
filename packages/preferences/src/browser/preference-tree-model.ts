@@ -316,7 +316,7 @@ export class PreferenceTreeModel extends TreeModelImpl {
         if (!this.lastSearchedTags.every(tag => node.preference.data.tags?.includes(tag))) {
             return false;
         }
-        if (this.searchedExtensionIds && !this.searchedExtensionIds.has(this.schemaProvider.getSchemaForProperty(prefID)?.extensionInfo?.id ?? '')) {
+        if (this.searchedExtensionIds && !this.searchedExtensionIds.has(node.preference.data.owner?.id ?? '')) {
             return false;
         }
         return fuzzy.test(this.lastSearchedFuzzy, prefID) // search matches preference name.
@@ -334,9 +334,9 @@ export class PreferenceTreeModel extends TreeModelImpl {
             return;
         }
         const extensionIds = new Set<string>();
-        for (const schema of this.schemaProvider.getSchemas()) {
-            if (schema.extensionInfo) {
-                extensionIds.add(schema.extensionInfo.id);
+        for (const property of this.schemaProvider.getSchemaProperties().values()) {
+            if (property.owner) {
+                extensionIds.add(property.owner.id);
             }
         }
         const candidates = Array.from(extensionIds);
