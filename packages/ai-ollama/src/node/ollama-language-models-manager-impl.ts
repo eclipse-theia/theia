@@ -26,6 +26,7 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
 
     protected _host: string | undefined;
     protected _proxyUrl: string | undefined;
+    protected _requestTimeout: number | undefined;
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
@@ -63,6 +64,7 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
                 const status = this.calculateStatus(host);
                 await this.languageModelRegistry.patchLanguageModel<OllamaModel>(modelDescription.id, {
                     proxy: proxyUrl,
+                    requestTimeout: this._requestTimeout,
                     status,
                     reasoningSupport: modelDescription.reasoningSupport
                 });
@@ -75,6 +77,7 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
                         status,
                         host: hostProvider,
                         proxy: proxyUrl,
+                        requestTimeout: this._requestTimeout,
                         reasoningSupport: modelDescription.reasoningSupport
                     })
                 ]);
@@ -92,6 +95,10 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
         } else {
             this._proxyUrl = undefined;
         }
+    }
+
+    setRequestTimeout(requestTimeout: number | undefined): void {
+        this._requestTimeout = requestTimeout;
     }
 
     async setHost(host: string | undefined): Promise<void> {
