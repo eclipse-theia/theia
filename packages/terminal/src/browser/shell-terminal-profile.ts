@@ -17,7 +17,7 @@
 import { URI } from '@theia/core';
 import { TerminalService } from './base/terminal-service.js';
 import { TerminalWidget, TerminalWidgetOptions } from './base/terminal-widget.js';
-import { TerminalProfile } from './terminal-profile-service.js';
+import { TerminalProfile, TerminalProfileStartOptions } from './terminal-profile-service.js';
 
 export class ShellTerminalProfile implements TerminalProfile {
 
@@ -25,10 +25,10 @@ export class ShellTerminalProfile implements TerminalProfile {
         return this.options.shellPath;
     }
 
-    constructor(protected readonly terminalService: TerminalService, protected readonly options: TerminalWidgetOptions) { }
+    constructor(protected readonly terminalService: TerminalService, protected readonly options: TerminalWidgetOptions, readonly label?: string) { }
 
-    async start(): Promise<TerminalWidget> {
-        const widget = await this.terminalService.newTerminal(this.options);
+    async start(options?: TerminalProfileStartOptions): Promise<TerminalWidget> {
+        const widget = await this.terminalService.newTerminal({ ...this.options, ...options });
         widget.start();
         return widget;
     }
@@ -40,6 +40,6 @@ export class ShellTerminalProfile implements TerminalProfile {
      * @returns a modified copy of this profile
      */
     modify(options: { cwd?: string | URI }): TerminalProfile {
-        return new ShellTerminalProfile(this.terminalService, { ...this.options, ...options });
+        return new ShellTerminalProfile(this.terminalService, { ...this.options, ...options }, this.label);
     }
 }

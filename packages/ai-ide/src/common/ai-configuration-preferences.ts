@@ -23,6 +23,7 @@ import { PreferenceSchema } from '@theia/core/lib/common';
  * in case the user looks in the preferences editor UI to find the configuration.
  */
 export const AiConfigurationPreferences: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         'ai-features.agentSettings.details': {
             type: 'null',

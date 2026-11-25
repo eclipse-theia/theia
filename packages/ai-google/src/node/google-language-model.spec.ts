@@ -63,6 +63,11 @@ describe('GoogleModel reasoning translation', () => {
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'medium' } });
             expect(result.thinkingConfig).to.deep.include({ thinkingLevel: 'medium', includeThoughts: true });
         });
+        it('maps level=xhigh to thinkingConfig.thinkingLevel=xhigh', () => {
+            const model = createModel('gemini-4-neon', 'effort');
+            const result = model.callGetSettings({ messages: [], reasoning: { level: 'xhigh' } });
+            expect(result.thinkingConfig).to.deep.include({ thinkingLevel: 'xhigh', includeThoughts: true });
+        });
         it('omits thinkingConfig entirely when level=off', () => {
             const model = createModel('gemini-3-pro', 'effort');
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'off' } });

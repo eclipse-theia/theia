@@ -19,8 +19,8 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { PreferenceInspection, PreferenceScope, PreferenceService } from '@theia/core/lib/common/preferences';
+import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { AiConfigurationChange, AiConfigurationInspection, AiConfigurationService } from '../common/ai-configuration-service.js';
-import { TrustAwarePreferenceReader } from './trust-aware-preference-reader.js';
 
 /**
  * Prefix shared by all AI-related preference keys. Only changes to keys under this namespace are
@@ -34,8 +34,8 @@ export class AiConfigurationServiceImpl implements AiConfigurationService {
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
-    @inject(TrustAwarePreferenceReader)
-    protected readonly trustAwareReader: TrustAwarePreferenceReader;
+    @inject(WorkspaceTrustService)
+    protected readonly trustService: WorkspaceTrustService;
 
     protected readonly toDispose = new DisposableCollection();
 
@@ -49,7 +49,7 @@ export class AiConfigurationServiceImpl implements AiConfigurationService {
 
     @postConstruct()
     protected init(): void {
-        this._ready.resolve(Promise.all([this.preferenceService.ready, this.trustAwareReader.ready]).then(() => undefined));
+        this._ready.resolve(Promise.all([this.preferenceService.ready, this.trustService.getWorkspaceTrust()]).then(() => undefined));
         this.toDispose.push(this.onDidChangeEmitter);
         this.toDispose.push(
             this.preferenceService.onPreferenceChanged(change => {
@@ -62,20 +62,10 @@ export class AiConfigurationServiceImpl implements AiConfigurationService {
                 }
             })
         );
-        this.toDispose.push(
-            // A trust transition can change the effective value of any trust-gated key. Emit a
-            // single change with no `preferenceName` and a sentinel `affects()` so listeners
-            // re-query, mirroring how trust-aware services already react to trust changes.
-            this.trustAwareReader.onDidChangeTrust(() => this.onDidChangeEmitter.fire({
-                preferenceName: undefined,
-                affects: () => true,
-                affectsPreference: preferenceName => preferenceName.startsWith(AI_PREFERENCE_PREFIX)
-            }))
-        );
     }
 
     get<T>(key: string, defaultValue?: T, resourceUri?: string): T | undefined {
-        return this.trustAwareReader.get<T>(key, defaultValue, resourceUri);
+        return this.preferenceService.get<T>(key, { fallback: defaultValue, resource: resourceUri });
     }
 
     set(key: string, value: unknown, scope: PreferenceScope, resourceUri?: string): Promise<void> {
@@ -95,29 +85,24 @@ export class AiConfigurationServiceImpl implements AiConfigurationService {
     }
 
     /**
-     * Derives the trust-aware {@link AiConfigurationInspection.sourceScope} and effective `value`
-     * from a raw {@link PreferenceInspection}. The workspace-trust rule is applied once, via
-     * {@link TrustAwarePreferenceReader.suppressUntrusted} (the single owner of that rule): when
-     * untrusted, folder and workspace scope values are cleared, so the scope walk below naturally
-     * resolves to the session, user or default scope and the whole inspection stays consistent with {@link get}.
+     * Derives {@link AiConfigurationInspection.sourceScope} and the effective `value` from a {@link PreferenceInspection}.
      *
      * Note: `value` reflects the highest-precedence defined scope, matching `PreferenceService.inspect`. For
      * object-valued preferences this can differ from {@link get}, which deep-merges across scopes.
      */
     protected enrichInspection<T extends JSONValue>(inspection: PreferenceInspection<T>): AiConfigurationInspection<T> {
-        const suppressed = this.trustAwareReader.suppressUntrusted(inspection);
-        if (suppressed.sessionValue !== undefined) {
-            return { ...suppressed, sourceScope: PreferenceScope.Session, value: suppressed.sessionValue };
+        if (inspection.sessionValue !== undefined) {
+            return { ...inspection, sourceScope: PreferenceScope.Session, value: inspection.sessionValue };
         }
-        if (suppressed.workspaceFolderValue !== undefined) {
-            return { ...suppressed, sourceScope: PreferenceScope.Folder, value: suppressed.workspaceFolderValue };
+        if (inspection.workspaceFolderValue !== undefined) {
+            return { ...inspection, sourceScope: PreferenceScope.Folder, value: inspection.workspaceFolderValue };
         }
-        if (suppressed.workspaceValue !== undefined) {
-            return { ...suppressed, sourceScope: PreferenceScope.Workspace, value: suppressed.workspaceValue };
+        if (inspection.workspaceValue !== undefined) {
+            return { ...inspection, sourceScope: PreferenceScope.Workspace, value: inspection.workspaceValue };
         }
-        if (suppressed.globalValue !== undefined) {
-            return { ...suppressed, sourceScope: PreferenceScope.User, value: suppressed.globalValue };
+        if (inspection.globalValue !== undefined) {
+            return { ...inspection, sourceScope: PreferenceScope.User, value: inspection.globalValue };
         }
-        return { ...suppressed, sourceScope: undefined, value: suppressed.defaultValue };
+        return { ...inspection, sourceScope: undefined, value: inspection.defaultValue };
     }
 }

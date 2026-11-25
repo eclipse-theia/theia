@@ -29,6 +29,7 @@ const AI_PREFERENCE_PREFIX = 'ai-features.';
 export const AI_CONFIGURATION_OPEN_PREFERENCE_ID = 'ai-features.openConfiguration';
 
 export const aiConfigurationOpenPlaceholderSchema: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [AI_CONFIGURATION_OPEN_PREFERENCE_ID]: {
             // eslint-disable-next-line no-null/no-null

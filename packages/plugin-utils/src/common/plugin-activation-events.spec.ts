@@ -77,6 +77,20 @@ describe('plugin-activation-events', () => {
         ]);
     });
 
+    it('derives activation events from contributed terminal profiles', () => {
+        const pkg = manifest({
+            contributes: {
+                terminal: {
+                    profiles: [{ id: 'sample.terminal', title: 'Sample Terminal' }]
+                }
+            }
+        });
+
+        updateActivationEvents(pkg);
+
+        expect(pkg.activationEvents).to.include('onTerminalProfile:sample.terminal');
+    });
+
     it('supports a single command object instead of an array', () => {
         const pkg = manifest({
             contributes: {

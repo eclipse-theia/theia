@@ -23,7 +23,7 @@ import { Disposable } from '@theia/core/lib/common/disposable';
 import {
     PreferenceProviderImpl, PreferenceScope, PreferenceProviderDataChange, PreferenceSchemaService,
     PreferenceConfigurations, PreferenceUtils, PreferenceLanguageOverrideService,
-    Listener
+    PreferenceExclusionService, ExcludedPreference, Listener
 } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -59,13 +59,15 @@ export interface PreferenceStorage extends Disposable {
 export const PreferenceStorageFactory = Symbol('PreferenceStorageFactory');
 export type PreferenceStorageFactory = (uri: URI, scope: PreferenceScope) => PreferenceStorage;
 
-const OVERRIDE_PROPERTY = '\\[(.*)\\]$';
-const OVERRIDE_PROPERTY_PATTERN = new RegExp(OVERRIDE_PROPERTY);
+const OVERRIDDEN_PREFERENCE_PATTERN = /^((?:\[[^\]]+\])+)\.(.+)$/;
 @injectable()
 export abstract class AbstractResourcePreferenceProvider extends PreferenceProviderImpl {
     protected preferenceStorage: PreferenceStorage;
 
     protected preferences: Record<string, any> = {};
+    /** The content of the settings file, including the values the {@link PreferenceExclusionService} omits from {@link preferences}. */
+    protected fileContent: Record<string, any> = {};
+    protected appliedExclusions: { fileContent: Record<string, any>, excluded: string } | undefined;
     protected _fileExists = false;
     protected readonly loading = new Deferred();
     protected readonly onDidChangeValidityEmitter = new Emitter<boolean>();
@@ -89,6 +91,8 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     protected readonly preferenceOverrideService: PreferenceLanguageOverrideService;
     @inject(PreferenceStorageFactory)
     protected readonly preferenceStorageFactory: PreferenceStorageFactory;
+    @inject(PreferenceExclusionService)
+    protected readonly exclusionService: PreferenceExclusionService;
 
     @inject(ILogger) @named('preferences:AbstractResourcePreferenceProvider')
     protected readonly logger: ILogger;
@@ -110,6 +114,10 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
             await this.fireDidPreferencesChanged(); // Ensure all consumers of the event have received it.¨
             return true;
         });
+        this.toDispose.pushAll([
+            this.exclusionService.onDidChange(() => this.applyExclusions()),
+            this.schemaProvider.onDidChangeSchema(() => this.applyExclusions())
+        ]);
         await this.readPreferencesFromFile();
         this._ready.resolve();
         this.loading.resolve();
@@ -187,8 +195,46 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         } catch {
             preferencesInJson = {};
         }
-        const parsedPreferences = this.getParsedContent(preferencesInJson);
-        this.handlePreferenceChanges(parsedPreferences);
+        if (this.toDispose.disposed) {
+            return;
+        }
+        this.fileContent = this.getParsedContent(preferencesInJson);
+        this.applyExclusions();
+    }
+
+    /**
+     * Applies the {@link PreferenceExclusionService} to the content of the settings file. Values that become
+     * excluded or included fire the same change events as an edit of the file.
+     */
+    protected applyExclusions(): void {
+        const configUri = this.getUri();
+        const scope = this.getScope();
+        const preferences: Record<string, any> = {};
+        const excluded: ExcludedPreference[] = [];
+        for (const [key, value] of Object.entries(this.fileContent)) {
+            const { preferenceName, overrideIdentifier } = this.parsePreferenceKey(key);
+            const property = this.schemaProvider.getSchemaProperty(preferenceName);
+            if (this.exclusionService.isExcluded(preferenceName, { scope, configUri, property, overrideIdentifier })) {
+                excluded.push({ preferenceName, overrideIdentifier, scope, configUri });
+            } else {
+                preferences[key] = value;
+            }
+        }
+        const applied = {
+            fileContent: this.fileContent,
+            excluded: JSON.stringify([scope, excluded.map(({ preferenceName, overrideIdentifier }) => [preferenceName, overrideIdentifier])])
+        };
+        if (this.appliedExclusions?.fileContent === applied.fileContent && this.appliedExclusions.excluded === applied.excluded) {
+            return;
+        }
+        this.appliedExclusions = applied;
+        this.exclusionService.setExcludedPreferences(configUri, excluded);
+        this.handlePreferenceChanges(preferences);
+    }
+
+    protected parsePreferenceKey(key: string): { preferenceName: string, overrideIdentifier?: string } {
+        const match = OVERRIDDEN_PREFERENCE_PATTERN.exec(key);
+        return match ? { preferenceName: match[2], overrideIdentifier: match[1].slice(1, -1) } : { preferenceName: key };
     }
 
     protected parse(content: string): any {
@@ -207,16 +253,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         const prefChanges: PreferenceProviderDataChange[] = [];
         const uri = this.getUri();
         for (const prefName of prefNames.values()) {
-            let overrideIdentifier: string | undefined;
-            let realName = prefName;
-            const index = prefName.indexOf('.');
-            if (index !== -1) {
-                const matches = prefName.substring(0, index).match(OVERRIDE_PROPERTY_PATTERN);
-                overrideIdentifier = matches && matches[1] || undefined;
-                if (overrideIdentifier) {
-                    realName = prefName.substring(index + 1);
-                }
-            }
+            const { preferenceName: realName, overrideIdentifier } = this.parsePreferenceKey(prefName);
 
             const oldValue = oldPrefs[prefName];
             const newValue = newPrefs[prefName];
@@ -242,6 +279,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     }
 
     protected reset(): void {
-        this.handlePreferenceChanges({});
+        this.fileContent = {};
+        this.applyExclusions();
     }
 }

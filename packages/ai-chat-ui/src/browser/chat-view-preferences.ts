@@ -26,6 +26,7 @@ export const CHAT_VIEW_ALLOWED_RESOURCE_URLS = 'ai-features.chat.allowedResource
 export const CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE_DEFAULT = 80;
 
 export const chatViewPreferenceSchema: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [CHAT_VIEW_TOKEN_USAGE_ENABLED]: {
             type: 'boolean',

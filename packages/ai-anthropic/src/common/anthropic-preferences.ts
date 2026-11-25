@@ -28,6 +28,7 @@ export const SERVER_SIDE_COMPACTION_PREF = 'ai-features.anthropic.serverSideComp
 export const SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF = 'ai-features.anthropic.serverSideCompactionTokenThreshold';
 
 export const AnthropicPreferencesSchema: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [API_KEY_PREF]: {
             type: 'string',

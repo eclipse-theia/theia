@@ -156,6 +156,14 @@ export class WorkspaceTrustService {
         this.toDispose.dispose();
     }
 
+    /**
+     * The trust state of the current workspace, or `undefined` while it is being resolved: at startup,
+     * and again after the workspace changed.
+     */
+    get currentWorkspaceTrust(): boolean | undefined {
+        return this.currentTrust;
+    }
+
     getWorkspaceTrust(): Promise<boolean> {
         // Return current trust if already resolved, otherwise wait for initial resolution
         if (this.currentTrust !== undefined) {

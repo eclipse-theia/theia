@@ -22,6 +22,7 @@ import {
 export const AGENT_SETTINGS_PREF = 'ai-features.agentSettings';
 
 export const AgentSettingsPreferenceSchema: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [AGENT_SETTINGS_PREF]: {
             type: 'object',

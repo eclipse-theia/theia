@@ -21,6 +21,7 @@ export const HOST_PREF = 'ai-features.ollama.ollamaHost';
 export const MODELS_PREF = 'ai-features.ollama.ollamaModels';
 
 export const OllamaPreferencesSchema: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [HOST_PREF]: {
             type: 'string',

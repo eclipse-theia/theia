@@ -303,6 +303,67 @@ describe('FileReadTrackerImpl', () => {
         expect(await tracker.getChangedFiles(SESSION)).to.deep.equal(['workspace/b.ts', 'workspace/c.ts']);
     });
 
+    describe('forceRefresh', () => {
+
+        it('reports a stale file but keeps it protected until it is actually re-read', async () => {
+            const tracker = new TestFileReadTracker();
+            await tracker.agentRead();
+            tracker.somebodyElseChanges('changed');
+            expect(await tracker.isStale(SESSION, FILE)).to.be.true;
+
+            const stale = await tracker.forceRefresh(SESSION);
+
+            // the file is surfaced, but protection is preserved: it is still stale until a genuine read
+            expect(stale).to.deep.equal([FILE_LABEL]);
+            expect(await tracker.isStale(SESSION, FILE)).to.be.true;
+            expect(await tracker.getChangedFiles(SESSION)).to.deep.equal([FILE_LABEL]);
+
+            // only a real agent read clears the protection
+            await tracker.agentRead();
+            expect(await tracker.isStale(SESSION, FILE)).to.be.false;
+        });
+
+        it('checks only the given file when a uri is passed', async () => {
+            const tracker = new TestFileReadTracker();
+            const other = ROOT.resolve('b.ts');
+            tracker.contents.set(other.toString(), 'original');
+            await tracker.agentRead();
+            await tracker.agentRead(other);
+            tracker.somebodyElseChanges('changed', FILE);
+            tracker.somebodyElseChanges('changed', other);
+
+            const stale = await tracker.forceRefresh(SESSION, FILE);
+
+            expect(stale).to.deep.equal([FILE_LABEL]);
+            // both stay protected; the un-asked file is untouched
+            expect(await tracker.isStale(SESSION, FILE)).to.be.true;
+            expect(await tracker.isStale(SESSION, other)).to.be.true;
+        });
+
+        it('returns nothing for a session that was never tracked', async () => {
+            const tracker = new TestFileReadTracker();
+            expect(await tracker.forceRefresh('unknown-session')).to.be.empty;
+        });
+
+        it('ignores files that are not currently flagged as stale', async () => {
+            const tracker = new TestFileReadTracker();
+            await tracker.agentRead();
+
+            expect(await tracker.forceRefresh(SESSION)).to.be.empty;
+        });
+
+        it('reports a stale file that has since been deleted, then forgets it', async () => {
+            const tracker = new TestFileReadTracker();
+            await tracker.agentRead();
+            tracker.somebodyElseDeletes();
+
+            const stale = await tracker.forceRefresh(SESSION);
+
+            expect(stale).to.deep.equal([FILE_LABEL]);
+            expect(await tracker.getChangedFiles(SESSION)).to.be.empty;
+        });
+    });
+
     it('keeps a re-read file tracked, evicting the one untouched for longest', async () => {
         const tracker = new TestFileReadTracker();
         const [a, b, c] = ['a', 'b', 'c'].map(name => new URI(`file:///workspace/${name}.ts`));
