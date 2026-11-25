@@ -30,7 +30,7 @@ import { VSXAllVersions, VSXExtensionRaw, VSXSearchEntry, VSXSearchOptions, VSXT
 import { OVSXApiFilterProvider } from '@theia/ovsx-client';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { VSXRegistryService } from '../common/vsx-registry-service.js';
-import { RequestContext, RequestService } from '@theia/core/shared/@theia/request';
+import { RequestService } from '@theia/core/shared/@theia/request';
 import { HostedPluginServer, PluginIdentifiers, PluginType } from '@theia/plugin-ext';
 import { HostedPluginWatcher } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin-watcher';
 import { ILogger } from '@theia/core';
@@ -194,7 +194,7 @@ export class VSXExtensionsModel {
                     // fetched directly by the frontend. A remote registry README must go through the backend
                     // `VSXRegistryService`, which only allows fetching from configured OVSX registry origins.
                     const rawReadme = extension.localReadmeUrl
-                        ? RequestContext.asText(await this.request.request({ url: extension.localReadmeUrl }))
+                        ? await this.fetchLocalReadme(extension.localReadmeUrl)
                         : await this.vsxRegistryService.fetchReadme(extension.readmeUrl);
                     if (rawReadme) {
                         const readme = this.compileReadme(rawReadme);
@@ -206,6 +206,21 @@ export class VSXExtensionsModel {
             }
             return extension;
         });
+    }
+
+    /**
+     * Fetches the README of an installed extension from the local plugin host.
+     *
+     * The URL is same-origin, so it is fetched directly by the frontend. It must not go through the
+     * `RequestService`: in Electron, that service always proxies requests to the backend, which only
+     * allows URLs matching the contributed allow-list patterns and rejects the local plugin host URL.
+     */
+    protected async fetchLocalReadme(url: string): Promise<string> {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Request to '${url}' failed with status ${response.status}.`);
+        }
+        return response.text();
     }
 
     protected async initInstalled(): Promise<void> {
