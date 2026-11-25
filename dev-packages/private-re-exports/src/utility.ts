@@ -52,3 +52,18 @@ export function parseModule(moduleName: string): [string, string?] {
         return [packageName, subModuleName];
     }
 }
+
+/**
+ * Returns the entry of the `exports` map of a package for the given sub-module, or for the main module if `subModuleName` is undefined.
+ * An `exports` object whose keys do not start with `.` lists the conditions of the main module, e.g. `{ "import": ..., "require": ... }`.
+ */
+export function getExportsEntry(packageExports: unknown, subModuleName: string | undefined): unknown {
+    if (typeof packageExports !== 'object' || !packageExports || Array.isArray(packageExports)) {
+        return undefined;
+    }
+    const keys = Object.keys(packageExports);
+    if (keys.length > 0 && keys.every(key => !key.startsWith('.'))) {
+        return subModuleName ? undefined : packageExports;
+    }
+    return (packageExports as Record<string, unknown>)[subModuleName ? `./${subModuleName}` : '.'];
+}

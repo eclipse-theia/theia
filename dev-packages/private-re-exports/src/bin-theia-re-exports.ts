@@ -21,7 +21,7 @@ import path = require('path');
 import semver = require('semver');
 import yargs = require('yargs');
 import ts = require('typescript');
-import { parseModule } from './utility';
+import { getExportsEntry, parseModule } from './utility';
 import { ReExport, PackageReExports } from './package-re-exports';
 type EOL = '\r\n' | '\n' | '\r';
 
@@ -267,9 +267,7 @@ function isCommonJsModule(moduleName: string, fromDir: string): boolean {
     }
     const packageJson = JSON.parse(fs.readFileSync(path.join(packageRoot, 'package.json'), 'utf8'));
     // A dual package provides a separate entry point for the `import` condition, which is an ES module.
-    const exportsEntry = typeof packageJson.exports === 'object' && packageJson.exports
-        ? packageJson.exports[subModuleName ? `./${subModuleName}` : '.']
-        : undefined;
+    const exportsEntry = getExportsEntry(packageJson.exports, subModuleName);
     if (typeof exportsEntry === 'object' && exportsEntry && 'import' in exportsEntry) {
         return false;
     }
