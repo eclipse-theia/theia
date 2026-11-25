@@ -21,6 +21,7 @@ import { ChatAgent, ChatAgentRecommendationService } from '@theia/ai-chat/lib/co
 import { Agent, AIVariableContribution, bindToolProvider } from '@theia/ai-core/lib/common';
 import { ArchitectAgent } from './architect-agent.js';
 import { CoderAgent } from './coder-agent.js';
+import { GenericEditorAgent } from './generic-editor-agent.js';
 import { SummarizeSessionCommandContribution } from './summarize-session-command-contribution.js';
 import {
     AccessibleRootContribution,
@@ -180,6 +181,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(CoderAgent).toSelf().inSingletonScope();
     bind(Agent).toService(CoderAgent);
     bind(ChatAgent).toService(CoderAgent);
+
+    bind(GenericEditorAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(GenericEditorAgent);
+    bind(ChatAgent).toService(GenericEditorAgent);
 
     bind(AgentsMdAgent).toSelf().inSingletonScope();
     bind(Agent).toService(AgentsMdAgent);
