@@ -48,6 +48,7 @@ import { PreviewableWidget } from '../widgets/previewable-widget.js';
 import { WindowService } from '../window/window-service.js';
 import { TheiaSplitPanel } from './theia-split-panel.js';
 import { ILogger } from '../../common/logger.js';
+import { WidgetManager } from '../widget-manager.js';
 
 /** The class name added to ApplicationShell instances. */
 export const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -998,6 +999,11 @@ export class ApplicationShell extends Widget {
     @inject(WidgetAreaResolver) @optional()
     protected readonly widgetAreaResolver: WidgetAreaResolver | undefined;
 
+    @inject(WidgetManager)
+    protected readonly widgetManager: WidgetManager;
+
+    protected mainAreaSections: ApplicationShell.MainAreaSection[] | undefined;
+
     protected resolveWidgetArea(widget: Widget, options?: Readonly<ApplicationShell.WidgetOptions>): Readonly<ApplicationShell.WidgetOptions> | undefined {
         if (this.widgetAreaResolver && !options?.ref) {
             const requestedArea = options?.area || 'main';
@@ -1023,7 +1029,7 @@ export class ApplicationShell extends Widget {
             return;
         }
         const resolvedOptions = this.resolveWidgetArea(widget, options);
-        const { area, addOptions } = this.getInsertionOptions(resolvedOptions);
+        const { area, addOptions } = this.getInsertionOptions(resolvedOptions, widget);
         const sidePanelOptions: SidePanel.WidgetOptions = { rank: options?.rank };
         switch (area) {
             case 'main':
@@ -1063,9 +1069,19 @@ export class ApplicationShell extends Widget {
         }
     }
 
-    getInsertionOptions(options?: Readonly<ApplicationShell.WidgetOptions>): { area: string; addOptions: TheiaDockPanel.AddOptions; } {
+    /**
+     * @param widget the widget to add, if known already. Used to pick its main area section, see {@link setMainAreaSections}.
+     */
+    getInsertionOptions(options?: Readonly<ApplicationShell.WidgetOptions>, widget?: Widget): { area: string; addOptions: TheiaDockPanel.AddOptions; } {
         let ref: Widget | undefined = options?.ref;
         let area: ApplicationShell.Area = options?.area || 'main';
+        if (!ref && area === 'main' && this.mainAreaSections
+            && !ApplicationShell.isOpenToSideMode(options?.mode) && !ApplicationShell.isReplaceMode(options?.mode)) {
+            const sectionOptions = this.getMainAreaSectionInsertionOptions(widget);
+            if (sectionOptions) {
+                return { area, addOptions: { ...sectionOptions, mode: sectionOptions.mode ?? options?.mode } };
+            }
+        }
         if (!ref && (area === 'main' || area === 'bottom')) {
             const tabBar = this.getTabBarFor(area);
             ref = tabBar && tabBar.currentTitle && tabBar.currentTitle.owner || undefined;
@@ -1093,6 +1109,88 @@ export class ApplicationShell extends Widget {
             addOptions.mode = options?.mode;
         }
         return { area, addOptions };
+    }
+
+    /**
+     * Splits the main area into sections, from left to right, e.g. for a perspective.
+     * Widgets are only added to stacks of their own section, and a stack is created next to the neighboring section if there is none yet.
+     * Pass `undefined` to go back to a main area without sections.
+     */
+    setMainAreaSections(sections: ApplicationShell.MainAreaSection[] | undefined): void {
+        this.mainAreaSections = sections?.length ? sections : undefined;
+    }
+
+    /**
+     * The index of the main area section of the given widget, or `undefined` if it belongs to none.
+     * The widget is `undefined` when it is not known yet, e.g. when the editor manager looks for an editor to reuse.
+     */
+    protected getMainAreaSectionIndex(widget: Widget | undefined): number | undefined {
+        const sections = this.mainAreaSections;
+        if (!sections) {
+            return undefined;
+        }
+        const factoryId = widget && this.widgetManager.getDescription(widget)?.factoryId;
+        let index = widget ? sections.findIndex(section =>
+            (factoryId !== undefined && section.factories?.includes(factoryId)) || section.matches?.(widget)) : -1;
+        if (index < 0) {
+            index = sections.findIndex(section => section.default);
+        }
+        return index < 0 ? undefined : index;
+    }
+
+    /** The section of a stack is the section of its widgets. */
+    protected getTabBarSectionIndex(tabBar: TabBar<Widget>): number | undefined {
+        return tabBar.titles.length > 0 ? this.getMainAreaSectionIndex(tabBar.titles[0].owner) : undefined;
+    }
+
+    /** The stack with the most recently focused widget, or the first stack if none of them was focused yet. */
+    protected getMostRecentlyFocusedTabBar(tabBars: TabBar<Widget>[]): TabBar<Widget> | undefined {
+        let result: TabBar<Widget> | undefined;
+        let resultFocusNumber = -Infinity;
+        for (const tabBar of tabBars) {
+            const focusNumber = Math.max(...tabBar.titles.map(title => this.tracker.focusNumber(title.owner)));
+            if (focusNumber > resultFocusNumber) {
+                result = tabBar;
+                resultFocusNumber = focusNumber;
+            }
+        }
+        return result;
+    }
+
+    protected getMainAreaSectionInsertionOptions(widget: Widget | undefined): TheiaDockPanel.AddOptions | undefined {
+        const sectionIndex = this.getMainAreaSectionIndex(widget);
+        if (sectionIndex === undefined) {
+            return undefined;
+        }
+        const tabBars = this.mainAreaTabBars;
+        const current = this.mainPanel.currentTabBar;
+        const sameSection = current && this.getTabBarSectionIndex(current) === sectionIndex
+            ? current
+            : this.getMostRecentlyFocusedTabBar(tabBars.filter(tabBar => this.getTabBarSectionIndex(tabBar) === sectionIndex));
+        if (sameSection?.currentTitle) {
+            return { ref: sameSection.currentTitle.owner };
+        }
+        // No stack for this section yet: split next to the closest section on its left, or else on its right
+        let left: { tabBar: TabBar<Widget>, index: number } | undefined;
+        let right: { tabBar: TabBar<Widget>, index: number } | undefined;
+        for (const tabBar of tabBars) {
+            const index = this.getTabBarSectionIndex(tabBar);
+            if (index === undefined || !tabBar.currentTitle) {
+                continue;
+            }
+            if (index < sectionIndex && (!left || index >= left.index)) {
+                left = { tabBar, index };
+            } else if (index > sectionIndex && (!right || index < right.index)) {
+                right = { tabBar, index };
+            }
+        }
+        if (left) {
+            return { ref: left.tabBar.currentTitle!.owner, mode: 'split-right' };
+        }
+        if (right) {
+            return { ref: right.tabBar.currentTitle!.owner, mode: 'split-left' };
+        }
+        return {};
     }
 
     /**
@@ -2395,6 +2493,19 @@ export namespace ApplicationShell {
          * if false then won't be saved on close
          */
         save?: boolean | undefined
+    }
+
+    /**
+     * A section of the main area. Widgets are only added to stacks of their own section.
+     */
+    export interface MainAreaSection {
+        id: string;
+        /** IDs of the widget factories whose widgets belong to this section. */
+        factories?: string[];
+        /** Alternatively, a rule for the widgets that belong to this section. */
+        matches?: (widget: Widget) => boolean;
+        /** Whether this section receives all widgets that no other section matches. */
+        default?: boolean;
     }
 
     /**

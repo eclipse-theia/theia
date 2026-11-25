@@ -40,6 +40,7 @@ describe('PerspectiveService', () => {
     let widgetAreaResolver: WidgetAreaResolverImpl;
     let tryGetWidgetStub: sinon.SinonStub;
     let getWidgetsStub: sinon.SinonStub;
+    let setMainAreaSectionsStub: sinon.SinonStub;
     let mockLogger: { debug: sinon.SinonStub; warn: sinon.SinonStub };
     let testWidget: Widget;
     let toTearDown: () => void;
@@ -60,6 +61,7 @@ describe('PerspectiveService', () => {
         collapsePanelStub = sinon.stub().resolves();
         widgetAreaResolver = new WidgetAreaResolverImpl();
         getWidgetsStub = sinon.stub().returns([]);
+        setMainAreaSectionsStub = sinon.stub();
         mockLogger = { debug: sinon.stub(), warn: sinon.stub() };
 
         const mockShell = {
@@ -70,7 +72,8 @@ describe('PerspectiveService', () => {
             getLayoutData: getLayoutDataStub,
             setLayoutData: setLayoutDataStub,
             collapsePanel: collapsePanelStub,
-            getWidgets: getWidgetsStub
+            getWidgets: getWidgetsStub,
+            setMainAreaSections: setMainAreaSectionsStub
         };
 
         tryGetWidgetStub = sinon.stub().returns(undefined);
@@ -494,6 +497,27 @@ describe('PerspectiveService', () => {
         expect(service.getActivePerspective()?.id).to.equal('ai-first');
         expect(setLayoutDataStub.calledOnce).to.be.true;
         expect(setLayoutDataStub.calledWith(aiLayout)).to.be.true;
+    });
+
+    it('should set the main area sections of the perspective when switching', async () => {
+        const mainAreaSections = [{ id: 'chat', factories: ['chat-view'] }, { id: 'editors', default: true }];
+        service.registerPerspective({ id: 'sections', label: 'Sections', viewPlacements: new Map(), mainAreaSections });
+        service.registerPerspective({ id: 'no-sections', label: 'No Sections', viewPlacements: new Map() });
+
+        await service.switchPerspective('sections');
+        expect(setMainAreaSectionsStub.lastCall.args[0]).to.equal(mainAreaSections);
+
+        await service.switchPerspective('no-sections');
+        expect(setMainAreaSectionsStub.lastCall.args[0]).to.be.undefined;
+    });
+
+    it('should set the main area sections of the restored perspective', () => {
+        const mainAreaSections = [{ id: 'editors', default: true }];
+        service.registerPerspective({ id: 'sections', label: 'Sections', viewPlacements: new Map(), mainAreaSections });
+
+        service.onLayoutRestored('sections');
+
+        expect(setMainAreaSectionsStub.calledOnceWith(mainAreaSections)).to.be.true;
     });
 
     // --- Chrome control options tests ---

@@ -44,6 +44,8 @@ export interface PerspectiveDescriptor {
     viewPlacements: Map<string, ApplicationShell.Area>;
     /** Chrome control options for this perspective */
     chromeOptions?: PerspectiveChromeOptions;
+    /** Splits the main area into sections, from left to right. Without it, the main area behaves as usual. */
+    mainAreaSections?: ApplicationShell.MainAreaSection[];
     /** Per-area primary view: the widget to activate last in each shell area, so it gets focus. */
     primaryViews?: Partial<Record<ApplicationShell.Area, string>>;
     /** Called when perspective is activated */
@@ -220,6 +222,7 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
 
     onLayoutRestored(activePerspectiveId: string): void {
         this.updateActivePerspectiveContextKey(activePerspectiveId);
+        this.shell.setMainAreaSections(this.perspectives.get(activePerspectiveId)?.mainAreaSections);
     }
 
     initialize(): void {
@@ -285,6 +288,7 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
 
         this.activePerspectiveId = id;
         this.widgetAreaResolver.setActivePlacementMap(descriptor.viewPlacements);
+        this.shell.setMainAreaSections(descriptor.mainAreaSections);
 
         try {
             const savedLayout = this.savedLayouts.get(id);

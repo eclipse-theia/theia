@@ -41,6 +41,10 @@ export class AIFirstPerspectiveContribution implements PerspectiveContribution {
                 [SCM_VIEW_CONTAINER_ID, 'right'],
                 [AISessionsWidget.ID, 'left']
             ]),
+            mainAreaSections: [
+                { id: 'chat', factories: [ChatViewWidget.ID] },
+                { id: 'editors', default: true }
+            ],
             primaryViews: { right: EXPLORER_VIEW_CONTAINER_ID },
             chromeOptions
         });
