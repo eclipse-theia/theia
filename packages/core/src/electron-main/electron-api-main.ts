@@ -45,6 +45,7 @@ import {
     CHANNEL_SHOW_ITEM_IN_FOLDER,
     CHANNEL_READ_CLIPBOARD,
     CHANNEL_WRITE_CLIPBOARD,
+    CHANNEL_COPY_OR_CUT_SELECTION,
     CHANNEL_IPC_CONNECTION,
     CHANNEL_IS_FULL_SCREEN,
     InternalMenuDto,
@@ -291,6 +292,15 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
         }));
         ipcMain.on(CHANNEL_WRITE_CLIPBOARD, (event, text) => {
             clipboard.writeText(text).catch(error => console.warn('Could not write to the clipboard', error));
+        });
+        ipcMain.handle(CHANNEL_COPY_OR_CUT_SELECTION, (event, command: unknown) => {
+            if (command === 'copy') {
+                event.sender.copy();
+            } else if (command === 'cut') {
+                event.sender.cut();
+            } else {
+                throw new Error('Invalid clipboard command');
+            }
         });
 
         nativeKeymap.onDidChangeKeyboardLayout(() => {

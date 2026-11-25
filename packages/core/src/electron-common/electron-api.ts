@@ -138,6 +138,7 @@ export interface TheiaCoreAPI {
 
     readClipboard(): Promise<string>;
     writeClipboard(text: string): void;
+    copyOrCutSelection(command: 'copy' | 'cut'): Promise<void>;
 
     onKeyboardLayoutChanged(handler: (newLayout: NativeKeyboardLayout) => void): Disposable;
 
@@ -210,6 +211,7 @@ export const CHANNEL_APP_STATE_CHANGED = 'ApplicationStateChanged';
 
 export const CHANNEL_READ_CLIPBOARD = 'ReadClipboard';
 export const CHANNEL_WRITE_CLIPBOARD = 'WriteClipboard';
+export const CHANNEL_COPY_OR_CUT_SELECTION = 'CopyOrCutSelection';
 
 export const CHANNEL_KEYBOARD_LAYOUT_CHANGED = 'KeyboardLayoutChanged';
 export const CHANNEL_IPC_CONNECTION = 'IpcConnection';
