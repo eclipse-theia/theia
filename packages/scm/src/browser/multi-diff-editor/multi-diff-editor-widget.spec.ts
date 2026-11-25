@@ -943,21 +943,38 @@ describe('Multi-Diff Editor — widgets', () => {
                 editor.goToPreviousEntry();
                 expect(document.activeElement).to.equal(document.body);
                 changed.resetHistory();
-                editor.goToNextEntry();
-                expect(document.activeElement).to.equal(headerOf(first));
-                expect(changed.called).to.be.true;
-                expect(editor.hasPreviousEntry()).to.be.false;
+                // With nothing focused, the visible first entry counts as the current file.
                 editor.goToNextEntry();
                 expect(document.activeElement).to.equal(headerOf(second));
+                expect(changed.called).to.be.true;
                 expect(second.isCollapsed).to.be.false;
                 expect(secondLoad.called).to.be.true;
+                expect(editor.hasPreviousEntry()).to.be.true;
                 editor.goToNextEntry();
                 expect(editor.hasNextEntry()).to.be.false;
                 editor.goToNextEntry();
                 expect(document.activeElement).to.equal(headerOf(third));
                 editor.goToPreviousEntry();
                 expect(document.activeElement).to.equal(headerOf(second));
-                expect(editor.hasPreviousEntry()).to.be.true;
+                editor.goToPreviousEntry();
+                expect(document.activeElement).to.equal(headerOf(first));
+                expect(editor.hasPreviousEntry()).to.be.false;
+            } finally {
+                editor.dispose();
+                globalThis.requestAnimationFrame = previous;
+            }
+        });
+
+        it('should offer no file navigation for a single entry', () => {
+            const previous = globalThis.requestAnimationFrame;
+            globalThis.requestAnimationFrame = sinon.stub().returns(0);
+            const editor = createEditor(1, () => new Promise<EditorWidget>(() => { }));
+            try {
+                Widget.attach(editor, document.body);
+                expect(editor.hasPreviousEntry()).to.be.false;
+                expect(editor.hasNextEntry()).to.be.false;
+                editor.goToNextEntry();
+                expect(document.activeElement).to.equal(document.body);
             } finally {
                 editor.dispose();
                 globalThis.requestAnimationFrame = previous;

@@ -610,22 +610,22 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
     }
 
     hasPreviousEntry(): boolean {
-        return this.getFocusedIndex() > 0;
+        return this.getEntryNavigationIndex() > 0;
     }
 
     hasNextEntry(): boolean {
-        return this.getFocusedIndex() < this.entryWidgets.length - 1;
+        return this.getEntryNavigationIndex() < this.entryWidgets.length - 1;
     }
 
     goToPreviousEntry(): void {
-        const index = this.getFocusedIndex();
+        const index = this.getEntryNavigationIndex();
         if (index > 0) {
             this.goToEntry(this.entryWidgets[index - 1]);
         }
     }
 
     goToNextEntry(): void {
-        const entry = this.entryWidgets[this.getFocusedIndex() + 1];
+        const entry = this.entryWidgets[this.getEntryNavigationIndex() + 1];
         if (entry) {
             this.goToEntry(entry);
         }
@@ -737,6 +737,13 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
 
     protected getFocusedIndex(): number {
         return this.lastFocusedEntry ? this.entryWidgets.indexOf(this.lastFocusedEntry) : -1;
+    }
+
+    /**
+     * The index that file navigation starts from. With no focused entry, this is the first entry, as in {@link goToNextChange}.
+     */
+    protected getEntryNavigationIndex(): number {
+        return Math.max(this.getFocusedIndex(), 0);
     }
 
     protected setFocusedEntry(entry: DiffEntryWidget | undefined, focusInEditor: boolean): void {

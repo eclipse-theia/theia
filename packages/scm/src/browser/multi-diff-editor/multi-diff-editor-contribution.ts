@@ -28,7 +28,7 @@ export namespace MultiDiffEditorCommands {
         originalCategory: 'Multi Diff Editor',
         label: nls.localize('theia/scm/multiDiffEditor/goToPreviousFile', 'Go to Previous File'),
         originalLabel: 'Go to Previous File',
-        iconClass: codicon('chevron-up')
+        iconClass: codicon('fold-up')
     };
     export const GO_TO_NEXT_FILE: Command = {
         id: 'multiDiffEditor.goToNextFile',
@@ -36,7 +36,7 @@ export namespace MultiDiffEditorCommands {
         originalCategory: 'Multi Diff Editor',
         label: nls.localize('theia/scm/multiDiffEditor/goToNextFile', 'Go to Next File'),
         originalLabel: 'Go to Next File',
-        iconClass: codicon('chevron-down')
+        iconClass: codicon('fold-down')
     };
     export const GO_TO_PREVIOUS_CHANGE = Command.toDefaultLocalizedCommand({
         id: 'multiDiffEditor.goToPreviousChange',
