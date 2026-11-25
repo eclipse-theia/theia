@@ -26,6 +26,7 @@ import { VSXRegistryService } from '../common/vsx-registry-service.js';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import { PluginIdentifiers } from '@theia/plugin-ext/lib/common/plugin-identifiers';
 import { extractExtensionIdentityFromVsix } from '@theia/plugin-ext-vscode/lib/node/plugin-vscode-utils';
+import { ArchiveExtractor } from '@theia/filesystem/lib/node/archive/archive-extractor';
 
 @injectable()
 export class VSXRegistryServiceImpl implements VSXRegistryService {
@@ -44,6 +45,9 @@ export class VSXRegistryServiceImpl implements VSXRegistryService {
 
     @inject(ILogger) @named('vsx-registry:VSXRegistryServiceImpl')
     protected readonly logger: ILogger;
+
+    @inject(ArchiveExtractor)
+    protected readonly archiveExtractor: ArchiveExtractor;
 
     async search(searchOptions?: VSXSearchOptions): Promise<VSXSearchResult> {
         const client = await this.clientProvider();
@@ -102,7 +106,7 @@ export class VSXRegistryServiceImpl implements VSXRegistryService {
     }
 
     async readVsixIdentity(vsixUri: string): Promise<PluginIdentifiers.Components | undefined> {
-        return extractExtensionIdentityFromVsix(FileUri.fsPath(vsixUri));
+        return extractExtensionIdentityFromVsix(FileUri.fsPath(vsixUri), this.archiveExtractor);
     }
 
     protected async validateRegistryOrigin(url: string): Promise<boolean> {

@@ -26,6 +26,8 @@ import { VSXEnvironment } from '../common/vsx-environment.js';
 import { VSXRegistryService } from '../common/vsx-registry-service.js';
 import { VSXRegistryServiceImpl } from './vsx-registry-service-impl.js';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { FileUri } from '@theia/core/lib/common/file-uri';
+import { ArchiveExtractor } from '@theia/filesystem/lib/node/archive/archive-extractor';
 
 describe('VSXRegistryServiceImpl', () => {
     let service: VSXRegistryService;
@@ -40,6 +42,7 @@ describe('VSXRegistryServiceImpl', () => {
         getOvsxRouterConfig: sinon.SinonStub;
     };
     let mockLogger: MockLogger;
+    let mockArchiveExtractor: { readFiles: sinon.SinonStub };
 
     let warnSpy: sinon.SinonSpy;
     let errorSpy: sinon.SinonSpy;
@@ -72,6 +75,7 @@ describe('VSXRegistryServiceImpl', () => {
         };
 
         mockLogger = new MockLogger();
+        mockArchiveExtractor = { readFiles: sinon.stub().resolves([]) };
 
         warnSpy = sinon.spy(mockLogger, 'warn');
         errorSpy = sinon.spy(mockLogger, 'error');
@@ -84,6 +88,7 @@ describe('VSXRegistryServiceImpl', () => {
         container.bind(RequestService).toConstantValue(mockRequestService as unknown as RequestService);
         container.bind(VSXEnvironment).toConstantValue(mockVsxEnvironment as unknown as VSXEnvironment);
         container.bind(ILogger).toConstantValue(mockLogger);
+        container.bind(ArchiveExtractor).toConstantValue(mockArchiveExtractor as unknown as ArchiveExtractor);
 
         service = container.get(VSXRegistryService);
     });
@@ -400,6 +405,20 @@ describe('VSXRegistryServiceImpl', () => {
 
             expect(result).to.be.undefined;
             expect(mockRequestService.request.called).to.be.false;
+        });
+    });
+
+    describe('readVsixIdentity', () => {
+        it('should read the package.json through the injected archive extractor', async () => {
+            const packageJson = { publisher: 'foo', name: 'bar', version: '1.0.0' };
+            mockArchiveExtractor.readFiles.resolves([{ path: 'extension/package.json', data: Buffer.from(JSON.stringify(packageJson)) }]);
+            const vsixPath = FileUri.fsPath(FileUri.create('/tmp/bar.vsix'));
+
+            const identity = await service.readVsixIdentity(FileUri.create(vsixPath).toString());
+
+            expect(identity).to.deep.equal(packageJson);
+            expect(mockArchiveExtractor.readFiles.calledOnce).to.be.true;
+            expect(mockArchiveExtractor.readFiles.firstCall.args[0]).to.equal(vsixPath);
         });
     });
 });
