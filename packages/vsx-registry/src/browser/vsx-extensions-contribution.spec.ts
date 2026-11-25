@@ -107,6 +107,7 @@ describe('VSXExtensionsContribution: installing a VSIX file', () => {
     interface Scenario {
         installed?: string[];
         uninstalled?: string[];
+        builtIns?: string[];
         identity?: { publisher: string, name: string, version: string };
         /** `false` for a VSIX file without a valid `package.json`. */
         readable?: boolean;
@@ -117,7 +118,7 @@ describe('VSXExtensionsContribution: installing a VSIX file', () => {
 
     const vsixIdentity = { publisher: 'foo', name: 'bar', version: '2.0.0' };
 
-    async function run({ installed = [], uninstalled = [], identity = vsixIdentity, readable = true, install, confirm, reloadChoice }: Scenario): Promise<{
+    async function run({ installed = [], uninstalled = [], builtIns = [], identity = vsixIdentity, readable = true, install, confirm, reloadChoice }: Scenario): Promise<{
         installs: unknown[][],
         confirmed: VsixReplacement[],
         infos: string[],
@@ -134,6 +135,7 @@ describe('VSXExtensionsContribution: installing a VSIX file', () => {
         };
         Object.assign(contribution, {
             labelProvider: { getName: () => 'ext.vsix' },
+            model: { isBuiltIn: (id: string) => builtIns.includes(id) },
             vsxRegistryService: { readVsixIdentity: async () => readable ? identity : undefined },
             pluginServer: {
                 getInstalledPlugins: async () => installed,
@@ -178,6 +180,24 @@ describe('VSXExtensionsContribution: installing a VSIX file', () => {
         it(`asks before it replaces ${title} version`, async () => {
             const result = await run({ installed: [`foo.bar@${installedVersion}`], identity: { publisher: 'foo', name: 'bar', version } });
             expect(result.confirmed).to.deep.equal([{ id: 'foo.bar', installedVersion, version }]);
+        });
+    }
+
+    it('does not install or report a replacement for the same version as a built-in extension', async () => {
+        const result = await run({ installed: ['foo.bar@2.0.0'], builtIns: ['foo.bar'], confirm: true });
+        expect(result.confirmed).to.be.empty;
+        expect(result.installs).to.be.empty;
+        expect(result.errors).to.be.empty;
+        expect(result.infos).to.have.lengthOf(1);
+        expect(result.infos[0]).to.contain('foo.bar').and.to.contain('built in');
+        expect(result.reloads).to.equal(0);
+    });
+
+    for (const [title, builtInVersion] of [['an older', '1.0.0'], ['a newer', '3.0.0']]) {
+        it(`asks before it replaces ${title} built-in version`, async () => {
+            const result = await run({ installed: [`foo.bar@${builtInVersion}`], builtIns: ['foo.bar'], confirm: true });
+            expect(result.confirmed).to.deep.equal([{ id: 'foo.bar', installedVersion: builtInVersion, version: '2.0.0' }]);
+            expect(result.installs).to.have.lengthOf(1);
         });
     }
 

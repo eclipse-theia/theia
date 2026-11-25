@@ -300,6 +300,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
      *
      * A VSIX always replaces an installed extension with the same ID. Thus, if the extension is installed in any version,
      * this asks the user before it installs the file, and offers a reload after the replacement.
+     * A VSIX file with the same version as a built-in extension is not installed, because it would never run.
      *
      * @param fileURI the URI of the file to install.
      */
@@ -307,6 +308,11 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         const extensionName = this.labelProvider.getName(fileURI);
         try {
             const replacement = await this.findVsixReplacement(fileURI);
+            if (replacement && this.isSameVersionAsBuiltIn(replacement)) {
+                this.messageService.info(nls.localize('theia/vsx-registry/builtInVSIX',
+                    'Version {1} of the extension \'{0}\' is built in. A VSIX file with the same version cannot replace it.', replacement.id, replacement.version));
+                return;
+            }
             if (replacement && !await this.confirmReplaceExtension(replacement)) {
                 return;
             }
@@ -338,6 +344,13 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
             .map(versionedId => PluginIdentifiers.idAndVersionFromVersionedId(versionedId))
             .find(candidate => candidate?.id === id)?.version;
         return installedVersion ? { id, installedVersion, version: identity.version } : undefined;
+    }
+
+    /**
+     * A user extension with the same version as a built-in extension never runs: the deployment skips it, because the built-in extension is deployed.
+     */
+    protected isSameVersionAsBuiltIn({ id, installedVersion, version }: VsixReplacement): boolean {
+        return installedVersion === version && this.model.isBuiltIn(id);
     }
 
     protected confirmReplaceExtension({ id, installedVersion, version }: VsixReplacement): Promise<boolean | undefined> {
