@@ -62,10 +62,34 @@ describe('CommandRegistryImpl', () => {
         expect(uris[1].path).equal('/home/project/file.txt');
     });
 
+    it('revives URIs in nested arrays', async () => {
+        await registry.$executeCommand(commandId, [[windowsClientUri]]);
+        const uri = (received[0] as URI[][])[0][0];
+        expect(uri).instanceOf(URI);
+        expect(uri.fsPath).equal(expectedFsPath);
+    });
+
     it('keeps other arguments', async () => {
         const object = { scheme: 'not a uri' };
-        await registry.$executeCommand(commandId, 'text', 1, object, ['text', object]);
+        const array = ['text', object];
+        await registry.$executeCommand(commandId, 'text', 1, object, array);
         expect(received).deep.equal(['text', 1, object, ['text', object]]);
         expect(received[2]).equal(object);
+        expect(received[3]).equal(array);
+    });
+
+    it('passes arrays without URIs to the handler of a local call', async () => {
+        const results: string[] = [];
+        await registry.executeCommand(commandId, results);
+        expect(received[0]).equal(results);
+    });
+
+    it('handles an array that contains itself', async () => {
+        const array: unknown[] = [windowsClientUri];
+        array.push(array);
+        await registry.$executeCommand(commandId, array);
+        const revived = received[0] as unknown[];
+        expect(revived[0]).instanceOf(URI);
+        expect(revived[1]).equal(array);
     });
 });
