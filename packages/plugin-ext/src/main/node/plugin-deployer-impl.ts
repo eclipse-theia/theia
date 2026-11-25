@@ -280,10 +280,12 @@ export class PluginDeployerImpl implements PluginDeployer {
                 if (!leftPlugin) {
                     return 1;
                 }
-                if (leftPlugin.type === PluginType.System && rightPlugin.type === PluginType.User) {
+                // A user extension wins over a built-in one in any version, as at install time,
+                // where the deployment of a user extension uninstalls the other versions.
+                if (leftPlugin.type === PluginType.User && rightPlugin.type === PluginType.System) {
                     return -1;
                 }
-                if (leftPlugin.type === PluginType.User && rightPlugin.type === PluginType.System) {
+                if (leftPlugin.type === PluginType.System && rightPlugin.type === PluginType.User) {
                     return 1;
                 }
                 if (semver.gtr(left.version, right.version)) {

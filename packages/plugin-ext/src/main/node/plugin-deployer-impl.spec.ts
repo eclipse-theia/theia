@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { DuplicateExtensionError, PluginDeployerResolver, PluginType } from '../../common/plugin-protocol.js';
+import { DuplicateExtensionError, PluginDeployerEntry, PluginDeployerEntryType, PluginDeployerResolver, PluginIdentifiers, PluginType } from '../../common/plugin-protocol.js';
+import { PluginDeployerEntryImpl } from './plugin-deployer-entry-impl.js';
 import { PluginDeployerImpl } from './plugin-deployer-impl.js';
 
 describe('PluginDeployerImpl', () => {
@@ -70,6 +71,42 @@ describe('PluginDeployerImpl', () => {
 
             expect(logs.error).to.have.lengthOf(1);
             expect(logs.info).to.be.empty;
+        });
+    });
+
+    describe('findBestVersion', () => {
+
+        function entry(version: string, type: PluginType): PluginDeployerEntryImpl {
+            const result = new PluginDeployerEntryImpl('test', `foo.bar@${version}`);
+            result.type = type;
+            result.accept(PluginDeployerEntryType.BACKEND);
+            return result;
+        }
+
+        function findBestVersion(...entries: PluginDeployerEntryImpl[]): void {
+            const known = new Map<PluginIdentifiers.VersionedId, PluginDeployerEntry>(entries.map(candidate => [candidate.id() as PluginIdentifiers.VersionedId, candidate]));
+            const versions = entries.map(candidate => PluginIdentifiers.idAndVersionFromVersionedId(candidate.id() as PluginIdentifiers.VersionedId)!.version);
+            (new PluginDeployerImpl() as unknown as {
+                findBestVersion(id: string, versions: string[], known: Map<PluginIdentifiers.VersionedId, PluginDeployerEntry>): void
+            }).findBestVersion('foo.bar', versions, known);
+        }
+
+        for (const [title, builtInVersion, userVersion] of [['an older', '2.0.0', '1.0.0'], ['a newer', '1.0.0', '2.0.0']]) {
+            it(`prefers ${title} user version over a built-in version, as the install does`, () => {
+                const builtIn = entry(builtInVersion, PluginType.System);
+                const user = entry(userVersion, PluginType.User);
+                findBestVersion(builtIn, user);
+                expect(user.isAccepted(PluginDeployerEntryType.BACKEND)).to.be.true;
+                expect(builtIn.isAccepted(PluginDeployerEntryType.BACKEND)).to.be.false;
+            });
+        }
+
+        it('prefers the newest version among entries of the same type', () => {
+            const older = entry('1.0.0', PluginType.User);
+            const newer = entry('2.0.0', PluginType.User);
+            findBestVersion(older, newer);
+            expect(newer.isAccepted(PluginDeployerEntryType.BACKEND)).to.be.true;
+            expect(older.isAccepted(PluginDeployerEntryType.BACKEND)).to.be.false;
         });
     });
 });
