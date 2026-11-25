@@ -24,7 +24,7 @@ FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { Emitter, ILogger, PreferenceSchemaService, PreferenceScope, PreferenceService } from '@theia/core';
+import { Emitter, ILogger, PreferenceDataProperty, PreferenceSchemaService, PreferenceScope, PreferenceService } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { CompositeTreeNode, createTreeContainer, LabelProvider } from '@theia/core/lib/browser';
 import { PreferenceTreeModel } from './preference-tree-model.js';
@@ -50,6 +50,12 @@ describe('PreferenceTreeModel', () => {
     let schemaEmitter: Emitter<CompositeTreeNode>;
     let scopeEmitter: Emitter<Preference.SelectedScopeDetails>;
     let isValidInScope: (preferenceId: string, scope: number) => boolean;
+    /** The data of the preferences in the fixture, shared by their nodes and the schema service */
+    let properties: Map<string, PreferenceDataProperty>;
+
+    function setOwner(preferenceId: string, ownerId: string): void {
+        properties.get(preferenceId)!.owner = { id: ownerId, label: ownerId };
+    }
 
     function createComposite(group: string, id: string, parent: CompositeTreeNode, depth: number, expandable: boolean): Preference.CompositeTreeNode {
         const node: Preference.CompositeTreeNode = {
@@ -74,14 +80,24 @@ describe('PreferenceTreeModel', () => {
             id: `${group}@${preferenceId}`,
             preferenceId,
             parent,
-            preference: { data: {} },
+            preference: { data: getPropertyData(preferenceId) },
             depth,
         };
         CompositeTreeNode.addChild(parent, node);
         return node;
     }
 
+    function getPropertyData(preferenceId: string): PreferenceDataProperty {
+        let data = properties.get(preferenceId);
+        if (!data) {
+            data = {};
+            properties.set(preferenceId, data);
+        }
+        return data;
+    }
+
     function createFixture(withCommonlyUsed: boolean = true): TreeFixture {
+        properties = new Map();
         const root: CompositeTreeNode = {
             id: 'root-node-id',
             name: '',
@@ -121,7 +137,7 @@ describe('PreferenceTreeModel', () => {
             getLongName: () => '',
         } as any);
         parent.bind(PreferenceSchemaService).toConstantValue({
-            getSchemaProperties: () => new Map(),
+            getSchemaProperties: () => properties,
             isValidInScope: (preferenceId: string, scope: number) => isValidInScope(preferenceId, scope),
         } as any);
         parent.bind(PreferenceService).toConstantValue({
@@ -334,6 +350,74 @@ describe('PreferenceTreeModel', () => {
             searchbarEmitter.fire('');
             expect(model.selectedNodes[0]?.id).to.equal(fixture.commonlyUsed!.id);
             expect(model.categoryFilterId).to.equal(fixture.commonlyUsed!.id);
+        });
+    });
+
+    describe('extension filter', () => {
+
+        function visiblePreferences(model: PreferenceTreeModel): string[] {
+            return Array.from(model.currentRows.values())
+                .map(row => row.node)
+                .filter((node): node is Preference.LeafNode => Preference.LeafNode.is(node))
+                .map(node => node.preferenceId);
+        }
+
+        async function createExtensionModel(): Promise<PreferenceTreeModel> {
+            const model = await createModel(createFixture());
+            setOwner('editor.fontSize', 'acme.sample');
+            setOwner('editor.cursorStyle', 'other.sample');
+            return model;
+        }
+
+        it('shows only the preferences of the extension', async () => {
+            const model = await createExtensionModel();
+            searchbarEmitter.fire('@ext:Acme.Sample');
+            expect(visiblePreferences(model)).to.deep.equal(['editor.fontSize']);
+        });
+
+        it('shows the preferences of any of several extensions', async () => {
+            const model = await createExtensionModel();
+            searchbarEmitter.fire('@ext:acme.sample,other.sample');
+            expect(visiblePreferences(model)).to.have.members(['editor.fontSize', 'editor.cursorStyle']);
+        });
+
+        it('combines with the search text', async () => {
+            const model = await createExtensionModel();
+            searchbarEmitter.fire('@ext:acme.sample @ext:other.sample cursor');
+            expect(visiblePreferences(model)).to.deep.equal(['editor.cursorStyle']);
+        });
+
+        it('matches part of the extension ID', async () => {
+            const model = await createExtensionModel();
+            searchbarEmitter.fire('@ext:ACME');
+            expect(visiblePreferences(model)).to.deep.equal(['editor.fontSize']);
+            searchbarEmitter.fire('@ext:sample');
+            expect(visiblePreferences(model)).to.have.members(['editor.fontSize', 'editor.cursorStyle']);
+        });
+
+        it('matches only the extension with a full ID', async () => {
+            const model = await createExtensionModel();
+            setOwner('editor.cursorStyle', 'acme.sample-nightly');
+            searchbarEmitter.fire('@ext:acme.sample');
+            expect(visiblePreferences(model)).to.deep.equal(['editor.fontSize']);
+            searchbarEmitter.fire('@ext:acme.samp');
+            expect(visiblePreferences(model)).to.have.members(['editor.fontSize', 'editor.cursorStyle']);
+        });
+
+        it('shows no preferences if no extension matches', async () => {
+            const model = await createExtensionModel();
+            searchbarEmitter.fire('@ext:unknown');
+            expect(visiblePreferences(model)).to.be.empty;
+        });
+
+        it('includes extensions that contribute preferences during the search', async () => {
+            const fixture = createFixture();
+            const model = await createModel(fixture);
+            searchbarEmitter.fire('@ext:acme');
+            expect(visiblePreferences(model)).to.be.empty;
+            setOwner('editor.fontSize', 'acme.sample');
+            schemaEmitter.fire(fixture.root);
+            expect(visiblePreferences(model)).to.deep.equal(['editor.fontSize']);
         });
     });
 

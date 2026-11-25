@@ -80,7 +80,7 @@ import {
     type PluginPackageWalkthroughStepMedia,
 } from '../common/contribution-types.js';
 import { rawContributes, type PluginManifest } from '../common/manifest-types.js';
-import { UNPUBLISHED } from '../common/constants.js';
+import { getUnversionedPluginId } from '../common/plugin-model.js';
 
 function isPluginUiTheme(value: unknown): value is PluginUiTheme {
     return value === 'vs' || value === 'vs-dark' || value === 'hc-black' || value === 'hc-light';
@@ -196,19 +196,15 @@ export async function normalizeContributions<TContrib extends object>(
     try {
         if (contributes.configuration) {
             const configurations = Array.isArray(contributes.configuration) ? contributes.configuration : [contributes.configuration];
-            const hasMultipleConfigs = configurations.length > 1;
+            const owner = {
+                id: getUnversionedPluginId(rawPlugin),
+                label: rawPlugin.displayName ?? rawPlugin.name
+            };
             output.configuration = [];
             for (const c of configurations) {
                 const config = readConfigurationFn(c as IConfigurationNode, rawPlugin.packagePath);
                 if (config) {
-                    Object.values(config.properties).forEach(property => {
-                        if (hasMultipleConfigs) {
-                            property.owner = rawPlugin.displayName;
-                            property.group = config.title;
-                        } else {
-                            property.owner = config.title;
-                        }
-                    });
+                    config.owner = owner;
                     output.configuration.push(config);
                 }
             }
@@ -475,7 +471,7 @@ export function readWalkthroughs(
     if (!walkthroughs) {
         return undefined;
     }
-    const pluginId = `${(pck.publisher ?? UNPUBLISHED).toLowerCase()}.${pck.name.toLowerCase()}`;
+    const pluginId = getUnversionedPluginId(pck);
     // `PluginModel` does not carry the extension icon, so it travels with the walkthroughs that show it.
     const pluginIcon = pck.icon ? ctx.resolveUrl(pck.icon) : undefined;
     const result: WalkthroughContribution[] = [];

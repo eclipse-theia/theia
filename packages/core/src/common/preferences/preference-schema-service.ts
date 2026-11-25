@@ -34,6 +34,8 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
     // Storage structures
     protected readonly schemas = new Set<PreferenceSchema>();
     protected readonly properties = new Map<string, PreferenceDataProperty>();
+    /** The schema that registered each property */
+    protected readonly propertySchemas = new Map<string, PreferenceSchema>();
     /**
      * This map stores default overrides. The primary map key is the base preference name.
      * The preference name maps to a second map keyed by the override identifier or a special object value `NO_OVERRIDE',
@@ -136,21 +138,7 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
                 continue;
             }
             this.pendingDefaultRegistrationWarnings?.delete(key);
-
-            if (property.scope === undefined) {
-                property.scope = schema.scope;
-            }
-
-            if (property.overridable === undefined) {
-                property.overridable = schema.defaultOverridable;
-            }
-
-            if (property.restricted === undefined && schema.defaultRestricted !== undefined) {
-                property.restricted = schema.defaultRestricted;
-            }
-
-            this.properties.set(key, property);
-            this.setJSONSchemasProperty(key, property);
+            this.registerProperty(key, property, schema);
             if (property.default !== undefined) {
                 this.defaultValueChangedEmitter.fire(this.changeFor(key, undefined, this.defaultOverrides.get(key), undefined, property.default!));
             }
@@ -162,9 +150,25 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         return Disposable.create(() => {
             if (this.schemas.delete(schema)) {
                 for (const [key, property] of Object.entries(schema.properties)) {
+                    // Properties that another schema registered first were skipped when this schema was added.
+                    if (this.propertySchemas.get(key) !== schema) {
+                        continue;
+                    }
                     this.deleteFromJSONSchemas(key, property);
                     this.properties.delete(key);
+                    this.propertySchemas.delete(key);
                     const overrides = this.defaultOverrides.get(key);
+
+                    // Hand the property over to the next schema that also declares it.
+                    const successor = this.findSchemaDeclaring(key);
+                    if (successor) {
+                        const successorProperty = successor.properties[key];
+                        this.registerProperty(key, successorProperty, successor);
+                        if (overrides?.get(NO_OVERRIDE) === undefined && !PreferenceUtils.deepEqual(property.default, successorProperty.default)) {
+                            this.defaultValueChangedEmitter.fire(this.changeFor(key, undefined, overrides, property.default, successorProperty.default));
+                        }
+                        continue;
+                    }
 
                     const baseOverride = overrides?.get(NO_OVERRIDE);
                     if (baseOverride !== undefined) {
@@ -184,6 +188,38 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
                 this.schemaChangedEmitter.fire();
             }
         });
+    }
+
+    protected registerProperty(key: string, property: PreferenceDataProperty, schema: PreferenceSchema): void {
+        if (property.scope === undefined) {
+            property.scope = schema.scope;
+        }
+
+        if (property.overridable === undefined) {
+            property.overridable = schema.defaultOverridable;
+        }
+
+        if (property.restricted === undefined && schema.defaultRestricted !== undefined) {
+            property.restricted = schema.defaultRestricted;
+        }
+
+        // Ownership belongs to the schema, so that a property cannot claim another owner.
+        property.owner = schema.owner;
+        property.category = schema.title;
+
+        this.properties.set(key, property);
+        this.propertySchemas.set(key, schema);
+        this.setJSONSchemasProperty(key, property);
+    }
+
+    /** Returns the earliest registered schema that declares the given property. */
+    protected findSchemaDeclaring(key: string): PreferenceSchema | undefined {
+        for (const schema of this.schemas) {
+            if (Object.hasOwn(schema.properties, key)) {
+                return schema;
+            }
+        }
+        return undefined;
     }
 
     isValidInScope(preferenceName: string, scope: PreferenceScope): boolean {
@@ -387,6 +423,8 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         delete prop['scope'];
         delete prop['overridable'];
         delete prop['restricted'];
+        delete prop['owner'];
+        delete prop['category'];
         if (property.overridable) {
             for (const overrideIdentifier of this._overrideIdentifiers) {
                 const overrideSchema: IJSONSchema = schema.properties![`[${overrideIdentifier}]`] || {

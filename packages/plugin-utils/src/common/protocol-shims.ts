@@ -38,8 +38,6 @@ export interface IJSONSchema {
     $id?: string;
     $schema?: string;
     type?: JsonType | JsonType[];
-    owner?: string;
-    group?: string;
     title?: string;
     default?: JSONValue;
     definitions?: IJSONSchemaMap;
@@ -121,9 +119,15 @@ export interface PreferenceDataProperty extends IJSONSchema {
     tags?: string[];
 }
 
+export interface PreferenceOwner {
+    id: string;
+    label: string;
+}
+
 export interface PreferenceSchema {
     scope?: PreferenceScope;
     title?: string;
+    owner?: PreferenceOwner;
     defaultOverridable?: boolean;
     properties: { [name: string]: PreferenceDataProperty };
 }

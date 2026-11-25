@@ -47,6 +47,13 @@ export function getPluginId(plugin: PluginIdentifierSource): string {
 }
 
 /**
+ * Returns the unversioned identifier of a plugin, i.e. `publisher.name` in lower case, as used for {@link PluginModel.id}.
+ */
+export function getUnversionedPluginId(plugin: PluginIdentifierSource): string {
+    return `${(plugin.publisher ?? UNPUBLISHED).toLowerCase()}.${plugin.name.toLowerCase()}`;
+}
+
+/**
  * Builds `<id>/<segments...>` for a plugin asset. Path separators stay literal `/`; each segment
  * is `encodeURIComponent`'d so plain static file servers (browser-only) resolve assets without
  * needing Express `:path(*)` decoding. `.` is dropped and `..` is resolved within the plugin root
@@ -159,7 +166,7 @@ export function buildModelForTheia(manifest: PluginManifest): PluginModel {
     return {
         packagePath: manifest.packagePath,
         packageUri,
-        id: `${publisher.toLowerCase()}.${manifest.name.toLowerCase()}`,
+        id: getUnversionedPluginId(manifest),
         name: manifest.name,
         publisher,
         version: manifest.version,
@@ -180,7 +187,7 @@ export function buildModelForVsCode(manifest: PluginManifest, options?: VsCodeBu
     return {
         packagePath: manifest.packagePath,
         packageUri,
-        id: `${publisher.toLowerCase()}.${manifest.name.toLowerCase()}`,
+        id: getUnversionedPluginId(manifest),
         name: manifest.name,
         publisher,
         version: manifest.version,

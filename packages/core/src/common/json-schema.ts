@@ -36,8 +36,6 @@ export interface IJSONSchema {
     $id?: string;
     $schema?: string;
     type?: JsonType | JsonType[];
-    owner?: string;
-    group?: string;
     title?: string;
     default?: JSONValue;
     definitions?: IJSONSchemaMap;
