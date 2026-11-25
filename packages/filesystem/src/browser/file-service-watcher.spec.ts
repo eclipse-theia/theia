@@ -68,6 +68,12 @@ function liveWatcherCount(provider: { watchers: MockWatcher[] }): number {
     return provider.watchers.filter(w => !w.disposed).length;
 }
 
+/** `FileService` reads `files.watcherExclude` for every watcher; these tests run without a configured value. */
+function stubNoWatcherExclude(fileService: FileService): void {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (fileService as any).preferences = { get: () => undefined };
+}
+
 describe('FileService watcher deduplication', () => {
     const sandbox = sinon.createSandbox();
     let fileService: FileService;
@@ -84,6 +90,7 @@ describe('FileService watcher deduplication', () => {
     beforeEach(() => {
         sandbox.restore();
         fileService = new FileService();
+        stubNoWatcherExclude(fileService);
         mockProvider = createMockProvider();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         sandbox.stub(fileService as any, 'withProvider').resolves(mockProvider);
@@ -691,6 +698,7 @@ describe('FileService watcher event delivery', () => {
 
     beforeEach(() => {
         fileService = new FileService();
+        stubNoWatcherExclude(fileService);
         provider = createEventMockProvider();
         fileService.registerProvider('file', provider);
     });
@@ -892,5 +900,177 @@ describe('FileService applies files.watcherExclude to all watchers', () => {
         // With files.watcherExclude applied uniformly, the child's excludes now match the parent's,
         // so the root watcher subsumes it — a single OS watcher instead of two.
         expect(liveWatcherCount(mockProvider)).to.equal(1);
+    });
+});
+
+describe('FileService applies files.watcherExclude changes to active watchers', () => {
+    const sandbox = sinon.createSandbox();
+    let disJSDOM: () => void;
+    let fileService: FileService;
+    let mockProvider: FileSystemProvider & { watchers: MockWatcher[] };
+    let watcherExclude: { [pattern: string]: boolean } | undefined;
+    let onPreferenceChanged: Emitter<{ preferenceName: string }>;
+
+    const flush = () => new Promise<void>(resolve => setTimeout(resolve, 0));
+
+    /** Change `files.watcherExclude` and fire the change event, like the preference service does. */
+    function setWatcherExclude(value: { [pattern: string]: boolean } | undefined): void {
+        watcherExclude = value;
+        onPreferenceChanged.fire({ preferenceName: 'files.watcherExclude' });
+    }
+
+    function liveWatchers(): MockWatcher[] {
+        return mockProvider.watchers.filter(w => !w.disposed);
+    }
+
+    before(() => { disJSDOM = enableJSDOM(); });
+    after(() => { disJSDOM(); });
+
+    beforeEach(() => {
+        sandbox.restore();
+        watcherExclude = undefined;
+        onPreferenceChanged = new Emitter();
+        fileService = new FileService();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const service = fileService as any;
+        service.preferences = {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            get: (name: string) => (name === 'files.watcherExclude' ? watcherExclude : undefined) as any,
+            onPreferenceChanged: onPreferenceChanged.event
+        };
+        service.contributions = { getContributions: () => [] };
+        // Run the @postConstruct, which subscribes to preference changes.
+        service.init();
+        mockProvider = createMockProvider();
+        sandbox.stub(service, 'withProvider').resolves(mockProvider);
+    });
+
+    afterEach(() => sandbox.restore());
+
+    it('re-creates the OS watcher with a newly added exclude', async () => {
+        fileService.watch(new URI('file:///project'), { recursive: true, excludes: [] });
+        await flush();
+
+        setWatcherExclude({ '**/build/**': true });
+
+        expect(liveWatchers()).to.have.lengthOf(1);
+        expect(liveWatchers()[0].options.excludes).to.include('**/build/**');
+        expect(mockProvider.watchers[0].disposed).to.be.true;
+    });
+
+    it('re-creates the OS watcher without a removed exclude', async () => {
+        watcherExclude = { '**/build/**': true };
+        fileService.watch(new URI('file:///project'), { recursive: true, excludes: [] });
+        await flush();
+
+        setWatcherExclude({ '**/build/**': false });
+
+        expect(liveWatchers()).to.have.lengthOf(1);
+        expect(liveWatchers()[0].options.excludes).to.not.include('**/build/**');
+    });
+
+    it('keeps the caller-supplied excludes when the preference changes', async () => {
+        fileService.watch(new URI('file:///project'), { recursive: true, excludes: ['**/*.log'] });
+        await flush();
+
+        setWatcherExclude({ '**/build/**': true });
+
+        expect(liveWatchers()[0].options.excludes).to.include.members(['**/*.log', '**/build/**']);
+    });
+
+    it('disposes the OS watcher when a watch made before the change is disposed', async () => {
+        const watch = fileService.watch(new URI('file:///project'), { recursive: true, excludes: [] });
+        await flush();
+        setWatcherExclude({ '**/build/**': true });
+
+        watch.dispose();
+
+        expect(liveWatchers()).to.have.lengthOf(0);
+    });
+
+    it('gives a subsumed child its own OS watcher when a new exclude covers it', async () => {
+        fileService.watch(new URI('file:///project'), { recursive: true, excludes: [] });
+        fileService.watch(new URI('file:///project/build/out'), { recursive: false, excludes: [] });
+        await flush();
+        expect(liveWatchers()).to.have.lengthOf(1);
+
+        setWatcherExclude({ '**/build/**': true });
+
+        expect(liveWatchers().map(w => w.resource.toString()).sort()).to.deep.equal(['file:///project', 'file:///project/build/out']);
+    });
+
+    it('lets the parent subsume a child again when the exclude that covered it is removed', async () => {
+        watcherExclude = { '**/build/**': true };
+        fileService.watch(new URI('file:///project'), { recursive: true, excludes: [] });
+        fileService.watch(new URI('file:///project/build/out'), { recursive: false, excludes: [] });
+        await flush();
+        expect(liveWatchers()).to.have.lengthOf(2);
+
+        setWatcherExclude({});
+
+        expect(liveWatchers().map(w => w.resource.toString())).to.deep.equal(['file:///project']);
+    });
+
+    it('applies the new excludes to a watch that was still being set up', async () => {
+        fileService.watch(new URI('file:///project'), { recursive: true, excludes: [] });
+        setWatcherExclude({ '**/build/**': true });
+        await flush();
+
+        expect(liveWatchers()).to.have.lengthOf(1);
+        expect(liveWatchers()[0].options.excludes).to.include('**/build/**');
+    });
+
+    it('ends with the same OS watchers as a fresh service with only the remaining watches', async () => {
+        // A small deterministic pseudo-random sequence, so that a failure can be reproduced.
+        let seed = 42;
+        const random = (n: number) => {
+            seed = (seed * 1103515245 + 12345) % 2147483648;
+            return seed % n;
+        };
+        const resources = ['file:///project', 'file:///project/src', 'file:///project/src/a', 'file:///project/build', 'file:///project/build/out', 'file:///other'];
+        const excludeChoices = [[], ['**/build/**'], ['**/*.log']];
+        const exclusions: { [pattern: string]: boolean }[] = [{}, { '**/build/**': true }, { '**/src/a/**': true }];
+        const watches: { resource: string, options: WatchOptions, disposable: Disposable }[] = [];
+
+        const describeLive = (provider: { watchers: MockWatcher[] }) => provider.watchers
+            .filter(w => !w.disposed)
+            .map(w => `${w.resource.toString()} ${w.options.recursive} ${[...w.options.excludes].sort().join()}`)
+            .sort();
+
+        for (let step = 0; step < 300; step++) {
+            const action = random(10);
+            if (action < 5 || !watches.length) {
+                const resource = resources[random(resources.length)];
+                const options: WatchOptions = { recursive: random(2) === 0, excludes: excludeChoices[random(excludeChoices.length)] };
+                watches.push({ resource, options, disposable: fileService.watch(new URI(resource), options) });
+                await flush();
+            } else if (action < 9) {
+                watches.splice(random(watches.length), 1)[0].disposable.dispose();
+            } else {
+                setWatcherExclude(exclusions[random(exclusions.length)]);
+            }
+
+            const fresh = new FileService();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (fresh as any).preferences = { get: (name: string) => (name === 'files.watcherExclude' ? watcherExclude : undefined) };
+            const freshProvider = createMockProvider();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            sandbox.stub(fresh as any, 'withProvider').resolves(freshProvider);
+            for (const watch of watches) {
+                await fresh.doWatch(new URI(watch.resource), watch.options);
+            }
+            expect(describeLive(mockProvider), `step ${step}`).to.deep.equal(describeLive(freshProvider));
+        }
+    });
+
+    it('keeps the OS watchers when another preference changes', async () => {
+        fileService.watch(new URI('file:///project'), { recursive: true, excludes: [] });
+        await flush();
+
+        watcherExclude = { '**/build/**': true };
+        onPreferenceChanged.fire({ preferenceName: 'files.autoSave' });
+
+        expect(mockProvider.watchers).to.have.lengthOf(1);
+        expect(liveWatchers()).to.have.lengthOf(1);
     });
 });
