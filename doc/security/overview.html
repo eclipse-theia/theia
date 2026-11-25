@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Eclipse Theia Security Model Overview</title>
+<style>
+:root {
+    --ink: #1f2328; --muted: #59636e; --line: #8c959f; --hair: #d1d9e0;
+    --red: #cf222e; --red-bg: #fff6f6;
+    --green: #1a7f37; --green-bg: #f4fbf6; --blue: #0969da; --blue-bg: #f3f8ff;
+    --amber: #9a6700; --amber-bg: #fffaeb;
+    --gray-bg: #f6f8fa;
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: 28px 36px 32px; background: #fff; color: var(--ink); width: 1872px;
+    font: 13px/1.4 "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+code { font: 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid var(--ink); padding-bottom: 12px; margin-bottom: 18px; }
+h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.2px; }
+h1 span { font-weight: 400; color: var(--muted); }
+.legend { display: grid; grid-template-columns: repeat(3, auto); gap: 6px 22px; font-size: 11.5px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.legend i { display: inline-block; width: 22px; height: 12px; border: 1.5px dashed; border-radius: 2px; }
+.legend i.t-untrusted { border-color: var(--red); background: var(--red-bg); }
+.legend i.t-partial { border-color: var(--amber); background: var(--amber-bg); }
+.legend i.t-trusted { border-color: var(--green); background: var(--green-bg); border-style: solid; }
+.legend i.t-infra { border-color: var(--blue); background: var(--blue-bg); border-style: solid; }
+.legend i.t-neutral { border-color: var(--line); background: var(--gray-bg); border-style: solid; }
+.legend i.l-boundary { height: 0; border: 0; border-top: 2px solid var(--red); border-radius: 0; }
+.legend i.l-flow { height: 0; border: 0; border-top: 1.5px dashed var(--line); border-radius: 0; }
+h2 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin: 22px 0 8px; }
+.canvas { position: relative; }
+.zone { position: absolute; border: 1.5px dashed; border-radius: 4px; }
+.zone.t-untrusted { border-color: var(--red); background: var(--red-bg); }
+.zone.t-partial { border-color: var(--amber); background: var(--amber-bg); }
+.zone.t-trusted { border-color: var(--green); background: var(--green-bg); border-style: solid; }
+.zone.t-infra { border-color: var(--blue); background: var(--blue-bg); border-style: solid; }
+.zone.t-neutral { border-color: var(--line); background: var(--gray-bg); border-style: solid; }
+.zone.sub { border: 1px solid var(--hair); background: #fff; border-radius: 3px; }
+.zlabel { position: absolute; top: 9px; left: 12px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
+.zlabel.right { left: auto; right: 12px; }
+.zone.t-untrusted > .zlabel { color: var(--red); }
+.zone.t-partial > .zlabel { color: var(--amber); }
+.zone.t-trusted > .zlabel { color: var(--green); }
+.zone.t-infra > .zlabel { color: var(--blue); }
+.zone.t-neutral > .zlabel, .zone.sub > .zlabel { color: var(--muted); }
+.zone.sub > .zlabel { top: 7px; font-size: 10px; }
+.zone > .znote { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--muted); font-size: 11px; }
+.box { position: absolute; z-index: 2; background: #fff; border: 1px solid var(--line); border-left: 3px solid var(--ink); border-radius: 2px; padding: 7px 10px 6px; overflow: hidden; }
+.box.a-untrusted { border-left-color: var(--red); }
+.box.a-partial { border-left-color: var(--amber); }
+.box.a-trusted { border-left-color: var(--green); }
+.box.a-infra { border-left-color: var(--blue); }
+.box.a-neutral { border-left-color: var(--line); }
+.box .title { font-size: 12.5px; font-weight: 600; }
+.box .desc { font-size: 11px; line-height: 1.38; color: var(--muted); margin-top: 2px; }
+svg.wires, svg.badges { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+svg.wires { z-index: 1; }
+svg.badges { z-index: 3; }
+line.boundary { stroke: var(--red); stroke-width: 1.8; }
+line.flow { stroke: var(--line); stroke-width: 1.4; stroke-dasharray: 5 4; }
+#h-boundary path { fill: var(--red); }
+#h-flow path { fill: var(--line); }
+.badge rect { fill: var(--red); stroke: #fff; stroke-width: 2; }
+.badge text { fill: #fff; font: 700 11px "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+.boundaries ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 5px 40px; font-size: 12px; }
+.boundaries li { display: flex; gap: 10px; align-items: baseline; }
+.boundaries b { flex: 0 0 20px; height: 20px; border-radius: 3px; background: var(--red); color: #fff; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; }
+.boundaries em { font-style: normal; font-weight: 600; }
+</style>
+</head>
+<body>
+<header>
+    <div>
+        <h1>Eclipse Theia <span>· Security Model Overview</span></h1>
+    </div>
+    <div class="legend">
+        <span><i class="t-trusted"></i>Trusted</span>
+        <span><i class="t-infra"></i>Release infrastructure</span>
+        <span><i class="l-boundary"></i>Crosses a trust boundary</span>
+        <span><i class="t-partial"></i>Partially trusted</span>
+        <span><i class="t-neutral"></i>Outside Theia's scope</span>
+        <span><i class="l-flow"></i>Data flow</span>
+        <span><i class="t-untrusted"></i>Untrusted</span>
+    </div>
+</header>
+<h2>Runtime</h2>
+<div id="runtime"></div>
+<h2>Development and release pipeline</h2>
+<div id="pipeline"></div>
+<section class="boundaries">
+    <h2>Trust boundaries</h2>
+    <ol>
+        <li><b>1</b><span><em>Browser page or network client → backend.</em> <code>localhost</code> bind, origin check, connection token (browser), security token (Electron)</span></li>
+        <li><b>8</b><span><em>LLM output → agent tools.</em> Tool confirmation, workspace path restriction, shell allow/denylist</span></li>
+        <li><b>2</b><span><em>Workspace → features that run code.</em> Workspace trust: tasks, debug, extensions, AI, MCP</span></li>
+        <li><b>9</b><span><em>Remote hosts → local app.</em> Opened by the user. Remote content only through the workbench and forwarded ports</span></li>
+        <li><b>3</b><span><em>Content → workbench DOM.</em> DOMPurify, <code>command:</code> links only in trusted markdown</span></li>
+        <li><b>10</b><span><em>Workbench ↔ collaboration server and guests.</em> Host approves each guest, optional read-only mode</span></li>
+        <li><b>4</b><span><em>Webviews, mini-browser, notebook outputs → workbench.</em> Separate origins, <code>postMessage</code>, command URI allowlist</span></li>
+        <li><b>11</b><span><em>Contributor → published packages.</em> Review, ECA, pinned actions, trusted publishing with provenance</span></li>
+        <li><b>5</b><span><em>Electron renderer → Electron main.</em> Context isolation, preload API over IPC</span></li>
+        <li><b>12</b><span><em>Build inputs → build.</em> Pinned versions, lockfile integrity hashes, <code>allowScripts</code></span></li>
+        <li><b>6</b><span><em>Other apps → Electron main.</em> <code>theia://</code> deep links</span></li>
+        <li><b>13</b><span><em>Maintainer → published packages.</em> Manual publish of new packages and fallback, npm 2FA, no provenance</span></li>
+        <li><b>7</b><span><em>Extension source → plugin host.</em> Installed by user, product, or CLI, then fully trusted</span></li>
+    </ol>
+</section>
+<script>
+window.diagrams = [{
+    host: 'runtime',
+    width: 1800,
+    height: 772,
+    cols: {
+        C0: [16, 256], C1: [372, 752], C1a: [372, 552], C1b: [572, 752],
+        C2: [842, 1092], C3: [1152, 1422], C4: [1538, 1786]
+    },
+    rows: { T: [40, 116], R1: [248, 324], R2: [396, 472], R3: [540, 616], B: [676, 752] },
+    boxes: [
+        { id: 'collab', col: 'C1', row: 'T', accent: 'partial', title: 'Collaboration server, guests', desc: '<code>api.open-collab.tools</code> by default. Host approves each guest' },
+        { id: 'web', col: 'C2', row: 'T', accent: 'untrusted', title: 'Web pages, network clients', desc: 'Other browser origins. Hosts reaching a non-loopback port' },
+        { id: 'content', col: 'C0', row: 'R1', accent: 'untrusted', title: 'Content', desc: 'Markdown, hovers, notebook data, terminal output, LLM responses' },
+        { id: 'deeplink', col: 'C0', row: 'R2', accent: 'untrusted', title: 'Deep links', desc: '<code>theia://</code> URLs from the OS, browsers, other apps' },
+        { id: 'workbench', col: 'C1', row: 'R1', accent: 'trusted', title: 'Workbench', desc: 'Browser tab or Electron renderer. Editors, views, AI chat. Controls the backend over RPC' },
+        { id: 'electron', col: 'C1a', row: 'R2', accent: 'trusted', title: 'Electron main', desc: 'Preload API, windows, <code>openExternal</code>' },
+        { id: 'webviews', col: 'C1b', row: 'R2', accent: 'untrusted', title: 'Webviews', desc: 'Own origin each. Mini-browser, notebooks, MCP apps' },
+        { id: 'server', col: 'C2', row: 'R1', rowEnd: 'R2', accent: 'trusted', title: 'HTTP + WebSocket server', desc: '<code>localhost</code> by default. Origin check, connection token (browser), security token (Electron). Serves the frontend and the HTTP routes' },
+        { id: 'plugins', col: 'C3', row: 'R1', accent: 'trusted', title: 'Plugin hosts', desc: 'Node.js process per connection, headless host. Web Worker host in the browser' },
+        { id: 'ai', col: 'C3', row: 'R2', accent: 'trusted', title: 'AI agents, MCP', desc: 'Tool calls, MCP client and server, local MCP servers. Off until enabled' },
+        { id: 'rpc', col: 'C2', colEnd: 'C3', row: 'R3', accent: 'trusted', title: 'RPC services', desc: 'Files, terminals, tasks, debug adapters, search, OS keychain, extension install' },
+        { id: 'os', col: 'C1', colEnd: 'C2', row: 'B', accent: 'trusted', title: 'Operating system', desc: 'All files of the user, processes, OS keychain, SSH keys, git credentials' },
+        { id: 'workspace', col: 'C3', row: 'B', accent: 'partial', title: 'Workspace folder', desc: 'Untrusted content: <code>.vscode/</code>, <code>.theia/</code>, tasks, launch configs, prompt files' },
+        { id: 'ovsx', col: 'C4', row: 'R1', accent: 'partial', title: 'Open VSX, VSIX, URLs', desc: '<code>VSX_REGISTRY_URL</code>, VSIX files, GitHub, HTTP URLs' },
+        { id: 'llm', col: 'C4', row: 'R2', accent: 'partial', title: 'LLMs, remote MCP servers', desc: 'OpenAI, Anthropic, Google, Ollama, Copilot' },
+        { id: 'remote', col: 'C4', row: 'R3', accent: 'partial', title: 'SSH, WSL, dev containers', desc: 'Run a Theia backend for the user. Electron only' }
+    ],
+    zones: [
+        { id: 'z-peers', trust: 'partial', title: 'Peers', members: ['collab'] },
+        { id: 'z-web', trust: 'untrusted', title: 'Untrusted', members: ['web'] },
+        { id: 'z-left', trust: 'untrusted', title: 'Untrusted', members: ['content', 'deeplink'] },
+        { id: 'z-front', sub: true, title: 'Electron or browser tab', members: ['workbench', 'electron', 'webviews'] },
+        { id: 'z-back', sub: true, labelRight: true, title: 'Backend · Node.js', members: ['server', 'plugins', 'ai', 'rpc'] },
+        { id: 'z-machine', trust: 'trusted', title: 'User machine', note: 'runs as the backend\'s OS user', members: ['z-front', 'z-back', 'os', 'workspace'] },
+        { id: 'z-ext', trust: 'partial', title: 'Extension sources', members: ['ovsx'] },
+        { id: 'z-right', trust: 'partial', title: 'External services', members: ['llm'] },
+        { id: 'z-remote', trust: 'partial', title: 'Remote hosts', members: ['remote'] }
+    ],
+    links: [
+        ['collab', 'workbench', 10, 'boundary', { both: true, at: 'z-machine' }],
+        ['web', 'server', 1, 'boundary', { at: 'z-machine' }],
+        ['content', 'workbench', 3, 'boundary', { at: 'z-machine' }],
+        ['deeplink', 'electron', 6, 'boundary', { at: 'z-machine' }],
+        ['webviews', 'workbench', 4, 'boundary'],
+        ['electron', 'workbench', 5, 'boundary', { both: true }],
+        ['workbench', 'server', 0, 'flow', { both: true }],
+        ['server', 'rpc', 0, 'flow'],
+        ['ai', 'rpc', 0, 'flow'],
+        ['rpc', 'os', 0, 'flow'],
+        ['workspace', 'rpc', 2, 'boundary'],
+        ['ovsx', 'plugins', 7, 'boundary', { at: 'z-machine' }],
+        ['llm', 'ai', 8, 'boundary', { at: 'z-machine' }],
+        ['remote', 'rpc', 9, 'boundary', { at: 'z-machine' }]
+    ]
+}, {
+    host: 'pipeline',
+    width: 1800,
+    height: 352,
+    cols: { P0: [16, 316], P1: [446, 786], P2: [916, 1256], P3: [1386, 1786] },
+    rows: { Q1: [40, 106], Q2: [180, 246], Q3: [266, 332] },
+    boxes: [
+        { id: 'pr', col: 'P0', row: 'Q1', accent: 'untrusted', title: 'Pull requests', desc: 'Forks and branches. ECA required' },
+        { id: 'deps', col: 'P0', row: 'Q2', accent: 'partial', title: 'npm dependencies', desc: '<code>package-lock.json</code>, <code>allowScripts</code>' },
+        { id: 'builtins', col: 'P0', row: 'Q3', accent: 'partial', title: 'Built-ins, Electron, prebuilds', desc: 'GitHub, Open VSX, npm' },
+        { id: 'ci', col: 'P1', row: 'Q1', accent: 'infra', title: 'CI and review', desc: 'Pinned actions, committer approval, lockfile and license checks' },
+        { id: 'publish', col: 'P1', row: 'Q2', rowEnd: 'Q3', accent: 'infra', title: 'publish-ci.yml', desc: 'Manual release, nightly <code>next</code>. npm trusted publishing (OIDC), no npm token. Native dependency archives after publishing' },
+        { id: 'maint', col: 'P2', row: 'Q1', accent: 'partial', title: 'Maintainer machine', desc: 'Manual publish with 2FA: first version of new packages, fallback' },
+        { id: 'npm', col: 'P2', row: 'Q2', accent: 'infra', title: '@theia/* on npm', desc: 'Provenance attestations' },
+        { id: 'releases', col: 'P2', row: 'Q3', accent: 'infra', title: 'GitHub releases, SBOM', desc: 'Native dependency archives, Eclipse SBOM registry' },
+        { id: 'products', col: 'P3', row: 'Q2', rowEnd: 'Q3', accent: 'neutral', title: 'Products', desc: 'Theia IDE, commercial and in-house tools. Build with the <code>theia</code> CLI and <code>download:plugins</code>' }
+    ],
+    zones: [
+        { id: 'z-contrib', trust: 'untrusted', title: 'Contributors', members: ['pr'] },
+        { id: 'z-inputs', trust: 'partial', title: 'Build inputs', members: ['deps', 'builtins'] },
+        { id: 'z-maint', trust: 'partial', title: 'Maintainers', members: ['maint'] },
+        { id: 'z-gh', trust: 'infra', title: 'GitHub eclipse-theia/theia', members: ['ci', 'publish'] },
+        { id: 'z-pub', trust: 'infra', title: 'Published', members: ['npm', 'releases'] },
+        { id: 'z-adopt', trust: 'neutral', title: 'Adopters', members: ['products'] }
+    ],
+    links: [
+        ['pr', 'ci', 11, 'boundary', { at: 'z-gh' }],
+        ['ci', 'publish', 0, 'flow'],
+        ['deps', 'publish', 12, 'boundary', { at: 'z-gh' }],
+        ['builtins', 'publish', 12, 'boundary', { at: 'z-gh' }],
+        ['publish', 'npm', 0, 'flow'],
+        ['maint', 'npm', 13, 'boundary', { at: 'z-pub' }],
+        ['publish', 'releases', 0, 'flow'],
+        ['npm', 'products', 0, 'flow'],
+        ['releases', 'products', 0, 'flow']
+    ]
+}];
+/*
+ * Renders a diagram from a declarative model and checks its geometry.
+ * Boxes sit on named columns and rows, zones wrap their members, and every
+ * link must be a straight horizontal or vertical line between two boxes.
+ */
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const MIN_LINK = 40;
+
+function boxRect(d, b) {
+    const c1 = d.cols[b.col];
+    const c2 = d.cols[b.colEnd || b.col];
+    const r1 = d.rows[b.row];
+    const r2 = d.rows[b.rowEnd || b.row];
+    return { x: c1[0], y: r1[0], w: c2[1] - c1[0], h: r2[1] - r1[0] };
+}
+
+function layout(d) {
+    const rect = {};
+    for (const b of d.boxes) {
+        rect[b.id] = boxRect(d, b);
+    }
+    for (const z of d.zones) {
+        const pad = z.pad || (z.sub ? [28, 12, 12, 12] : [34, 14, 14, 14]);
+        const rs = z.members.map(m => rect[m]);
+        const x1 = Math.min(...rs.map(r => r.x)) - pad[3];
+        const y1 = Math.min(...rs.map(r => r.y)) - pad[0];
+        const x2 = Math.max(...rs.map(r => r.x + r.w)) + pad[1];
+        const y2 = Math.max(...rs.map(r => r.y + r.h)) + pad[2];
+        rect[z.id] = { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
+    }
+    return rect;
+}
+
+function route(a, b) {
+    const oy1 = Math.max(a.y, b.y);
+    const oy2 = Math.min(a.y + a.h, b.y + b.h);
+    const ox1 = Math.max(a.x, b.x);
+    const ox2 = Math.min(a.x + a.w, b.x + b.w);
+    if (oy2 - oy1 >= 16 && (b.x >= a.x + a.w || a.x >= b.x + b.w)) {
+        const y = (oy1 + oy2) / 2;
+        return b.x >= a.x + a.w ? [[a.x + a.w, y], [b.x, y]] : [[a.x, y], [b.x + b.w, y]];
+    }
+    if (ox2 - ox1 >= 16 && (b.y >= a.y + a.h || a.y >= b.y + b.h)) {
+        const x = (ox1 + ox2) / 2;
+        return b.y >= a.y + a.h ? [[x, a.y + a.h], [x, b.y]] : [[x, a.y], [x, b.y + b.h]];
+    }
+    return undefined;
+}
+
+function badgePoint(seg, z) {
+    const [[x1, y1], [x2, y2]] = seg;
+    if (!z) {
+        return [(x1 + x2) / 2, (y1 + y2) / 2];
+    }
+    if (y1 === y2) {
+        const lo = Math.min(x1, x2);
+        const hi = Math.max(x1, x2);
+        const edge = [z.x, z.x + z.w].find(e => e > lo && e < hi);
+        return edge === undefined ? undefined : [edge, y1];
+    }
+    const lo = Math.min(y1, y2);
+    const hi = Math.max(y1, y2);
+    const edge = [z.y, z.y + z.h].find(e => e > lo && e < hi);
+    return edge === undefined ? undefined : [x1, edge];
+}
+
+function el(tag, cls, parent, html) {
+    const e = document.createElement(tag);
+    if (cls) {
+        e.className = cls;
+    }
+    if (html !== undefined) {
+        e.innerHTML = html;
+    }
+    parent.appendChild(e);
+    return e;
+}
+
+function place(e, r) {
+    e.style.left = `${r.x}px`;
+    e.style.top = `${r.y}px`;
+    e.style.width = `${r.w}px`;
+    e.style.height = `${r.h}px`;
+}
+
+function render(d, host) {
+    const rect = layout(d);
+    const canvas = el('div', 'canvas', host);
+    canvas.style.width = `${d.width}px`;
+    canvas.style.height = `${d.height}px`;
+    const labels = {};
+    // Outer zones first, so nested zones paint on top of them.
+    for (const z of [...d.zones].reverse()) {
+        const ze = el('div', `zone ${z.sub ? 'sub' : 't-' + z.trust}`, canvas);
+        place(ze, rect[z.id]);
+        labels[z.id] = el('div', `zlabel${z.labelRight ? ' right' : ''}`, ze, z.title);
+        if (z.note) {
+            labels[`${z.id} note`] = el('div', 'zlabel znote right', ze, z.note);
+        }
+    }
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('class', 'wires');
+    svg.setAttribute('width', d.width);
+    svg.setAttribute('height', d.height);
+    svg.innerHTML = '<defs>' +
+        '<marker id="h-boundary" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,1 L10,5 L0,9 z"/></marker>' +
+        '<marker id="h-flow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L10,5 L0,9 z"/></marker>' +
+        '</defs>';
+    canvas.appendChild(svg);
+    const boxes = {};
+    for (const b of d.boxes) {
+        const be = el('div', `box${b.accent ? ' a-' + b.accent : ''}`, canvas);
+        place(be, rect[b.id]);
+        el('div', 'title', be, b.title);
+        if (b.desc) {
+            el('div', 'desc', be, b.desc);
+        }
+        boxes[b.id] = be;
+    }
+    const top = document.createElementNS(SVG_NS, 'svg');
+    top.setAttribute('class', 'badges');
+    top.setAttribute('width', d.width);
+    top.setAttribute('height', d.height);
+    canvas.appendChild(top);
+    const drawn = [];
+    for (const l of d.links) {
+        const [from, to, num, kind, opt = {}] = l;
+        const seg = route(rect[from], rect[to]);
+        drawn.push({ l, seg });
+        if (!seg) {
+            continue;
+        }
+        const line = document.createElementNS(SVG_NS, 'line');
+        line.setAttribute('x1', seg[0][0]);
+        line.setAttribute('y1', seg[0][1]);
+        line.setAttribute('x2', seg[1][0]);
+        line.setAttribute('y2', seg[1][1]);
+        line.setAttribute('class', kind);
+        line.setAttribute('marker-end', `url(#h-${kind})`);
+        if (opt.both) {
+            line.setAttribute('marker-start', `url(#h-${kind})`);
+        }
+        svg.appendChild(line);
+        if (num) {
+            const p = badgePoint(seg, opt.at && rect[opt.at]);
+            drawn[drawn.length - 1].badge = p;
+            if (p) {
+                const g = document.createElementNS(SVG_NS, 'g');
+                g.setAttribute('class', 'badge');
+                g.innerHTML = `<rect x="${p[0] - 10}" y="${p[1] - 10}" width="20" height="20" rx="3"/>` +
+                    `<text x="${p[0]}" y="${p[1] + 4}" text-anchor="middle">${num}</text>`;
+                top.appendChild(g);
+            }
+        }
+    }
+    return { rect, boxes, labels, drawn, canvas };
+}
+
+function check(d, r) {
+    const issues = [];
+    const cr = r.canvas.getBoundingClientRect();
+    const local = e => {
+        const b = e.getBoundingClientRect();
+        return { x: b.left - cr.left, y: b.top - cr.top, w: b.width, h: b.height };
+    };
+    const hit = (a, b, m = 0) => a.x < b.x + b.w + m && b.x < a.x + a.w + m && a.y < b.y + b.h + m && b.y < a.y + a.h + m;
+    const segRect = s => {
+        const [[x1, y1], [x2, y2]] = s;
+        return { x: Math.min(x1, x2) - 1, y: Math.min(y1, y2) - 1, w: Math.abs(x2 - x1) + 2, h: Math.abs(y2 - y1) + 2 };
+    };
+    const labelRects = Object.entries(r.labels).map(([id, e]) => ({ id, r: local(e) }));
+    const badgeRects = [];
+    for (const { l, seg, badge } of r.drawn) {
+        const [from, to, num] = l;
+        const name = `${from}->${to}`;
+        if (!seg) {
+            issues.push(`${name}: not straight, boxes share no row or column`);
+            continue;
+        }
+        const len = Math.abs(seg[1][0] - seg[0][0]) + Math.abs(seg[1][1] - seg[0][1]);
+        if (len < MIN_LINK) {
+            issues.push(`${name}: too short (${len}px)`);
+        }
+        const sr = segRect(seg);
+        for (const b of d.boxes) {
+            if (b.id !== from && b.id !== to && hit(sr, r.rect[b.id])) {
+                issues.push(`${name}: crosses box ${b.id}`);
+            }
+        }
+        for (const lr of labelRects) {
+            if (hit(sr, lr.r, 2)) {
+                issues.push(`${name}: crosses label of ${lr.id}`);
+            }
+        }
+        if (num) {
+            if (!badge) {
+                issues.push(`${name}: badge has no zone edge to sit on`);
+                continue;
+            }
+            const br = { x: badge[0] - 11, y: badge[1] - 11, w: 22, h: 22 };
+            for (const b of d.boxes) {
+                if (hit(br, r.rect[b.id], 2)) {
+                    issues.push(`${name}: badge overlaps box ${b.id}`);
+                }
+            }
+            for (const lr of labelRects) {
+                if (hit(br, lr.r, 2)) {
+                    issues.push(`${name}: badge overlaps label of ${lr.id}`);
+                }
+            }
+            for (const o of badgeRects) {
+                if (hit(br, o.r, 2)) {
+                    issues.push(`${name}: badge overlaps badge of ${o.name}`);
+                }
+            }
+            badgeRects.push({ name, r: br });
+        }
+    }
+    for (let i = 0; i < r.drawn.length; i++) {
+        for (let j = i + 1; j < r.drawn.length; j++) {
+            const a = r.drawn[i].seg;
+            const b = r.drawn[j].seg;
+            if (!a || !b) {
+                continue;
+            }
+            const sameAxis = (a[0][1] === a[1][1] && b[0][1] === b[1][1] && a[0][1] === b[0][1]) ||
+                (a[0][0] === a[1][0] && b[0][0] === b[1][0] && a[0][0] === b[0][0]);
+            if (sameAxis && hit(segRect(a), segRect(b), -2)) {
+                issues.push(`${r.drawn[i].l[0]}->${r.drawn[i].l[1]} and ${r.drawn[j].l[0]}->${r.drawn[j].l[1]}: overlap`);
+            }
+        }
+    }
+    for (const [id, e] of Object.entries(r.boxes)) {
+        if (e.scrollHeight > e.clientHeight + 1 || e.scrollWidth > e.clientWidth + 1) {
+            issues.push(`${id}: text overflows`);
+        }
+    }
+    for (const id of Object.keys(r.rect)) {
+        const q = r.rect[id];
+        if (q.x < 0 || q.y < 0 || q.x + q.w > d.width || q.y + q.h > d.height) {
+            issues.push(`${id}: outside canvas`);
+        }
+    }
+    return issues;
+}
+
+window.addEventListener('load', () => {
+    window.diagramIssues = [];
+    for (const d of window.diagrams) {
+        const host = document.getElementById(d.host);
+        const r = render(d, host);
+        window.diagramIssues.push(...check(d, r).map(i => `${d.host}: ${i}`));
+    }
+    document.body.dataset.ready = 'true';
+});
+</script>
+</body>
+</html>
