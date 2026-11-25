@@ -158,6 +158,7 @@ import { CommitMessageCommandContribution } from './commit-message-command-contr
 import { GetGitChangesTool } from './git-changes-tool.js';
 import { AiAwareScmCommitWidget } from './ai-aware-scm-commit-widget.js';
 import { ScmCommitWidget } from '@theia/scm/lib/browser/scm-commit-widget';
+import { ExecutableWorkspaceConfiguration } from './executable-workspace-configuration.js';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
@@ -262,6 +263,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(LaunchListProvider, bind);
     bindToolProvider(LaunchRunnerProvider, bind);
     bindToolProvider(LaunchStopProvider, bind);
+    bind(ExecutableWorkspaceConfiguration).toSelf().inSingletonScope();
     bind(ReplaceContentInFileFunctionHelper).toSelf().inSingletonScope();
     bind(FileChangeSetTitleProvider).to(DefaultFileChangeSetTitleProvider).inSingletonScope();
     bind(ReplaceContentInFileFunctionHelperV2).toSelf().inSingletonScope();

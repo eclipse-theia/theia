@@ -14,6 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+let disableJSDOM = enableJSDOM();
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+FrontendApplicationConfigProvider.set({});
+
 import { expect } from 'chai';
 import { CancellationTokenSource, PreferenceService, ILogger } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
@@ -45,7 +50,16 @@ const makeEnvVariablesServer = (): EnvVariablesServer => ({
     getConfigDirUri: async () => 'file:///home/test/.config'
 } as unknown as EnvVariablesServer);
 
+disableJSDOM();
+
 describe('Workspace Task Provider Cancellation Tests', () => {
+    before(() => {
+        disableJSDOM = enableJSDOM();
+    });
+    after(() => {
+        disableJSDOM();
+    });
+
     let cancellationTokenSource: CancellationTokenSource;
     let mockCtx: ToolInvocationContext;
     let container: Container;
@@ -324,6 +338,11 @@ describe('Workspace Task Provider Cancellation Tests', () => {
         const wsResult = await handler(JSON.stringify({ taskName: 'build', workspaceRoot: WORKSPACE_SCOPE_TOKEN }), mockCtx);
         expect(wsResult as string).to.not.include('Ambiguous');
         expect(wsResult as string).to.not.include('Did not find');
+    });
+
+    it('TaskRunnerProvider asks for confirmation before being always allowed, as tasks can execute any command', () => {
+        const tool = container.get(TaskRunnerProvider).getTool();
+        expect(tool.confirmAlwaysAllow).to.be.a('string').that.is.not.empty;
     });
 
     it('TaskRunnerProvider should run a uniquely-named task without workspaceRoot', async () => {
