@@ -64,8 +64,15 @@ class TestDebugChannel implements DebugChannel {
     }
 
     onError(): void { }
-    onClose(): void { }
-    close(): void { }
+    onClose(cb: (code: number, reason: string) => void): void {
+        this.closeHandler = cb;
+    }
+    close(): void {
+        if (this.closeHandler) {
+            this.closeHandler(0, 'closed');
+        }
+    }
+    private closeHandler?: (code: number, reason: string) => void;
 }
 
 describe('DebugSession', () => {
@@ -111,6 +118,92 @@ describe('DebugSession', () => {
             channel.receive({ type: 'event', seq: 0, event: 'capabilities', body: { capabilities: { supportsRestartFrame: false } } } as DebugProtocol.CapabilitiesEvent);
             expect(changes).to.equal(2);
             expect(session.capabilities.supportsRestartFrame).to.be.false;
+        });
+    });
+
+    describe('disconnect', () => {
+
+        let channel: TestDebugChannel;
+        let session: DebugSession;
+        let connection: DebugSessionConnection;
+
+        beforeEach(() => {
+            channel = new TestDebugChannel({});
+            const container = new Container();
+            container.bind(BreakpointManager).toConstantValue({ onDidChangeMarkers: Event.None } as unknown as BreakpointManager);
+            container.bind(ContributionProvider).toConstantValue({ getContributions: () => [] }).whenTargetNamed(DebugContribution);
+            container.bind(DebugPreferences).toConstantValue({} as DebugPreferences);
+            const services: interfaces.ServiceIdentifier<unknown>[] = [
+                CommandService, ILogger, TestService, DebugSessionManager, TerminalService, EditorManager, LabelProvider, MessageClient, FileService, WorkspaceService
+            ];
+            for (const service of services) {
+                container.bind(service).toConstantValue({});
+            }
+            const options = { name: 'test', configuration: { type: 'node', name: 'test', request: 'launch' } } as DebugConfigurationSessionOptions;
+            const data: DebugSessionData = { id: 'test', options, parentSession: undefined };
+            connection = new DebugSessionConnection('test', async () => channel, undefined);
+            session = DebugSession.createContainer(container, data, connection).get(DebugSession);
+        });
+
+        it('executes callback and does not send request if connection is already closed', async () => {
+            await session.start();
+            channel.close();
+            expect(connection.closed).to.be.true;
+
+            let callbackCalled = false;
+            await session.disconnect(false, () => {
+                callbackCalled = true;
+            });
+
+            expect(callbackCalled).to.be.true;
+        });
+
+        it('executes callback when connection closes while disconnect request is in flight', async () => {
+            await session.start();
+            // Override channel.send to close connection instead of replying
+            channel.send = () => {
+                channel.close();
+            };
+
+            let callbackCalled = false;
+            await session.disconnect(false, () => {
+                callbackCalled = true;
+            });
+
+            expect(callbackCalled).to.be.true;
+            expect(connection.closed).to.be.true;
+        });
+
+        it('propagates error when error happens on an active connection', async () => {
+            await session.start();
+            // Send an error response while connection remains open
+            channel.send = content => {
+                const request: DebugProtocol.Request = JSON.parse(content);
+                const response: DebugProtocol.Response = {
+                    type: 'response',
+                    seq: 0,
+                    request_seq: request.seq,
+                    command: request.command,
+                    success: false,
+                    message: 'Adapter failure on active connection'
+                };
+                channel.receive(response);
+            };
+
+            let callbackCalled = false;
+            let errorCaught: Error | undefined;
+            try {
+                await session.disconnect(false, () => {
+                    callbackCalled = true;
+                });
+            } catch (e) {
+                errorCaught = e as Error;
+            }
+
+            expect(callbackCalled).to.be.false;
+            expect(connection.closed).to.be.false;
+            expect(errorCaught).to.be.not.undefined;
+            expect(errorCaught?.message).to.equal('Adapter failure on active connection');
         });
     });
 });
