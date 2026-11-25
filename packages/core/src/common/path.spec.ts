@@ -248,6 +248,15 @@ describe('Path', () => {
         expectation: '../'
     });
 
+    for (const from of ['/', '/foo/..', '/..', '/.', '//', '/foo/bar/../../', '/foo/../../..']) {
+        it(`should preserve the absolute root when normalizing ${from}`, () => {
+            const path = new Path(from).normalize();
+            expect(path.toString()).eq('/');
+            expect(path.isAbsolute).eq(true);
+            expect(path.isRoot).eq(true);
+        });
+    }
+
     function assertNormalize({ from, expectation }: {
         from: string,
         expectation: string
@@ -409,6 +418,8 @@ describe('Path', () => {
         });
     }
 
+    checkResolution('/foo', ['..'], '/');
+    checkResolution('/foo/bar', ['../..'], '/');
     checkResolution('a/b/c', ['/d/e/f'], '/d/e/f');
     checkResolution('a/b/c', ['../d/e/f'], undefined);
     checkResolution('/a/b/c', ['../d', 'e', './f'], '/a/b/d/e/f');

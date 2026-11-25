@@ -263,6 +263,14 @@ describe('uri', () => {
         });
     });
 
+    describe('#normalizePath', () => {
+        it('should preserve the file URI root when all path segments cancel out', () => {
+            const uri = URI.fromFilePath('/foo/..').normalizePath();
+            expect(uri.toString()).equals('file:///');
+            expect(uri.isEqual(URI.fromFilePath('/'))).equals(true);
+        });
+    });
+
     describe('#resolveToAbsolute', () => {
         function checkResolution(original: string, segments: Array<Path | string>, expected: string | undefined): void {
             it(`should resolve ${original.toString()} and ${segments.map(segment => segment.toString()).join(', ')} to ${expected}`, () => {
@@ -271,6 +279,7 @@ describe('uri', () => {
                 expect(result?.toString()).equals(expected);
             });
         }
+        checkResolution('file:///foo', ['..'], 'file:///');
         checkResolution('file:///home/hello/', ['some-segment'], 'file:///home/hello/some-segment');
         checkResolution('file:///home/hello', ['/this/is-already/absolute'], 'file:///this/is-already/absolute');
     });
