@@ -44,15 +44,23 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         this.argumentProcessors = [];
         this.commandsConverter = new CommandsConverter(this);
         this.registerArgumentProcessor({
-            processArgument: arg => {
-                // Revive URI-like plain objects that lost their class identity during RPC/JSON serialization
-                // (e.g. command arguments from markdown links parsed by CommandOpenHandler)
-                if (isUriComponents(arg) && !(arg instanceof URI)) {
-                    return URI.revive(arg);
-                }
-                return arg;
-            }
+            processArgument: arg => this.reviveUris(arg)
         });
+    }
+
+    /**
+     * Revives URI-like plain objects that lost their class identity during RPC/JSON serialization
+     * (e.g. command arguments from markdown links parsed by CommandOpenHandler),
+     * including those in arrays (e.g. the selected resources passed to `explorer/context` commands).
+     */
+    protected reviveUris(arg: unknown): unknown {
+        if (isUriComponents(arg) && !(arg instanceof URI)) {
+            return URI.revive(arg);
+        }
+        if (Array.isArray(arg)) {
+            return arg.map(element => this.reviveUris(element));
+        }
+        return arg;
     }
 
     get converter(): CommandsConverter {
