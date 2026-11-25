@@ -30,7 +30,7 @@ import {
     CHANNEL_OPEN_URL, CHANNEL_SET_THEME, CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW,
     CHANNEL_UPDATE_RECENT_WORKSPACES,
     CHANNEL_SET_AUTO_HIDE_MENU_BAR,
-    CHANNEL_ON_SECONDARY_WINDOW_EVENT, CHANNEL_SUBSCRIBE_SECONDARY_WINDOW_EVENT
+    CHANNEL_ON_SECONDARY_WINDOW_EVENT, CHANNEL_SUBSCRIBE_SECONDARY_WINDOW_EVENT, CHANNEL_COPY_OR_CUT_SELECTION
 } from '../electron-common/electron-api.js';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { ipcRenderer, contextBridge } from 'electron';
@@ -269,6 +269,10 @@ const api: TheiaCoreAPI = {
 
     writeClipboard(text): void {
         ipcRenderer.send(CHANNEL_WRITE_CLIPBOARD, text);
+    },
+
+    copyOrCutSelection(command): Promise<void> {
+        return ipcRenderer.invoke(CHANNEL_COPY_OR_CUT_SELECTION, command);
     },
 
     onKeyboardLayoutChanged(handler): Disposable {

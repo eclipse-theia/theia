@@ -23,6 +23,7 @@ import { CustomTitleWidget, CustomTitleWidgetFactory, ElectronMenuContribution }
 import { BrowserMenuNodeFactory } from '../../browser/menu/browser-menu-node-factory.js';
 import { BrowserMainMenuFactory } from '../../browser/menu/browser-menu-plugin.js';
 import { ElectronWindowTitleBarService } from './electron-window-title-bar-service.js';
+import { ElectronClipboardCommandContribution } from '../electron-clipboard-command-contribution.js';
 
 export default new ContainerModule(bind => {
     bind(ElectronMainMenuFactory).toSelf().inSingletonScope();
@@ -44,4 +45,6 @@ export default new ContainerModule(bind => {
     bind(BrowserMenuNodeFactory).toSelf().inSingletonScope();
     bind(MenuNodeFactory).toService(BrowserMenuNodeFactory);
     bind(ElectronWindowTitleBarService).toSelf().inSingletonScope();
+    bind(ElectronClipboardCommandContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(ElectronClipboardCommandContribution);
 });
