@@ -26,6 +26,9 @@ This package is intended to be the interface between the `@theia/monaco-editor-c
 team, and the rest of the application. When we uplift to a new version of `monaco-editor-core`, this package will need to be checked particularly thoroughly. To facilitate that
 process, the steps for undertaking a Monaco uplift are outlined here.
 
+Known issues of past uplifts, the files that change together with the version and a log of previous uplifts are collected in
+[`.agents/skills/update-dependency/deps/monaco/GUIDE.md`](../../.agents/skills/update-dependency/deps/monaco/GUIDE.md).
+
 ### Setting up the VSCode side
 
 1. Clone the VSCode repo and make sure you have the following remotes:
