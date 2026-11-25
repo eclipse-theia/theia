@@ -53,7 +53,7 @@ function generateContent(properties: string, interfaceEntries: string[]): string
  ********************************************************************************/
 
 import { isOSX, isWindows, nls } from '@theia/core';
-import { PreferenceSchema } from '@theia/core/lib/browser';
+import { PreferenceSchema, PreferenceScope } from '@theia/core/lib/common/preferences';
 
 /* eslint-disable @stylistic/quotes,max-len,no-null/no-null */
 
@@ -79,6 +79,7 @@ const DEFAULT_LINUX_FONT_FAMILY = "\\'Droid Sans Mono\\', \\'monospace\\', monos
 
 const fontFamilyText = `${dequoteMarker}isOSX ? '${DEFAULT_MAC_FONT_FAMILY}' : isWindows ? '${DEFAULT_WINDOWS_FONT_FAMILY}' : '${DEFAULT_LINUX_FONT_FAMILY}'${dequoteMarker}`;
 const fontSizeText = `${dequoteMarker}isOSX ? 12 : 14${dequoteMarker}`;
+const renderFinalNewlineText = `${dequoteMarker}!isOSX && !isWindows ? 'dimmed' : 'on'${dequoteMarker}`;
 
 /**
  * This class is intended for use when uplifting Monaco.
@@ -123,18 +124,34 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
                     }
                 });
                 this.guaranteePlatformOptions(properties);
+                this.removeUnsupportedOptions(properties);
                 const interfaceEntries = [];
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 for (const [name, description] of Object.entries(properties) as Array<[string, any]>) {
-                    const { scope, overridable } = this.getScope(description.scope);
-                    description.scope = scope;
-                    description.overridable = overridable;
+                    // All editor preferences are overridable by default (see `editorPreferenceSchema`), so only the scope is emitted.
+                    description.scope = `${dequoteMarker}PreferenceScope.${PreferenceScope[this.getScope(description.scope)]}${dequoteMarker}`;
                     delete description.defaultDefaultValue;
                     delete description.restricted;
+                    // Metadata used only by VS Code's settings editor, experiments and agents window.
+                    delete description.section;
+                    delete description.experiment;
+                    delete description.keywords;
+                    delete description.agentsWindow;
+                    // `onExP` marks options that are part of VS Code's online experiments, which Theia does not run.
+                    // The preferences UI would show the tag as a label.
+                    if (Array.isArray(description.tags)) {
+                        description.tags = description.tags.filter((tag: string) => tag !== 'onExP');
+                        if (description.tags.length === 0) {
+                            delete description.tags;
+                        }
+                    }
                     if (name === 'editor.fontSize') {
                         description.default = fontSizeText;
                     } else if (name === 'editor.fontFamily') {
                         description.default = fontFamilyText;
+                    } else if (name === 'editor.renderFinalNewline') {
+                        // Monaco's default depends on the platform (`platform.isLinux ? 'dimmed' : 'on'`).
+                        description.default = renderFinalNewlineText;
                     }
                     interfaceEntries.push(`'${name}': ${this.formatSchemaForInterface(description)};`);
                 }
@@ -144,6 +161,24 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
                 await this.fileService.write(fileToWrite, content);
             }
         });
+    }
+
+    /**
+     * Removes option values that Monaco supports but Theia does not.
+     * The `advanced-external` and `advanced-wasm` diff algorithms load the `@vscode/diff` package at runtime, which Theia does not ship.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    protected removeUnsupportedOptions(properties: Record<string, any>): void {
+        const diffAlgorithm = properties['diffEditor.diffAlgorithm'];
+        if (diffAlgorithm && Array.isArray(diffAlgorithm.enum)) {
+            const unsupported = ['advanced-external', 'advanced-wasm'];
+            const supportedIndices = diffAlgorithm.enum.map((_: unknown, i: number) => i).filter((i: number) => !unsupported.includes(diffAlgorithm.enum[i]));
+            for (const key of ['enum', 'enumDescriptions', 'markdownEnumDescriptions']) {
+                if (Array.isArray(diffAlgorithm[key])) {
+                    diffAlgorithm[key] = supportedIndices.map((i: number) => diffAlgorithm[key][i]);
+                }
+            }
+        }
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -184,19 +219,19 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
         };
     };
 
-    protected getScope(monacoScope: unknown): { scope: PreferenceScope, overridable: boolean } {
+    protected getScope(monacoScope: unknown): PreferenceScope {
         switch (monacoScope) {
             case ConfigurationScope.MACHINE_OVERRIDABLE:
             case ConfigurationScope.WINDOW:
             case ConfigurationScope.RESOURCE:
-                return { scope: PreferenceScope.Folder, overridable: false };
             case ConfigurationScope.LANGUAGE_OVERRIDABLE:
-                return { scope: PreferenceScope.Folder, overridable: true };
+                return PreferenceScope.Folder;
             case ConfigurationScope.APPLICATION:
             case ConfigurationScope.MACHINE:
-                return { scope: PreferenceScope.User, overridable: false };
+                return PreferenceScope.User;
         }
-        return { scope: PreferenceScope.Default, overridable: false };
+        // Monaco treats a missing scope as `ConfigurationScope.WINDOW`.
+        return PreferenceScope.Folder;
     }
 
     protected formatSchemaForInterface(schema: PreferenceDataProperty): string {
@@ -209,7 +244,7 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
         if (jsonType === undefined) {
             const subschemata = schema.anyOf ?? schema.oneOf;
             if (subschemata) {
-                const permittedTypes = [].concat.apply(subschemata.map(subschema => this.formatSchemaForInterface(subschema).split(' | ')));
+                const permittedTypes = subschemata.flatMap(subschema => this.formatSchemaForInterface(subschema).split(' | '));
                 return Array.from(new Set(permittedTypes)).join(' | ');
             }
         }
@@ -227,6 +262,7 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
             case 'string':
             case 'true':
             case 'false':
+            case 'null':
                 return jsonType;
             case true:
             case false:

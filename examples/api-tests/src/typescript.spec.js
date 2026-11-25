@@ -800,6 +800,11 @@ SPAN {
             const lightbulbVisibility = codeActionController['_lightBulbWidget'].rawValue?.['_domNode'].style.visibility;
             return lightbulbVisibility !== undefined && lightbulbVisibility !== 'hidden';
         }
+        // The action widget stays in the DOM after it was closed, so check that it is visible.
+        const isActionWidgetVisible = () => {
+            const actionWidget = document.querySelector('.action-widget');
+            return !!actionWidget && actionWidget.getClientRects().length > 0;
+        }
         assert.strictEqual(editor.getControl().getModel().getLineContent(30), 'import { DefinedInterface } from "./demo-definitions-file";');
         editor.getControl().revealLine(30);
         editor.getControl().setSelection(new Selection(30, 1, 30, 60));
@@ -809,10 +814,7 @@ SPAN {
         await timeout(1000)
 
         await commands.executeCommand('editor.action.quickFix');
-        await waitForAnimation(() => {
-            const elements = document.querySelector('.action-widget');
-            return !!elements;
-        }, 5000, 'No context menu appeared. (1)');
+        await waitForAnimation(() => isActionWidgetVisible(), 5000, 'No context menu appeared. (1)');
 
         await timeout();
 
@@ -846,7 +848,7 @@ SPAN {
 
         // Change import back: https://github.com/eclipse-theia/theia/issues/11059
         await commands.executeCommand('editor.action.quickFix');
-        await waitForAnimation(() => Boolean(document.querySelector('.context-view-pointerBlock')), 5000, 'No context menu appeared. (2)');
+        await waitForAnimation(() => isActionWidgetVisible(), 5000, 'No context menu appeared. (2)');
         await timeout();
 
         keybindings.dispatchKeyDown('Enter');

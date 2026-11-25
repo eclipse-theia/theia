@@ -182,8 +182,7 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         const comments = configuration.comments;
         const config: monaco.languages.LanguageConfiguration = {
             comments: comments ? {
-                // @monaco-uplift: Monaco doesn't support LineCommentRule yet, extract the string
-                lineComment: comments.lineComment && typeof comments.lineComment === 'object' ? comments.lineComment.comment : comments.lineComment,
+                lineComment: comments.lineComment,
                 blockComment: comments.blockComment,
             } : undefined,
             brackets: configuration.brackets,
