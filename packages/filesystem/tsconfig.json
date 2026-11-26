@@ -7,9 +7,6 @@
     "paths": {
       "mv": [
         "./src/typings/mv"
-      ],
-      "trash": [
-        "./src/typings/trash"
       ]
     }
   },
