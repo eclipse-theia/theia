@@ -103,6 +103,18 @@ Hoisting `diff` 8+ (e.g. via an override, Sinon 22, or Mocha 12) shadows `@types
 
 In ESLint 9/10 flat config, `RuleTester` mounts the tested rule under the `rule-to-test/` prefix (so inline disable directives in tests must reference `rule-to-test/<rule>`), and `new Linter()` refuses to match filenames outside `cwd` (pass `new Linter({ cwd: path.dirname(filename) })` for temp-dir tests). Also set `linterOptions: { reportUnusedDisableDirectives: 'off' }` in `configs/base.eslint.mjs` so directives for `warnings.eslint.mjs` rules (like `@typescript-eslint/no-deprecated`) do not warn during `build.eslint.mjs` runs.
 
+### `theiaext test` still runs Mocha 11 after bumping Mocha 12 in `@theia/cli`
+
+`electron-mocha@13.1.0` in root `devDependencies` pulls `mocha@11`, which npm hoists to root `node_modules/.bin/mocha` unless `mocha@^12` is also declared in root `devDependencies`. Declare `mocha@^12` at root so Mocha 12 is hoisted and `electron-mocha` nests Mocha 11. (#18418)
+
+### CJS `dev-packages/*` and plain CJS scripts consuming ESM-only dependencies on Node >=24
+
+Node >=24's native `require(esm)` sets `__esModule: true` on the returned module namespace object, so TypeScript's `tslib.__importDefault(require('esm-pkg'))` works in CommonJS `dev-packages/*` compiled with `NodeNext`. Plain JS CommonJS scripts must unwrap `.default` (e.g. `require('chalk').default`), except for packages like `yargs@18` that export `export { Yargs as 'module.exports' }` and return the function directly. For ESM-only re-exports in `@theia/core`/`@theia/electron`, `@theia/re-exports` emits `index.js` + `index.d.ts` stubs and `node scripts/esm/package-exports.mjs <pkg-dirs>` updates the package `exports` map. (#18418)
+
+### `filenamify` 7 turns empty strings into the replacement character
+
+Unlike `filenamify` 4 (which returned `''` for empty input), `filenamify` 7 returns the replacement character (`'_'`). Guard empty/whitespace-only inputs before calling `filenamify` (see `PluginDirectoryNamingImpl.directoryName`). (#18418)
+
 ### Electron postinstall fails sporadically on Node 24 (`extract-zip` race)
 
 `yauzl` 3.4.0 reintroduced the race; the override was held at `~3.3.2` and removed once Electron 42.4 dropped `extract-zip`. (#17741, 98c400291, efcce0a7b)
@@ -121,6 +133,7 @@ Newest first. One entry per merged update and target branch.
 
 | Date | Branch | From → To | PR | Notes |
 | --- | --- | --- | --- | --- |
+| 2026-11-26 | master | major upgrades after 1.77.0 | #18418 | Lerna 10 (drops `lerna`/`nx` overrides), ESLint 10 flat config (`eslint-plugin-import-x`, drops `xss.eslintrc.json`/`eslint-plugin-react`/`eslint-plugin-no-unsanitized`), Sinon 22, Mocha 12, Chai 6 (drops `chai-string`/`chai-spies`), jsdom 31, unused `http(s)-proxy-agent` removed, ESM-only runtime/dev deps (`uuid` 14, `cookie` 2, `p-debounce` 6, `filenamify` 7, `valid-filename` 5, `trash` 10, `mime` 4, `archiver` 8, `string-argv` 0.4, `fix-path` 5, `mermaid` 12, `electron-store` 12, `yargs` 18, `chalk` 6, `log-update` 8, `escape-string-regexp` 5, `write-json-file` 7), `@theia/re-exports` ESM stub support, and Express 5 (`body-parser` 2, drops `express.qs` override). Excluded: TypeScript 7, InversifyJS 8. |
 | 2026-11-17 | master | after 1.77.0 | #18420 | Ranges aligned; puppeteer 25.17.0, minimatch 11, rimraf 6, zod floor 4.6.7 (drops zod 3); override `follow-redirects` (nx); `jsondiffpatch` override removed; `@types/vscode` held in sample plugins. Clean regen needed `node_modules` removed. Held back: `@vscode/proxy-agent`, `diff`, `mermaid` 12, lerna 10, TypeScript 7. |
 | 2026-10-12 | master | after 1.76.0 | #18149 | Ranges aligned (incl. `@playwright/test` 1.63.0), `simple-git` 4.0.2 in ai-ide, scoped overrides for `axios` (nx) and `basic-ftp`, full regen so `uuid`/`@tootallnate/once` overrides apply. |
 | 2026-09-15 | master | after 1.75.0 | #18005 | Overrides `pacote` (lerna), `smol-toml` (nx), `jsondiffpatch`, `qs` (express), `@tootallnate/once`; `tar-stream` type fix; `@types/vscode` held in sample plugins; `@vscode/vsce` dev dep and platform-restore tooling dropped. Held back: `decompress` (needs replacement), `ai`/`@ai-sdk/*` (v5 migration), `diff`, `stream-json` via `scanoss`. |

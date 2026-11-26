@@ -72,7 +72,7 @@ minimatch 11 removed `makeRe` and internal `Minimatch` members (`matchOne`, `reg
 
 ### `diff` cannot be overridden
 
-Needs the `@theia/scm` migration first, see the [NPM upgrade known issue](../npm-upgrade/GUIDE.md#theiascm-stops-compiling-after-overriding-diff).
+Needs the `@theia/scm` migration first, see the [NPM upgrade known issue](../npm-upgrade/GUIDE.md#theiascm-stops-compiling-after-hoisting-diff-89).
 
 ### `adm-zip` has no fixed release
 
@@ -84,6 +84,7 @@ Newest first. One entry per run. Record what is left open (severity and package)
 
 | Date | Branch | Left open | PR | Notes |
 | --- | --- | --- | --- | --- |
+| 2026-11-26 | master | moderate: `minimatch`/`glob` in tooling (`@npmcli/arborist`/`npm-packlist`/lerna, mocha/electron-mocha, nyc/`test-exclude`, typedoc, `readdir-glob`/`archiver`), `opfs-worker` (bundled), `stream-json` (scanoss); low: `diff`; no critical or high | #18418 | Lerna 10 (`nx` 24) dropped the `nx` `minimatch` chain and `lerna`/`nx` overrides; Mermaid 12 dropped `katex` low advisories; Express 5 dropped `overrides.express.qs`. |
 | 2026-11-17 | master | moderate: `minimatch`/`glob` in tooling (lerna/nx, mocha, nyc, typedoc), `opfs-worker` (bundled), `stream-json` (scanoss); low: `diff`, `katex` (mermaid 11); no critical or high | #18420 | Range alignment; puppeteer 25.17.0 (zod 4 for chromium-bidi), minimatch 11 in our packages, rimraf 6, override `follow-redirects` (nx); `jsondiffpatch` override removed; `decompress` gone since #18207. |
 | 2026-10-12 | master | critical: `decompress` | #18149 | Overrides `axios` (nx), `basic-ftp`. |
 | 2026-09-15 | master | critical: `decompress`; no high | #18005 | Overrides `pacote`, `smol-toml`, `jsondiffpatch`, `qs`, `@tootallnate/once`; `@vscode/vsce` dropped. |
