@@ -53,6 +53,9 @@ import { LanguageService } from '@theia/core/lib/browser/language-service';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables.js';
 import { JSONObject, JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import { ILogger } from '@theia/core';
+import URI from '@theia/core/lib/common/uri';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { hasReadWriteCapability } from '@theia/filesystem/lib/common/files';
 
 // The enum export is missing from `vscode-textmate@9.2.0`
 const enum StandardTokenType {
@@ -150,6 +153,9 @@ export class PluginContributionHandler {
 
     @inject(ILogger) @named('plugin-ext:PluginContributionHandler')
     protected readonly logger: ILogger;
+
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     protected readonly commandHandlers = new Map<string, CommandHandler['execute'] | undefined>();
 
@@ -255,11 +261,13 @@ export class PluginContributionHandler {
                     // processing is deferred.
                     grammarsWithLanguage.push(grammar);
                 }
+                const loadGrammarContent = this.createGrammarContentLoader(plugin, grammar);
                 pushContribution(`grammar.textmate.scope.${grammar.scope}`, () => this.grammarsRegistry.registerTextmateGrammarScope(grammar.scope, {
+                    location: grammar.grammarLocation,
                     async getGrammarDefinition(): Promise<GrammarDefinition> {
                         return {
                             format: grammar.format,
-                            content: grammar.grammar || '',
+                            content: await loadGrammarContent(),
                             location: grammar.grammarLocation
                         };
                     },
@@ -497,6 +505,38 @@ export class PluginContributionHandler {
         }
 
         return toDispose;
+    }
+
+    /**
+     * Browser-only builds leave the grammar content out of the plugin metadata, so it is fetched from
+     * the plugin's files when the registry asks for it. No caching here, vscode-textmate keeps loaded grammars.
+     */
+    protected createGrammarContentLoader(plugin: DeployedPlugin, grammar: GrammarsContribution): () => Promise<string | object> {
+        const content = grammar.grammar;
+        if (content !== undefined) {
+            return async () => content;
+        }
+        const location = grammar.grammarLocation;
+        // `resolveToAbsolute` rather than `resolve`, which would keep the `./` grammar paths usually start with
+        const grammarUri = location ? new URI(plugin.metadata.model.packageUri).resolveToAbsolute(location) : undefined;
+        if (!grammarUri) {
+            return async () => {
+                throw new Error(`Grammar '${grammar.scope}' has no content and no location to load it from.`);
+            };
+        }
+        return () => this.readGrammarFile(grammarUri);
+    }
+
+    /**
+     * `FileService.read` also stats the file, which is an extra `HEAD` per grammar in browser-only.
+     * Markdown alone pulls in about 70 embedded grammars.
+     */
+    protected async readGrammarFile(uri: URI): Promise<string> {
+        const provider = await this.fileService.activateProvider(uri.scheme);
+        if (hasReadWriteCapability(provider)) {
+            return new TextDecoder().decode(await provider.readFile(uri));
+        }
+        return (await this.fileService.read(uri)).value;
     }
 
     protected registerCommands(contribution: PluginContribution): Disposable {
