@@ -45,6 +45,7 @@
     "./shared/inversify": "./shared/inversify/index.js",
     "./shared/reflect-metadata": "./shared/reflect-metadata/index.js",
     "./shared/vscode-languageserver-types": "./shared/vscode-languageserver-types/index.js",
+    "./shared/yargs": "./shared/yargs/index.js",
     "./shared/*": "./shared/*/index.cjs",
     "./lib/*.json": "./lib/*.json",
     "./lib/*.js": "./lib/*.js",
@@ -115,7 +116,7 @@
     "vscode-languageserver-protocol": "3.17.5",
     "vscode-uri": "3.0.8",
     "ws": "^8.23.0",
-    "yargs": "^17.7.3"
+    "yargs": "^18.2.0"
   },
   "peerDependencies": {
     "@theia/electron": "*",

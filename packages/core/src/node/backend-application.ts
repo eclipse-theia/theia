@@ -19,7 +19,7 @@ import * as path from 'path';
 import * as http from 'http';
 import * as https from 'https';
 import express from '../../shared/express/index.cjs';
-import yargs from '../../shared/yargs/index.cjs';
+import * as yargs from '../../shared/yargs/index.js';
 import * as fs from '../../shared/fs-extra/index.cjs';
 import { inject, named, injectable, type interfaces, postConstruct } from 'inversify';
 import { ContributionProvider, LogLevel, MaybePromise, MeasurementContext, Stopwatch, environment } from '../common/index.js';

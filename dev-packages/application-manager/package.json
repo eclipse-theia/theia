@@ -52,7 +52,7 @@
     "http-server": "^14.1.1",
     "semver": "^7.8.6",
     "tslib": "^2.9.1",
-    "yargs": "^17.7.3"
+    "yargs": "^18.2.0"
   },
   "peerDependencies": {
     "@theia/electron": "*"

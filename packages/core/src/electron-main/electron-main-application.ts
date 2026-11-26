@@ -20,7 +20,7 @@ import {
     nativeTheme, shell, dialog, session
 } from '../../electron-shared/electron/index.cjs';
 import * as path from 'path';
-import { Argv } from '../../shared/yargs/index.cjs';
+import { Argv } from '../../shared/yargs/index.js';
 import yargsFactory from 'yargs/yargs';
 import { AddressInfo } from 'net';
 import { promises as fs } from 'fs';

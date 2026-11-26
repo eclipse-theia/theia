@@ -112,7 +112,7 @@ export class SomeClass {
   - `markdown-it-anchor` (from [`markdown-it-anchor@^9.2.1`](https://www.npmjs.com/package/markdown-it-anchor))
   - `markdown-it-emoji` (from [`markdown-it-emoji@^3.1.0`](https://www.npmjs.com/package/markdown-it-emoji))
   - `ws` (from [`ws@^8.23.0`](https://www.npmjs.com/package/ws))
-  - `yargs` (from [`yargs@^17.7.3`](https://www.npmjs.com/package/yargs))
+  - `yargs` (from [`yargs@^18.2.0`](https://www.npmjs.com/package/yargs))
 
 ## Logging Configuration
 

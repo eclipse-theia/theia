@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as yargs from '../../shared/yargs/index.cjs';
+import * as yargs from '../../shared/yargs/index.js';
 import * as chai from 'chai';
 import { CliManager, CliContribution } from './cli.js';
 import { Deferred } from '../common/promise-util.js';
@@ -27,10 +27,6 @@ class TestCliManager extends CliManager {
         });
     }
 }
-
-beforeEach(() => {
-    yargs.global([]);
-});
 
 describe('CliManager', () => {
     it('Parses simple option', async () => {

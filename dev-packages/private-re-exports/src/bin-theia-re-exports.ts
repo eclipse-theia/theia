@@ -19,13 +19,14 @@ import mustache = require('mustache');
 import os = require('os');
 import path = require('path');
 import semver = require('semver');
-import yargs = require('yargs');
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 import ts = require('typescript');
 import { isEsmOnlyModule, parseModule } from './utility';
 import { ReExport, PackageReExports } from './package-re-exports';
 type EOL = '\r\n' | '\n' | '\r';
 
-yargs
+yargs(hideBin(process.argv))
     .command(
         'generate [packageName]',
         'Generate Theia re-exports',

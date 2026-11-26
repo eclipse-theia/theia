@@ -59,7 +59,7 @@
     "tar-stream": "^3.2.2",
     "temp": "^0.9.4",
     "tslib": "^2.9.1",
-    "yargs": "^17.7.3",
+    "yargs": "^18.2.0",
     "yauzl": "^3.4.0"
   },
   "devDependencies": {

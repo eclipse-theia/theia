@@ -39,7 +39,8 @@ let debugging = false;
     let defaultWorkspace = true;
 
     const yargs = require('yargs');
-    const args = yargs(process.argv.slice(2)).option('name', {
+    const cli = yargs(process.argv.slice(2));
+    const args = cli.option('name', {
         alias: 'n',
         desc: 'A name for the test suite',
         type: 'string',
@@ -63,7 +64,7 @@ let debugging = false;
         alias: 'X',
         desc: 'Whether to log debug information',
         boolean: true
-    }).wrap(Math.min(120, yargs.terminalWidth())).argv;
+    }).wrap(Math.min(120, cli.terminalWidth())).argv;
 
     if (args.name) {
         name = args.name.toString();

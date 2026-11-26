@@ -17,7 +17,7 @@
 import { inject, injectable } from 'inversify';
 import { MaybePromise } from '../../common/types.js';
 import { RequestConfiguration, RequestService } from '@theia/request';
-import { Argv, Arguments } from '../../../shared/yargs/index.cjs';
+import { Argv, Arguments } from '../../../shared/yargs/index.js';
 import { CliContribution } from '../cli.js';
 
 export const ProxyUrl = 'proxy-url';

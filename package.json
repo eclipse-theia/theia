@@ -61,7 +61,7 @@
     "temp": "^0.9.4",
     "typedoc": "0.28.20",
     "typescript": "~6.0.3",
-    "yargs": "^17.7.3"
+    "yargs": "^18.2.0"
   },
   "scripts": {
     "all": "npm -s install && npm run -s lint && npm run -s build",

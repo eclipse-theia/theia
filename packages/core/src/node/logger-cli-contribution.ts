@@ -17,7 +17,7 @@
 // Parses the log config the loggers are built from, so no ILogger exists yet.
 /* eslint-disable @theia/named-logger-check */
 
-import * as yargs from '../../shared/yargs/index.cjs';
+import * as yargs from '../../shared/yargs/index.js';
 import { injectable } from 'inversify';
 import { LogLevel } from '../common/logger.js';
 import { CliContribution } from './cli.js';

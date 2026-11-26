@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import yargs from '../../shared/yargs/index.cjs';
+import yargs, { Arguments, Argv } from '../../shared/yargs/index.js';
 import { inject, named, injectable } from 'inversify';
 import { ContributionProvider } from '../common/contribution-provider.js';
 import { MaybePromise } from '../common/types.js';
@@ -26,8 +26,8 @@ export const CliContribution = Symbol('CliContribution');
  * Call back for extension to contribute options to the cli.
  */
 export interface CliContribution {
-    configure(conf: yargs.Argv): void;
-    setArguments(args: yargs.Arguments): MaybePromise<void>;
+    configure(conf: Argv): void;
+    setArguments(args: Arguments): MaybePromise<void>;
 }
 
 @injectable()

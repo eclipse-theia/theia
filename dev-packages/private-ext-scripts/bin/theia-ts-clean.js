@@ -25,6 +25,7 @@ const parcelWatcher = require('@parcel/watcher');
 const path = require('path');
 const util = require('util');
 const yargs = require('yargs');
+const { hideBin } = require('yargs/helpers');
 
 const glob = util.promisify(_glob);
 
@@ -34,7 +35,7 @@ tsClean().catch(error => {
 });
 
 async function tsClean() {
-    yargs
+    yargs(hideBin(process.argv))
         .command(
             '$0 [globs..]',
             'cleanup TypeScript output',

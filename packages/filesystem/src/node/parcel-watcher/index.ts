@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as yargs from '@theia/core/shared/yargs';
+import yargs from '@theia/core/shared/yargs';
 import { RpcProxyFactory } from '@theia/core';
 import { FileSystemWatcherServiceClient } from '../../common/filesystem-watcher-protocol.js';
 import { FileSystemWatcherServiceImpl } from '../filesystem-watcher-service-impl.js';
@@ -24,7 +24,7 @@ import { IPCEntryPoint } from '@theia/core/lib/node/messaging/ipc-protocol';
 
 const options: {
     verbose: boolean
-} = yargs
+} = yargs(process.argv.slice(2))
     .option('verbose', {
         default: false,
         alias: 'v',

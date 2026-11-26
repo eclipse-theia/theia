@@ -24,7 +24,7 @@ import { writeBrowserOnlyExtensionsList } from './browser-only/write-browser-onl
 import { BundlerGenerator, FrontendGenerator, BackendGenerator } from './generator';
 import { ApplicationProcess } from './application-process';
 import { GeneratorOptions } from './generator/abstract-generator';
-import yargs = require('yargs');
+import type yargs from 'yargs';
 
 // Declare missing exports from `@types/semver@7`
 declare module 'semver' {

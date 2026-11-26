@@ -42,7 +42,8 @@ let runs = 10;
 (async () => {
     let defaultUrl = true;
     const yargs = require('yargs');
-    const args = yargs(process.argv.slice(2)).option('name', {
+    const cli = yargs(process.argv.slice(2));
+    const args = cli.option('name', {
         alias: 'n',
         desc: 'A name for the test suite',
         type: 'string',
@@ -66,7 +67,7 @@ let runs = 10;
         desc: 'Run in headless mode (do not open a browser)',
         type: 'boolean',
         default: headless
-    }).wrap(Math.min(120, yargs.terminalWidth())).argv;
+    }).wrap(Math.min(120, cli.terminalWidth())).argv;
 
     if (args.name) {
         name = args.name.toString();
