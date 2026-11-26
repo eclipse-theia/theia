@@ -212,6 +212,10 @@ What changes for adopters:
 - Adopters with a custom preload script must expose `getBackendPort()` on `electronTheiaCore`, forwarding to the `CHANNEL_GET_BACKEND_PORT` IPC channel.
 - `TheiaMainApi.onStart` registers the handler of the `CHANNEL_GET_BACKEND_PORT` channel. An override of it that does not call `super.onStart` must register that handler itself, otherwise the frontend never gets the port and the window stays blank.
 
+#### Start-up skeleton in the generated page [#18206](https://github.com/eclipse-theia/theia/pull/18206)
+
+The generated `index.html` now paints before the frontend bundle and stylesheet have loaded: critical styles are inlined, `bundle.css` is preloaded rather than linked, so that it blocks neither the first paint nor the inline script, and the generated `index.js` waits for it before the application starts; the default loading indicator is an inline SVG instead of an icon-font glyph, and an inline script draws a skeleton of the workbench parts of the last session (title bar, activity bar, side bars, panel, status bar in the colours and sizes of that session) from a record that `StartupSkeletonContribution` of `@theia/core` keeps in `localStorage` under `theia.startupSkeleton`, per workspace where the URL names one (`theia.startupSkeleton:<hash>`). Applications that configure a `preloadTemplate` are unchanged: their template is rendered as before, without the skeleton, and the icon-font spinner of `@theia/core`'s stylesheet still applies to it. Applications that styled the default indicator through `.theia-preload::after` should style `.theia-preload-spinner` instead.
+
 ### v1.77.0
 
 #### TypeScript 6.0 [#18100](https://github.com/eclipse-theia/theia/pull/18100)
