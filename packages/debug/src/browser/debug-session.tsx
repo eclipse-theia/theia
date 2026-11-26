@@ -539,11 +539,9 @@ export class DebugSession implements CompositeTreeElement {
             this.isStopping = true;
             if (!this.connection.closed) {
                 try {
-                    await this.sendRequest('disconnect', { restart: isRestart });
+                    await this.sendRequest('disconnect', { restart: isRestart }, this.stopTimeout);
                 } catch (e) {
-                    if (!this.connection.closed) {
-                        throw e;
-                    }
+                    this.handleDisconnectError(e);
                 }
             }
             callback();

@@ -43,12 +43,14 @@ disableJSDOM();
 
 /** A debug adapter that answers every request successfully, and the `initialize` request with the given capabilities. */
 class TestDebugChannel implements DebugChannel {
+    readonly sentCommands: string[] = [];
     protected messageHandler: (message: string) => void = () => { };
 
     constructor(protected readonly capabilities: DebugProtocol.Capabilities) { }
 
     send(content: string): void {
         const request: DebugProtocol.Request = JSON.parse(content);
+        this.sentCommands.push(request.command);
         const body = request.command === 'initialize' ? this.capabilities : {};
         const response: DebugProtocol.Response = { type: 'response', seq: 0, request_seq: request.seq, command: request.command, success: true, body };
         this.receive(response);
@@ -80,6 +82,27 @@ describe('DebugSession', () => {
     before(() => disableJSDOM = enableJSDOM());
     after(() => disableJSDOM());
 
+    function createSession(channel: TestDebugChannel): { session: DebugSession; connection: DebugSessionConnection; loggerErrors: unknown[][] } {
+        const loggerErrors: unknown[][] = [];
+        const container = new Container();
+        container.bind(BreakpointManager).toConstantValue({ onDidChangeMarkers: Event.None } as unknown as BreakpointManager);
+        container.bind(ContributionProvider).toConstantValue({ getContributions: () => [] }).whenTargetNamed(DebugContribution);
+        container.bind(DebugPreferences).toConstantValue({} as DebugPreferences);
+        container.bind(ILogger).toConstantValue({ error: (...args: unknown[]) => loggerErrors.push(args) } as unknown as ILogger);
+        // not used by these tests
+        const services: interfaces.ServiceIdentifier<unknown>[] = [
+            CommandService, TestService, DebugSessionManager, TerminalService, EditorManager, LabelProvider, MessageClient, FileService, WorkspaceService
+        ];
+        for (const service of services) {
+            container.bind(service).toConstantValue({});
+        }
+        const options = { name: 'test', configuration: { type: 'node', name: 'test', request: 'launch' } } as DebugConfigurationSessionOptions;
+        const data: DebugSessionData = { id: 'test', options, parentSession: undefined };
+        const connection = new DebugSessionConnection('test', async () => channel, undefined);
+        const session = DebugSession.createContainer(container, data, connection).get(DebugSession);
+        return { session, connection, loggerErrors };
+    }
+
     describe('onDidChangeCapabilities', () => {
 
         let channel: TestDebugChannel;
@@ -88,21 +111,7 @@ describe('DebugSession', () => {
 
         beforeEach(() => {
             channel = new TestDebugChannel({ supportsRestartFrame: true });
-            const container = new Container();
-            container.bind(BreakpointManager).toConstantValue({ onDidChangeMarkers: Event.None } as unknown as BreakpointManager);
-            container.bind(ContributionProvider).toConstantValue({ getContributions: () => [] }).whenTargetNamed(DebugContribution);
-            container.bind(DebugPreferences).toConstantValue({} as DebugPreferences);
-            // not used by these tests
-            const services: interfaces.ServiceIdentifier<unknown>[] = [
-                CommandService, ILogger, TestService, DebugSessionManager, TerminalService, EditorManager, LabelProvider, MessageClient, FileService, WorkspaceService
-            ];
-            for (const service of services) {
-                container.bind(service).toConstantValue({});
-            }
-            const options = { name: 'test', configuration: { type: 'node', name: 'test', request: 'launch' } } as DebugConfigurationSessionOptions;
-            const data: DebugSessionData = { id: 'test', options, parentSession: undefined };
-            const connection = new DebugSessionConnection('test', async () => channel, undefined);
-            session = DebugSession.createContainer(container, data, connection).get(DebugSession);
+            ({ session } = createSession(channel));
             changes = 0;
             session.onDidChangeCapabilities(() => changes++);
         });
@@ -126,23 +135,11 @@ describe('DebugSession', () => {
         let channel: TestDebugChannel;
         let session: DebugSession;
         let connection: DebugSessionConnection;
+        let loggerErrors: unknown[][];
 
         beforeEach(() => {
             channel = new TestDebugChannel({});
-            const container = new Container();
-            container.bind(BreakpointManager).toConstantValue({ onDidChangeMarkers: Event.None } as unknown as BreakpointManager);
-            container.bind(ContributionProvider).toConstantValue({ getContributions: () => [] }).whenTargetNamed(DebugContribution);
-            container.bind(DebugPreferences).toConstantValue({} as DebugPreferences);
-            const services: interfaces.ServiceIdentifier<unknown>[] = [
-                CommandService, ILogger, TestService, DebugSessionManager, TerminalService, EditorManager, LabelProvider, MessageClient, FileService, WorkspaceService
-            ];
-            for (const service of services) {
-                container.bind(service).toConstantValue({});
-            }
-            const options = { name: 'test', configuration: { type: 'node', name: 'test', request: 'launch' } } as DebugConfigurationSessionOptions;
-            const data: DebugSessionData = { id: 'test', options, parentSession: undefined };
-            connection = new DebugSessionConnection('test', async () => channel, undefined);
-            session = DebugSession.createContainer(container, data, connection).get(DebugSession);
+            ({ session, connection, loggerErrors } = createSession(channel));
         });
 
         it('executes callback and does not send request if connection is already closed', async () => {
@@ -156,12 +153,15 @@ describe('DebugSession', () => {
             });
 
             expect(callbackCalled).to.be.true;
+            expect(channel.sentCommands).to.not.include('disconnect');
         });
 
         it('executes callback when connection closes while disconnect request is in flight', async () => {
             await session.start();
             // Override channel.send to close connection instead of replying
-            channel.send = () => {
+            channel.send = content => {
+                const request: DebugProtocol.Request = JSON.parse(content);
+                channel.sentCommands.push(request.command);
                 channel.close();
             };
 
@@ -174,11 +174,12 @@ describe('DebugSession', () => {
             expect(connection.closed).to.be.true;
         });
 
-        it('propagates error when error happens on an active connection', async () => {
+        it('executes callback and logs error when error happens on an active connection', async () => {
             await session.start();
             // Send an error response while connection remains open
             channel.send = content => {
                 const request: DebugProtocol.Request = JSON.parse(content);
+                channel.sentCommands.push(request.command);
                 const response: DebugProtocol.Response = {
                     type: 'response',
                     seq: 0,
@@ -191,19 +192,14 @@ describe('DebugSession', () => {
             };
 
             let callbackCalled = false;
-            let errorCaught: Error | undefined;
-            try {
-                await session.disconnect(false, () => {
-                    callbackCalled = true;
-                });
-            } catch (e) {
-                errorCaught = e as Error;
-            }
+            await session.disconnect(false, () => {
+                callbackCalled = true;
+            });
 
-            expect(callbackCalled).to.be.false;
+            expect(callbackCalled).to.be.true;
             expect(connection.closed).to.be.false;
-            expect(errorCaught).to.be.not.undefined;
-            expect(errorCaught?.message).to.equal('Adapter failure on active connection');
+            expect(channel.sentCommands).to.include('disconnect');
+            expect(loggerErrors).to.have.lengthOf(1);
         });
     });
 });
