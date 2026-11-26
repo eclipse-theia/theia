@@ -171,6 +171,15 @@ If you worked around the ripgrep problem by overriding the `@vscode/ripgrep` rep
 
 ### v1.78.0
 
+#### Express 5
+
+`@theia/core` upgraded `express` from 4.x to 5.3.0 (`@types/express` 5.0.6) and `body-parser` from 1.x to 2.4.0 (`@types/body-parser` 2.2.0). Adopters implementing `BackendApplicationContribution.configure(app)` or consuming `@theia/core/shared/express` should review the [Express 5 migration guide](https://expressjs.com/en/guide/migrating-5.html):
+
+- **Wildcard route syntax (`path-to-regexp` v8):** unnamed `*` wildcards and regex suffixes like `'*.js'` or `/:path(*)` throw at route registration time. Replace suffix patterns with regular expressions (e.g. `/\.js$/`), catch-all `'*'` with `'/{*splat}'`, and named catch-alls `/:path(*)` with `/*path` (whose `req.params.path` value is now a `string[]` of path segments).
+- **Removed `res.send(status)` signature:** use `res.sendStatus(status)` or `res.status(status).send(...)`.
+- **`req.params` typing:** `@types/express@5` types `req.params` values as `string | string[]` to reflect wildcard parameters.
+- **`req.query`:** now a read-only getter using the `simple` query parser by default.
+
 #### ESLint 10 and flat configuration
 
 Theia upgraded ESLint from 8 to 10 and consolidated linting into a root `eslint.config.mjs` using ESLint's flat configuration format.

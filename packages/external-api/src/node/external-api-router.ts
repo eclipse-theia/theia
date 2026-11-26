@@ -373,7 +373,11 @@ export class ExternalApiRouterImpl implements ExternalApiRouter {
                         return;
                     }
                 }
-                const result = await handler({ params: request.params, body: request.body as B, authorized: this.isAuthorized(request), raw: request });
+                const params: Record<string, string> = {};
+                for (const [key, value] of Object.entries(request.params)) {
+                    params[key] = Array.isArray(value) ? value.join('/') : value;
+                }
+                const result = await handler({ params, body: request.body as B, authorized: this.isAuthorized(request), raw: request });
                 this.responseWriter.write(result, response);
             } catch (error) {
                 this.logger.error(`Failed to serve '${method.toUpperCase()} ${this.options.contributionPath}${path === '/' ? '' : path}'.`, error);

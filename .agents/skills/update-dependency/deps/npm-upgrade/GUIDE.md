@@ -77,7 +77,7 @@ Install with `npm ci --ignore-scripts`, run `npm rebuild` for every `allowScript
 
 ### Duplicate `@types/express` / `@types/express-serve-static-core` type conflicts
 
-Dependencies declaring `"@types/express": "*"` pulled 5.x next to 4.x. Pin `@types/express` to `^4.17.x` in root devDependencies; a temporary override of `@types/express-serve-static-core` was removed again in the next upgrade. (#15147, #15415)
+While Theia was on Express 4, dependencies declaring `"@types/express": "*"` pulled 5.x next to 4.x, requiring `@types/express` pinned to `^4.17.x` in root devDependencies (#15147, #15415). With the upgrade to Express 5 (`@types/express` 5.0.6), `@modelcontextprotocol/sdk` and `@theia/core` share Express 5 and `qs` deduplicates without an `overrides.express.qs` entry.
 
 ### `entry.end()` in the browser-only download service no longer compiles
 

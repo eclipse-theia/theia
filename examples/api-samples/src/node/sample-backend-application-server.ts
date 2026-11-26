@@ -22,7 +22,7 @@ import * as express from '@theia/core/shared/express';
 export class SampleBackendApplicationServer implements BackendApplicationServer {
 
     configure(app: express.Application): void {
-        app.get('*', (req, res) => {
+        app.get('/{*splat}', (req, res) => {
             res.status(200).send('SampleBackendApplicationServer OK');
         });
     }

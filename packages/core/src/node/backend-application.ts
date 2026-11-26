@@ -271,17 +271,17 @@ export class BackendApplication {
             this.app.use(handler);
         }
 
-        this.app.get('*.js', this.serveGzipped.bind(this, 'text/javascript'));
-        this.app.get('*.js.map', this.serveGzipped.bind(this, 'application/json'));
-        this.app.get('*.css', this.serveGzipped.bind(this, 'text/css'));
-        this.app.get('*.wasm', this.serveGzipped.bind(this, 'application/wasm'));
-        this.app.get('*.gif', this.serveGzipped.bind(this, 'image/gif'));
-        this.app.get('*.png', this.serveGzipped.bind(this, 'image/png'));
-        this.app.get('*.svg', this.serveGzipped.bind(this, 'image/svg+xml'));
-        this.app.get('*.eot', this.serveGzipped.bind(this, 'application/vnd.ms-fontobject'));
-        this.app.get('*.ttf', this.serveGzipped.bind(this, 'font/ttf'));
-        this.app.get('*.woff', this.serveGzipped.bind(this, 'font/woff'));
-        this.app.get('*.woff2', this.serveGzipped.bind(this, 'font/woff2'));
+        this.app.get(/\.js$/, this.serveGzipped.bind(this, 'text/javascript'));
+        this.app.get(/\.js\.map$/, this.serveGzipped.bind(this, 'application/json'));
+        this.app.get(/\.css$/, this.serveGzipped.bind(this, 'text/css'));
+        this.app.get(/\.wasm$/, this.serveGzipped.bind(this, 'application/wasm'));
+        this.app.get(/\.gif$/, this.serveGzipped.bind(this, 'image/gif'));
+        this.app.get(/\.png$/, this.serveGzipped.bind(this, 'image/png'));
+        this.app.get(/\.svg$/, this.serveGzipped.bind(this, 'image/svg+xml'));
+        this.app.get(/\.eot$/, this.serveGzipped.bind(this, 'application/vnd.ms-fontobject'));
+        this.app.get(/\.ttf$/, this.serveGzipped.bind(this, 'font/ttf'));
+        this.app.get(/\.woff$/, this.serveGzipped.bind(this, 'font/woff'));
+        this.app.get(/\.woff2$/, this.serveGzipped.bind(this, 'font/woff2'));
 
         await Promise.all(this.contributionsProvider.getContributions().map(async contribution => {
             if (contribution.configure) {

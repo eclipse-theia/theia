@@ -105,7 +105,7 @@ export class SomeClass {
   - `vscode-uri` (from [`vscode-uri@3.0.8`](https://www.npmjs.com/package/vscode-uri/v/3.0.8))
   - `@parcel/watcher` (from [`@parcel/watcher@^2.6.0`](https://www.npmjs.com/package/@parcel/watcher))
   - `dompurify` (from [`dompurify@^3.4.18`](https://www.npmjs.com/package/dompurify))
-  - `express` (from [`express@^4.22.3`](https://www.npmjs.com/package/express))
+  - `express` (from [`express@^5.3.0`](https://www.npmjs.com/package/express))
   - `lodash.debounce` (from [`lodash.debounce@^4.0.8`](https://www.npmjs.com/package/lodash.debounce))
   - `lodash.throttle` (from [`lodash.throttle@^4.1.1`](https://www.npmjs.com/package/lodash.throttle))
   - `markdown-it` (from [`markdown-it@^14.3.3`](https://www.npmjs.com/package/markdown-it))
