@@ -100,7 +100,7 @@
     "markdown-it-anchor": "^9.2.1",
     "markdown-it-emoji": "^3.1.0",
     "msgpackr": "^1.12.1",
-    "p-debounce": "^2.1.0",
+    "p-debounce": "^6.0.0",
     "perfect-scrollbar": "1.5.5",
     "react-tooltip": "^4.5.1",
     "react-virtuoso": "^2.19.1",

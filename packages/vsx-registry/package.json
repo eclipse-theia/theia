@@ -14,7 +14,7 @@
     "@theia/workspace": "1.77.0",
     "limiter": "^2.1.0",
     "luxon": "^2.5.2",
-    "p-debounce": "^2.1.0",
+    "p-debounce": "^6.0.0",
     "semver": "^7.8.6",
     "tslib": "^2.9.1"
   },
