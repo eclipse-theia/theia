@@ -97,7 +97,7 @@
     "test": "npm run -s test:theia && npm run -s electron test && npm run -s browser test",
     "test:browser": "cd examples/browser && npm run test",
     "test:electron": "cd examples/electron && npm run test",
-    "test:theia": "lerna run --scope \"@theia/!(example-)*\" test --stream --concurrency=1",
+    "test:theia": "lerna run --scope \"@theia/*\" --ignore \"@theia/example-*\" test --stream --concurrency=1",
     "test:playwright": "cd examples/playwright && npm run -s ui-tests",
     "version": "lerna run version",
     "watch:browser": "cd examples/browser && npm run -s watch",

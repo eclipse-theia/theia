@@ -103,6 +103,14 @@ Hoisting `diff` 8+ (e.g. via an override, Sinon 22, or Mocha 12) shadows `@types
 
 In ESLint 9/10 flat config, `RuleTester` mounts the tested rule under the `rule-to-test/` prefix (so inline disable directives in tests must reference `rule-to-test/<rule>`), and `new Linter()` refuses to match filenames outside `cwd` (pass `new Linter({ cwd: path.dirname(filename) })` for temp-dir tests). Also set `linterOptions: { reportUnusedDisableDirectives: 'off' }` in `configs/base.eslint.mjs` so directives for `warnings.eslint.mjs` rules (like `@typescript-eslint/no-deprecated`) do not warn during `build.eslint.mjs` runs.
 
+### Root `eslint.config.mjs` breaks `examples/api-tests/src/typescript.spec.js` (`Can execute code actions`)
+
+Because `dbaeumer.vscode-eslint` is loaded in `test:browser`, a root `eslint.config.mjs` that matches `examples/api-tests/test-ts-workspace/demo-file.ts` causes ESLint to flag `@stylistic/quotes` on line 30 and insert an ESLint quick fix ahead of TypeScript's "Convert to namespace import" code action. Exclude `examples/api-tests/**` (and `sample-plugins/**`) in root `eslint.config.mjs` `ignores`. (#18418, #18453)
+
+### Lerna 10 `--scope "@theia/!(example-)*"` includes `@theia/example-*` packages
+
+Under Lerna 10 (`minimatch` 11), `--scope "@theia/!(example-)*"` matches `@theia/example-browser` and `@theia/example-electron`, causing `test:theia` to run browser/Electron integration tests during headless unit tests. Use `--scope "@theia/*" --ignore "@theia/example-*"` instead. (#18418, #18453)
+
 ### `theiaext test` still runs Mocha 11 after bumping Mocha 12 in `@theia/cli`
 
 `electron-mocha@13.1.0` in root `devDependencies` pulls `mocha@11`, which npm hoists to root `node_modules/.bin/mocha` unless `mocha@^12` is also declared in root `devDependencies`. Declare `mocha@^12` at root so Mocha 12 is hoisted and `electron-mocha` nests Mocha 11. (#18418)

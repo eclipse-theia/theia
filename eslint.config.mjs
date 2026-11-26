@@ -24,6 +24,8 @@ export default [
             '**/lib/**',
             '**/src-gen/**',
             'plugins/**',
+            'examples/api-tests/**',
+            'sample-plugins/**',
             'examples/playwright/configs/playwright.config.ts'
         ]
     },
