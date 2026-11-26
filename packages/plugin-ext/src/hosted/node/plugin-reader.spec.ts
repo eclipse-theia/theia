@@ -16,13 +16,20 @@
 
 import { expect } from 'chai';
 import * as fs from 'fs';
+import * as http from 'http';
 import * as os from 'os';
 import * as path from 'path';
+import express from '@theia/core/shared/express';
+import { PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
 import { HostedPluginReader } from './plugin-reader.js';
 
 class TestHostedPluginReader extends HostedPluginReader {
     resolve(localPath: string, filePath: string): Promise<string | undefined> {
         return this.resolveFile(localPath, filePath);
+    }
+
+    registerPlugin(pluginId: string, localPath: string): void {
+        this.pluginsIdsFiles.set(pluginId, localPath);
     }
 }
 
@@ -76,5 +83,54 @@ describe('HostedPluginReader#resolveFile', () => {
 
     it('returns undefined for a missing file inside the plugin directory', async () => {
         expect(await reader.resolve(pluginDir, 'does-not-exist.js')).to.be.undefined;
+    });
+});
+
+describe('HostedPluginReader#configure', () => {
+
+    let tempRoot: string;
+    let server: http.Server;
+    let baseUrl: string;
+
+    before(async () => {
+        tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'theia-plugin-reader-http-'));
+        const dotPluginDir = path.join(tempRoot, '.theia', 'deployedPlugins', 'my-plugin');
+        fs.mkdirSync(path.join(dotPluginDir, 'a', 'b'), { recursive: true });
+        fs.writeFileSync(path.join(dotPluginDir, 'a', 'b', 'c.js'), 'export const value = 42;');
+        fs.writeFileSync(path.join(tempRoot, '.theia', 'deployedPlugins', 'secret.txt'), 'secret');
+
+        const reader = new TestHostedPluginReader();
+        reader.registerPlugin('my-plugin', dotPluginDir);
+
+        const app = express();
+        reader.configure(app);
+        server = http.createServer(app);
+        await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+        const address = server.address();
+        if (!address || typeof address === 'string') {
+            throw new Error('Unexpected server address');
+        }
+        baseUrl = `http://127.0.0.1:${address.port}`;
+    });
+
+    after(async () => {
+        await new Promise<void>(resolve => server.close(() => resolve()));
+        fs.rmSync(tempRoot, { recursive: true, force: true });
+    });
+
+    it('serves nested plugin files inside a hidden dot-directory', async () => {
+        const response = await fetch(`${baseUrl}/${PLUGINS_BASE_PATH}/my-plugin/a/b/c.js`);
+        expect(response.status).to.equal(200);
+        expect(await response.text()).to.equal('export const value = 42;');
+    });
+
+    it('rejects path traversal attempts outside the plugin directory', async () => {
+        const response = await fetch(`${baseUrl}/${PLUGINS_BASE_PATH}/my-plugin/%2e%2e/secret.txt`);
+        expect(response.status).to.equal(404);
+    });
+
+    it('returns 404 for unknown plugin ids', async () => {
+        const response = await fetch(`${baseUrl}/${PLUGINS_BASE_PATH}/unknown-plugin/main.js`);
+        expect(response.status).to.equal(404);
     });
 });

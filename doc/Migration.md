@@ -179,6 +179,12 @@ If you worked around the ripgrep problem by overriding the `@vscode/ripgrep` rep
 - **Removed `res.send(status)` signature:** use `res.sendStatus(status)` or `res.status(status).send(...)`.
 - **`req.params` typing:** `@types/express@5` types `req.params` values as `string | string[]` to reflect wildcard parameters.
 - **`req.query`:** now a read-only getter using the `simple` query parser by default.
+- **`res.sendFile` `dotfiles` default:** Express 5 (`send` v1) defaults `dotfiles` to `'ignore'` even for absolute paths and checks every path segment. Callers serving files that may live under hidden directories (such as `~/.theia/` or `.vscode/`) must pass `{ dotfiles: 'allow' }` after validating the path.
+
+#### ESM-only re-exports: `yargs` 18 and `electron-store` 12
+
+- `@theia/core/shared/yargs` now re-exports `yargs` 18 as an ES module (`index.js` / `index.d.ts`). `yargs` 18 removed the default singleton API (`yargs.option(...)`, `yargs.parse(...)`, `yargs.terminalWidth()`, `yargs.global(...)`) — invoke the factory function `yargs(argv)` instead. Because `@types/yargs@17` is still the latest published type package and continues to type the default export with singleton members, code calling `yargs.option(...)` may compile and fail at runtime.
+- `@theia/electron/shared/electron-store` and `@theia/core/electron-shared/electron-store` now re-export `electron-store` 12 as ES modules (`index.js` / `index.d.ts`) instead of CommonJS (`index.cjs`). Update any direct `.../electron-store/index.cjs` imports to the package subpath or `index.js`.
 
 #### ESLint 10 and flat configuration
 

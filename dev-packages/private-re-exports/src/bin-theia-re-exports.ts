@@ -22,7 +22,7 @@ import semver = require('semver');
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import ts = require('typescript');
-import { isEsmOnlyModule, parseModule } from './utility';
+import { isCommonJsModule, isEsmOnlyModule, parseModule } from './utility';
 import { ReExport, PackageReExports } from './package-re-exports';
 type EOL = '\r\n' | '\n' | '\r';
 
@@ -67,6 +67,8 @@ yargs(hideBin(process.argv))
                     await writer.write(`${reExportPath}.d.cts`, declaration);
                     await writer.remove(`${reExportPath}.js`, `${reExportPath}.d.ts`);
                 } else if (reExport.reExportStyle === '=') {
+                    // ESM-only entries in `export =` (such as `electron-store` and `yargs`) expose a default export
+                    // alongside any named exports; re-export both so consumers can use default and named imports.
                     const content = `export * from '${reExport.internalImport}';\nexport { default } from '${reExport.internalImport}';\n`;
                     await writer.write(`${reExportPath}.js`, content);
                     await writer.write(`${reExportPath}.d.ts`, content);
@@ -246,40 +248,3 @@ function collectExportNames(moduleNames: string[], fromDir: string): Map<string,
 const RESERVED_WORDS = new Set(['break', 'case', 'catch', 'class', 'const', 'continue', 'debugger', 'default', 'delete', 'do', 'else', 'enum', 'export', 'extends',
     'false', 'finally', 'for', 'function', 'if', 'import', 'in', 'instanceof', 'new', 'null', 'return', 'super', 'switch', 'this', 'throw', 'true', 'try', 'typeof',
     'var', 'void', 'while', 'with', 'yield', 'let', 'static', 'implements', 'interface', 'package', 'private', 'protected', 'public', 'await']);
-
-/**
- * Determines whether `moduleName` is loaded as a CommonJS module when imported from an ES module in `fromDir`.
- */
-function isCommonJsModule(moduleName: string, fromDir: string): boolean {
-    const [packageName, subModuleName] = parseModule(moduleName);
-    let resolved: string;
-    try {
-        resolved = require.resolve(moduleName, { paths: [fromDir] });
-    } catch {
-        return false;
-    }
-    if (resolved.endsWith('.cjs')) {
-        return true;
-    }
-    if (resolved.endsWith('.mjs')) {
-        return false;
-    }
-    // Find the `package.json` of the package that `moduleName` belongs to.
-    let packageRoot = path.dirname(resolved);
-    while (!fs.existsSync(path.join(packageRoot, 'package.json'))
-        || JSON.parse(fs.readFileSync(path.join(packageRoot, 'package.json'), 'utf8')).name !== packageName) {
-        if (packageRoot === path.dirname(packageRoot)) {
-            return true;
-        }
-        packageRoot = path.dirname(packageRoot);
-    }
-    const packageJson = JSON.parse(fs.readFileSync(path.join(packageRoot, 'package.json'), 'utf8'));
-    // A dual package provides a separate entry point for the `import` condition, which is an ES module.
-    const exportsEntry = typeof packageJson.exports === 'object' && packageJson.exports
-        ? packageJson.exports[subModuleName ? `./${subModuleName}` : '.']
-        : undefined;
-    if (typeof exportsEntry === 'object' && exportsEntry && 'import' in exportsEntry) {
-        return false;
-    }
-    return packageJson.type !== 'module';
-}

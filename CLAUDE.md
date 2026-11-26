@@ -119,8 +119,9 @@ Read on demand (not auto-loaded) — consult when the task calls for it:
 
 **Key Config Files:**
 - `configs/base.tsconfig.json` - TypeScript base config (all packages extend this)
-- `configs/base.eslintrc.json` - ESLint parser/base rules
-- `configs/build.eslintrc.json` - ESLint build rules (packages extend this)
+- `eslint.config.mjs` - Root ESLint 10 flat configuration
+- `configs/base.eslint.mjs` - ESLint parser/base flat-config module
+- `configs/build.eslint.mjs` - ESLint build flat-config module (imported by `eslint.config.mjs`)
 - `configs/mocharc.yml` - Mocha test runner config
 - `configs/nyc.json` - Test coverage config
 

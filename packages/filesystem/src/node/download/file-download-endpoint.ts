@@ -62,7 +62,9 @@ export class FileDownloadEndpoint implements BackendApplicationContribution {
                 return;
             }
             const fsPath = FileUri.fsPath(decodeURIComponent(uri));
-            response.sendFile(fsPath);
+            // Express 5 (`send@1`) defaults `dotfiles` to `'ignore'` even for absolute paths, which would
+            // reject workspace or config files located under hidden directories (e.g. `.vscode/`, `~/.theia/`).
+            response.sendFile(fsPath, { dotfiles: 'allow' });
         });
     }
 

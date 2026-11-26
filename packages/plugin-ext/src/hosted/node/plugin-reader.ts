@@ -56,7 +56,10 @@ export class HostedPluginReader implements BackendApplicationContribution {
                     res.status(404).send(`No such file found in '${escape_html(pluginId)}' plugin.`);
                     return;
                 }
-                res.sendFile(resolvedFile, e => {
+                // Express 5 (`send@1`) defaults `dotfiles` to `'ignore'` even for absolute paths, which would
+                // reject plugins deployed under hidden directories such as `~/.theia/deployedPlugins`.
+                // `resolveFile` already enforces that `resolvedFile` stays inside `localPath`.
+                res.sendFile(resolvedFile, { dotfiles: 'allow' }, e => {
                     if (!e) {
                         // the file was found and successfully transferred
                         return;

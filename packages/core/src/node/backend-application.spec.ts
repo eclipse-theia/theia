@@ -15,8 +15,14 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import fs from '../../shared/fs-extra/index.cjs';
+import * as http from 'http';
+import * as os from 'os';
+import * as path from 'path';
+import * as zlib from 'zlib';
 import * as sinon from 'sinon';
 import { Container, ContainerModule, injectable, preDestroy } from 'inversify';
+import express from '../../shared/express/index.cjs';
 import { bindContributionProvider, ILogger, Stopwatch } from '../common/index.js';
 import { Deferred } from '../common/promise-util.js';
 import { NodeStopwatch } from './performance/node-stopwatch.js';
@@ -36,8 +42,31 @@ import { MockLogger } from '../common/test/mock-logger.js';
  */
 @injectable()
 class TestBackendApplication extends BackendApplication {
+    public staticRoot?: string;
+
     public invokeGracefulShutdown(): Promise<void> {
         return this.gracefulShutdown();
+    }
+
+    public invokeConfigure(): Promise<void> {
+        return this.configure();
+    }
+
+    public getExpressApp(): express.Application {
+        return this.app;
+    }
+
+    protected override async serveGzipped(contentType: string, req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
+        if (!this.staticRoot) {
+            return super.serveGzipped(contentType, req, res, next);
+        }
+        const gzUrl = `${req.url}.gz`;
+        if (req.acceptsEncodings().indexOf('gzip') !== -1 && await fs.pathExists(path.join(this.staticRoot, gzUrl))) {
+            req.url = gzUrl;
+            res.set('Content-Encoding', 'gzip');
+            res.set('Content-Type', contentType);
+        }
+        next();
     }
 }
 
@@ -480,6 +509,54 @@ describe('BackendApplication', () => {
             container.get(TestBackendApplication);
 
             expect(() => process.emit('uncaughtException', undefined as unknown as Error)).not.to.throw();
+        });
+
+    });
+
+    describe('gzipped static asset routes', () => {
+
+        it('serves pre-compressed .js.gz assets for both lowercase and uppercase .js requests', async () => {
+            const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'theia-backend-app-gzip-'));
+            const payload = 'console.log("compressed");';
+            fs.writeFileSync(path.join(tempDir, 'bundle.js.gz'), zlib.gzipSync(payload));
+            fs.writeFileSync(path.join(tempDir, 'BUNDLE.JS.gz'), zlib.gzipSync(payload));
+
+            const container = createTestContainer();
+            container.bind(BackendApplicationContribution).toConstantValue({
+                configure(app: express.Application): void {
+                    app.use(express.static(tempDir));
+                }
+            });
+
+            const backendApp = container.get(TestBackendApplication);
+            backendApp.staticRoot = tempDir;
+            await backendApp.invokeConfigure();
+            const server = http.createServer(backendApp.getExpressApp());
+            await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+            const address = server.address();
+            if (!address || typeof address === 'string') {
+                throw new Error('Unexpected server address');
+            }
+            const baseUrl = `http://127.0.0.1:${address.port}`;
+
+            try {
+                for (const asset of ['bundle.js', 'BUNDLE.JS']) {
+                    const result = await new Promise<{ status?: number, headers: http.IncomingHttpHeaders, body: Buffer }>((resolve, reject) => {
+                        http.get(`${baseUrl}/${asset}`, { headers: { 'Accept-Encoding': 'gzip' } }, res => {
+                            const chunks: Buffer[] = [];
+                            res.on('data', chunk => chunks.push(chunk));
+                            res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks) }));
+                        }).on('error', reject);
+                    });
+                    expect(result.status).to.equal(200);
+                    expect(result.headers['content-encoding']).to.equal('gzip');
+                    expect(result.headers['content-type']).to.match(/^text\/javascript/);
+                    expect(zlib.gunzipSync(result.body).toString('utf8')).to.equal(payload);
+                }
+            } finally {
+                await new Promise<void>(resolve => server.close(() => resolve()));
+                fs.rmSync(tempDir, { recursive: true, force: true });
+            }
         });
 
     });

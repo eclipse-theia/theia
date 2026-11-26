@@ -17,7 +17,7 @@
 import fs = require('fs');
 import os = require('os');
 import path = require('path');
-import { isEsmOnlyModule, parseModule } from './utility';
+import { isCommonJsModule, isEsmOnlyModule, parseModule } from './utility';
 import { expect } from 'chai';
 
 describe('@theia/re-exports/lib/utility.js', () => {
@@ -117,6 +117,33 @@ describe('@theia/re-exports/lib/utility.js', () => {
                 'shared/esm-dep/index.js': "export * from 'esm-dep';\nexport { default } from 'esm-dep';\n"
             });
             expect(isEsmOnlyModule('@scope/host/shared/esm-dep', tempDir)).to.be.true;
+        });
+
+        it('isCommonJsModule distinguishes CJS, dual, and ESM-only packages', () => {
+            writePkg('cjs-pkg', {
+                'package.json': JSON.stringify({ name: 'cjs-pkg', main: 'index.js' }),
+                'index.js': 'module.exports = {};'
+            });
+            writePkg('dual-pkg', {
+                'package.json': JSON.stringify({
+                    name: 'dual-pkg',
+                    type: 'module',
+                    exports: { '.': { import: './index.js', require: './index.cjs' } }
+                }),
+                'index.js': 'export default {};',
+                'index.cjs': 'module.exports = {};'
+            });
+            writePkg('esm-pkg', {
+                'package.json': JSON.stringify({
+                    name: 'esm-pkg',
+                    type: 'module',
+                    exports: { types: './index.d.ts', default: './index.js' }
+                }),
+                'index.js': 'export default class {};'
+            });
+            expect(isCommonJsModule('cjs-pkg', tempDir)).to.be.true;
+            expect(isCommonJsModule('dual-pkg', tempDir)).to.be.false;
+            expect(isCommonJsModule('esm-pkg', tempDir)).to.be.false;
         });
     });
 });

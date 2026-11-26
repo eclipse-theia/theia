@@ -109,11 +109,28 @@ function hasCondition(entry: unknown, condition: string): boolean {
     return Object.values(record).some(value => hasCondition(value, condition));
 }
 
-/**
- * Determines whether `moduleName` resolved from `fromDir` is an ESM-only module
- * (i.e. ships only ES modules without a CommonJS / `require` entry point).
- */
-export function isEsmOnlyModule(moduleName: string, fromDir: string): boolean {
+function findPackageRootFromResolved(resolved: string, packageName: string): string | undefined {
+    let current = path.dirname(resolved);
+    while (!fs.existsSync(path.join(current, 'package.json'))
+        || JSON.parse(fs.readFileSync(path.join(current, 'package.json'), 'utf8')).name !== packageName) {
+        const parent = path.dirname(current);
+        if (parent === current) {
+            return undefined;
+        }
+        current = parent;
+    }
+    return current;
+}
+
+interface ResolvedPackageInfo {
+    resolved?: string
+    packageRoot?: string
+    packageJson?: PackageJson
+    subModuleName?: string
+    exportsEntry?: unknown
+}
+
+function resolvePackageInfo(moduleName: string, fromDir: string): ResolvedPackageInfo {
     const [packageName, subModuleName] = parseModule(moduleName);
     let resolved: string | undefined;
     try {
@@ -121,43 +138,72 @@ export function isEsmOnlyModule(moduleName: string, fromDir: string): boolean {
     } catch {
         resolved = undefined;
     }
+    const packageRoot = resolved
+        ? findPackageRootFromResolved(resolved, packageName)
+        : findPackageRootInNodeModules(packageName, fromDir);
+    const packageJson = packageRoot
+        ? JSON.parse(fs.readFileSync(path.join(packageRoot, 'package.json'), 'utf8')) as PackageJson
+        : undefined;
+    const exportsEntry = packageJson ? resolveExportsEntry(packageJson.exports, subModuleName) : undefined;
+    return { resolved, packageRoot, packageJson, subModuleName, exportsEntry };
+}
+
+/**
+ * Determines whether `moduleName` is loaded as a CommonJS module when imported from an ES module in `fromDir`.
+ */
+export function isCommonJsModule(moduleName: string, fromDir: string): boolean {
+    const { resolved, packageJson, exportsEntry } = resolvePackageInfo(moduleName, fromDir);
+    if (!resolved) {
+        return false;
+    }
+    // A dual package provides a separate entry point for the `import` condition, which is an ES module.
+    if (hasCondition(exportsEntry, 'import')) {
+        return false;
+    }
+    if (resolved.endsWith('.cjs')) {
+        return true;
+    }
+    if (resolved.endsWith('.mjs')) {
+        return false;
+    }
+    if (!packageJson) {
+        return true;
+    }
+    return packageJson.type !== 'module';
+}
+
+/**
+ * Determines whether `moduleName` resolved from `fromDir` is an ESM-only module
+ * (i.e. ships only ES modules without a CommonJS / `require` entry point).
+ */
+export function isEsmOnlyModule(moduleName: string, fromDir: string): boolean {
+    const { resolved, packageRoot, packageJson, subModuleName, exportsEntry } = resolvePackageInfo(moduleName, fromDir);
     if (resolved) {
         if (resolved.endsWith('.cjs')) {
             return false;
         }
-        let resolvedRoot = path.dirname(resolved);
-        while (!fs.existsSync(path.join(resolvedRoot, 'package.json'))
-            || JSON.parse(fs.readFileSync(path.join(resolvedRoot, 'package.json'), 'utf8')).name !== packageName) {
-            const parent = path.dirname(resolvedRoot);
-            if (parent === resolvedRoot) {
-                return resolved.endsWith('.mjs');
-            }
-            resolvedRoot = parent;
+        if (!packageJson) {
+            return resolved.endsWith('.mjs');
         }
-        const resolvedPkg = JSON.parse(fs.readFileSync(path.join(resolvedRoot, 'package.json'), 'utf8')) as PackageJson;
-        const resolvedExports = resolveExportsEntry(resolvedPkg.exports, subModuleName);
-        if (hasCondition(resolvedExports, 'require')) {
+        if (hasCondition(exportsEntry, 'require')) {
             return false;
         }
         if (resolved.endsWith('.mjs')) {
             return true;
         }
-        return resolvedPkg.type === 'module';
+        return packageJson.type === 'module';
     }
     // `require.resolve` can fail when a package only declares an `import` export condition, or when
     // a copied re-export stub was just switched from `index.cjs` to `index.js` before `exports` was updated.
-    const packageRoot = findPackageRootInNodeModules(packageName, fromDir);
-    if (!packageRoot) {
+    if (!packageRoot || !packageJson) {
         return false;
     }
-    const packageJson = JSON.parse(fs.readFileSync(path.join(packageRoot, 'package.json'), 'utf8')) as PackageJson;
     if (subModuleName) {
         const subDir = path.join(packageRoot, subModuleName);
         if (fs.existsSync(path.join(subDir, 'index.js')) && !fs.existsSync(path.join(subDir, 'index.cjs'))) {
             return packageJson.type === 'module';
         }
     }
-    const exportsEntry = resolveExportsEntry(packageJson.exports, subModuleName);
     if (hasCondition(exportsEntry, 'require')) {
         return false;
     }
