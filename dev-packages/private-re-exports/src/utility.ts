@@ -152,12 +152,8 @@ function resolvePackageInfo(moduleName: string, fromDir: string): ResolvedPackag
  * Determines whether `moduleName` is loaded as a CommonJS module when imported from an ES module in `fromDir`.
  */
 export function isCommonJsModule(moduleName: string, fromDir: string): boolean {
-    const { resolved, packageJson, exportsEntry } = resolvePackageInfo(moduleName, fromDir);
+    const { resolved, packageJson, subModuleName } = resolvePackageInfo(moduleName, fromDir);
     if (!resolved) {
-        return false;
-    }
-    // A dual package provides a separate entry point for the `import` condition, which is an ES module.
-    if (hasCondition(exportsEntry, 'import')) {
         return false;
     }
     if (resolved.endsWith('.cjs')) {
@@ -168,6 +164,14 @@ export function isCommonJsModule(moduleName: string, fromDir: string): boolean {
     }
     if (!packageJson) {
         return true;
+    }
+    // A dual package provides a separate entry point for the `import` condition under an explicit subpath key,
+    // which is an ES module.
+    const exportsEntry = typeof packageJson.exports === 'object' && packageJson.exports
+        ? (packageJson.exports as Record<string, unknown>)[subModuleName ? `./${subModuleName}` : '.']
+        : undefined;
+    if (typeof exportsEntry === 'object' && exportsEntry && 'import' in exportsEntry) {
+        return false;
     }
     return packageJson.type !== 'module';
 }

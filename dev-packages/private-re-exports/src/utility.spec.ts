@@ -119,19 +119,36 @@ describe('@theia/re-exports/lib/utility.js', () => {
             expect(isEsmOnlyModule('@scope/host/shared/esm-dep', tempDir)).to.be.true;
         });
 
-        it('isCommonJsModule distinguishes CJS, dual, and ESM-only packages', () => {
+        it('isCommonJsModule preserves CJS classification for CJS, .cjs dual, and conditions-only exports (vscode-uri shape)', () => {
             writePkg('cjs-pkg', {
                 'package.json': JSON.stringify({ name: 'cjs-pkg', main: 'index.js' }),
                 'index.js': 'module.exports = {};'
             });
-            writePkg('dual-pkg', {
+            writePkg('dual-cjs-ext', {
                 'package.json': JSON.stringify({
-                    name: 'dual-pkg',
+                    name: 'dual-cjs-ext',
                     type: 'module',
                     exports: { '.': { import: './index.js', require: './index.cjs' } }
                 }),
                 'index.js': 'export default {};',
                 'index.cjs': 'module.exports = {};'
+            });
+            writePkg('dual-subpath-pkg', {
+                'package.json': JSON.stringify({
+                    name: 'dual-subpath-pkg',
+                    exports: { '.': { import: './index.mjs', require: './index.js' } }
+                }),
+                'index.mjs': 'export default {};',
+                'index.js': 'module.exports = {};'
+            });
+            writePkg('conditions-only-dual', {
+                'package.json': JSON.stringify({
+                    name: 'conditions-only-dual',
+                    main: './lib/umd/index.js',
+                    exports: { import: './lib/esm/index.mjs', require: './lib/umd/index.js' }
+                }),
+                'lib/esm/index.mjs': 'export default {};',
+                'lib/umd/index.js': 'module.exports = {};'
             });
             writePkg('esm-pkg', {
                 'package.json': JSON.stringify({
@@ -142,7 +159,10 @@ describe('@theia/re-exports/lib/utility.js', () => {
                 'index.js': 'export default class {};'
             });
             expect(isCommonJsModule('cjs-pkg', tempDir)).to.be.true;
-            expect(isCommonJsModule('dual-pkg', tempDir)).to.be.false;
+            expect(isCommonJsModule('dual-cjs-ext', tempDir)).to.be.true;
+            expect(isCommonJsModule('dual-subpath-pkg', tempDir)).to.be.false;
+            expect(isCommonJsModule('conditions-only-dual', tempDir)).to.be.true;
+            expect(isEsmOnlyModule('conditions-only-dual', tempDir)).to.be.false;
             expect(isCommonJsModule('esm-pkg', tempDir)).to.be.false;
         });
     });

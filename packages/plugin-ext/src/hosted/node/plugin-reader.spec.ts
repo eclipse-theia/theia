@@ -125,8 +125,9 @@ describe('HostedPluginReader#configure', () => {
     });
 
     it('rejects path traversal attempts outside the plugin directory', async () => {
-        const response = await fetch(`${baseUrl}/${PLUGINS_BASE_PATH}/my-plugin/%2e%2e/secret.txt`);
+        const response = await fetch(`${baseUrl}/${PLUGINS_BASE_PATH}/my-plugin/..%2Fsecret.txt`);
         expect(response.status).to.equal(404);
+        expect(await response.text()).to.contain('No such file found');
     });
 
     it('returns 404 for unknown plugin ids', async () => {
