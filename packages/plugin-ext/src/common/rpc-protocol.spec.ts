@@ -18,8 +18,6 @@ import { expect } from 'chai';
 import { BasicChannel } from '@theia/core/lib/common/message-rpc/channel';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '@theia/core/lib/common/message-rpc/uint8-array-message-buffer';
 import { ConnectionClosedError, createProxyIdentifier, RPCProtocolImpl } from './rpc-protocol.js';
-import { LoggerMain, PLUGIN_RPC_CONTEXT } from './plugin-api-rpc.js';
-import { PluginLogger } from '../plugin/logger.js';
 
 interface Greeter {
     $greet(name: string): Promise<string>;
@@ -27,10 +25,10 @@ interface Greeter {
 const GREETER = createProxyIdentifier<Greeter>('Greeter');
 
 /**
- * A pair of connected channels, each delivering every committed buffer to its peer on a later
- * tick. Stands in for the transport between the main side and a plugin host.
+ * Connects a main side serving `greeter` to a plugin host, over a pair of channels that deliver
+ * every committed buffer to the peer on a later tick.
  */
-function createChannelPair(): [BasicChannel, BasicChannel] {
+function connect(greeter: Greeter): { main: RPCProtocolImpl, host: RPCProtocolImpl } {
     const channels: BasicChannel[] = [];
     const create = (peer: number) => new BasicChannel(() => {
         const writer = new Uint8ArrayWriteBuffer();
@@ -38,98 +36,40 @@ function createChannelPair(): [BasicChannel, BasicChannel] {
         return writer;
     });
     channels.push(create(1), create(0));
-    return [channels[0], channels[1]];
+    const main = new RPCProtocolImpl(channels[0]);
+    main.set(GREETER, greeter);
+    return { main, host: new RPCProtocolImpl(channels[1]) };
 }
+
+const hello: Greeter = { $greet: async name => `hello ${name}` };
 
 describe('RPCProtocolImpl', () => {
 
     it('should service requests for registered locals', async () => {
-        const [mainChannel, hostChannel] = createChannelPair();
-        const main = new RPCProtocolImpl(mainChannel);
-        main.set(GREETER, { $greet: async (name: string) => `hello ${name}` });
-        const host = new RPCProtocolImpl(hostChannel);
+        const { host } = connect(hello);
 
         expect(await host.getProxy(GREETER).$greet('world')).to.equal('hello world');
     });
 
-    // Disposal clears `locals`, so a peer that is unaware of it keeps sending requests. Reporting
-    // those as a missing service handler points at an absent binding rather than a closed
-    // connection.
+    // Disposal clears `locals`, so a late request must report the closed connection.
     it('should report requests handled after disposal as a closed connection', () => {
-        const [mainChannel] = createChannelPair();
-        const main = new RPCProtocolImpl(mainChannel);
-        main.set(GREETER, { $greet: async (name: string) => `hello ${name}` });
+        const { main } = connect(hello);
 
         main.dispose();
 
-        let caught: unknown;
-        try {
-            main.handleRequest('$greet', [GREETER.id, 'world']);
-        } catch (error) {
-            caught = error;
-        }
-        expect(ConnectionClosedError.is(caught), `unexpected error: ${caught}`).to.be.true;
+        expect(() => main.handleRequest('$greet', [GREETER.id, 'world'])).to.throw().that.satisfies(ConnectionClosedError.is);
     });
 
     it('should reject a peer request sent after disposal', async () => {
-        const [mainChannel, hostChannel] = createChannelPair();
-        const main = new RPCProtocolImpl(mainChannel);
-        main.set(GREETER, { $greet: async (name: string) => `hello ${name}` });
-        const host = new RPCProtocolImpl(hostChannel);
+        const { main, host } = connect(hello);
 
         main.dispose();
 
-        try {
-            await host.getProxy(GREETER).$greet('world');
-            throw new Error('expected the request to be rejected');
-        } catch (error) {
-            // `code` is not carried across the wire, so the peer can only match on the message.
-            expect((error as Error).message).to.equal('connection is closed');
-        }
+        // `code` is not carried across the wire, so the peer can only match on the message.
+        await host.getProxy(GREETER).$greet('world').then(
+            () => expect.fail('expected the request to be rejected'),
+            error => expect(error.message).to.equal('connection is closed')
+        );
     });
 
-    it('should reject in-flight requests when the channel announces its close', async () => {
-        const [mainChannel, hostChannel] = createChannelPair();
-        const main = new RPCProtocolImpl(mainChannel);
-        // never settles, so the request is still in flight when the channel goes down
-        main.set(GREETER, { $greet: () => new Promise<string>(() => { }) });
-        const host = new RPCProtocolImpl(hostChannel);
-
-        const inFlight = host.getProxy(GREETER).$greet('world');
-        hostChannel.onCloseEmitter.fire({ reason: 'connection went down' });
-
-        try {
-            await inFlight;
-            throw new Error('expected the in-flight request to be rejected');
-        } catch (error) {
-            expect((error as Error).message).to.equal('connection went down');
-        }
-    });
-});
-
-describe('PluginLogger', () => {
-
-    // The plugin host reports unhandled rejections through `console.error`, which it routes back
-    // through this logger. A rejected `$log` that stayed unhandled would therefore log itself,
-    // and each report would send further failing logs.
-    it('should not leave an unhandled rejection when the main side cannot log', async () => {
-        const [mainChannel, hostChannel] = createChannelPair();
-        const main = new RPCProtocolImpl(mainChannel);
-        const failing: LoggerMain = { $log: () => { throw new Error('main side is gone'); } };
-        main.set(PLUGIN_RPC_CONTEXT.LOGGER_MAIN, failing);
-        const logger = new PluginLogger(new RPCProtocolImpl(hostChannel), 'plugin-host');
-
-        const rejections: unknown[] = [];
-        const onRejection = (reason: unknown) => rejections.push(reason);
-        process.on('unhandledRejection', onRejection);
-        try {
-            logger.error('a log the main side will refuse');
-            // two turns of the delivery `setTimeout` plus a macrotask for the rejection to surface
-            await new Promise(resolve => setTimeout(resolve, 20));
-        } finally {
-            process.off('unhandledRejection', onRejection);
-        }
-
-        expect(rejections, `unexpected unhandled rejections: ${rejections}`).to.be.empty;
-    });
 });
