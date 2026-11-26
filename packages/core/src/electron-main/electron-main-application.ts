@@ -35,7 +35,7 @@ import { Stopwatch } from '../common/performance/index.js';
 import { ContributionProvider } from '../common/contribution-provider.js';
 import { ElectronSecurityTokenService } from './electron-security-token-service.js';
 import { ElectronSecurityToken } from '../electron-common/electron-token.js';
-import Storage from '../../electron-shared/electron-store/index.cjs';
+import Storage from '../../electron-shared/electron-store/index.js';
 import { CancellationTokenSource, Disposable, DisposableCollection, Path, isOSX, isWindows } from '../common/index.js';
 import { DEFAULT_WINDOW_HASH, WindowSearchParams } from '../common/window.js';
 import { LaunchArguments } from '../common/launch-arguments.js';

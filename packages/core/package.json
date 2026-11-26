@@ -39,6 +39,7 @@
     "./lib/node/env-variables": "./lib/node/env-variables/index.js",
     "./lib/node/messaging": "./lib/node/messaging/index.js",
     "./lib/node/performance": "./lib/node/performance/index.js",
+    "./electron-shared/electron-store": "./electron-shared/electron-store/index.js",
     "./electron-shared/fix-path": "./electron-shared/fix-path/index.js",
     "./electron-shared/*": "./electron-shared/*/index.cjs",
     "./shared/inversify": "./shared/inversify/index.js",

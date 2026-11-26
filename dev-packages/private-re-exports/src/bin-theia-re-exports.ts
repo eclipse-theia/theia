@@ -21,7 +21,7 @@ import path = require('path');
 import semver = require('semver');
 import yargs = require('yargs');
 import ts = require('typescript');
-import { parseModule } from './utility';
+import { isEsmOnlyModule, parseModule } from './utility';
 import { ReExport, PackageReExports } from './package-re-exports';
 type EOL = '\r\n' | '\n' | '\r';
 
@@ -40,10 +40,12 @@ yargs
             }
             const packageReExports = await PackageReExports.FromPackage(packageName);
             const writer = new FileWriter(findEol(await readFile(packageReExports.resolvePath('package.json'))));
-            // Modules declared with `export =` cannot be re-exported from an ES module without losing their types,
-            // so they are always re-exported from a CommonJS module, which also loads the CommonJS entry point of dual packages.
-            const commonJsReExports = packageReExports.all.filter(reExport => reExport.reExportStyle === '='
-                || isCommonJsModule(reExport.internalImport, packageReExports.packageRoot));
+            // Modules declared with `export =` cannot be re-exported from an ES module without losing their types
+            // when they are CommonJS or dual packages, so they stay CommonJS unless the target is ESM-only.
+            const esmOnlyReExports = new Set(packageReExports.all.filter(reExport =>
+                isEsmOnlyModule(reExport.internalImport, packageReExports.packageRoot)));
+            const commonJsReExports = packageReExports.all.filter(reExport => !esmOnlyReExports.has(reExport)
+                && (reExport.reExportStyle === '=' || isCommonJsModule(reExport.internalImport, packageReExports.packageRoot)));
             const exportNames = collectExportNames(commonJsReExports.map(reExport => reExport.internalImport), packageReExports.packageRoot);
             await Promise.all(packageReExports.all.map(async reExport => {
                 const reExportPath = packageReExports.resolvePath(reExport.reExportDir, reExport.moduleName, 'index');
@@ -63,6 +65,11 @@ yargs
                         : `export * from '${reExport.internalImport}';\n`;
                     await writer.write(`${reExportPath}.d.cts`, declaration);
                     await writer.remove(`${reExportPath}.js`, `${reExportPath}.d.ts`);
+                } else if (reExport.reExportStyle === '=') {
+                    const content = `export * from '${reExport.internalImport}';\nexport { default } from '${reExport.internalImport}';\n`;
+                    await writer.write(`${reExportPath}.js`, content);
+                    await writer.write(`${reExportPath}.d.ts`, content);
+                    await writer.remove(`${reExportPath}.cjs`, `${reExportPath}.d.cts`);
                 } else if (reExport.reExportStyle === '*') {
                     const content = `export * from '${reExport.internalImport}';\n`;
                     await writer.write(`${reExportPath}.js`, content);

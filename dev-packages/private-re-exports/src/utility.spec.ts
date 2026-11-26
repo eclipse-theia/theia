@@ -14,7 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { parseModule } from './utility';
+import fs = require('fs');
+import os = require('os');
+import path = require('path');
+import { isEsmOnlyModule, parseModule } from './utility';
 import { expect } from 'chai';
 
 describe('@theia/re-exports/lib/utility.js', () => {
@@ -37,5 +40,83 @@ describe('@theia/re-exports/lib/utility.js', () => {
 
     it('parseModule unexpected module name/format', () => {
         expect(() => parseModule('@a')).throw();
+    });
+
+    describe('isEsmOnlyModule', () => {
+        let tempDir: string;
+
+        beforeEach(() => {
+            tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'theia-re-exports-test-'));
+        });
+
+        afterEach(() => {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+        });
+
+        function writePkg(pkgName: string, files: Record<string, string>): void {
+            const pkgDir = path.join(tempDir, 'node_modules', pkgName);
+            for (const [relPath, content] of Object.entries(files)) {
+                const fullPath = path.join(pkgDir, relPath);
+                fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+                fs.writeFileSync(fullPath, content, 'utf8');
+            }
+        }
+
+        it('returns false for CommonJS packages', () => {
+            writePkg('cjs-pkg', {
+                'package.json': JSON.stringify({ name: 'cjs-pkg', main: 'index.js' }),
+                'index.js': 'module.exports = {};'
+            });
+            expect(isEsmOnlyModule('cjs-pkg', tempDir)).to.be.false;
+        });
+
+        it('returns false for dual ESM/CJS packages with a require export condition', () => {
+            writePkg('dual-pkg', {
+                'package.json': JSON.stringify({
+                    name: 'dual-pkg',
+                    type: 'module',
+                    exports: { '.': { import: './index.js', require: './index.cjs' } }
+                }),
+                'index.js': 'export default {};',
+                'index.cjs': 'module.exports = {};'
+            });
+            expect(isEsmOnlyModule('dual-pkg', tempDir)).to.be.false;
+        });
+
+        it('returns true for ESM-only packages with type module and default export', () => {
+            writePkg('esm-pkg', {
+                'package.json': JSON.stringify({
+                    name: 'esm-pkg',
+                    type: 'module',
+                    exports: { types: './index.d.ts', default: './index.js' }
+                }),
+                'index.js': 'export default class {};'
+            });
+            expect(isEsmOnlyModule('esm-pkg', tempDir)).to.be.true;
+        });
+
+        it('returns true for ESM-only packages with import-only exports', () => {
+            writePkg('esm-import-only', {
+                'package.json': JSON.stringify({
+                    name: 'esm-import-only',
+                    type: 'module',
+                    exports: { '.': { import: './index.mjs' } }
+                }),
+                'index.mjs': 'export default {};'
+            });
+            expect(isEsmOnlyModule('esm-import-only', tempDir)).to.be.true;
+        });
+
+        it('returns true for copied ESM re-export stubs before exports map is refreshed', () => {
+            writePkg('@scope/host', {
+                'package.json': JSON.stringify({
+                    name: '@scope/host',
+                    type: 'module',
+                    exports: { './shared/*': './shared/*/index.cjs' }
+                }),
+                'shared/esm-dep/index.js': "export * from 'esm-dep';\nexport { default } from 'esm-dep';\n"
+            });
+            expect(isEsmOnlyModule('@scope/host/shared/esm-dep', tempDir)).to.be.true;
+        });
     });
 });
