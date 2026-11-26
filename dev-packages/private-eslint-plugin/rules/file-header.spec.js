@@ -24,10 +24,10 @@ const error = {
 };
 
 const ruleTester = new RuleTester({
-    parserOptions: { ecmaVersion: 2020, sourceType: 'module' }
+    languageOptions: { ecmaVersion: 2020, sourceType: 'module' }
 });
 
-ruleTester.run('@theia/file-header', rule, {
+ruleTester.run('file-header', rule, {
     valid: [
         {
             code: `
@@ -54,7 +54,7 @@ const value = true;
             options
         },
         {
-            code: `/* eslint-disable @theia/file-header */
+            code: `/* eslint-disable rule-to-test/file-header */
         // SPDX-License-Identifier: MIT
         const value = true;
         `,
@@ -96,7 +96,7 @@ const value = true;
         },
         {
             code: `// SPDX-License-Identifier: MIT
-        /* eslint-disable @theia/file-header */
+        /* eslint-disable rule-to-test/file-header */
         const value = true;
         `,
             options,

@@ -33,7 +33,7 @@ module.exports = {
         },
     },
     create(context) {
-        const filename = context.getFilename();
+        const filename = context.filename;
         const packageJson = reportingMalformedPackageJson(context, () => findPackageJson(filename));
         if (packageJson && dependsOnTheiaCore(packageJson)) {
             // Only show an error regarding the package.json file if this is the first
@@ -42,7 +42,7 @@ module.exports = {
                 const redundantDeps = getRedundantDependencies(packageJson);
                 if (redundantDeps.length > 0) {
                     context.report({
-                        loc: { line: 0, column: 0 },
+                        loc: { line: 1, column: 0 },
                         message: `"${packageJson.__filename}" depends on some @theia/core shared dependencies: [${redundantDeps}]`,
                     });
                 }

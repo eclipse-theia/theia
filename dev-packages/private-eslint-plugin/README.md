@@ -38,7 +38,7 @@ The rule enforces the [logging guidelines](https://github.com/eclipse-theia/thei
 
 Code without an `ILogger` binding is exempted through ESLint itself rather than by the rule:
 
-- The `electron-main` runtime is turned off in the `overrides` of `configs/errors.eslintrc.json`, as the Electron main container binds no `ILogger`.
+- The `electron-main` runtime is turned off in the overrides of `configs/errors.eslint.mjs`, as the Electron main container binds no `ILogger`.
 - Individual files, such as the console logger and the log config parser, carry an inline `eslint-disable @theia/named-logger-check` with the reason.
 
 ### `no-src-import`

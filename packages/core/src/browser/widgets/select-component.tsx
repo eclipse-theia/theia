@@ -428,7 +428,7 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             const className = 'theia-select-component-description';
             if (markdown) {
                 descriptionNode = <div key="description" className={className}
-                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(description) }} />; // eslint-disable-line react/no-danger
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(description) }} />;
             } else {
                 descriptionNode = <div key="description" className={className}>
                     {description}

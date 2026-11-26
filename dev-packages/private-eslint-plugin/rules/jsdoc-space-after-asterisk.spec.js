@@ -20,7 +20,7 @@ const rule = require('./jsdoc-space-after-asterisk');
 const message = 'JSDoc line asterisks must be followed by a space';
 
 const ruleTester = new RuleTester({
-    parserOptions: { ecmaVersion: 2020, sourceType: 'module' }
+    languageOptions: { ecmaVersion: 2020, sourceType: 'module' }
 });
 
 ruleTester.run('@theia/jsdoc-space-after-asterisk', rule, {

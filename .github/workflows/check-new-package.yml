@@ -54,7 +54,7 @@ jobs:
 
             - [ ] \`package.json\` contains all required fields (name, version, description, license, etc.) and scripts
             - [ ] \`README.md\` was added (please align with the existing README structure, e.g. [README.md](https://github.com/eclipse-theia/theia/blob/master/packages/editor/README.md))
-            - [ ] Config files (\`tsconfig.json\`, \`.eslintrc.js\`) were added and align with the existing packages
+            - [ ] Config files (\`tsconfig.json\`) were added and align with the existing packages
             - [ ] Folder structure follows Theia conventions (see [Code Organization](https://github.com/eclipse-theia/theia/blob/master/doc/code-organization.md))
             - [ ] Package is added to the example applications (i.e. \`browser\`, \`browser-only\`, \`electron\`)
             - [ ] New packages must be published manually by a Theia committer initially (see also [Release Process - Newly added Theia packages](https://github.com/eclipse-theia/theia/blob/master/doc/Publishing.md#212-newly-added-theia-packages---publish-initially-to-npm)).

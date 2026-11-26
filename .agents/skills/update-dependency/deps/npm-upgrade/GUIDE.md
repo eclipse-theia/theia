@@ -28,7 +28,7 @@ Split this file into `ISSUES.md` and `LOG.md` next to it once a section gets too
 ## Coupled versions
 
 | When this changes | Also update |
-|---|---|
+| --- | --- |
 | A resolved version in `package-lock.json` | The range in the declaring `package.json` (done by `--save`), `packages/core/README.md` for re-exported packages |
 | A dependency gains or loses an install script | `allowScripts` in the root `package.json` |
 | An override is added or changed | Full lockfile regeneration; floors of root overrides should not lag behind the package's own range (e.g. `dompurify`) |
@@ -97,7 +97,11 @@ An override to `diff` 8 hoists it to the root and its bundled types replace `@ty
 
 ### `npm install` fails on a fresh checkout because of an ESLint plugin
 
-`eslint-plugin-no-unsanitized` 4.1.5 dropped ESLint 8 while declared as `latest`. Pin it (4.1.4) and `eslint-plugin-no-null` (1.0.2). (#17151)
+`eslint-plugin-no-unsanitized` 4.1.5 dropped ESLint 8 while declared as `latest` (#17151); it was removed together with `eslint-plugin-react` and `configs/xss.eslintrc.json` during the ESLint 10 flat-config migration. Keep `eslint-plugin-no-null` pinned at `1.0.2`.
+
+### ESLint 10 flat-config `RuleTester` and `Linter` failures on custom rules
+
+In ESLint 9/10 flat config, `RuleTester` mounts the tested rule under the `rule-to-test/` prefix (so inline disable directives in tests must reference `rule-to-test/<rule>`), and `new Linter()` refuses to match filenames outside `cwd` (pass `new Linter({ cwd: path.dirname(filename) })` for temp-dir tests). Also set `linterOptions: { reportUnusedDisableDirectives: 'off' }` in `configs/base.eslint.mjs` so directives for `warnings.eslint.mjs` rules (like `@typescript-eslint/no-deprecated`) do not warn during `build.eslint.mjs` runs.
 
 ### Electron postinstall fails sporadically on Node 24 (`extract-zip` race)
 
@@ -116,7 +120,7 @@ The wrapper used a broken Nexus 2 URL after the repo.eclipse.org upgrade, and 1.
 Newest first. One entry per merged update and target branch.
 
 | Date | Branch | From → To | PR | Notes |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | 2026-11-17 | master | after 1.77.0 | #18420 | Ranges aligned; puppeteer 25.17.0, minimatch 11, rimraf 6, zod floor 4.6.7 (drops zod 3); override `follow-redirects` (nx); `jsondiffpatch` override removed; `@types/vscode` held in sample plugins. Clean regen needed `node_modules` removed. Held back: `@vscode/proxy-agent`, `diff`, `mermaid` 12, lerna 10, TypeScript 7. |
 | 2026-10-12 | master | after 1.76.0 | #18149 | Ranges aligned (incl. `@playwright/test` 1.63.0), `simple-git` 4.0.2 in ai-ide, scoped overrides for `axios` (nx) and `basic-ftp`, full regen so `uuid`/`@tootallnate/once` overrides apply. |
 | 2026-09-15 | master | after 1.75.0 | #18005 | Overrides `pacote` (lerna), `smol-toml` (nx), `jsondiffpatch`, `qs` (express), `@tootallnate/once`; `tar-stream` type fix; `@types/vscode` held in sample plugins; `@vscode/vsce` dev dep and platform-restore tooling dropped. Held back: `decompress` (needs replacement), `ai`/`@ai-sdk/*` (v5 migration), `diff`, `stream-json` via `scanoss`. |

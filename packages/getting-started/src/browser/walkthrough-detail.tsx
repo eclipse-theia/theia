@@ -417,7 +417,6 @@ function WalkthroughMediaSvg(props: {
             role='img'
             aria-label={props.altText || undefined}
             onClick={handleClick}
-            // eslint-disable-next-line react/no-danger
             dangerouslySetInnerHTML={{ __html: content }}
         />
     );

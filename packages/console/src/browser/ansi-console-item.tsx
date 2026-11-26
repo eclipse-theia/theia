@@ -41,7 +41,7 @@ export class AnsiConsoleItem implements ConsoleItem {
     render(): React.ReactNode {
         return <div
             className='theia-console-ansi-console-item'
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(this.htmlContent) }} // eslint-disable-line react/no-danger
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(this.htmlContent) }}
         />;
     }
 

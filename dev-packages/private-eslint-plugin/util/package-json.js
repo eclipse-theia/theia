@@ -186,7 +186,7 @@ function reportingMalformedPackageJson(context, lookup) {
         }
         if (!reportedErrors.has(error)) {
             reportedErrors.add(error);
-            context.report({ loc: { line: 0, column: 0 }, message: error.message });
+            context.report({ loc: { line: 1, column: 0 }, message: error.message });
         }
         return undefined;
     }

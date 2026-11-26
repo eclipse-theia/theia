@@ -10,7 +10,7 @@ Split this file into `ISSUES.md` and `LOG.md` next to it once a section gets too
 
 1. Check peer ranges before bumping: `npm view @typescript-eslint/parser@<v> peerDependencies`, `npm view typedoc@<v> peerDependencies`. Pick the first releases that include the new TypeScript line.
 2. Bump every pin (all `~x.y.z`): `git grep -n '"typescript"' -- '*package.json'` gives the root `package.json`, `dev-packages/localization-manager` (a runtime `dependency`, so adopters get it), `dev-packages/private-re-exports`, `examples/playwright`. Also `.github/workflows/copilot-sdk-mirror.yml` (`npm install ... typescript@~x.y.z`).
-3. Run `npm run compile` and fix compiler options first: deprecated/removed options and changed defaults go into `configs/base.tsconfig.json`, with a comment why. Mirror them into `examples/api-tests/test-ts-workspace/tsconfig.json` (see Known issues) and keep `lib` in `configs/build.eslintrc.json` equal to the base `lib`.
+3. Run `npm run compile` and fix compiler options first: deprecated/removed options and changed defaults go into `configs/base.tsconfig.json`, with a comment why. Mirror them into `examples/api-tests/test-ts-workspace/tsconfig.json` (see Known issues) and keep `lib` in `configs/build.eslint.mjs` equal to the base `lib`.
 4. Fix code errors in a separate commit. Typical categories: stricter generic/`lib` typings (typed arrays, `Error.cause`), missing `override`, missing `;` on overload signatures, imports that the new module semantics reject. Isolate behaviour-relevant switches in their own commit; #18100 switched to default imports with `esModuleInterop` on the old compiler first.
 5. Run `npm run lint`; the lint is type-aware, so typescript-eslint must support the new compiler.
 6. `tsfmt.json`, `scripts/compile-references.js` and `configs/mocharc.yml` (runs compiled JS, no ts-node) have never needed changes for an upgrade.
@@ -20,10 +20,10 @@ Split this file into `ISSUES.md` and `LOG.md` next to it once a section gets too
 ## Coupled versions
 
 | When this changes | Also update |
-|---|---|
+| --- | --- |
 | `typescript` (root) | same `~x.y.z` in `localization-manager`, `private-re-exports`, `examples/playwright`, `copilot-sdk-mirror.yml` |
 | `typescript` minor/major | `@typescript-eslint/*` (peer range), `typedoc` (peer range); `.vscode/settings.json` `typescript.tsdk` stays `node_modules/typescript/lib` |
-| `target` / `lib` in `configs/base.tsconfig.json` | `lib` in `configs/build.eslintrc.json`; the minimum Node.js in [doc/runtime-policy.md](../../../../../doc/runtime-policy.md) must support the target |
+| `target` / `lib` in `configs/base.tsconfig.json` | `lib` in `configs/build.eslint.mjs`; the minimum Node.js in [doc/runtime-policy.md](../../../../../doc/runtime-policy.md) must support the target |
 | any `compilerOptions` change | `examples/api-tests/test-ts-workspace/tsconfig.json`, which must stay valid for the TypeScript bundled with the built-in `vscode.typescript-language-features` |
 | options that make emit use more `tslib` helpers (`importHelpers`, `esModuleInterop`) | `tslib` in `dependencies` of every published package whose output imports `tslib` |
 | any upgrade | Theia IDE needs the same update (Publishing 3.6 ticket) |
@@ -111,7 +111,7 @@ The editor uses its bundled, older TypeScript. Select the workspace version (`ty
 Newest first. One entry per merged update and target branch.
 
 | Date | Branch | From → To | PR | Notes |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | 2026-11-03 | master | ~6.0.3 (unchanged) | #18216 | ESM switch: `module`/`moduleResolution` `NodeNext`, `"type": "module"` with generated `exports` maps, `emitDecoratorMetadata: false`, `allowSyntheticDefaultImports`; `dev-packages` stay CommonJS. Breaking, CHANGELOG + Migration |
 | 2026-10-14 | master | ~5.9.3 → ~6.0.3 | #18100 | `bundler` resolution, `esModuleInterop`, explicit `types`, `strict: false`, `noUncheckedSideEffectImports: false`; typescript-eslint 7 → 8, TSLint bridge and `eslint-plugin-deprecation` removed, typedoc 0.28.20; `tslib` declared in 19 packages. Breaking, CHANGELOG + Migration |
 | 2026-01-14 | master | ~5.4.5 → ~5.9.3 | #16774 | Together with built-ins 1.104.0. Target/lib ES2019 → ES2023, `useDefineForClassFields: false`, code fixes in a separate commit |

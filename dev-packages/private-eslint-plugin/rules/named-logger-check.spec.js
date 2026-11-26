@@ -16,6 +16,7 @@
 
 const assert = require('assert');
 const fs = require('fs');
+const path = require('path');
 const { Linter, RuleTester } = require('eslint');
 const rule = require('./named-logger-check');
 const { tempFiles } = require('../util/test/temp-files');
@@ -36,8 +37,11 @@ const repo = tempFiles({
 after(() => repo.dispose());
 
 const ruleTester = new RuleTester({
-    parser: require.resolve('@typescript-eslint/parser'),
-    parserOptions: { ecmaVersion: 2020, sourceType: 'module' }
+    languageOptions: {
+        parser: require('@typescript-eslint/parser'),
+        ecmaVersion: 2020,
+        sourceType: 'module'
+    }
 });
 
 ruleTester.run('named-logger-check', rule, {
@@ -298,9 +302,7 @@ describe('malformed package.json', () => {
      * @param {string} filename
      */
     function lintBrokenClass(filename) {
-        const linter = new Linter();
-        linter.defineRule('named-logger-check', rule);
-        linter.defineParser('ts-parser', require('@typescript-eslint/parser'));
+        const linter = new Linter({ cwd: path.dirname(filename) });
         return linter.verify(
             `
             @injectable()
@@ -308,11 +310,18 @@ describe('malformed package.json', () => {
                 constructor(@inject(ILogger) @named('broken:BrokenClass') logger) {}
             }
             `,
-            {
-                parser: 'ts-parser',
-                parserOptions: { ecmaVersion: 2020, sourceType: 'module' },
-                rules: { 'named-logger-check': 'error' }
-            },
+            [{
+                files: ['**/*.ts'],
+                languageOptions: {
+                    parser: require('@typescript-eslint/parser'),
+                    ecmaVersion: 2020,
+                    sourceType: 'module'
+                },
+                plugins: {
+                    '@theia': { rules: { 'named-logger-check': rule } }
+                },
+                rules: { '@theia/named-logger-check': 'error' }
+            }],
             filename
         );
     }
@@ -322,7 +331,7 @@ describe('malformed package.json', () => {
         try {
             const messages = lintBrokenClass(broken.resolve('packages/broken/src/broken-class.ts'));
             assert.strictEqual(messages.length, 1);
-            assert.strictEqual(messages[0].ruleId, 'named-logger-check');
+            assert.strictEqual(messages[0].ruleId, '@theia/named-logger-check');
             assert.ok(messages[0].message.startsWith(`Cannot read "${broken.resolve('packages/broken/package.json')}"`), messages[0].message);
         } finally {
             broken.dispose();

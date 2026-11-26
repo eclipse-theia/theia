@@ -15,6 +15,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+const pkg = require('./package.json');
+
+exports.meta = {
+    name: pkg.name,
+    version: pkg.version
+};
+
 /** @type {{[ruleId: string]: import('eslint').Rule.RuleModule}} */
 exports.rules = {
     "annotation-check": require('./rules/annotation-check'),

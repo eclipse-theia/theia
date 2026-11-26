@@ -1,7 +1,0 @@
-{
-  "rules": {
-    "@typescript-eslint/await-thenable": "warn",
-    "@typescript-eslint/no-deprecated": "warn",
-    "no-return-await": "warn"
-  }
-}

@@ -19,8 +19,11 @@ const rule = require('./explicit-return-type');
 
 const error = { message: 'Expected a return type annotation.' };
 const ruleTester = new RuleTester({
-    parser: require.resolve('@typescript-eslint/parser'),
-    parserOptions: { ecmaVersion: 2020, sourceType: 'module' }
+    languageOptions: {
+        parser: require('@typescript-eslint/parser'),
+        ecmaVersion: 2020,
+        sourceType: 'module'
+    }
 });
 
 ruleTester.run('@theia/explicit-return-type', rule, {

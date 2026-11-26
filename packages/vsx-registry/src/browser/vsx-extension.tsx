@@ -695,7 +695,6 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
                     <div className='body'
                         ref={ref => { this.body = (ref || undefined); }}
                         onClick={this.openLink}
-                        // eslint-disable-next-line react/no-danger
                         dangerouslySetInnerHTML={{ __html: sanitizedReadme }}
                     />
                 </div>
