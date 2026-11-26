@@ -51,7 +51,7 @@
     "@vscode/proxy-agent": "^0.13.2",
     "async-mutex": "^0.4.1",
     "escape-html": "^1.0.3",
-    "filenamify": "^4.3.0",
+    "filenamify": "^7.0.3",
     "is-electron": "^2.2.2",
     "jsonc-parser": "^3.3.1",
     "lodash.clonedeep": "^4.5.0",

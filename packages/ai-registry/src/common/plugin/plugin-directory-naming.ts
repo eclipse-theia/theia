@@ -42,6 +42,10 @@ export interface PluginDirectoryNaming {
 export class PluginDirectoryNamingImpl implements PluginDirectoryNaming {
 
     directoryName(pluginId: string): string {
+        if (!pluginId.trim()) {
+            throw new Error(nls.localize('theia/ai-registry/plugin/invalidDirectoryName',
+                'Invalid plugin directory name "{0}": it must be a single path segment without separators.', pluginId));
+        }
         const encoded = filenamify(pluginId, { replacement: '_' });
         if (!encoded || encoded === '.' || encoded === '..' || NOT_A_SINGLE_SEGMENT.test(encoded)) {
             throw new Error(nls.localize('theia/ai-registry/plugin/invalidDirectoryName',
