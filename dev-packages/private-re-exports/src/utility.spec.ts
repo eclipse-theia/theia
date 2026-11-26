@@ -119,6 +119,20 @@ describe('@theia/re-exports/lib/utility.js', () => {
             expect(isEsmOnlyModule('@scope/host/shared/esm-dep', tempDir)).to.be.true;
         });
 
+        it('does not match overlapping wildcard exports patterns when target is shorter than prefix + suffix', () => {
+            writePkg('wildcard-pkg', {
+                'package.json': JSON.stringify({
+                    name: 'wildcard-pkg',
+                    exports: {
+                        './foo*foo': { import: './dist/foo*foo.mjs' }
+                    }
+                })
+            });
+            expect(isEsmOnlyModule('wildcard-pkg/foo', tempDir)).to.be.false;
+            expect(isEsmOnlyModule('wildcard-pkg/foofoo', tempDir)).to.be.true;
+            expect(isEsmOnlyModule('wildcard-pkg/foo-bar-foo', tempDir)).to.be.true;
+        });
+
         it('isCommonJsModule preserves CJS classification for CJS, .cjs dual, and conditions-only exports (vscode-uri shape)', () => {
             writePkg('cjs-pkg', {
                 'package.json': JSON.stringify({ name: 'cjs-pkg', main: 'index.js' }),

@@ -90,7 +90,7 @@ function resolveExportsEntry(exportsField: unknown, subModuleName?: string): unk
     for (const key of keys) {
         if (key.includes('*')) {
             const [prefix, suffix] = key.split('*', 2);
-            if (target.startsWith(prefix) && target.endsWith(suffix)) {
+            if (target.length >= prefix.length + suffix.length && target.startsWith(prefix) && target.endsWith(suffix)) {
                 return record[key];
             }
         }
