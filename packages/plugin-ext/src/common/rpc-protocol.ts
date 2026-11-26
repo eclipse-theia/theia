@@ -92,8 +92,7 @@ export class RPCProtocolImpl implements RPCProtocol {
 
     handleNotification(method: any, args: any[]): void {
         if (this.isDisposed) {
-            // Disposal empties `locals`; a late message is a closed connection, not a missing
-            // service registration.
+            // Disposal empties `locals`, so a late message must report the closed connection.
             throw ConnectionClosedError.create();
         }
         const serviceId = args[0] as string;

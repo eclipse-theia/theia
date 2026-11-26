@@ -390,8 +390,8 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
 
     /**
      * Creates the protocol for a backend plugin host. Disposing it also disposes the watcher
-     * subscription and closes the channel, which the watcher would otherwise keep feeding after
-     * a reconnect, since it reuses `pluginHostId` for the next connection.
+     * subscription and closes the channel: the watcher outlives the connection and reuses
+     * `pluginHostId` for the next one.
      */
     protected createServerRpc(pluginHostId: string): RPCProtocol {
 
@@ -412,12 +412,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
                     channel.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(received.message));
                 }
             }),
-            Disposable.create(() => {
-                // `Channel.close()` emits no close event; fire it explicitly so that the protocol
-                // rejects the requests still in flight.
-                channel.onCloseEmitter.fire({ reason: 'The plugin host connection was closed.' });
-                channel.close();
-            }),
+            Disposable.create(() => channel.close()),
             rpc
         );
 
