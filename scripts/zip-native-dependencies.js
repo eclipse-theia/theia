@@ -18,7 +18,7 @@ const { promisify } = require('util');
 const glob = promisify(require('glob'));
 const fs = require('fs');
 const path = require('path');
-const archiver = require('archiver');
+const { ZipArchive } = require('archiver');
 
 async function run() {
     const repoPath = path.resolve(__dirname, '..');
@@ -33,7 +33,7 @@ async function run() {
     const trashDependencies = await glob('lib/backend/{windows-trash.exe,macos-trash}', {
         cwd: browserAppPath
     });
-    const archive = archiver('zip');
+    const archive = new ZipArchive();
     const output = fs.createWriteStream(zipFile, { flags: "w" });
     archive.pipe(output);
     for (const file of [
