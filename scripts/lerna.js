@@ -18,4 +18,4 @@
 if (process.argv.indexOf('--reject-cycles') === -1) {
     process.argv.push('--reject-cycles');
 }
-require(`lerna/${require('lerna/package.json').bin['lerna']}`);
+require('lerna/cli');

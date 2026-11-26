@@ -43,7 +43,7 @@ Advisories of published npm packages are public; the last PRs name them like thi
 ## Coupled versions
 
 | When this changes | Also update |
-|---|---|
+| --- | --- |
 | A package is dropped or replaced | `allowScripts` in the root `package.json` if it had an install script; license check |
 | A runtime dependency range of a published package | `packages/core/README.md` if it is re-exported |
 
@@ -58,9 +58,9 @@ Advisories of published npm packages are public; the last PRs name them like thi
 
 `opfs-worker` bundles `minimatch` into its `dist` (the import is only visible in the source maps); its declared `minimatch` dependency does not affect the shipped code, so an override changes nothing. Every release is in the range (checked with 2.3.1); wait for an upstream release built against minimatch 11. (after 1.77.0)
 
-### `nx` and the lerna chain have no fixed release
+### The lerna `@npmcli/*` chain has no fixed release
 
-The `minimatch` advisory range covers every `nx` release since 17.3 and the `@npmcli/*`, `sigstore`, `tuf-js` copies pulled by lerna 9; lerna 10 does not help. `npm audit` suggests lerna 8.1.4 as "fix", which is a downgrade; ignore it. (after 1.77.0)
+Lerna 10 (with `nx` 24) resolves the `nx` overrides (`axios`, `brace-expansion`, `follow-redirects`, `smol-toml`) and the `pacote` override, but `@npmcli/arborist` / `npm-packlist` pulled by lerna still depend on older `minimatch` versions. `npm audit` suggests downgrading lerna; ignore it. (updated with Lerna 10)
 
 ### Overriding nested `minimatch` 9/10 to 11 breaks nx and typedoc
 
@@ -83,7 +83,7 @@ The override is already on the latest version. (#18005)
 Newest first. One entry per run. Record what is left open (severity and package), not counts; counts change with every new advisory.
 
 | Date | Branch | Left open | PR | Notes |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | 2026-11-17 | master | moderate: `minimatch`/`glob` in tooling (lerna/nx, mocha, nyc, typedoc), `opfs-worker` (bundled), `stream-json` (scanoss); low: `diff`, `katex` (mermaid 11); no critical or high | #18420 | Range alignment; puppeteer 25.17.0 (zod 4 for chromium-bidi), minimatch 11 in our packages, rimraf 6, override `follow-redirects` (nx); `jsondiffpatch` override removed; `decompress` gone since #18207. |
 | 2026-10-12 | master | critical: `decompress` | #18149 | Overrides `axios` (nx), `basic-ftp`. |
 | 2026-09-15 | master | critical: `decompress`; no high | #18005 | Overrides `pacote`, `smol-toml`, `jsondiffpatch`, `qs`, `@tootallnate/once`; `@vscode/vsce` dropped. |
