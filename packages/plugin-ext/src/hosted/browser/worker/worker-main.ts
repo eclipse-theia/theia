@@ -19,7 +19,7 @@ import { Container } from '@theia/core/shared/inversify';
 import * as theia from '@theia/plugin';
 import { emptyPlugin, MAIN_RPC_CONTEXT, Plugin } from '../../../common/plugin-api-rpc.js';
 import { ExtPluginApi } from '../../../common/plugin-ext-api-contribution.js';
-import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol.js';
+import { PluginMetadata, PluginPackage } from '../../../common/plugin-protocol.js';
 import { RPCProtocol } from '../../../common/rpc-protocol.js';
 import { ClipboardExt } from '../../../plugin/clipboard-ext.js';
 import { EditorsAndDocumentsExtImpl } from '../../../plugin/editors-and-documents.js';
@@ -38,7 +38,6 @@ import { TelemetryExtImpl } from '../../../plugin/telemetry-ext.js';
 import { SecretsExtImpl } from '../../../plugin/secrets-ext.js';
 import pluginHostModule from './worker-plugin-module.js';
 import { VsCodeExtensionLoader } from './vscode-extension-loader.js';
-import { PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ctx = self as any;
@@ -56,7 +55,7 @@ pluginManager.setPluginHost({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         loadPlugin(plugin: Plugin): any {
             if (plugin.pluginPath) {
-                const scriptPath = isElectron() ? plugin.pluginPath : `./${PLUGINS_BASE_PATH}/` + getPluginId(plugin.model) + '/' + plugin.pluginPath;
+                const scriptPath = isElectron() ? plugin.pluginPath : `./${PluginPackage.toPluginUrl(plugin.model, plugin.pluginPath)}`;
                 if (plugin.model.engine.type === 'vscode') {
                     return vsCodeExtensionLoader.load(scriptPath, pluginsApiImpl.get(plugin.model.id));
                 }
