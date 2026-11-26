@@ -32,7 +32,7 @@
     "@typescript-eslint/parser": "^8.74.0",
     "archiver": "^8.0.0",
     "chai": "^6.3.0",
-    "chalk": "4.0.0",
+    "chalk": "^6.0.1",
     "concurrently": "^3.6.1",
     "debug": "^4.4.3",
     "electron-mocha": "^13.1.0",
