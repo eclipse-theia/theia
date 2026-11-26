@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 import '../../src/browser/style/index.css';
-import './preferences-monaco-contribution.js';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { bindViewContribution, FrontendApplicationContribution, noopWidgetStatusBarContribution, OpenHandler, WidgetStatusBarContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -26,7 +25,6 @@ import { PreferencesContribution } from './preferences-contribution.js';
 import { PreferenceScopeCommandManager } from './util/preference-scope-command-manager.js';
 import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
 import { PreferencesJsonSchemaContribution } from './preferences-json-schema-contribution.js';
-import { MonacoJSONCEditor } from './monaco-jsonc-editor.js';
 import { PreferenceTransaction, PreferenceTransactionFactory, preferenceTransactionFactoryCreator } from './preference-transaction-manager.js';
 import { PreferenceOpenHandler } from './preference-open-handler.js';
 import { CliPreferences, CliPreferencesPath } from '../common/cli-preferences.js';
@@ -41,6 +39,8 @@ import { PreferenceStorageFactory } from '../common/abstract-resource-preference
 import { FrontendPreferenceStorage } from './frontend-preference-storage.js';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { PreferenceScope, URI } from '@theia/core';
+import { WorkspaceRestrictionContribution } from '@theia/workspace/lib/browser/workspace-trust-service';
+import { RestrictedPreferencesContribution } from './restricted-preferences-contribution.js';
 
 export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind): void {
     bindPreferenceProviders(bind, unbind);
@@ -60,7 +60,6 @@ export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind
     bind(PreferencesJsonSchemaContribution).toSelf().inSingletonScope();
     bind(JsonSchemaContribution).toService(PreferencesJsonSchemaContribution);
 
-    bind(MonacoJSONCEditor).toSelf().inSingletonScope();
     bind(PreferenceTransaction).toSelf();
     bind(PreferenceTransactionFactory).toFactory(preferenceTransactionFactoryCreator);
     bind(PreferenceStorageFactory).toFactory(({ container }) => (uri: URI, scope: PreferenceScope) => new FrontendPreferenceStorage(
@@ -77,6 +76,10 @@ export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind
     bind(RemoteCliArgsContribution).toService(SessionPreferenceRemoteCliContribution);
     bind(SessionPreferenceStatusBarContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(SessionPreferenceStatusBarContribution);
+
+    bind(RestrictedPreferencesContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(RestrictedPreferencesContribution);
+    bind(WorkspaceRestrictionContribution).toService(RestrictedPreferencesContribution);
 
     bind(WidgetStatusBarContribution).toConstantValue(noopWidgetStatusBarContribution(PreferencesWidget));
 }

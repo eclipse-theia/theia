@@ -25,6 +25,7 @@ export const PREF_AI_INLINE_COMPLETION_STRIP_BACKTICKS = 'ai-features.codeComple
 export const PREF_AI_INLINE_COMPLETION_CACHE_CAPACITY = 'ai-features.codeCompletion.cacheCapacity';
 
 export const AICodeCompletionPreferencesSchema: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE]: {
             title: AI_CORE_PREFERENCES_TITLE,

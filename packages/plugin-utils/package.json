@@ -7,7 +7,7 @@
     "@types/fs-extra": "^4.0.15",
     "fs-extra": "^4.0.3",
     "jsonc-parser": "^3.3.1",
-    "tslib": "^2.8.1"
+    "tslib": "^2.9.1"
   },
   "publishConfig": {
     "access": "public"

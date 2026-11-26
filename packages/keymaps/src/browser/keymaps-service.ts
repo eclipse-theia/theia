@@ -27,7 +27,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import URI from '@theia/core/lib/common/uri';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { MonacoJSONCEditor } from '@theia/preferences/lib/browser/monaco-jsonc-editor';
+import { MonacoJSONCEditor } from '@theia/monaco/lib/browser/monaco-jsonc-editor';
 import { ILogger } from '@theia/core';
 
 @injectable()

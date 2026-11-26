@@ -32,7 +32,10 @@ import {
     PreferenceService,
     bindTreePreferences,
     PreferenceProviderProvider,
-    PreferenceProvider
+    PreferenceProvider,
+    PreferenceExclusionPolicy,
+    PreferenceExclusionService,
+    PreferenceExclusionServiceImpl
 } from '../common/index.js';
 import {
     BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution,
@@ -64,6 +67,7 @@ import { BackendRemoteService } from './remote/backend-remote-service.js';
 import { RemoteCliContribution } from './remote/remote-cli-contribution.js';
 import { SettingService, SettingServiceImpl } from './setting-service.js';
 import { bindCorePreferences } from '../common/core-preferences.js';
+import { JSONCEditor, JSONCEditorImpl } from '../common/jsonc-editor.js';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -191,10 +195,15 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => ctx.container.getNamed(PreferenceProvider, scope));
     bind(PreferenceSchemaServiceImpl).toSelf().inSingletonScope();
     bind(PreferenceSchemaService).toService(PreferenceSchemaServiceImpl);
+    bindRootContributionProvider(bind, PreferenceExclusionPolicy);
+    bind(PreferenceExclusionServiceImpl).toSelf().inSingletonScope();
+    bind(PreferenceExclusionService).toService(PreferenceExclusionServiceImpl);
     bind(PreferenceProvider).to(DefaultsPreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Default);
     bind(PreferenceLanguageOverrideService).toSelf().inSingletonScope();
     bind(PreferenceServiceImpl).toSelf().inSingletonScope();
     bind(PreferenceService).toService(PreferenceServiceImpl);
     bindCorePreferences(bind);
+    bind(JSONCEditorImpl).toSelf().inSingletonScope();
+    bind(JSONCEditor).toService(JSONCEditorImpl);
     bindTreePreferences(bind);
 });

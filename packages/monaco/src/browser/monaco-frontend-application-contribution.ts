@@ -93,7 +93,10 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
             'aliases': [
                 'JSON with Comments'
             ],
-            'extensions': workspaceExtensions.map(ext => `.${ext}`)
+            'extensions': workspaceExtensions.map(ext => `.${ext}`),
+            'filenames': [
+                'settings.json'
+            ]
         });
     }
     onStart(): void {

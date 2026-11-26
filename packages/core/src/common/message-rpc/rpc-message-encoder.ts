@@ -184,6 +184,10 @@ export function registerMsgPackExtensions(): void {
             const error = data.isResponseError ? new ResponseError(data.code, data.message, data.data) : new Error(data.message);
             error.name = data.name;
             error.stack = data.stack;
+            if (data.code !== undefined && !data.isResponseError) {
+                // Keep the error code of a plain error, e.g. the `code` of a Node.js system error
+                (error as Error & { code?: unknown }).code = data.code;
+            }
             return error;
         }
     });

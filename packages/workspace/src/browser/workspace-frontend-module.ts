@@ -52,6 +52,8 @@ import { WorkspaceBreadcrumbsContribution } from './workspace-breadcrumbs-contri
 import { FilepathBreadcrumbsContribution } from '@theia/filesystem/lib/browser/breadcrumbs/filepath-breadcrumbs-contribution';
 import { WorkspaceTrustService, WorkspaceRestrictionContribution } from './workspace-trust-service.js';
 import { bindWorkspaceTrustPreferences } from '../common/workspace-trust-preferences.js';
+import { WorkspaceTrustPreferenceExclusionPolicy } from './workspace-trust-preference-exclusion-policy.js';
+import { PreferenceExclusionPolicy } from '@theia/core/lib/common/preferences';
 import { UserWorkingDirectoryProvider } from '@theia/core/lib/browser/user-working-directory-provider';
 import { WorkspaceUserWorkingDirectoryProvider } from './workspace-user-working-directory-provider.js';
 import { WindowTitleUpdater } from '@theia/core/lib/browser/window/window-title-updater';
@@ -126,6 +128,8 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
 
     bindRootContributionProvider(bind, WorkspaceRestrictionContribution);
     bind(WorkspaceTrustService).toSelf().inSingletonScope();
+    bind(WorkspaceTrustPreferenceExclusionPolicy).toSelf().inSingletonScope();
+    bind(PreferenceExclusionPolicy).toService(WorkspaceTrustPreferenceExclusionPolicy);
     rebind(UserWorkingDirectoryProvider).to(WorkspaceUserWorkingDirectoryProvider).inSingletonScope();
 
     rebind(WindowTitleUpdater).to(WorkspaceWindowTitleUpdater).inSingletonScope();

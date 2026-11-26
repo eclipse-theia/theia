@@ -18,7 +18,7 @@ import { interfaces } from '@theia/core/shared/inversify';
 import { ApplicationShell, WidgetOpenerOptions, codicon } from '@theia/core/lib/browser';
 import { TerminalEditorLocationOptions } from '@theia/plugin';
 import { TerminalLocation, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
-import { TerminalProfileService } from '@theia/terminal/lib/browser/terminal-profile-service';
+import { TerminalProfileService, TerminalProfileStartOptions } from '@theia/terminal/lib/browser/terminal-profile-service';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalServiceMain, TerminalServiceExt, MAIN_RPC_CONTEXT, TerminalOptions } from '../../common/plugin-api-rpc.js';
 import { RPCProtocol } from '../../common/rpc-protocol.js';
@@ -75,7 +75,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
 
         this.shellTerminalServer.getEnvVarCollections().then(collections => this.extProxy.$initEnvironmentVariableCollections(collections));
 
-        this.pluginTerminalRegistry.startCallback = id => this.startProfile(id);
+        this.pluginTerminalRegistry.startCallback = (id, options) => this.startProfile(id, options);
 
         container.bind(TerminalLinkProvider).toDynamicValue(() => this);
 
@@ -84,9 +84,11 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
         }));
     }
 
-    async startProfile(id: string): Promise<string> {
+    async startProfile(id: string, options?: TerminalProfileStartOptions): Promise<string> {
         await this.hostedPluginSupport.activateByTerminalProfile(id);
-        return this.extProxy.$startProfile(id, CancellationToken.None);
+        const location = options?.location;
+        const parentId = typeof location === 'object' && 'parentTerminal' in location ? location.parentTerminal : undefined;
+        return this.extProxy.$startProfile(id, { parentId }, CancellationToken.None);
     }
 
     $setEnvironmentVariableCollection(persistent: boolean, extensionIdentifier: string, rootUri: string, collection: SerializableEnvironmentVariableCollection): void {
@@ -182,14 +184,15 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
     }
 
     protected getTerminalLocation(options: TerminalOptions, parentId?: string): TerminalLocation | TerminalEditorLocationOptions | { parentTerminal: string; } | undefined {
+        // A parent is only given for a split, which takes precedence over the location of a contributed profile.
+        if (parentId) {
+            return { parentTerminal: parentId };
+        }
         if (typeof options.location === 'number' && Object.values(TerminalLocation).includes(options.location)) {
             return options.location;
         } else if (options.location && typeof options.location === 'object') {
             if ('parentTerminal' in options.location) {
-                if (!parentId) {
-                    throw new Error('parentTerminal is set but no parentId is provided');
-                }
-                return { 'parentTerminal': parentId };
+                throw new Error('parentTerminal is set but no parentId is provided');
             } else {
                 return options.location;
             }

@@ -11,7 +11,7 @@
     "@theia/monaco": "1.77.0",
     "@theia/monaco-editor-core": "1.108.201",
     "@theia/scanoss": "1.77.0",
-    "tslib": "^2.8.1"
+    "tslib": "^2.9.1"
   },
   "publishConfig": {
     "access": "public"

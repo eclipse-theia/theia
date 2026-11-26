@@ -171,6 +171,23 @@ If you worked around the ripgrep problem by overriding the `@vscode/ripgrep` rep
 
 ### v1.78.0
 
+#### ChatGPT authentication modes [#18156](https://github.com/eclipse-theia/theia/pull/18156)
+
+`ChatGptAuthServiceConfig` now configures OSS authentication and requires `agentName` instead of a fixed `clientId`.
+Applications that previously supplied a custom Codex client ID or callback host through that binding must move those overrides
+to `ChatGptCodexAuthServiceConfig`. The default Codex configuration inherits shared fields, such as key-store identifiers,
+from `ChatGptAuthServiceConfig`.
+Codex OAuth constants and helpers previously exported by `chatgpt-oauth` now live in `chatgpt-codex-oauth`;
+`chatgpt-oauth` describes the OSS protocol instead.
+
+Custom auth implementations must support parameterless `startLogin` and login operations bound to its returned `loginId`.
+Signing out forgets the current session and registration; there are no account-list or account-selection RPC methods.
+Backend implementations also implement `setAuthenticationMode`, signing out the previous mode on changes;
+individual protocol sessions use `ChatGptBackendAuthSession` instead.
+Backend credentials include the mode's OAuth `clientId` (fixed for Codex, issued by OpenAI for OSS) and a session identity
+that remains stable through refresh and changes on reconnect. The frontend does not select accounts or client IDs.
+`ChatGptModel` takes separate `oss` and `codex` Responses utility instances; its `initializeOpenAi` hook receives the selected credentials.
+
 #### Electron: the backend resolves the login shell environment [#18204](https://github.com/eclipse-theia/theia/pull/18204)
 
 The generated `electron-main.js` no longer runs `fix-path` before the Electron main process starts, which blocked the start for as long as the user's interactive login shell took to initialize. Instead, the backend runs the login shell once it has started, in parallel with the window and the frontend bundle, and applies the shell's `PATH` to its own `process.env`, from where every process it spawns inherits it.
@@ -185,6 +202,15 @@ What changes for adopters:
 - Backend code that spawns processes on its own before any frontend connects, for example in `BackendApplicationContribution.onStart()`, has to await `ShellEnvironmentServer.whenResolved()` (`@theia/core/lib/common/shell-environment`) before spawning. The headless plugin host, which `@theia/plugin-ext-headless` forks on its own, is started by `HostedPluginServerImpl` once the environment is known; `HostedPluginServerImpl.whenPluginServerStarted()` settles when it has been forked. Code that serves the requests of a held service needs no change.
 - `EnvVariablesServerImpl` reads `process.env` on every request instead of a snapshot taken when it was created, so that the `PATH` of the login shell is reported; its `envs` field is a getter now, and `getValue` answers from it like `getVariables`. The service is not held, as the frontend needs the configuration directory to start, so a frontend that asks for a variable before the login shell has answered gets the `PATH` of the GUI application; it used to get the `fix-path`-ed `PATH` at any time. The `${env:...}` variable of `@theia/variable-resolver` waits for the login shell before it reads, so that a task or launch configuration started early does not pass the `PATH` of the GUI application to its process. A frontend service of your own that passes variables to a process should await `ShellEnvironmentServer.whenResolved()` likewise; the frontend proxy is bound in Electron applications only, so inject it `@optional()`.
 - The login shell runs with `THEIA_RESOLVING_ENVIRONMENT=1` in its environment, which dotfiles can check to skip prompts or programs that would keep the shell from exiting. A shell that does not answer within the new `application.shellEnvironmentResolutionTimeout` preference, 10 seconds by default, is killed, the environment is left as it is, and the user is notified. The preference takes effect at the next start.
+
+#### Electron: the window loads before the backend is listening [#18205](https://github.com/eclipse-theia/theia/pull/18205)
+
+`ElectronMainApplication` no longer waits for the backend port before it loads the frontend into the main window. The backend is forked in the background, the window content loads as soon as the window exists, and the preload script asks the main process for the port as soon as the window loads, through the new `getBackendPort()` of the preload API (`TheiaCoreAPI`), which resolves once the backend is listening and the security token cookie is set.
+
+- The URL that the main process loads into a window no longer carries a `?port=` parameter, except for windows that are opened with explicit `WindowSearchParams` (remote backends). The generated `index.js` resolves the port and writes it into the URL in the preload phase, once the `frontendPreload` modules are loaded and before the `Preloader` makes the first connection, so `Endpoint`, `getCurrentPort()` and other readers of `location.search` see it as before. It does so through the `ElectronBackendPortResolver`, which a `frontendPreload` module can rebind. Only code that runs earlier, such as the top level of a `frontendPreload` module or a custom generated entry point, cannot rely on it.
+- `ElectronMainApplicationContribution.onStart` now runs before the backend has started. A contribution that awaits `application.backendPort` there delays the window until the backend is up; chain on the promise instead, as `@theia/mini-browser` does for its security token cookie.
+- Adopters with a custom preload script must expose `getBackendPort()` on `electronTheiaCore`, forwarding to the `CHANNEL_GET_BACKEND_PORT` IPC channel.
+- `TheiaMainApi.onStart` registers the handler of the `CHANNEL_GET_BACKEND_PORT` channel. An override of it that does not call `super.onStart` must register that handler itself, otherwise the frontend never gets the port and the window stays blank.
 
 ### v1.77.0
 
@@ -230,6 +256,7 @@ Set `"keyboard.dispatch": "keyCode"` to restore positional key-code dispatch glo
 - Review `KeyCode` consumers: `equals()` requires the same physical key and `dispatchString()`, character-only values are not modifier-only, and `toString()` preserves authored spelling. Use `dispatchString()` when a runtime match identity is required.
 - Update `KeybindingRegistry.matchKeybinding()` consumers from `match.binding` to `match.runtime.binding`; the resolved sequence is available as `match.runtime.sequence`. Pass resolved sequences (`resolveKeybinding(binding)`) or runtime interpretations to `matchKeybinding()`; raw `KeySequence.parse()` output is no longer guaranteed to match under `keyboard.dispatch: 'code'`. Subclasses that override chord handling must replace the protected `keySequence` field with `keySequenceCandidates`. Protected keybinding-tree values are runtime records containing the original scoped binding and its resolved sequence, rather than `ScopedKeybinding[]`.
 - Pass an explicit `'logical'` or `'physical'` form to `AcceleratorSource.getAccelerator`. Browser UI uses logical labels, while Electron native menus require physical accelerators.
+
 #### Theia packages are ES modules
 
 The runtime packages (`packages/*`) are now published as ES modules: their `package.json` declares `"type": "module"` and an `exports` map, and `lib` contains ES modules.

@@ -24,6 +24,11 @@ export class ElectronSecurityTokenService {
     @inject(ElectronSecurityToken)
     protected readonly electronSecurityToken: ElectronSecurityToken;
 
+    /**
+     * Sets the token as a cookie for the given URL. Since Electron 45, Chromium does not send it from the `file://` frontend,
+     * so `addElectronSecurityTokenHeader` authenticates the requests to the backend. The cookie is kept as a fallback,
+     * e.g. for webview and mini-browser host patterns outside `localhost`.
+     */
     async setElectronSecurityTokenCookie(url: string): Promise<void> {
         await session.defaultSession.cookies.set({
             url,
@@ -32,5 +37,32 @@ export class ElectronSecurityTokenService {
             httpOnly: true,
             sameSite: 'no_restriction'
         });
+    }
+
+    /**
+     * Since Electron 45, Chromium no longer sends the cookie on requests from the `file://` frontend to the backend.
+     * Adds the token to the requests to the backend and its `*.localhost` subdomains (webviews, mini-browser) instead,
+     * if `isTrustedInitiator` accepts the request.
+     */
+    addElectronSecurityTokenHeader(port: number): void {
+        const tokenCookie = `${ElectronSecurityToken}=${encodeURIComponent(JSON.stringify(this.electronSecurityToken))}`;
+        session.defaultSession.webRequest.onBeforeSendHeaders({ urls: ['*://localhost/*', '*://*.localhost/*'] }, (details, callback) => {
+            const requestHeaders = details.requestHeaders;
+            const url = new URL(details.url);
+            if (url.port === String(port) && this.isTrustedInitiator(details.initiatorOrigin, url)
+                && !requestHeaders.Cookie?.includes(`${ElectronSecurityToken}=`)) {
+                requestHeaders.Cookie = requestHeaders.Cookie ? `${requestHeaders.Cookie}; ${tokenCookie}` : tokenCookie;
+            }
+            callback({ requestHeaders });
+        });
+    }
+
+    /**
+     * Whether a request started by `initiatorOrigin` gets the token: requests of the `file://` frontend, same-origin requests
+     * (a webview or mini-browser page loading its own resources) and requests without an initiator (started by Electron itself).
+     * Other pages, e.g. an external page in the mini-browser, do not get it.
+     */
+    protected isTrustedInitiator(initiatorOrigin: string | undefined, url: URL): boolean {
+        return !initiatorOrigin || initiatorOrigin === 'file://' || initiatorOrigin === url.origin;
     }
 }

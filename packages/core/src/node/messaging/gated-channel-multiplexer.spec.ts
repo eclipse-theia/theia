@@ -22,14 +22,31 @@ import { GatedChannelMultiplexer } from './gated-channel-multiplexer.js';
 
 describe('GatedChannelMultiplexer', () => {
 
-    const setup = (): { pipe: ChannelPipe, gate: Deferred<void>, frontend: ChannelMultiplexer, backend: GatedChannelMultiplexer, opened: string[] } => {
+    interface Setup {
+        pipe: ChannelPipe;
+        gate: Deferred<void>;
+        frontend: ChannelMultiplexer;
+        backend: GatedChannelMultiplexer;
+        opened: string[];
+        /** Makes the backend stop acknowledging channels, as when it is stopping. */
+        stopAccepting(): void;
+    }
+
+    const setup = (): Setup => {
         const pipe = new ChannelPipe();
         const gate = new Deferred<void>();
+        let accepting = true;
         const frontend = new ChannelMultiplexer(pipe.left);
-        const backend = new GatedChannelMultiplexer(pipe.right, id => id.startsWith('/held') ? gate.promise : undefined);
+        const backend = new GatedChannelMultiplexer(pipe.right, id => id.startsWith('/held') ? gate.promise : undefined, () => accepting);
         const opened: string[] = [];
         backend.onDidOpenChannel(({ id }) => opened.push(id));
-        return { pipe, gate, frontend, backend, opened };
+        return { pipe, gate, frontend, backend, opened, stopAccepting: () => { accepting = false; } };
+    };
+
+    /** Closes the connection: each side learns of it through its own channel. */
+    const closeConnection = (pipe: ChannelPipe): void => {
+        pipe.right.onCloseEmitter.fire({ reason: 'The frontend went away' });
+        pipe.left.onCloseEmitter.fire({ reason: 'The backend went away' });
     };
 
     it('acknowledges a held channel only once the gate has opened', async () => {
@@ -68,12 +85,37 @@ describe('GatedChannelMultiplexer', () => {
         const { pipe, gate, frontend, opened } = setup();
         let rejected: unknown;
         const open = frontend.open('/held/task').catch(error => { rejected = error; });
-        // the socket closes: each side learns of it through its own channel
-        pipe.right.onCloseEmitter.fire({ reason: 'The frontend went away' });
-        pipe.left.onCloseEmitter.fire({ reason: 'The backend went away' });
+        closeConnection(pipe);
         gate.resolve();
         await wait(0);
         expect(opened).to.be.empty;
+        await open;
+        expect(rejected).to.be.instanceOf(Error);
+    });
+
+    it('does not open a held channel once it no longer accepts channels', async () => {
+        const { pipe, gate, frontend, opened, stopAccepting } = setup();
+        let rejected: unknown;
+        const open = frontend.open('/held/task').catch(error => { rejected = error; });
+        await wait(0);
+        stopAccepting();
+        gate.resolve();
+        await wait(0);
+        expect(opened).to.be.empty;
+        expect(rejected).to.be.undefined;
+        closeConnection(pipe);
+        await open;
+        expect(rejected).to.be.instanceOf(Error);
+    });
+
+    it('does not open a channel that the gate lets through once it no longer accepts channels', async () => {
+        const { pipe, frontend, opened, stopAccepting } = setup();
+        stopAccepting();
+        let rejected: unknown;
+        const open = frontend.open('/services/filesystem').catch(error => { rejected = error; });
+        await wait(0);
+        expect(opened).to.be.empty;
+        closeConnection(pipe);
         await open;
         expect(rejected).to.be.instanceOf(Error);
     });

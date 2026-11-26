@@ -22,6 +22,7 @@ import { MCPFrontendNotificationService, MCPFrontendService } from '../common/mc
 import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
 import { MessageService, PreferenceService, PreferenceUtils, Progress, ILogger } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
+import { AiConfigurationService } from '@theia/ai-core/lib/common/ai-configuration-service';
 import {
     WorkspaceTrustService,
     WorkspaceRestrictionContribution,
@@ -44,6 +45,9 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
 
     @inject(WorkspaceTrustService)
     protected workspaceTrustService: WorkspaceTrustService;
+
+    @inject(AiConfigurationService)
+    protected aiConfigurationService: AiConfigurationService;
 
     @inject(ILogger) @named('ai-mcp:McpFrontendApplicationContribution')
     protected readonly logger: ILogger;
@@ -79,7 +83,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
             this.dismissSettledSignInPrompts().catch(error => this.logger.error('Failed to dismiss settled MCP OAuth sign-in prompts', error));
         });
 
-        this.preferenceService.ready.then(async () => {
+        this.aiConfigurationService.ready.then(async () => {
             const servers = filterValidValues(this.preferenceService.get(
                 MCP_SERVERS_PREF,
                 { fallback: {} }

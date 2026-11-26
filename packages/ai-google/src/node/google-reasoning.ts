@@ -35,7 +35,8 @@ export function googleReasoningFor(level: ReasoningLevel | undefined, api: Reaso
                 level === 'low' ? 'low' :
                     level === 'medium' ? 'medium' :
                         level === 'high' ? 'high' :
-                            undefined; // 'auto' → omit so the provider default applies
+                            level === 'xhigh' ? 'xhigh' :
+                                undefined; // 'auto' → omit so the provider default applies
         return thinkingLevel ? { thinkingConfig: { thinkingLevel, includeThoughts: true } } : {};
     }
     const thinkingBudget =

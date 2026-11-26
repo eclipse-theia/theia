@@ -54,6 +54,7 @@ import {
     CHANNEL_REQUEST_SECONDARY_CLOSE,
     CHANNEL_SET_BACKGROUND_COLOR,
     CHANNEL_WC_METADATA,
+    CHANNEL_GET_BACKEND_PORT,
     CHANNEL_ABOUT_TO_CLOSE,
     CHANNEL_OPEN_WITH_SYSTEM_APP,
     CHANNEL_OPEN_URL,
@@ -90,11 +91,16 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
             };
         });
 
+        // The window loads before the backend is listening; its preload script asks for the port right away,
+        // and the answer waits until the backend is listening and the security token cookie is set.
+        ipcMain.handle(CHANNEL_GET_BACKEND_PORT, () => application.backendPort);
+
         // electron security token
         ipcMain.on(CHANNEL_GET_SECURITY_TOKEN, event => {
             event.returnValue = this.electronSecurityToken.value;
         });
 
+        // Kept as a fallback, see `ElectronSecurityTokenService.setElectronSecurityTokenCookie`
         ipcMain.handle(CHANNEL_ATTACH_SECURITY_TOKEN, (event, endpoint) => session.defaultSession.cookies.set({
             url: endpoint,
             name: ElectronSecurityToken,

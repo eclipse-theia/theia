@@ -15,13 +15,14 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
+import { TerminalProfileStartOptions } from '@theia/terminal/lib/browser/terminal-profile-service';
 
 @injectable()
 export class PluginTerminalRegistry {
 
-    startCallback: (id: string) => Promise<string>;
+    startCallback: (id: string, options?: TerminalProfileStartOptions) => Promise<string>;
 
-    start(profileId: string): Promise<string> {
-        return this.startCallback(profileId);
+    start(profileId: string, options?: TerminalProfileStartOptions): Promise<string> {
+        return this.startCallback(profileId, options);
     }
 }

@@ -12,7 +12,7 @@
     "@theia/variable-resolver": "1.77.0",
     "@theia/workspace": "1.77.0",
     "p-debounce": "^2.1.0",
-    "tslib": "^2.8.1",
+    "tslib": "^2.9.1",
     "xterm": "^5.3.0",
     "xterm-addon-fit": "^0.8.0",
     "xterm-addon-search": "^0.13.0",

@@ -26,7 +26,7 @@ import {
     CHANNEL_IS_FULL_SCREEN, CHANNEL_SET_MENU_BAR_VISIBLE, CHANNEL_REQUEST_CLOSE, CHANNEL_SET_TITLE_STYLE, CHANNEL_RESTART,
     CHANNEL_REQUEST_RELOAD, CHANNEL_APP_STATE_CHANGED, CHANNEL_SHOW_ITEM_IN_FOLDER, CHANNEL_READ_CLIPBOARD, CHANNEL_WRITE_CLIPBOARD,
     CHANNEL_KEYBOARD_LAYOUT_CHANGED, CHANNEL_IPC_CONNECTION, InternalMenuDto, CHANNEL_REQUEST_SECONDARY_CLOSE, CHANNEL_SET_BACKGROUND_COLOR,
-    CHANNEL_WC_METADATA, CHANNEL_ABOUT_TO_CLOSE, CHANNEL_OPEN_WITH_SYSTEM_APP,
+    CHANNEL_WC_METADATA, CHANNEL_ABOUT_TO_CLOSE, CHANNEL_OPEN_WITH_SYSTEM_APP, CHANNEL_GET_BACKEND_PORT, BACKEND_PORT_PARAM,
     CHANNEL_OPEN_URL, CHANNEL_SET_THEME, CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW,
     CHANNEL_UPDATE_RECENT_WORKSPACES,
     CHANNEL_SET_AUTO_HIDE_MENU_BAR,
@@ -44,6 +44,21 @@ let nextMenuId = mainMenuId + 1;
 let openUrlHandler: ((url: string) => Promise<boolean>) | undefined;
 
 const subscribedSecondaryWindows = new Set<string>();
+
+let backendPort: Promise<number> | undefined;
+
+/**
+ * Requests the port of the backend from the main process once, as the main process answers only when the
+ * backend is listening.
+ */
+function getBackendPort(): Promise<number> {
+    if (!backendPort) {
+        backendPort = ipcRenderer.invoke(CHANNEL_GET_BACKEND_PORT);
+        // A rejection is reported where the frontend awaits the port.
+        backendPort.catch(() => { });
+    }
+    return backendPort;
+}
 
 ipcRenderer.on(CHANNEL_OPEN_URL, async (event: Electron.IpcRendererEvent, url: string, replyChannel: string) => {
     if (openUrlHandler) {
@@ -101,6 +116,7 @@ const api: TheiaCoreAPI = {
         ipcRenderer.send(CHANNEL_OPEN_WITH_SYSTEM_APP, location);
     },
     attachSecurityToken: (endpoint: string) => ipcRenderer.invoke(CHANNEL_ATTACH_SECURITY_TOKEN, endpoint),
+    getBackendPort,
 
     popup: async function (menu: MenuDto[], x: number, y: number, onClosed: () => void, windowName?: string): Promise<number> {
         const menuId = nextMenuId++;
@@ -289,6 +305,12 @@ export function preload(): void {
     // Synchronous, so the metadata (including the parsed options of a forwarded launch) is in place
     // before any frontend code runs.
     api.WindowMetadata = ipcRenderer.sendSync(CHANNEL_WC_METADATA);
+    // Request the backend port while the frontend loads, so that the `ElectronBackendPortResolver` finds it on its way.
+    // Not for a window that connects to a remote backend, whose port the URL carries, nor for a secondary window,
+    // which another window opens and which does not connect to a backend.
+    if (!new URLSearchParams(location.search).get(BACKEND_PORT_PARAM) && !window.opener) {
+        getBackendPort();
+    }
 
     contextBridge.exposeInMainWorld('electronTheiaCore', api);
 }

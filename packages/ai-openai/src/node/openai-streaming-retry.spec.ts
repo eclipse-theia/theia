@@ -142,6 +142,30 @@ describe('OpenAiStreamingRetry', () => {
         expect(open.callCount).to.equal(1);
     });
 
+    for (const event of [
+        { type: 'error', message: 'Request rejected', code: 'invalid_request_error', param: 'tools', sequence_number: 7, response_id: 'resp-1' },
+        { type: 'response.failed', sequence_number: 8, response: { id: 'resp-2', error: { type: 'overloaded_error', message: 'Capacity limit', param: 'model' } } },
+        { type: 'response.failed', sequence_number: 9, response: { id: 'resp-3' } }
+    ]) {
+        it(`preserves scalar diagnostics for ${event.type} sequence ${event.sequence_number}`, async () => {
+            const open = sinon.stub().resolves(events(event));
+            const { error } = await collect(retry.retry(open, 0, () => true));
+            expect(error).to.be.instanceOf(Error);
+            expect(error).to.include({
+                sequence_number: event.sequence_number,
+                response_id: event.response?.id ?? event.response_id,
+                event_type: event.type
+            });
+            if (event.type === 'error') {
+                expect(error).to.include({ message: event.message, code: event.code, param: event.param });
+                expect(error).to.have.property('type', undefined);
+            } else if (event.response?.error) {
+                expect(error).to.include(event.response.error);
+            }
+            expect(error).not.to.have.property('response');
+        });
+    }
+
     it('reports a failed response with no error details instead of silently ending', async () => {
         const open = sinon.stub().resolves(events({ type: 'response.failed', response: {} }));
         const result = await collect(retry.retry(open, 3, () => true));

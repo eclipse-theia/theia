@@ -23,9 +23,10 @@ describe('getOpenAiModelDefaults', () => {
     });
 
     describe('GPT-6', () => {
-        for (const model of ['gpt-6-astra', 'gpt-6.1-sol', 'gpt-6-sol', 'gpt-6-luna']) {
+        const withoutNone = ['gpt-6-astra', 'gpt-6.1-sol', 'gpt-6.2-astra', 'gpt-6.2-sol'];
+        for (const model of [...withoutNone, 'gpt-6-sol', 'gpt-6-luna']) {
             it(`uses the reasoning preset for ${model} and its dated snapshots`, () => {
-                const supportedLevels = model === 'gpt-6-astra' || model === 'gpt-6.1-sol'
+                const supportedLevels = withoutNone.includes(model)
                     ? ['off', 'low', 'medium', 'high', 'xhigh', 'max', 'auto']
                     : ['off', 'none', 'low', 'medium', 'high', 'xhigh', 'max', 'auto'];
                 for (const id of [model, `${model}-2026-09-01`]) {
@@ -37,7 +38,7 @@ describe('getOpenAiModelDefaults', () => {
         }
 
         it('uses the common GPT-6 preset for other family members', () => {
-            for (const id of ['gpt-6', 'gpt-6-other', 'gpt-6.1-other']) {
+            for (const id of ['gpt-6', 'gpt-6-other', 'gpt-6.1-other', 'gpt-6.2-other']) {
                 const d = getOpenAiModelDefaults(id);
                 expect(d.contextWindow, id).to.equal(1_050_000);
                 expect(d.reasoningSupport, id).to.deep.equal({

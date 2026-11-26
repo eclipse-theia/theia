@@ -23,9 +23,8 @@ import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { PreferenceChange, PreferenceInspection, PreferenceScope, PreferenceService } from '@theia/core/lib/common/preferences';
+import { PreferenceChange, PreferenceGetOptions, PreferenceInspection, PreferenceScope, PreferenceService } from '@theia/core/lib/common/preferences';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
-import { TrustAwarePreferenceReader } from './trust-aware-preference-reader.js';
 import { AiConfigurationChange, AiConfigurationInspection } from '../common/ai-configuration-service.js';
 import { AiConfigurationServiceImpl } from './ai-configuration-service-impl.js';
 
@@ -59,9 +58,12 @@ class StubPreferenceService {
         this.scopeMap(key).set(scope, value);
     }
 
-    get<T>(preferenceName: string, defaultValue?: T): T | undefined {
+    readonly resources: (string | undefined)[] = [];
+
+    get<T>(preferenceName: string, options?: PreferenceGetOptions<T>): T | undefined {
+        this.resources.push(options?.resource);
         const inspection = this.inspect<T>(preferenceName);
-        return (inspection?.value as T | undefined) ?? defaultValue;
+        return (inspection?.value as T | undefined) ?? options?.fallback;
     }
 
     set(preferenceName: string, value: unknown, scope: PreferenceScope = PreferenceScope.User): Promise<void> {
@@ -97,15 +99,9 @@ class StubPreferenceService {
 
 class StubWorkspaceTrustService {
     readonly trustDeferred = new Deferred<boolean>();
-    protected readonly emitter = new Emitter<boolean>();
-    readonly onDidChangeWorkspaceTrust: Event<boolean> = this.emitter.event;
 
     getWorkspaceTrust(): Promise<boolean> {
         return this.trustDeferred.promise;
-    }
-
-    fireTrustChange(trusted: boolean): void {
-        this.emitter.fire(trusted);
     }
 }
 
@@ -114,23 +110,26 @@ describe('AiConfigurationServiceImpl', () => {
     let trust: StubWorkspaceTrustService;
     let service: AiConfigurationServiceImpl;
 
-    const createService = async (trusted: boolean): Promise<void> => {
+    const constructService = (): void => {
         preferences = new StubPreferenceService();
         trust = new StubWorkspaceTrustService();
 
         const container = new Container();
         container.bind(PreferenceService).toConstantValue(preferences as unknown as PreferenceService);
         container.bind(WorkspaceTrustService).toConstantValue(trust as unknown as WorkspaceTrustService);
-        container.bind(TrustAwarePreferenceReader).toSelf().inSingletonScope();
         container.bind(AiConfigurationServiceImpl).toSelf().inSingletonScope();
 
         service = container.get(AiConfigurationServiceImpl);
-        trust.trustDeferred.resolve(trusted);
+    };
+
+    const createService = async (): Promise<void> => {
+        constructService();
+        trust.trustDeferred.resolve(true);
         await service.ready;
     };
 
     describe('acceptance scenario', () => {
-        beforeEach(() => createService(true));
+        beforeEach(() => createService());
 
         it('writes at User scope, reads back, reports User as source scope, and fires onDidChange', async () => {
             const changes: AiConfigurationChange[] = [];
@@ -144,8 +143,8 @@ describe('AiConfigurationServiceImpl', () => {
         });
     });
 
-    describe('inspect source-scope derivation (trusted)', () => {
-        beforeEach(() => createService(true));
+    describe('inspect source-scope derivation', () => {
+        beforeEach(() => createService());
 
         it('reports undefined source scope when only the default applies', () => {
             preferences.setScopeValue(KEY, PreferenceScope.Default, 'default');
@@ -179,68 +178,32 @@ describe('AiConfigurationServiceImpl', () => {
         });
     });
 
-    describe('trust-aware reads', () => {
-        it('ignores the workspace value when untrusted', async () => {
-            await createService(false);
-            preferences.setScopeValue(KEY, PreferenceScope.Default, 'default');
-            preferences.setScopeValue(KEY, PreferenceScope.User, 'user');
-            preferences.setScopeValue(KEY, PreferenceScope.Workspace, 'workspace');
+    describe('reads', () => {
+        it('is ready once the initial workspace trust state is known', async () => {
+            constructService();
+            let ready = false;
+            service.ready.then(() => ready = true);
 
-            expect(service.get<string>(KEY)).to.equal('user');
-            const inspection = service.inspect<string>(KEY);
-            expect(inspection?.value).to.equal('user');
-            expect(inspection?.sourceScope).to.equal(PreferenceScope.User);
-            // The suppressed workspace/folder values are cleared, not just excluded from `value`.
-            expect(inspection?.workspaceValue).to.equal(undefined);
-            expect(inspection?.workspaceFolderValue).to.equal(undefined);
+            await preferences.ready;
+            await new Promise(resolve => setTimeout(resolve));
+            expect(ready).to.equal(false);
+
+            trust.trustDeferred.resolve(false);
+            await service.ready;
+            expect(ready).to.equal(true);
         });
 
-        it('honors a session value when untrusted', async () => {
-            await createService(false);
-            preferences.setScopeValue(KEY, PreferenceScope.User, 'user');
-            preferences.setScopeValue(KEY, PreferenceScope.Session, 'session');
+        it('returns the fallback when no value is set, and passes the resource on', async () => {
+            await createService();
 
-            expect(service.get<string>(KEY)).to.equal('session');
-            expect(service.inspect<string>(KEY)?.value).to.equal('session');
-        });
-
-        it('merges a session object into the user object when untrusted, like the trusted read', async () => {
-            await createService(false);
-            preferences.setScopeValue(KEY, PreferenceScope.User, { deleteFile: 'disabled' });
-            preferences.setScopeValue(KEY, PreferenceScope.Session, { shellExecute: 'always_allow' });
-
-            expect(service.get(KEY)).to.deep.equal({ deleteFile: 'disabled', shellExecute: 'always_allow' });
-        });
-
-        it('honors the workspace value when trusted', async () => {
-            await createService(true);
-            preferences.setScopeValue(KEY, PreferenceScope.User, 'user');
-            preferences.setScopeValue(KEY, PreferenceScope.Workspace, 'workspace');
-
-            expect(service.get<string>(KEY)).to.equal('workspace');
-            expect(service.inspect<string>(KEY)?.value).to.equal('workspace');
-        });
-
-        it('fires onDidChange (without a preference name) on a trust transition', async () => {
-            await createService(false);
-            const changes: AiConfigurationChange[] = [];
-            service.onDidChange(change => changes.push(change));
-
-            trust.fireTrustChange(true);
-
-            expect(changes).to.have.lengthOf(1);
-            expect(changes[0].preferenceName).to.equal(undefined);
-            expect(changes[0].affects()).to.equal(true);
-            // A trust transition affects every trust-gated (ai-features.*) key, but not unrelated ones.
-            expect(changes[0].affectsPreference(KEY)).to.equal(true);
-            expect(changes[0].affectsPreference('ai-features.anythingElse')).to.equal(true);
-            expect(changes[0].affectsPreference('editor.fontSize')).to.equal(false);
+            expect(service.get<string>(KEY, 'fallback', 'file:///workspace/a.txt')).to.equal('fallback');
+            expect(preferences.resources).to.deep.equal(['file:///workspace/a.txt']);
         });
     });
 
     describe('valueWithoutSession', () => {
-        it('merges the object values of the trusted scopes, without the session value', async () => {
-            await createService(true);
+        it('merges the object values of the scopes, without the session value', async () => {
+            await createService();
             preferences.setScopeValue(KEY, PreferenceScope.Default, { a: 'default', b: 'default' });
             preferences.setScopeValue(KEY, PreferenceScope.User, { b: 'user' });
             preferences.setScopeValue(KEY, PreferenceScope.Workspace, { c: 'workspace' });
@@ -249,17 +212,8 @@ describe('AiConfigurationServiceImpl', () => {
             expect(AiConfigurationInspection.valueWithoutSession(service.inspect(KEY))).to.deep.equal({ a: 'default', b: 'user', c: 'workspace' });
         });
 
-        it('leaves out the workspace value when untrusted', async () => {
-            await createService(false);
-            preferences.setScopeValue(KEY, PreferenceScope.User, { b: 'user' });
-            preferences.setScopeValue(KEY, PreferenceScope.Workspace, { c: 'workspace' });
-            preferences.setScopeValue(KEY, PreferenceScope.Session, { d: 'session' });
-
-            expect(AiConfigurationInspection.valueWithoutSession(service.inspect(KEY))).to.deep.equal({ b: 'user' });
-        });
-
         it('takes a list from the highest scope that sets it, without the session value', async () => {
-            await createService(true);
+            await createService();
             preferences.setScopeValue(KEY, PreferenceScope.Default, []);
             preferences.setScopeValue(KEY, PreferenceScope.User, ['rm *']);
             preferences.setScopeValue(KEY, PreferenceScope.Session, ['curl *']);
@@ -268,7 +222,7 @@ describe('AiConfigurationServiceImpl', () => {
         });
 
         it('returns a copy that writing doesn\'t share with the inspected values', async () => {
-            await createService(true);
+            await createService();
             const user = { b: 'user' };
             preferences.setScopeValue(KEY, PreferenceScope.User, user);
 
@@ -279,7 +233,7 @@ describe('AiConfigurationServiceImpl', () => {
         });
 
         it('returns undefined when only a session value is set', async () => {
-            await createService(true);
+            await createService();
             preferences.setScopeValue(KEY, PreferenceScope.Session, 'session');
 
             expect(AiConfigurationInspection.valueWithoutSession(service.inspect(KEY))).to.equal(undefined);
@@ -287,7 +241,7 @@ describe('AiConfigurationServiceImpl', () => {
     });
 
     describe('set vs update', () => {
-        beforeEach(() => createService(true));
+        beforeEach(() => createService());
 
         it('set writes the exact scope requested', async () => {
             await service.set(KEY, 'workspace', PreferenceScope.Workspace);
@@ -302,7 +256,7 @@ describe('AiConfigurationServiceImpl', () => {
     });
 
     describe('onDidChange filtering', () => {
-        beforeEach(() => createService(true));
+        beforeEach(() => createService());
 
         it('only fires for ai-features.* keys', async () => {
             const changes: AiConfigurationChange[] = [];

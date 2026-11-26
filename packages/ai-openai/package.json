@@ -8,8 +8,8 @@
     "@theia/core": "1.77.0",
     "@theia/filesystem": "1.77.0",
     "@theia/workspace": "1.77.0",
-    "openai": "^7.34.0",
-    "tslib": "^2.8.1"
+    "openai": "^7.57.0",
+    "tslib": "^2.9.1"
   },
   "publishConfig": {
     "access": "public"

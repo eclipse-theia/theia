@@ -31,6 +31,7 @@ const CONFLICT_RESOLUTION_DESCRIPTION = 'When templates with the same ID (filena
 (highest) > workspace directories > global directories (lowest).';
 
 export const WorkspacePreferencesSchema: PreferenceSchema = {
+    defaultRestricted: true,
     properties: {
         [CONSIDER_GITIGNORE_PREF]: {
             type: 'boolean',

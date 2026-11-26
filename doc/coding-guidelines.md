@@ -842,6 +842,25 @@ bind(WorkspaceRestrictionContribution).toDynamicValue((): WorkspaceRestrictionCo
 
 * [3.](#workspace-trust-context-key) Use the `isWorkspaceTrusted` context key when workspace trust should control menu or command visibility.
 
+<a name="workspace-trust-restricted-preferences"></a>
+
+* [4.](#workspace-trust-restricted-preferences) Mark a preference as `restricted` in its schema when a value from a workspace or folder settings file could do harm before the user trusts the workspace, for example a command to run, a server to contact or a permission to grant. Set `defaultRestricted: true` on a schema whose preferences are restricted unless they opt out. The preference providers leave out the workspace and folder values of a restricted preference until the workspace is trusted, so a reader needs no trust check of its own. In a trusted workspace these values apply once the trust state is known, which is after `PreferenceService.ready`, so listen for preference changes instead of reading the value once at startup.
+
+```ts
+export const myFeaturePreferenceSchema: PreferenceSchema = {
+    defaultRestricted: true,
+    properties: {
+        'myFeature.serverCommand': {
+            type: 'string'
+        },
+        'myFeature.fontSize': {
+            type: 'number',
+            restricted: false
+        }
+    }
+};
+```
+
 ## "To Do" Tags
 
 There are situations where we can't properly implement some functionality at the time we merge a PR. In those cases, it is sometimes good practice to leave an indication that something needs to be fixed later in the code. This can be done by putting a "tag" string in a comment. This allows us to find the places we need to fix again later. Currently, we use two "standard" tags in Theia:
