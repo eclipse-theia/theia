@@ -52,7 +52,6 @@ export class CommandRegistryImpl implements CommandRegistryExt {
      * Revives URI-like plain objects that lost their class identity during RPC/JSON serialization
      * (e.g. command arguments from markdown links parsed by CommandOpenHandler),
      * including those in arrays (e.g. the selected resources passed to `explorer/context` commands).
-     * An array is copied only if it contains such a URI, so that the handler receives the arrays passed by local callers.
      */
     protected reviveUris(arg: unknown, visited = new Set<unknown[]>()): unknown {
         if (isUriComponents(arg) && !(arg instanceof URI)) {
@@ -60,8 +59,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         }
         if (Array.isArray(arg) && !visited.has(arg)) {
             visited.add(arg);
-            const revived = arg.map(element => this.reviveUris(element, visited));
-            return revived.some((element, index) => element !== arg[index]) ? revived : arg;
+            return arg.map(element => this.reviveUris(element, visited));
         }
         return arg;
     }

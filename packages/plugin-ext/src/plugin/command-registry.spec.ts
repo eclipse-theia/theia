@@ -71,17 +71,10 @@ describe('CommandRegistryImpl', () => {
 
     it('keeps other arguments', async () => {
         const object = { scheme: 'not a uri' };
-        const array = ['text', object];
-        await registry.$executeCommand(commandId, 'text', 1, object, array);
+        await registry.$executeCommand(commandId, 'text', 1, object, ['text', object]);
         expect(received).deep.equal(['text', 1, object, ['text', object]]);
         expect(received[2]).equal(object);
-        expect(received[3]).equal(array);
-    });
-
-    it('passes arrays without URIs to the handler of a local call', async () => {
-        const results: string[] = [];
-        await registry.executeCommand(commandId, results);
-        expect(received[0]).equal(results);
+        expect((received[3] as unknown[])[1]).equal(object);
     });
 
     it('handles an array that contains itself', async () => {
