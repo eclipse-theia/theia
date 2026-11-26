@@ -110,7 +110,7 @@
     "socket.io": "^4.8.4",
     "socket.io-client": "^4.8.4",
     "tslib": "^2.9.1",
-    "uuid": "^11.1.1",
+    "uuid": "^14.0.3",
     "vscode-languageserver-protocol": "3.17.5",
     "vscode-uri": "3.0.8",
     "ws": "^8.23.0",
