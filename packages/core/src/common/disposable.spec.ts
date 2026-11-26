@@ -14,12 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-// `spy` is added to `chai` by the `chai-spies` plugin at runtime, so it is not a named export of the module.
-import chai, { expect, use } from 'chai';
+import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { DisposableCollection, Disposable } from './disposable.js';
-import spies from 'chai-spies';
-
-use(spies);
 
 describe('Disposables', () => {
     it('Is safe to use Disposable.NULL', () => {
@@ -32,7 +29,7 @@ describe('Disposables', () => {
     });
 
     it('Collection is auto-pruned when an element is disposed', () => {
-        const onDispose = chai.spy(() => { });
+        const onDispose = sinon.spy();
         const elementDispose = () => { };
 
         const collection = new DisposableCollection();
@@ -48,48 +45,48 @@ describe('Disposables', () => {
 
         disposable1.dispose();
         expect(collection['disposables']).to.have.lengthOf(1);
-        expect(onDispose).to.have.not.been.called();
+        expect(onDispose.called).to.be.false;
         expect(collection.disposed).is.false;
 
         // Test that calling dispose on an already disposed element doesn't
         // alter the collection state
         disposable1.dispose();
         expect(collection['disposables']).to.have.lengthOf(1);
-        expect(onDispose).to.have.not.been.called();
+        expect(onDispose.called).to.be.false;
         expect(collection.disposed).is.false;
 
         disposable2.dispose();
         expect(collection['disposables']).to.be.empty;
         expect(collection.disposed).is.true;
-        expect(onDispose).to.have.been.called.once;
+        expect(onDispose.calledOnce).to.be.true;
     });
 
     it('onDispose is only called once on actual disposal of elements', () => {
-        const onDispose = chai.spy(() => { });
-        const elementDispose = chai.spy(() => { });
+        const onDispose = sinon.spy();
+        const elementDispose = sinon.spy();
 
         const collection = new DisposableCollection();
         collection.onDispose(onDispose);
 
         // if the collection is empty 'onDispose' is not called
         collection.dispose();
-        expect(onDispose).to.not.have.been.called();
+        expect(onDispose.called).to.be.false;
 
         // 'onDispose' is called because we actually dispose an element
         collection.push(Disposable.create(elementDispose));
         collection.dispose();
-        expect(elementDispose).to.have.been.called.once;
-        expect(onDispose).to.have.been.called.once;
+        expect(elementDispose.calledOnce).to.be.true;
+        expect(onDispose.calledOnce).to.be.true;
 
         // if the collection is empty 'onDispose' is not called and no further element is disposed
         collection.dispose();
-        expect(elementDispose).to.have.been.called.once;
-        expect(onDispose).to.have.been.called.once;
+        expect(elementDispose.calledOnce).to.be.true;
+        expect(onDispose.calledOnce).to.be.true;
 
         // 'onDispose' is not called again even if we actually dispose an element
         collection.push(Disposable.create(elementDispose));
         collection.dispose();
-        expect(elementDispose).to.have.been.called.twice;
-        expect(onDispose).to.have.been.called.once;
+        expect(elementDispose.calledTwice).to.be.true;
+        expect(onDispose.calledOnce).to.be.true;
     });
 });

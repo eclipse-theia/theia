@@ -87,9 +87,9 @@ Dependencies declaring `"@types/express": "*"` pulled 5.x next to 4.x. Pin `@typ
 
 `@modelcontextprotocol/sdk` resolves `zod/v4/core` through the hoisted zod 3.25 while `@theia/ai-mcp-server` uses zod 4. Cast to the SDK's `AnySchema`; pass a raw shape (`{}`) instead of `z.object({})` in the sample. (#17741)
 
-### `@theia/scm` stops compiling after overriding `diff`
+### `@theia/scm` stops compiling after hoisting `diff` 8/9
 
-An override to `diff` 8 hoists it to the root and its bundled types replace `@types/diff@5` (`ArrayDiff` missing). Do not override `diff` until `@theia/scm` migrates. (#17909, #18005)
+Hoisting `diff` 8+ (e.g. via an override, Sinon 22, or Mocha 12) shadows `@types/diff@5` with `diff`'s bundled types (`ArrayDiff` missing). Mapping `"diff": ["../../node_modules/@types/diff/index.d.ts"]` in `packages/scm/tsconfig.json` keeps `@theia/scm` compiling against `@types/diff@5` until `@theia/scm` migrates off `diff@5`. (#17909, #18005)
 
 ### Build breaks after `ssh-config` minor bump
 

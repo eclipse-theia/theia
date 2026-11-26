@@ -39,12 +39,12 @@
     "@theia/localization-manager": "1.77.0",
     "@theia/ovsx-client": "1.77.0",
     "@theia/request": "1.77.0",
-    "@types/chai": "^4.3.0",
+    "@types/chai": "^5.2.3",
     "@types/mocha": "^10.0.10",
     "@types/node-fetch": "^2.6.13",
     "@types/tar-stream": "^3.1.5",
     "@types/yauzl": "^3.4.0",
-    "chai": "^4.3.10",
+    "chai": "^6.3.0",
     "chalk": "4.0.0",
     "escape-string-regexp": "4.0.0",
     "glob": "^8.1.0",
@@ -63,7 +63,7 @@
     "yauzl": "^3.4.0"
   },
   "devDependencies": {
-    "@types/chai": "^4.3.0",
+    "@types/chai": "^5.2.3",
     "@types/mocha": "^10.0.10",
     "@types/node-fetch": "^2.6.13",
     "@types/proxy-from-env": "^1.0.4"

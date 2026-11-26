@@ -3,7 +3,12 @@
   "compilerOptions": {
     "composite": true,
     "rootDir": "src",
-    "outDir": "lib"
+    "outDir": "lib",
+    "paths": {
+      "diff": [
+        "../../node_modules/@types/diff/index.d.ts"
+      ]
+    }
   },
   "include": [
     "src"

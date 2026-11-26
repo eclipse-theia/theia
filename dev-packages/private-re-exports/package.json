@@ -40,7 +40,7 @@
     "yargs": "^17.7.3"
   },
   "devDependencies": {
-    "@types/chai": "^4.3.0",
+    "@types/chai": "^5.2.3",
     "@types/mocha": "^10.0.10",
     "@types/mustache": "^4.2.6",
     "@types/yargs": "^17.0.35"
