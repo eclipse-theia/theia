@@ -5,7 +5,7 @@
   "type": "module",
   "dependencies": {
     "electron-store": "^8.2.0",
-    "fix-path": "^4.0.0",
+    "fix-path": "^5.0.0",
     "native-keymap": "^2.5.0",
     "tslib": "^2.9.1"
   },
