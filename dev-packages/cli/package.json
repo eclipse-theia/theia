@@ -46,7 +46,7 @@
     "@types/yauzl": "^3.4.0",
     "chai": "^6.3.0",
     "chalk": "^6.0.1",
-    "escape-string-regexp": "4.0.0",
+    "escape-string-regexp": "^5.0.0",
     "glob": "^8.1.0",
     "http-server": "^14.1.1",
     "limiter": "^2.1.0",
