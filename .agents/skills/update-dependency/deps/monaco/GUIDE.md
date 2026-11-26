@@ -53,6 +53,11 @@ The version follows the VS Code release the fork is based on, with a higher patc
 - `npm run license:check` and the IPLab approval.
 - No `StandaloneServices was already initialized` or other Monaco errors in the browser console on start.
 - Manual smoke test in browser and Electron, following the wiki checklist. At minimum: editor with a language extension (highlighting, hover, completion, code actions, rename, references peek, formatting), diff editor incl. revert/stage hunk, quick input/command palette (also before any editor was opened, and in a minimal app), editor in a secondary window, theme switch, preferences editor (old values of changed options, e.g. `editor.hover.enabled: false`), output, debug console and breakpoints, notebook cells, AI chat input (suggest widget, paste), a non-English display language (Monaco context menu, find widget and Selection menu translated).
+- Parts of Theia that depend on Monaco internals and broke unnoticed before, so check them explicitly:
+  - Editor context menu with Shift+F10 as well as with right-click: both show the language items (Go to Definition, Rename...). The keyboard path goes through Theia's `IContextMenuService` override with a coordinate anchor.
+  - Debug console input: Enter accepts the selected suggestion, a second Enter evaluates; Up/Down move in the suggest widget, otherwise through the history. Theia's console keybindings use Monaco context keys (`suggestWidgetVisible`, `suggestWidgetHasFocusedSuggestion`, `suggestionMakesTextEdit`), which an uplift can rename.
+  - Multi-diff editor (Git: View Changes, Theia's own widget built from Monaco diff editors): navigation between files and changes, collapse/expand all, editing the modified side.
+- In the browser app, Go to Definition is Ctrl+F11 (F12 opens the devtools) and Ctrl+T is taken by the browser; neither is a failure.
 
 ## Known issues
 
@@ -108,13 +113,17 @@ Some Monaco defaults depend on the platform (`platform.isLinux ? 'dimmed' : 'on'
 
 VS Code tags options of its online experiments with `onExP`; the preference renderer shows unknown tags verbatim. The extractor drops the tag and `monaco-editor-preference-schema.spec.ts` checks it. (#18366)
 
+### Typing feels laggy after the uplift
+
+Profile before blaming Monaco (DevTools > Performance, type in a large file, check the long tasks). During the 1.144 testing the freezes came from the file decorations: `FileTreeDecoratorAdapter.updateDecorations` re-queries every decorated resource through the unbalanced `TernarySearchTree` of each provider, which gets slow with large expanded folders. The same on master, not related to the uplift. Turning off `editor.editContext` made no difference.
+
 ## Log
 
 Newest first. One entry per merged update and target branch.
 
 | Date | Branch | From → To | PR | Notes |
 |---|---|---|---|---|
-| 2026-11 | master | 1.108.201 → 1.144.1 | #18366 | Issue #18355. Tested from a local registry, published after the IP review ([IPLab #33204](https://gitlab.eclipse.org/eclipsefdn/emo-team/iplab/-/work_items/33204)). `vs/nls` accessors in `monaco-nls.ts`, `IUserInteractionService`, quick access and quick input API, schema regenerated (38 new, 6 removed options, extractor emits the final format), obsolete `@monaco-uplift` workarounds removed, `open-in-window` icon (#17789). New spec tests for the schema and `monaco-nls.ts`. Fork: relocatable source maps, `^` ranges, repository metadata. |
+| 2026-11 | master | 1.108.201 → 1.144.1 | #18366 | Issue #18355. Tested from a local registry, published after the IP review ([IPLab #33204](https://gitlab.eclipse.org/eclipsefdn/emo-team/iplab/-/work_items/33204)). `vs/nls` accessors in `monaco-nls.ts`, `IUserInteractionService`, quick access and quick input API, schema regenerated (38 new, 6 removed options, extractor emits the final format), obsolete `@monaco-uplift` workarounds removed, `open-in-window` icon (#17789). New spec tests for the schema and `monaco-nls.ts`. Fork: relocatable source maps, `^` ranges, repository metadata. Pre-existing bugs found while testing (Shift+F10 context menu without language items, debug console Enter not accepting suggestions) fixed separately, together with the empty editor hint. |
 | 2026-03-17 | master | 1.96.302 → 1.108.201 | #17140 | First in v1.70.0. EditContext input, `ILayoutService`/workspace context overrides, NLS via bundler alias (`monaco-nls.ts`), `preferTreeSitter` per-language booleans, tab preview staging, Monaco version in About dialog, test CSS hooks. Follow-ups: #17189, #17204, #17284, #17361, #17608, #17874. |
 | 2025-01-30 | master | 1.83.101 → 1.96.302 | #14737 | First in v1.58.0. Quick input, preference schema, secondary windows, webpack config; dropped the 1.83.101 `theia-patch`. Regressions: localization lost (#15016), hover delegate (#15064). |
 | 2024-02-15 | master | 1.72.3 → 1.83.101 | #13217 | First in v1.47.0. Breaking: service overrides rewritten into `monaco-init.ts`, new diff editor, `setContext` → `_setContext`, icons via VS Code icon registry. Follow-up: #13557 (localization). |
