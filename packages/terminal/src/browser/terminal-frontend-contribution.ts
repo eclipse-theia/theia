@@ -244,6 +244,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     protected terminalPreferences: TerminalPreferences;
 
     protected mergePreferencesPromise: Promise<void> = Promise.resolve();
+    protected profilesApplied: Promise<void> | undefined;
 
     protected readonly onDidCreateTerminalEmitter = new Emitter<TerminalWidget>();
     readonly onDidCreateTerminal: Event<TerminalWidget> = this.onDidCreateTerminalEmitter.event;
@@ -311,10 +312,10 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
         this.terminalPreferences.onPreferenceChanged(e => {
             if (e.preferenceName.startsWith('terminal.integrated.')) {
-                this.mergePreferencesPromise = this.mergePreferencesPromise.finally(() => this.mergePreferences());
+                this.queueMergePreferences().catch(error => this.logger.error('Failed to apply the terminal profile settings', error));
             }
         });
-        this.mergePreferencesPromise = this.mergePreferencesPromise.finally(() => this.mergePreferences());
+        this.queueMergePreferences().catch(error => this.logger.error('Failed to apply the terminal profile settings', error));
 
         // extension contributions get read after this point: need to set the default profile if necessary
         this.profileService.onAdded(id => {
@@ -353,28 +354,33 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             // Use shell.addWidget directly (not this.open()) to add the terminal
             // to the bottom panel without expanding it on startup.
             this.shell.addWidget(termWidget, { area: 'bottom' });
-            // The terminal's process starts once the shell settings apply, which can wait for the trust of the workspace,
-            // and the backend starts it once the login shell environment is known. The layout does not wait for either.
-            this.whenShellSettingsApplied()
-                .then(() => termWidget.start())
-                .catch(error => this.logger.error('Failed to start the terminal of the default layout', error));
+            // The terminal's process starts once the trust of the workspace is known, and the backend starts it
+            // once the login shell environment is known. The layout does not wait for either.
+            termWidget.start().catch(error => this.logger.error('Failed to start the terminal of the default layout', error));
         } catch (error) {
             this.logger.error('Failed to initialize terminal in default layout', error);
         }
     }
 
     /**
-     * Resolves once the shell and profile settings apply, including those of the workspace.
-     * The workspace values of these settings apply once the trust of the workspace is known.
+     * Resolves once the terminal profiles include the profile settings of the workspace.
+     * These settings apply once the trust of the workspace is known.
      */
-    async whenShellSettingsApplied(): Promise<void> {
-        await this.workspaceTrustService.getWorkspaceTrust();
-        this.mergePreferencesPromise = this.mergePreferencesPromise.finally(() => this.mergePreferences());
-        try {
-            await this.mergePreferencesPromise;
-        } catch (error) {
-            this.logger.error('Failed to apply the terminal profile settings', error);
+    whenProfilesApplied(): Promise<void> {
+        if (!this.profilesApplied) {
+            this.profilesApplied = this.workspaceTrustService.getWorkspaceTrust()
+                .then(() => this.queueMergePreferences())
+                .catch(error => this.logger.error('Failed to apply the terminal profile settings', error));
         }
+        return this.profilesApplied;
+    }
+
+    /**
+     * Merges the profile settings into the terminal profiles after the pending merges, whether they succeeded or not.
+     */
+    protected queueMergePreferences(): Promise<void> {
+        this.mergePreferencesPromise = this.mergePreferencesPromise.catch(() => undefined).then(() => this.mergePreferences());
+        return this.mergePreferencesPromise;
     }
 
     async contributeDefaultProfiles(): Promise<void> {
