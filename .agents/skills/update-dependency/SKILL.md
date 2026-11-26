@@ -18,6 +18,7 @@ Read it before changing anything; it holds what earlier updates had to learn the
 | [deps/typescript](deps/typescript/GUIDE.md) | `typescript` and the compiler configuration |
 | [deps/monaco](deps/monaco/GUIDE.md) | `@theia/monaco-editor-core` uplifts |
 | [deps/ai-sdks](deps/ai-sdks/GUIDE.md) | OpenAI, Anthropic, Google, MCP SDKs |
+| [deps/lumino](deps/lumino/GUIDE.md) | `@lumino/*`, Theia's private overrides of `@lumino/widgets` |
 
 Not covered here: the VS Code API version, `nls.metadata.json` and built-in extensions (separate monthly update), and the default LLM models (`update-default-models` skill).
 
