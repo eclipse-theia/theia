@@ -16,7 +16,7 @@
 
 import { interfaces } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution, isBasicWasmSupported } from '@theia/core/lib/browser';
-import { bindRootContributionProvider } from '@theia/core';
+import { bindRootContributionProvider, ILogger } from '@theia/core';
 import { TextmateRegistry } from './textmate-registry.js';
 import { LanguageGrammarDefinitionContribution } from './textmate-contribution.js';
 import { MonacoTextmateService } from './monaco-textmate-service.js';
@@ -46,22 +46,25 @@ export default (bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: inter
     bind(TextmateRegistryFactory).toFactory(({ container }) => (theme?: ThemeMix) => {
         const onigProvider = container.get<OnigasmProvider>(OnigasmProvider);
         const textmateRegistry = container.get(TextmateRegistry);
+        const logger = container.getNamed<ILogger>(ILogger, 'monaco:TextmateRegistryFactory');
         return new vscodeTextmate.Registry({
             onigLib: onigProvider(),
             theme,
             loadGrammar: async (scopeName: string) => {
                 const provider = textmateRegistry.getProvider(scopeName);
-                if (provider) {
-                    const definition = await provider.getGrammarDefinition();
-                    let rawGrammar: IRawGrammar;
-                    if (typeof definition.content === 'string') {
-                        rawGrammar = vscodeTextmate.parseRawGrammar(definition.content, definition.format === 'json' ? 'grammar.json' : 'grammar.plist');
-                    } else {
-                        rawGrammar = definition.content as IRawGrammar;
-                    }
-                    return rawGrammar;
+                if (!provider) {
+                    return undefined;
                 }
-                return undefined;
+                try {
+                    const definition = await provider.getGrammarDefinition();
+                    if (typeof definition.content === 'string') {
+                        return vscodeTextmate.parseRawGrammar(definition.content, definition.format === 'json' ? 'grammar.json' : 'grammar.plist');
+                    }
+                    return definition.content as IRawGrammar;
+                } catch (error) {
+                    logger.error(`Failed to load the grammar for '${scopeName}' scope.`, error);
+                    return undefined;
+                }
             },
             getInjections: (scopeName: string) => {
                 const provider = textmateRegistry.getProvider(scopeName);
