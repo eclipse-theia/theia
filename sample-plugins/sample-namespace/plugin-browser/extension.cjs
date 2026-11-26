@@ -14,14 +14,26 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-const vscode = require('vscode');
-
-exports.activate = function (context) {
-    console.log('[plugin-browser] activated in browser worker!');
-    const disposable = vscode.commands.registerCommand('plugin-browser.hello', function () {
-        vscode.window.showInformationMessage('Hello from a browser-only extension!');
-    });
-    context.subscriptions.push(disposable);
+// Like bundlers emit it, the extension assigns `module.exports` and requires `vscode` when it needs it.
+module.exports = {
+    activate,
+    deactivate
 };
 
-exports.deactivate = function () { };
+function activate(context) {
+    const vscode = require('vscode');
+    console.log('[plugin-browser] activated in browser worker!');
+    context.subscriptions.push(
+        vscode.commands.registerCommand('plugin-browser.hello', () => {
+            vscode.window.showInformationMessage('Hello from a browser-only extension!');
+        }),
+        vscode.commands.registerCommand('plugin-browser.secret', async () => {
+            const stored = new Date().toISOString();
+            await context.secrets.store('plugin-browser.secret', stored);
+            const read = await context.secrets.get('plugin-browser.secret');
+            vscode.window.showInformationMessage(`Stored the secret '${stored}' and read back '${read}'.`);
+        })
+    );
+}
+
+function deactivate() { }

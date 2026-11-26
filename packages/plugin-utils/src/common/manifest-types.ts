@@ -100,8 +100,6 @@ export interface PluginLifecycle {
     stopMethod: string;
     /** Frontend module name; the frontend plugin should expose this name. */
     frontendModuleName?: string;
-    /** Script run before the frontend plugin is loaded. */
-    frontendInitPath?: string;
     /** Script run before the backend plugin is loaded. */
     backendInitPath?: string;
 }

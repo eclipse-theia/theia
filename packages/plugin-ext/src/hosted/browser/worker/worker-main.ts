@@ -19,7 +19,7 @@ import { Container } from '@theia/core/shared/inversify';
 import * as theia from '@theia/plugin';
 import { emptyPlugin, MAIN_RPC_CONTEXT, Plugin } from '../../../common/plugin-api-rpc.js';
 import { ExtPluginApi } from '../../../common/plugin-ext-api-contribution.js';
-import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol.js';
+import { PluginMetadata, PluginPackage } from '../../../common/plugin-protocol.js';
 import { RPCProtocol } from '../../../common/rpc-protocol.js';
 import { ClipboardExt } from '../../../plugin/clipboard-ext.js';
 import { EditorsAndDocumentsExtImpl } from '../../../plugin/editors-and-documents.js';
@@ -35,8 +35,9 @@ import { EnvExtImpl } from '../../../plugin/env.js';
 import { DebugExtImpl } from '../../../plugin/debug/debug-ext.js';
 import { LocalizationExtImpl } from '../../../plugin/localization-ext.js';
 import { TelemetryExtImpl } from '../../../plugin/telemetry-ext.js';
+import { SecretsExtImpl } from '../../../plugin/secrets-ext.js';
 import pluginHostModule from './worker-plugin-module.js';
-import { PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
+import { VsCodeExtensionLoader } from './vscode-extension-loader.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ctx = self as any;
@@ -44,36 +45,21 @@ const ctx = self as any;
 const pluginsApiImpl = new Map<string, typeof theia>();
 const pluginsModulesNames = new Map<string, Plugin>();
 
-const scripts = new Set<string>();
-
-function initialize(contextPath: string, pluginMetadata: PluginMetadata): void {
-    const path = './context/' + contextPath;
-
-    if (!scripts.has(path)) {
-        ctx.importScripts(path);
-        scripts.add(path);
-    }
-}
-
 const container = new Container();
 container.load(pluginHostModule);
 
 const rpc: RPCProtocol = container.get(RPCProtocol);
 const pluginManager = container.get(PluginManagerExtImpl);
+const vsCodeExtensionLoader = container.get(VsCodeExtensionLoader);
 pluginManager.setPluginHost({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         loadPlugin(plugin: Plugin): any {
             if (plugin.pluginPath) {
-                if (isElectron()) {
-                    ctx.importScripts(plugin.pluginPath);
-                } else {
-                    if (plugin.lifecycle.frontendModuleName) {
-                        // Set current module name being imported
-                        ctx.frontendModuleName = plugin.lifecycle.frontendModuleName;
-                    }
-
-                    ctx.importScripts(`./${PLUGINS_BASE_PATH}/` + getPluginId(plugin.model) + '/' + plugin.pluginPath);
+                const scriptPath = isElectron() ? plugin.pluginPath : `./${PluginPackage.toPluginUrl(plugin.model, plugin.pluginPath)}`;
+                if (plugin.model.engine.type === 'vscode') {
+                    return vsCodeExtensionLoader.load(scriptPath, pluginsApiImpl.get(plugin.model.id));
                 }
+                ctx.importScripts(scriptPath);
             }
 
             if (plugin.lifecycle.frontendModuleName) {
@@ -96,12 +82,6 @@ pluginManager.setPluginHost({
                 const pluginModel = plg.model;
                 const pluginLifecycle = plg.lifecycle;
                 if (pluginModel.entryPoint!.frontend) {
-                    let frontendInitPath = pluginLifecycle.frontendInitPath;
-                    if (frontendInitPath) {
-                        initialize(frontendInitPath, plg);
-                    } else {
-                        frontendInitPath = '';
-                    }
                     const rawModel = await loadManifest(pluginModel);
                     const plugin: Plugin = {
                         pluginPath: pluginModel.entryPoint.frontend!,
@@ -173,6 +153,7 @@ const webviewExt = container.get(WebviewsExtImpl);
 const localizationExt = container.get(LocalizationExtImpl);
 const telemetryExt = container.get(TelemetryExtImpl);
 const storageProxy = container.get(KeyValueStorageProxy);
+const secretsExt = container.get(SecretsExtImpl);
 
 const apiFactory = createAPIFactory(
     rpc,
@@ -214,6 +195,7 @@ rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, workspaceExt);
 rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, preferenceRegistryExt);
 rpc.set(MAIN_RPC_CONTEXT.STORAGE_EXT, storageProxy);
 rpc.set(MAIN_RPC_CONTEXT.WEBVIEWS_EXT, webviewExt);
+rpc.set(MAIN_RPC_CONTEXT.SECRETS_EXT, secretsExt);
 
 function isElectron(): boolean {
     if (typeof navigator === 'object' && typeof navigator.userAgent === 'string' && navigator.userAgent.indexOf('Electron') >= 0) {

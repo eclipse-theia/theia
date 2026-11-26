@@ -2,7 +2,7 @@
   "private": true,
   "name": "plugin-browser",
   "version": "1.77.0",
-  "browser": "./extension.js",
+  "browser": "./extension.cjs",
   "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "publisher": "sample-namespace",
   "repository": {
@@ -13,7 +13,8 @@
     "vscode": "^1.125.0"
   },
   "activationEvents": [
-    "onCommand:plugin-browser.hello"
+    "onCommand:plugin-browser.hello",
+    "onCommand:plugin-browser.secret"
   ],
   "devDependencies": {
     "@types/vscode": "^1.125.0"
@@ -26,6 +27,10 @@
       {
         "command": "plugin-browser.hello",
         "title": "Hello from plugin-browser"
+      },
+      {
+        "command": "plugin-browser.secret",
+        "title": "Store a Secret from plugin-browser"
       }
     ]
   }

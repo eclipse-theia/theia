@@ -68,7 +68,6 @@ export class TheiaHeadlessPluginScanner extends AbstractPluginScanner {
         const result = deepClone(plugin.metadata);
 
         const lifecycle = result.lifecycle;
-        delete lifecycle.frontendInitPath;
         delete lifecycle.backendInitPath;
 
         // Same as in VS Code

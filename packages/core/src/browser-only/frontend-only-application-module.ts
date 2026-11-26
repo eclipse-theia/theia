@@ -20,6 +20,7 @@ import { ApplicationInfo, ApplicationServer, ExtensionInfo } from '../common/app
 import { EnvVariable, EnvVariablesServer } from './../common/env-variables/index.js';
 import { bindMessageService } from '../browser/frontend-application-bindings.js';
 import { KeyStoreService } from '../common/key-store.js';
+import { InMemoryKeyStoreService } from './in-memory-key-store-service.js';
 import { QuickPickService } from '../common/quick-pick-service.js';
 import { QuickPickServiceImpl } from '../browser/quick-input/index.js';
 import { BackendRequestService, RequestService } from '@theia/request';
@@ -106,18 +107,11 @@ export const frontendOnlyApplicationModule = new ContainerModule((bind, unbind, 
         bind(EnvVariablesServer).toConstantValue(varServer);
     }
 
-    const keyStoreService: KeyStoreService = {
-        deletePassword: () => Promise.resolve(false),
-        findCredentials: () => Promise.resolve([]),
-        findPassword: () => Promise.resolve(undefined),
-        setPassword: () => Promise.resolve(),
-        getPassword: () => Promise.resolve(undefined),
-        keys: () => Promise.resolve([]),
-    };
+    bind(InMemoryKeyStoreService).toSelf().inSingletonScope();
     if (isBound(KeyStoreService)) {
-        rebind<KeyStoreService>(KeyStoreService).toConstantValue(keyStoreService);
+        rebind(KeyStoreService).toService(InMemoryKeyStoreService);
     } else {
-        bind<KeyStoreService>(KeyStoreService).toConstantValue(keyStoreService);
+        bind(KeyStoreService).toService(InMemoryKeyStoreService);
     }
 
     const requestService: RequestService = {
