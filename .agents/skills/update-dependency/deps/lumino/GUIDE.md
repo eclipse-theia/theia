@@ -10,7 +10,7 @@ Split this file into `ISSUES.md` and `LOG.md` next to it once a section gets too
 
 ### No patch since 2.11.0
 
-Up to 2.10.0, Theia patched `@lumino/widgets` (`dev-packages/cli/patches/@lumino+widgets+<version>.patch`, applied by `theia-patch` on `postinstall`) so that `Menu` works in secondary windows. 2.11.0 contains the same support upstream ([jupyterlab/lumino#883](https://github.com/jupyterlab/lumino/pull/883)): the document-level `pointerdown` listener, the viewport data and the submenu host come from the menu's document, the window-data cache is kept per document, and `Widget.attach` adopts the node into the host document before `onBeforeAttach`. The patch's inline `top`/`left` reset is not needed: Lumino's `menu.css` sets both to `0`, and secondary windows mirror the main window's stylesheets (`secondary-window-style-mirror.ts`). Theia opens context menus in a secondary window with `host` set to that window's `body` (`browser-context-menu-renderer.ts`).
+Up to 2.10.0, Theia patched `@lumino/widgets` (`dev-packages/cli/patches/@lumino+widgets+<version>.patch`, applied by `theia-patch` on `postinstall`) so that `Menu` works in secondary windows. 2.11.0 contains the same support upstream ([jupyterlab/lumino#883](https://github.com/jupyterlab/lumino/pull/883)): the document-level `pointerdown` listener, the viewport data and the submenu host come from the menu's document, the window-data cache is kept per document, and `Widget.attach` adopts the node into the host document before `onBeforeAttach`. The patch's inline `top`/`left` reset is not needed: Lumino's `menu.css` sets both to `0`, and secondary windows mirror the main window's stylesheets (`secondary-window-style-mirror.ts`). Theia opens context menus in a secondary window with `host` set to that window's `body` (`browser-context-menu-renderer.ts`). Not covered, neither by the old patch: `MonacoContextMenuService` opens Monaco's own menus (e.g. of the minimap) with `menu.open(x, y)` and no `host`, so in a secondary window they appear in the main window. Monaco passes only coordinates for them, so the fix needs the editor's window.
 
 `theia-patch` stays: adopters run it on `postinstall`, and with no patch files it prints "No patch files found" and exits 0.
 
@@ -29,12 +29,12 @@ Generate it from a build, never by rebasing an old patch (the 2.7.5 patch carrie
 Theia overrides or reads private Lumino members (`this['_x']`, `prototype['_x']`), which break silently when upstream renames them or changes their meaning:
 
 - `theia-dock-panel.ts`: `_onCurrentChanged`, `_createTabBar`, `_onTabActivateRequested`, `_onTabCloseRequested`, `_onTabDetachRequested`, `_tabsConstrained`
-- `theia-split-panel.ts`: `_evtPointerDown`, `_releaseMouse`, `_pressData`
+- `theia-split-panel.ts`: `_evtPointerDown`, `_releaseMouse`, `_pressData`, `_updateIntersectionHover`
 - `browser-menu-plugin.ts`: `DynamicMenuBarWidget.prototype._openChildMenu`; `DynamicMenuWidget` reads `_parentMenu` and has a copy of the hit test of `Menu._evtPointerDown`
 - `view-container.ts`: `ViewContainerLayout._items`
 - `application-shell.ts`: `TabBar._previousTitle`
 - `output-widget.ts` (`@theia/output`): `NoopDragOverDockPanel` replaces `_evtDragOver`, `_evtDrop`, `_evtDragLeave`
-- `tab-bars.ts`: skips Lumino's `preventDefault` on tab presses for native tab drags (`tab-bars.spec.ts` fails if Lumino stops calling it)
+- `tab-bars.ts`: skips Lumino's `preventDefault` on tab presses for native tab drags (`tab-bars.spec.ts` fails if Lumino stops calling it); calls `TabBar._releaseMouse`; `ScrollableTabBar.onBeforeAttach`/`onAfterDetach` replace Lumino's to listen on the `contentNode` instead of the `node`, so `tabEventTypes` must list the same events as `TabBar.onBeforeAttach` (`tab-bars.spec.ts` compares them)
 
 ## Steps
 
@@ -57,7 +57,7 @@ Theia overrides or reads private Lumino members (`this['_x']`, `prototype['_x']`
 - `npx lerna run test --scope @theia/core`, `npm run lint`, `npm run build:browser`, `npm run test:playwright` if possible.
 - To compare behaviour with the previous version, build a baseline bundle: put the old published package into `node_modules/@lumino/widgets` (plus its patch, if any, applied with `patch -p1` after stripping `node_modules/@lumino/widgets/` from the paths), `npx theia build --mode development` in `examples/browser`, then restore. Stop the backend before rebuilding: `theia build` also rewrites the backend bundle and native modules, and the running backend dumps core.
 - Scripted checks with Puppeteer: menu `.lm-Menu` count and bounding boxes against `innerWidth`/`innerHeight` (also in the secondary window page `secondary-window.html`, opened via `SecondaryWindowHandler.moveWidgetToSecondaryWindow` with an editor; the Explorer is not extractable), `document.activeElement` after clicking a tab, side panel width after dragging its split handle, `CommandRegistry.onDidExecuteCommand` after clicking a menu item. Look up menu bar items and tabs by label, not index: the api-samples add a "Sample Menu". `puppeteer.connect` with a `defaultViewport` also resizes the secondary window page. Close stale pages with `runBeforeUnload: false`; a page stuck in a `beforeunload` prompt blocks every page of the same origin.
-- Manual smoke test in browser and Electron, also in a secondary window (pop out an editor): main menu (hover switching, submenus, near the window edges, click outside closes, Alt toggles a hidden menu bar), context menus of editor, tabs and explorer, tab close via icon and middle click, tab drag within and between windows, collapse a side panel by clicking its active tab, resize split and dock handles (also where two handles cross), view container parts, a touch device or DevTools touch emulation if touch behaviour changed.
+- Manual test with [TEST-PLAN.md](TEST-PLAN.md) in the browser and in Electron, after every fix again. Add the behaviour changes of the update to its run, and new checks and non-bugs to the plan.
 
 ## Known issues
 
@@ -73,21 +73,31 @@ Since 2.10.0 Lumino calls `preventDefault`/`stopPropagation` on `pointerdown` (w
 
 `MenuBar` now handles `pointerdown` in its document capture listener before the menu's, and stops immediate propagation, so a click on the title of the open menu closes it (open, close, open, ...), as in VS Code. With 2.7.5 Theia's `DynamicMenuWidget` closed it first and `MenuBar` reopened it, so the menu stayed open. Intended upstream behaviour, but visible to users.
 
+### Every menu item announced as an unchecked checkbox (2.10.0)
+
+`Menu.Renderer.createItemARIA` gives the `menuitemcheckbox` role to items that are `isToggleable || isToggled` ([jupyterlab/lumino#823](https://github.com/jupyterlab/lumino/pull/823)), and `@lumino/commands` sets `isToggleable` to `!!options.isToggled` unless a command passes it. `DynamicMenuWidget.createItems` passed `isToggled` for every command, so every item got `aria-checked="false"`. It now passes `isToggled` only for toggled items, as with 2.7.5: Theia's menu model does not know which commands can be toggled, so unchecked toggle items stay `menuitem`. `MonacoContextMenuService` passes it only for actions with `checked` defined. Covered by `browser-menu-plugin.spec.ts`; to check by hand, open the View menu and list `role` and `aria-checked` of its `.lm-Menu-item` elements.
+
 ### Menu bar overflow is disabled
 
 `DynamicMenuBarWidget` passes `overflowMenuOptions: { isVisible: false }` because of a `RangeError` at zero width ([jupyterlab/lumino#811](https://github.com/jupyterlab/lumino/issues/811), theia#17352). 2.11.0 fixes the stale overflow index ([jupyterlab/lumino#850](https://github.com/jupyterlab/lumino/pull/850)), so the workaround can be revisited; Theia's CSS also never constrains the menu bar width, so the overflow menu would not show anyway.
 
 ### Tab width freezing on close (2.8.0) has no visible effect in Theia
 
-Lumino freezes tab widths after a close-icon or middle-click close until the pointer leaves the tab bar, applied in `TabBar.onUpdateRequest`. `ScrollableTabBar` and `SideTabBar` override `onUpdateRequest` without calling `super`, so no widths are frozen; on pointer leave Lumino only clears inline `width`/`flex-basis` (Theia uses `minWidth`/`maxWidth`) and toggles `lm-mod-unfreezing`.
+Lumino freezes tab widths after a close-icon or middle-click close until the pointer leaves the tab bar (in Theia: the `contentNode`), applied in `TabBar.onUpdateRequest`. `ScrollableTabBar` and `SideTabBar` override `onUpdateRequest` without calling `super`, so no widths are frozen; on pointer leave Lumino only clears inline `width`/`flex-basis` (Theia uses `minWidth`/`maxWidth`) and toggles `lm-mod-unfreezing`.
 
-### Tabs get a `tabindex` only once focus enters the tab bar (2.11.0)
+### Theia's tabs get no `tabindex` (2.11.0)
 
-`TabBar` now keeps one tab at `tabindex="0"` and the others at `-1`, updated in `onUpdateRequest` and on `focusin`/`focusout`. Theia's tab renderer sets no `tabindex` and its tab bars skip `super.onUpdateRequest`, so tabs only get the attribute after something inside the tab bar was focused. Focus still ends up in the widget after clicking a tab (`restoreFocusAfterTabPress`, verified for editors).
+`TabBar` now keeps one tab at `tabindex="0"` and the others at `-1`, updated in `onUpdateRequest` and on `focusin`/`focusout`. Theia's tab renderer sets no `tabindex` and its tab bars skip `super.onUpdateRequest`, so the tabs are not focusable and the `focusin` listener on the `contentNode` never fires: the tab bars cannot be reached with Tab, as with 2.7.5. Focus still ends up in the widget after clicking a tab (`restoreFocusAfterTabPress`, verified for editors).
+
+### Tapping the close icon of a tab does nothing (2.10.0)
+
+Since 2.10.0 a touch release on the close icon only records the close request, and the `click` that follows emits it. `ScrollableTabBar` replaces `TabBar.onBeforeAttach` to listen on the `contentNode` and only listened to the events of 2.7.5 (`pointerdown`, `dblclick`, `keydown`), so the `click` never arrived; `pointerleave` (2.8.0) and `focusin`/`focusout` (2.11.0) were missing as well. `tabEventTypes` now lists all events of `TabBar.onBeforeAttach`, `onAfterDetach` calls `super` to clear Lumino's pending close and freeze state, and `tab-bars.spec.ts` compares the events with Lumino's. Verified with Chromium touch emulation.
 
 ### Split and dock handle drags are applied per animation frame (2.11.0)
 
 `SplitPanel` and `DockPanel` coalesce pointer moves into one `requestAnimationFrame`, adjust the sizers with the new `SplitLayout.adjustHandle` and send a `ResizeMessage` instead of an `update-request`; `update()` and `handleMoved` follow on release. `moveHandle` (used by `SplitPositionHandler`) still updates the parent. Code that reacts to an ongoing drag must listen to resizes, not update requests. Where two orthogonal handles cross, a press now drags both (`lm-mod-intersection`, `move` cursor).
+
+Lumino only looks for crossings in orthogonal `SplitPanel` children of the panel whose handle is pressed. In the shell, the side panel handles find the bottom panel handle within 8 px, but not the other way round: the bottom split panel's children are `DockPanel`s, so a press on the bottom handle only moves the bottom panel. Both handles had `z-index: 6` and the bottom one comes later in the DOM, so it covered the side handle at the junction (2 px of it left); `split-widget.css` puts the handles of a split panel with split panel children on top (`z-index: 7`), so a press at the junction drags both. Lumino puts `lm-mod-intersection` on both handles, but only the outer one is hovered, so `view-container.css` and `dockpanel.css` highlight `.lm-mod-intersection::after` like `:hover`. Lumino clears the class on `pointerleave`, also while a handle is pressed, and `@lumino/dragdrop` causes one as soon as it captures the pointer to its cursor backdrop, so both handles lost the highlight on press. `TheiaSplitPanel.handleEvent` ignores `pointerleave` while a handle is pressed and recomputes the highlight on `pointerup` (Lumino does not); `DockPanel` (editor splits) still loses it during the drag (upstream). The same capture takes the pointer away from `TheiaSplitPanel`'s own `setPointerCapture` (#15643) right away.
 
 ### Layouts keep the DOM order equal to the layout order (2.11.0)
 
@@ -107,7 +117,7 @@ Newest first. One entry per merged update and target branch.
 
 | Date | Branch | From → To | PR | Notes |
 |---|---|---|---|---|
-| 2026-11-26 | master | widgets 2.7.5 → 2.11.0 | | Patch removed: secondary window menus are supported upstream since 2.11.0 (jupyterlab/lumino#883). 2.10.0: `Menu`/`MenuBar` switched to pointer events, clicking an open menu title closes it, tab width freezing on close (inert in Theia). 2.11.0: handle drags per animation frame and two-axis drags at crossings, DOM order follows layout order, tab `tabindex` management, menu bar overflow fixes. Other `@lumino/*` already latest. Verified with a scripted browser smoke test incl. secondary window; Electron and touch not tested. |
+| 2026-11-26 | master | widgets 2.7.5 → 2.11.0 | #18454 | Patch removed: secondary window menus are supported upstream since 2.11.0 (jupyterlab/lumino#883). 2.10.0: `Menu`/`MenuBar` switched to pointer events, clicking an open menu title closes it, tab width freezing on close (inert in Theia), `menuitemcheckbox` role for every Theia menu item and touch close of tabs via `click` (both fixed in Theia). 2.11.0: handle drags per animation frame and two-axis drags at crossings (from the side panel handles only; highlight and junction stacking fixed in Theia), DOM order follows layout order, tab `tabindex` management, menu bar overflow fixes. Other `@lumino/*` already latest. Verified with a scripted browser smoke test and a manual test in the browser and Electron (custom and native title bar), incl. secondary windows; touch only with DevTools emulation. |
 | 2026-02-26 | master | widgets 2.7.2 → 2.7.5, dragdrop | #16970 | Patch rebased; `index.min.js` not regenerated. |
 | 2025-11-20 | master | widgets 2.5.0 → 2.7.2, all `@lumino/*` | #16586 | Menu bar hover fix; `BaseWidget.isVisible` kept at pre-2.7.0 behaviour (#16585). |
 | 2025-03-17 | master | PhosphorJS → Lumino 2.5.0 | #14320 | Migration; secondary window patch ported from `@phosphor/widgets`; `.p-` to `.lm-` CSS. |

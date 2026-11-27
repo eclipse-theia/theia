@@ -256,6 +256,31 @@ describe('tab bar', () => {
                 tabBar.dispose();
             }
         });
+
+        it('should listen on its tabs to all events that a Lumino tab bar listens to', () => {
+            const luminoTabBar = new TabBar<Widget>();
+            const tabBar = new ScrollableTabBar();
+            try {
+                const luminoAdded = sinon.spy(luminoTabBar.node, 'addEventListener');
+                const luminoRemoved = sinon.spy(luminoTabBar.node, 'removeEventListener');
+                const added = sinon.spy(tabBar.contentNode, 'addEventListener');
+                const removed = sinon.spy(tabBar.contentNode, 'removeEventListener');
+                for (const widget of [luminoTabBar, tabBar]) {
+                    MessageLoop.sendMessage(widget, Widget.Msg.BeforeAttach);
+                    MessageLoop.sendMessage(widget, Widget.Msg.AfterDetach);
+                }
+                const eventTypes = (spy: sinon.SinonSpy, listener: object): string[] =>
+                    spy.args.filter(args => args[1] === listener).map(args => args[0]).sort();
+                const luminoTypes = eventTypes(luminoAdded, luminoTabBar);
+                expect(luminoTypes).to.not.be.empty;
+                expect(eventTypes(luminoRemoved, luminoTabBar)).to.deep.equal(luminoTypes);
+                expect(eventTypes(added, tabBar)).to.deep.equal(luminoTypes);
+                expect(eventTypes(removed, tabBar)).to.deep.equal(luminoTypes);
+            } finally {
+                luminoTabBar.dispose();
+                tabBar.dispose();
+            }
+        });
     });
 
     describe('native tab drag', () => {

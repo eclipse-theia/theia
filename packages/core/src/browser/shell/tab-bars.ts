@@ -958,17 +958,26 @@ export class ScrollableTabBar extends TabBar<Widget> {
         this.toDispose.dispose();
     }
 
+    /**
+     * The events that Lumino's `TabBar.onBeforeAttach` listens to on the `node`. This tab bar listens to them on the
+     * `contentNode`, which holds the tabs, so that events of the other parts of the tab bar, e.g. its toolbar, are not
+     * handled as tab events. Compare them with Lumino's on every Lumino update.
+     */
+    protected readonly tabEventTypes: readonly string[] = ['pointerdown', 'pointerleave', 'click', 'dblclick', 'focusin', 'focusout', 'keydown'];
+
     protected override onBeforeAttach(msg: Message): void {
-        this.contentNode.addEventListener('pointerdown', this);
-        this.contentNode.addEventListener('dblclick', this);
-        this.contentNode.addEventListener('keydown', this);
+        for (const type of this.tabEventTypes) {
+            this.contentNode.addEventListener(type, this);
+        }
     }
 
     protected override onAfterDetach(msg: Message): void {
-        this.contentNode.removeEventListener('pointerdown', this);
-        this.contentNode.removeEventListener('dblclick', this);
-        this.contentNode.removeEventListener('keydown', this);
+        for (const type of this.tabEventTypes) {
+            this.contentNode.removeEventListener(type, this);
+        }
         this.doReleaseMouse();
+        // Clears Lumino's pending touch close and tab size state. The listeners that it removes from the `node` were never added.
+        super.onAfterDetach(msg);
     }
 
     protected doReleaseMouse(): void {

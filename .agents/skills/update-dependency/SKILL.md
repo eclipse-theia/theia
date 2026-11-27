@@ -5,7 +5,7 @@ description: Update dependencies of the Theia framework and record what was lear
 
 # Update dependencies
 
-Each tracked technology has its own folder under `deps/` with a single `GUIDE.md`: the steps, the versions that move together, known issues and a log of past updates.
+Each tracked technology has its own folder under `deps/` with a `GUIDE.md`: the steps, the versions that move together, known issues and a log of past updates. A `TEST-PLAN.md` next to it, if there is one, is the manual test of an update.
 Read it before changing anything; it holds what earlier updates had to learn the hard way.
 
 | Folder | Covers |

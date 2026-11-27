@@ -109,7 +109,9 @@ export class MonacoContextMenuService implements IContextMenuService {
                 menu.commands.addCommand(action.id, {
                     label: action.label,
                     className: action.class,
-                    isToggled: () => Boolean(action.checked),
+                    // Lumino gives every command with `isToggled` the `menuitemcheckbox` role (jupyterlab/lumino#823),
+                    // `checked` is only defined for actions that can be toggled.
+                    ...(action.checked !== undefined ? { isToggled: () => Boolean(action.checked) } : {}),
                     isEnabled: () => action.enabled,
                     execute: () => action.run()
                 });

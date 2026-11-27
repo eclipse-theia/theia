@@ -55,7 +55,9 @@
   top: calc(-1 * var(--theia-sash-width) / 2);
 }
 
-.lm-DockPanel-handle:hover::after {
+/* Lumino marks both handles where two handles cross, only one of them is hovered */
+.lm-DockPanel-handle:hover::after,
+.lm-DockPanel-handle.lm-mod-intersection::after {
   background-color: var(--theia-sash-hoverBorder);
   transition-delay: var(--theia-sash-hoverDelay);
 }

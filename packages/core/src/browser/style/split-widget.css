@@ -29,6 +29,11 @@
   z-index: 6; /* Upper than the minimap */
 }
 
+/* Where two handles cross, Lumino drags both only for a press on the outer handle, so it must not be covered by the inner one */
+.lm-SplitPanel:has(> .lm-SplitPanel) > .lm-SplitPanel-handle {
+  z-index: 7;
+}
+
 .theia-split-widget > .lm-SplitPanel > .lm-SplitPanel-handle {
   box-sizing: border-box;
 }
