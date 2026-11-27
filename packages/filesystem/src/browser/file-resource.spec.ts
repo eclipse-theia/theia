@@ -43,19 +43,11 @@ describe('file-resource', () => {
     beforeEach(() => {
         sandbox.restore();
 
-        sandbox.stub(mockFileService, 'onDidFilesChange').get(() =>
-            mockOnChangeEmitter.event
-        );
+        sandbox.stub(mockFileService, 'onDidFilesChange').value(mockOnChangeEmitter.event);
         sandbox.stub(mockFileService, 'onDidRunOperation').returns(Disposable.NULL);
-        sandbox.stub(mockFileService, 'watch').get(() =>
-            mockEmitter.event
-        );
-        sandbox.stub(mockFileService, 'onDidChangeFileSystemProviderCapabilities').get(() =>
-            mockEmitter.event
-        );
-        sandbox.stub(mockFileService, 'onDidChangeFileSystemProviderReadOnlyMessage').get(() =>
-            mockEmitter.event
-        );
+        sandbox.stub(mockFileService, 'watch').returns(Disposable.NULL);
+        sandbox.stub(mockFileService, 'onDidChangeFileSystemProviderCapabilities').value(mockEmitter.event);
+        sandbox.stub(mockFileService, 'onDidChangeFileSystemProviderReadOnlyMessage').value(mockEmitter.event);
     });
 
     after(() => {

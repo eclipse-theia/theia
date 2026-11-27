@@ -18,7 +18,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as temp from 'temp';
 import yargs from 'yargs';
-import yargsFactory = require('yargs/yargs');
+import { hideBin } from 'yargs/helpers';
 import { ApplicationPackageManager, rebuild } from '@theia/application-manager';
 import { ApplicationProps, DEFAULT_SUPPORTED_API_VERSION } from '@theia/application-package';
 import checkDependencies from './check-dependencies';
@@ -106,15 +106,14 @@ function defineCommonOptions<T>(cli: yargs.Argv<T>): yargs.Argv<T & {
 
 async function theiaCli(): Promise<void> {
     const { version } = await fs.promises.readFile(path.join(__dirname, '../package.json'), 'utf8').then(JSON.parse);
-    yargs.scriptName('theia').version(version);
     const projectPath = process.cwd();
     // Create a sub `yargs` parser to read `app-target` without
-    // affecting the global `yargs` instance used by the CLI.
-    const { appTarget } = await defineCommonOptions(yargsFactory()).help(false).parse();
+    // affecting the main `yargs` instance used by the CLI.
+    const { appTarget } = await defineCommonOptions(yargs(hideBin(process.argv))).help(false).version(false).parse();
     const manager = new ApplicationPackageManager({ projectPath, appTarget });
     const localizationManager = new LocalizationManager();
     const { target } = manager.pck;
-    defineCommonOptions(yargs)
+    defineCommonOptions(yargs(hideBin(process.argv)).scriptName('theia').version(version))
         .command<{
             theiaArgs?: (string | number)[]
         }>({

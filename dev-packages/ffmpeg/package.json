@@ -38,10 +38,12 @@
   },
   "dependencies": {
     "@electron/get": "^2.0.3",
+    "fs-extra": "^4.0.3",
     "tslib": "^2.9.1",
     "unzipper": "^0.9.15"
   },
   "devDependencies": {
+    "@types/fs-extra": "^4.0.15",
     "@types/unzipper": "^0.9.2"
   },
   "gitHead": "21358137e41342742707f660b8e222f940a27652"

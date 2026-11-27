@@ -74,7 +74,7 @@ module.exports = {
         },
     },
     create(context) {
-        let relativeFilePath = path.relative(context.getCwd(), context.getFilename());
+        let relativeFilePath = path.relative(context.cwd, context.filename);
         // Normalize the path so we only deal with forward slashes.
         if (process.platform === 'win32') {
             relativeFilePath = relativeFilePath.replace(/\\/g, '/');

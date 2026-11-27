@@ -16,8 +16,16 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import * as fs from 'fs';
 import * as puppeteer from 'puppeteer-core';
-const collectFiles: (options: TestFileOptions) => { files: string[] } = require('mocha/lib/cli/collect-files');
+const collectFiles: (options: TestFileOptions) => { files: string[] } = require('mocha/lib/cli/collect-files.cjs');
+let cachedChaiModuleScript: string | undefined;
+function getChaiModuleScript(): string {
+    if (!cachedChaiModuleScript) {
+        cachedChaiModuleScript = `import * as chai from 'data:text/javascript;base64,${fs.readFileSync(require.resolve('chai')).toString('base64')}';\nwindow.chai = { ...chai };`;
+    }
+    return cachedChaiModuleScript;
+}
 
 export interface TestFileOptions {
     ignore: string[]
@@ -67,7 +75,7 @@ export default async function newTestPage(options: TestPageOptions): Promise<pup
         }
         console.log('loading chai...');
         theiaLoaded = true;
-        page.addScriptTag({ path: require.resolve('chai/chai.js') });
+        page.addScriptTag({ type: 'module', content: getChaiModuleScript() });
         page.evaluate(() =>
             window.addEventListener('beforeunload', () => (window as any)['fireDidUnloadTheia']())
         );

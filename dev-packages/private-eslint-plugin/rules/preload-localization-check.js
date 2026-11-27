@@ -117,7 +117,7 @@ module.exports = {
     create(context) {
         // The canonical path, because the entry points are resolved through 'node_modules', where a
         // workspace package is a symbolic link, and the linted file has to be comparable with them.
-        const file = realPath(context.getFilename());
+        const file = realPath(context.filename);
         const entryPoints = reportingMalformedPackageJson(context, () => preloadEntryPoints(file, context.options[0]?.additionalEntryPoints));
         // Only the entry points are checked, following their imports from there. The modules they
         // pull in are reported on the import that pulls them in, which is where the problem can be
@@ -127,7 +127,7 @@ module.exports = {
         }
         return {
             'Program:exit'(program) {
-                const { imports, nlsCalls } = analyzeSource(program, context.getSourceCode().scopeManager);
+                const { imports, nlsCalls } = analyzeSource(program, context.sourceCode.scopeManager);
                 for (const { callee, node } of nlsCalls) {
                     context.report({ node, messageId: 'loadTimeNls', data: { callee } });
                 }
@@ -137,7 +137,7 @@ module.exports = {
                     if (!found) {
                         continue;
                     }
-                    const chain = found.chain.map(step => path.relative(context.getCwd(), step).replace(/\\/g, '/'));
+                    const chain = found.chain.map(step => path.relative(context.cwd, step).replace(/\\/g, '/'));
                     const data = { specifier, callee: found.nlsCall.callee, module: chain[chain.length - 1], chain: chain.join(' -> ') };
                     context.report({ node, messageId: chain.length > 1 ? 'transitiveLoadTimeNls' : 'importedLoadTimeNls', data });
                 }

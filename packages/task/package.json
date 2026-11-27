@@ -17,7 +17,7 @@
     "@theia/workspace": "1.77.0",
     "async-mutex": "^0.3.2",
     "jsonc-parser": "^3.3.1",
-    "p-debounce": "^2.1.0",
+    "p-debounce": "^6.0.0",
     "tslib": "^2.9.1"
   },
   "publishConfig": {

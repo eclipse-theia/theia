@@ -72,7 +72,7 @@ module.exports = {
                                 node,
                                 message: `'${value}' can be translated using the 'nls.localizeByDefault' function.`,
                                 fix: function (fixer) {
-                                    const code = context.getSourceCode();
+                                    const code = context.sourceCode;
                                     const args = node.arguments.slice(1);
                                     const argsCode = args.map(e => code.getText(e)).join(', ');
                                     const updatedCall = `nls.localizeByDefault(${argsCode})`;

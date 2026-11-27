@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import yargs from '../../shared/yargs/index.cjs';
+import yargs, { Arguments, Argv } from '../../shared/yargs/index.js';
 import * as temp from 'temp';
 import * as fs from 'fs';
 import { ContainerModule, Container } from 'inversify';
@@ -28,6 +28,7 @@ import { Disposable, DisposableCollection } from '../common/index.js';
 const track = temp.track();
 
 let cli: LogLevelCliContribution;
+let yargsInstance: Argv;
 let consoleErrorSpy: sinon.SinonSpy;
 let container: Container;
 let toDisposeAfter: DisposableCollection;
@@ -54,8 +55,8 @@ describe('log-level-cli-contribution', () => {
         container.load(module);
 
         cli = container.get(LogLevelCliContribution);
-        yargs.global([]);
-        cli.configure(yargs);
+        yargsInstance = yargs();
+        cli.configure(yargsInstance);
 
         consoleErrorSpy = sinon.spy(console, 'error');
     });
@@ -67,7 +68,7 @@ describe('log-level-cli-contribution', () => {
     });
 
     it('should use --log-level flag', async () => {
-        const args: yargs.Arguments = await yargs.parse(['--log-level=debug']);
+        const args: Arguments = await yargsInstance.parse(['--log-level=debug']);
         await cli.setArguments(args);
 
         expect(cli.defaultLogLevel).eq(LogLevel.DEBUG);
@@ -85,7 +86,7 @@ describe('log-level-cli-contribution', () => {
         fs.fsyncSync(file.fd);
         fs.closeSync(file.fd);
 
-        const args: yargs.Arguments = await yargs.parse(['--log-config', file.path]);
+        const args: Arguments = await yargsInstance.parse(['--log-config', file.path]);
         await cli.setArguments(args);
 
         expect(cli.defaultLogLevel).eq(LogLevel.INFO);
@@ -96,7 +97,7 @@ describe('log-level-cli-contribution', () => {
     });
 
     it('should use info as default log level', async () => {
-        const args: yargs.Arguments = await yargs.parse([]);
+        const args: Arguments = await yargsInstance.parse([]);
         await cli.setArguments(args);
 
         expect(cli.defaultLogLevel).eq(LogLevel.INFO);
@@ -113,7 +114,7 @@ describe('log-level-cli-contribution', () => {
             }
         }));
 
-        const args: yargs.Arguments = await yargs.parse(['--log-config', file.path]);
+        const args: Arguments = await yargsInstance.parse(['--log-config', file.path]);
         await cli.setArguments(args);
         sinon.assert.calledWithMatch(consoleErrorSpy, 'Unknown default log level in');
     });
@@ -128,13 +129,13 @@ describe('log-level-cli-contribution', () => {
             }
         }));
 
-        const args: yargs.Arguments = await yargs.parse(['--log-config', file.path]);
+        const args: Arguments = await yargsInstance.parse(['--log-config', file.path]);
         await cli.setArguments(args);
         sinon.assert.calledWithMatch(consoleErrorSpy, 'Unknown log level for logger hello in');
     });
 
     it('should reject nonexistent config files', async () => {
-        const args: yargs.Arguments = await yargs.parse(['--log-config', '/tmp/cacaca']);
+        const args: Arguments = await yargsInstance.parse(['--log-config', '/tmp/cacaca']);
         await cli.setArguments(args);
         sinon.assert.calledWithMatch(consoleErrorSpy, 'no such file or directory');
     });
@@ -150,7 +151,7 @@ describe('log-level-cli-contribution', () => {
         });
         fs.writeFileSync(file.fd, '{' + text);
 
-        const args: yargs.Arguments = await yargs.parse(['--log-config', file.path]);
+        const args: Arguments = await yargsInstance.parse(['--log-config', file.path]);
         await cli.setArguments(args);
         sinon.assert.calledWithMatch(consoleErrorSpy, 'Error reading log config file');
     });
@@ -175,7 +176,7 @@ describe('log-level-cli-contribution', () => {
             fs.fsyncSync(file.fd);
             fs.closeSync(file.fd);
 
-            const args: yargs.Arguments = await yargs.parse(['--log-config', file.path]);
+            const args: Arguments = await yargsInstance.parse(['--log-config', file.path]);
             await cli.setArguments(args);
         }
 
@@ -224,7 +225,7 @@ describe('log-level-cli-contribution', () => {
         }));
         fs.fsyncSync(file.fd);
 
-        const args: yargs.Arguments = await yargs.parse(['--log-config', file.path]);
+        const args: Arguments = await yargsInstance.parse(['--log-config', file.path]);
         await cli.setArguments(args);
 
         expect(cli.defaultLogLevel).eq(LogLevel.INFO);
@@ -269,7 +270,7 @@ describe('log-level-cli-contribution', () => {
             fs.fsyncSync(file.fd);
             fs.closeSync(file.fd);
 
-            const args: yargs.Arguments = await yargs.parse(['--log-config', file.path]);
+            const args: Arguments = await yargsInstance.parse(['--log-config', file.path]);
             await cli.setArguments(args);
         }
 

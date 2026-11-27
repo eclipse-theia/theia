@@ -23,7 +23,7 @@ import * as path from 'path';
 import { DEFAULT_SUPPORTED_API_VERSION } from '@theia/application-package/lib/api';
 import { RequestContext, RequestService } from '@theia/request';
 import { RateLimiter } from 'limiter';
-import escapeStringRegexp = require('escape-string-regexp');
+import escapeStringRegexp from 'escape-string-regexp';
 import { extractArchive, readArchiveFiles } from './extract-archive';
 
 /**

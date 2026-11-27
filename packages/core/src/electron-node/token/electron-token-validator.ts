@@ -52,7 +52,7 @@ export class ElectronTokenValidator implements WsRequestValidatorContribution {
         }
         const cookieHeader = request.headers.cookie;
         if (isString(cookieHeader)) {
-            const token = cookie.parse(cookieHeader)[ElectronSecurityToken];
+            const token = cookie.parseCookie(cookieHeader)[ElectronSecurityToken];
             if (isString(token)) {
                 return this.isTokenValid(JSON.parse(token));
             }

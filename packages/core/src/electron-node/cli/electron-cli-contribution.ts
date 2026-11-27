@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { Argv, Arguments } from '../../../shared/yargs/index.cjs';
+import { Argv, Arguments } from '../../../shared/yargs/index.js';
 import { CliContribution } from '../../node/index.js';
 import { MaybePromise } from '../../common/index.js';
 

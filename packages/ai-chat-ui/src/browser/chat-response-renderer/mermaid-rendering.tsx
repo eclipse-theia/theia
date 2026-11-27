@@ -206,7 +206,6 @@ export const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ code, themeMode,
     }, [code, themeMode]);
 
     if (svg) {
-        // eslint-disable-next-line react/no-danger
         return <div className='theia-MermaidViewer-diagram' dangerouslySetInnerHTML={{ __html: svg }} />;
     }
     // Only show the error once the content is complete and rendering actually failed. Before that (initial async

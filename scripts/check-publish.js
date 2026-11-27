@@ -16,7 +16,7 @@
 // @ts-check
 
 const path = require('path');
-const chalk = require('chalk');
+const chalk = require('chalk').default;
 const cp = require('child_process');
 const fs = require('fs');
 const { fetchVersion } = require('./npm-registry');

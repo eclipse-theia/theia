@@ -104,8 +104,8 @@ describe('WalkthroughCard', () => {
         setTimeout(() => {
             const progressFill = container.querySelector('.gs-walkthrough-progress-fill') as HTMLElement;
             assert.ok(progressFill, 'Progress fill element should exist');
-            const expectedWidth = `${(1 / 3) * 100}%`;
-            assert.strictEqual(progressFill.style.width, expectedWidth, 'Progress fill should reflect 1 of 3 steps');
+            assert.ok(progressFill.style.width.endsWith('%'), 'Progress fill width should be a percentage');
+            assert.ok(Math.abs(parseFloat(progressFill.style.width) - (1 / 3) * 100) < 0.01, 'Progress fill should reflect 1 of 3 steps');
 
             const progressText = container.querySelector('.gs-walkthrough-progress-text');
             assert.ok(progressText, 'Progress text should exist');

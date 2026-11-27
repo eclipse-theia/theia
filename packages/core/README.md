@@ -73,7 +73,7 @@ export class SomeClass {
 - `@theia/core/electron-shared/...`
   - `native-keymap` (from [`native-keymap@^2.5.0`](https://www.npmjs.com/package/native-keymap))
   - `electron` (from [`electron@45.4.1`](https://www.npmjs.com/package/electron/v/45.4.1))
-  - `electron-store` (from [`electron-store@^8.2.0`](https://www.npmjs.com/package/electron-store))
+  - `electron-store` (from [`electron-store@^12.0.0`](https://www.npmjs.com/package/electron-store))
 - `@theia/core/shared/...`
   - `@lumino/algorithm` (from [`@lumino/algorithm@^2.0.5`](https://www.npmjs.com/package/@lumino/algorithm))
   - `@lumino/commands` (from [`@lumino/commands@^2.3.4`](https://www.npmjs.com/package/@lumino/commands))
@@ -105,14 +105,14 @@ export class SomeClass {
   - `vscode-uri` (from [`vscode-uri@3.0.8`](https://www.npmjs.com/package/vscode-uri/v/3.0.8))
   - `@parcel/watcher` (from [`@parcel/watcher@^2.6.0`](https://www.npmjs.com/package/@parcel/watcher))
   - `dompurify` (from [`dompurify@^3.4.18`](https://www.npmjs.com/package/dompurify))
-  - `express` (from [`express@^4.22.3`](https://www.npmjs.com/package/express))
+  - `express` (from [`express@^5.3.0`](https://www.npmjs.com/package/express))
   - `lodash.debounce` (from [`lodash.debounce@^4.0.8`](https://www.npmjs.com/package/lodash.debounce))
   - `lodash.throttle` (from [`lodash.throttle@^4.1.1`](https://www.npmjs.com/package/lodash.throttle))
   - `markdown-it` (from [`markdown-it@^14.3.3`](https://www.npmjs.com/package/markdown-it))
   - `markdown-it-anchor` (from [`markdown-it-anchor@^9.2.1`](https://www.npmjs.com/package/markdown-it-anchor))
   - `markdown-it-emoji` (from [`markdown-it-emoji@^3.1.0`](https://www.npmjs.com/package/markdown-it-emoji))
   - `ws` (from [`ws@^8.23.0`](https://www.npmjs.com/package/ws))
-  - `yargs` (from [`yargs@^17.7.3`](https://www.npmjs.com/package/yargs))
+  - `yargs` (from [`yargs@^18.2.0`](https://www.npmjs.com/package/yargs))
 
 ## Logging Configuration
 

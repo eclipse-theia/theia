@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as fs from 'fs';
-import writeJsonFile = require('write-json-file');
+import { writeJsonFile } from 'write-json-file';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function readJsonFile(path: string): any {

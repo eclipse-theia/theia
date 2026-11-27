@@ -268,14 +268,14 @@ export interface IGlobOptions {
 }
 
 interface ParsedStringPattern {
-    (path: string, basename: string): string | Promise<string> /* the matching pattern */;
+    (path: string, basename: string): string | Promise<string>; // the matching pattern
     basenames?: string[];
     patterns?: string[];
     allBasenames?: string[];
     allPaths?: string[];
 }
 interface ParsedExpressionPattern {
-    (path: string, basename: string, name: string, hasSibling: (name: string) => boolean | Promise<boolean>): string | Promise<string> /* the matching pattern */;
+    (path: string, basename: string, name: string, hasSibling: (name: string) => boolean | Promise<boolean>): string | Promise<string>; // the matching pattern
     requiresSiblings?: boolean;
     allBasenames?: string[];
     allPaths?: string[];

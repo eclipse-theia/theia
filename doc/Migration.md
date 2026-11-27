@@ -171,6 +171,31 @@ If you worked around the ripgrep problem by overriding the `@vscode/ripgrep` rep
 
 ### v1.78.0
 
+#### Express 5
+
+`@theia/core` upgraded `express` from 4.x to 5.3.0 (`@types/express` 5.0.6) and `body-parser` from 1.x to 2.4.0 (`@types/body-parser` 2.2.0). Adopters implementing `BackendApplicationContribution.configure(app)` or consuming `@theia/core/shared/express` should review the [Express 5 migration guide](https://expressjs.com/en/guide/migrating-5.html):
+
+- **Wildcard route syntax (`path-to-regexp` v8):** unnamed `*` wildcards and regex suffixes like `'*.js'` or `/:path(*)` throw at route registration time. Replace suffix patterns with regular expressions (e.g. `/\.js$/`), catch-all `'*'` with `'/{*splat}'`, and named catch-alls `/:path(*)` with `/*path` (whose `req.params.path` value is now a `string[]` of path segments).
+- **Removed `res.send(status)` signature:** use `res.sendStatus(status)` or `res.status(status).send(...)`.
+- **`req.params` typing:** `@types/express@5` types `req.params` values as `string | string[]` to reflect wildcard parameters.
+- **`req.query`:** now a read-only getter using the `simple` query parser by default.
+- **`res.sendFile` `dotfiles` default:** Express 5 (`send` v1) defaults `dotfiles` to `'ignore'` even for absolute paths and checks every path segment. Callers serving files that may live under hidden directories (such as `~/.theia/` or `.vscode/`) must pass `{ dotfiles: 'allow' }` after validating the path.
+
+#### ESM-only re-exports: `yargs` 18 and `electron-store` 12
+
+- `@theia/core/shared/yargs` now re-exports `yargs` 18 as an ES module (`index.js` / `index.d.ts`). `yargs` 18 removed the default singleton API (`yargs.option(...)`, `yargs.parse(...)`, `yargs.terminalWidth()`, `yargs.global(...)`) — invoke the factory function `yargs(argv)` instead. Because `@types/yargs@17` is still the latest published type package and continues to type the default export with singleton members, code calling `yargs.option(...)` may compile and fail at runtime.
+- `@theia/electron/shared/electron-store` and `@theia/core/electron-shared/electron-store` now re-export `electron-store` 12 as ES modules (`index.js` / `index.d.ts`) instead of CommonJS (`index.cjs`). Update any direct `.../electron-store/index.cjs` imports to the package subpath or `index.js`.
+
+#### ESLint 10 and flat configuration
+
+Theia upgraded ESLint from 8 to 10 and consolidated linting into a root `eslint.config.mjs` using ESLint's flat configuration format.
+
+- The legacy `configs/*.eslintrc.json` files (`base.eslintrc.json`, `build.eslintrc.json`, `errors.eslintrc.json`, `warnings.eslintrc.json`) have been replaced with ESM flat-config modules: `configs/base.eslint.mjs`, `configs/build.eslint.mjs`, `configs/errors.eslint.mjs`, and `configs/warnings.eslint.mjs`.
+- `eslint-plugin-import` has been replaced by `eslint-plugin-import-x` (mounted under the `import` plugin namespace so existing `eslint-disable import/...` comments remain valid).
+- The unused `configs/xss.eslintrc.json`, `eslint-plugin-react`, and `eslint-plugin-no-unsanitized` have been removed.
+- `@stylistic/eslint-plugin` was upgraded to v6, `eslint-plugin-jsdoc` to v65, and `globals` was added for environment globals.
+- Per-package `.eslintrc.{js,cjs}` files are no longer needed inside the monorepo. Adopters extending Theia's shared ESLint configuration should migrate to flat config (`eslint.config.mjs`) and import `configs/build.eslint.mjs` (or `base`/`errors`/`warnings`).
+
 #### ChatGPT authentication modes [#18156](https://github.com/eclipse-theia/theia/pull/18156)
 
 `ChatGptAuthServiceConfig` now configures OSS authentication and requires `agentName` instead of a fixed `clientId`.

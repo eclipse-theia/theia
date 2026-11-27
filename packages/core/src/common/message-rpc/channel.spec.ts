@@ -14,14 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-// `spy` is added to `chai` by the `chai-spies` plugin at runtime, so it is not a named export of the module.
-import chai, { assert, expect, use } from 'chai';
-import spies from 'chai-spies';
+import { assert, expect } from 'chai';
+import * as sinon from 'sinon';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from './uint8-array-message-buffer.js';
 import { ChannelMultiplexer, ForwardingChannel, MessageProvider } from './channel.js';
 import { RpcProtocol } from './rpc-protocol.js';
-
-use(spies);
 
 /**
  * A pipe with two channels at each end for testing.
@@ -49,8 +46,7 @@ describe('Message Channel', () => {
 
             const leftMultiplexer = new ChannelMultiplexer(pipe.left);
             const rightMultiplexer = new ChannelMultiplexer(pipe.right);
-            const openChannelSpy = chai.spy(() => {
-            });
+            const openChannelSpy = sinon.spy();
 
             rightMultiplexer.onDidOpenChannel(openChannelSpy);
             leftMultiplexer.onDidOpenChannel(openChannelSpy);
@@ -64,14 +60,14 @@ describe('Message Channel', () => {
             assert.isNotNull(rightFirst);
             assert.isNotNull(rightSecond);
 
-            const leftSecondSpy = chai.spy((buf: MessageProvider) => {
+            const leftSecondSpy = sinon.spy((buf: MessageProvider) => {
                 const message = buf().readString();
                 expect(message).equal('message for second');
             });
 
             leftSecond.onMessage(leftSecondSpy);
 
-            const rightFirstSpy = chai.spy((buf: MessageProvider) => {
+            const rightFirstSpy = sinon.spy((buf: MessageProvider) => {
                 const message = buf().readString();
                 expect(message).equal('message for first');
             });
@@ -81,10 +77,10 @@ describe('Message Channel', () => {
             leftFirst.getWriteBuffer().writeString('message for first').commit();
             rightSecond!.getWriteBuffer().writeString('message for second').commit();
 
-            expect(leftSecondSpy).to.be.called();
-            expect(rightFirstSpy).to.be.called();
+            expect(leftSecondSpy.called).to.be.true;
+            expect(rightFirstSpy.called).to.be.true;
 
-            expect(openChannelSpy).to.be.called.exactly(4);
+            expect(openChannelSpy.callCount).to.equal(4);
         });
 
         it('should reject pending open() promises when underlying channel closes', async () => {
@@ -116,13 +112,13 @@ describe('Message Channel', () => {
             const rightChannel = rightMultiplexer.getOpenChannel('test');
             assert.isDefined(rightChannel);
 
-            const leftCloseSpy = chai.spy(() => { });
+            const leftCloseSpy = sinon.spy();
             leftChannel.onClose(leftCloseSpy);
 
             // Close the underlying channel from the remote side
             pipe.left.onCloseEmitter.fire({ reason: 'underlying closed' });
 
-            expect(leftCloseSpy).to.have.been.called();
+            expect(leftCloseSpy.called).to.be.true;
         });
     });
 
@@ -130,7 +126,7 @@ describe('Message Channel', () => {
         it('should not deliver onClose after close() has been called', () => {
             const channel = new ForwardingChannel('test', () => { }, () => new Uint8ArrayWriteBuffer());
 
-            const closeSpy = chai.spy(() => { });
+            const closeSpy = sinon.spy();
             channel.onClose(closeSpy);
 
             // Bug pattern: close() first (disposes emitters), then fire (no-op)
@@ -138,20 +134,20 @@ describe('Message Channel', () => {
             channel.onCloseEmitter.fire({ reason: 'too late' });
 
             // The listener should not be called because close() already disposed the emitter
-            expect(closeSpy).to.not.have.been.called();
+            expect(closeSpy.called).to.be.false;
         });
 
         it('should deliver onClose when fired before close()', () => {
             const channel = new ForwardingChannel('test', () => { }, () => new Uint8ArrayWriteBuffer());
 
-            const closeSpy = chai.spy(() => { });
+            const closeSpy = sinon.spy();
             channel.onClose(closeSpy);
 
             // Correct pattern: fire first, then close
             channel.onCloseEmitter.fire({ reason: 'proper close' });
             channel.close();
 
-            expect(closeSpy).to.have.been.called();
+            expect(closeSpy.called).to.be.true;
         });
     });
 

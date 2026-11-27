@@ -155,7 +155,7 @@ export class BrowserConnectionTokenBackendContribution implements BackendApplica
     protected getTokenFromCookie(req: http.IncomingMessage): string | undefined {
         const cookieHeader = req.headers.cookie;
         if (cookieHeader) {
-            return cookie.parse(cookieHeader)[BROWSER_TOKEN_COOKIE_NAME];
+            return cookie.parseCookie(cookieHeader)[BROWSER_TOKEN_COOKIE_NAME];
         }
         return undefined;
     }

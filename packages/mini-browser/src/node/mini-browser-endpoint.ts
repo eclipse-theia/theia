@@ -106,7 +106,7 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
 
     protected async attachRequestHandler(app: Application): Promise<void> {
         const miniBrowserApp = express();
-        miniBrowserApp.get('*', async (request, response) => this.response(await this.getUri(request), response));
+        miniBrowserApp.get('/{*splat}', async (request, response) => this.response(await this.getUri(request), response));
         app.use(MiniBrowserEndpointNS.PATH, vhost(await this.getVirtualHostRegExp(), miniBrowserApp));
     }
 
@@ -165,7 +165,7 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
             } else {
                 this.logger.error(`${error}`);
             }
-            return response.send(500);
+            return response.sendStatus(500);
         };
     }
 

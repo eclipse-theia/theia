@@ -1,0 +1,197 @@
+// *****************************************************************************
+// Copyright (C) 2026 EclipseSource and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
+
+/** @type {import('eslint').Linter.Config[]} */
+export default [
+    {
+        files: ['**/*.{ts,tsx,js,jsx,mjs,cjs}'],
+        rules: {
+            '@typescript-eslint/consistent-type-definitions': 'error',
+            '@stylistic/indent': 'off',
+            '@typescript-eslint/no-explicit-any': 'error',
+            '@stylistic/quotes': [
+                'error',
+                'single',
+                {
+                    avoidEscape: true
+                }
+            ],
+            '@stylistic/semi': [
+                'error',
+                'always'
+            ],
+            '@stylistic/type-annotation-spacing': 'error',
+            'arrow-body-style': [
+                'error',
+                'as-needed'
+            ],
+            'arrow-parens': [
+                'error',
+                'as-needed'
+            ],
+            'camelcase': 'off',
+            'comma-dangle': 'off',
+            'curly': 'error',
+            'eol-last': 'error',
+            'eqeqeq': [
+                'error',
+                'smart'
+            ],
+            'guard-for-in': 'error',
+            'id-blacklist': 'off',
+            'id-denylist': [
+                'error',
+                'await'
+            ],
+            'id-match': 'off',
+            'max-len': [
+                'error',
+                {
+                    code: 180
+                }
+            ],
+            'no-duplicate-imports': 'error',
+            'no-magic-numbers': 'off',
+            'no-multiple-empty-lines': [
+                'error',
+                {
+                    max: 1
+                }
+            ],
+            'no-new-wrappers': 'error',
+            'no-null/no-null': 'error',
+            'no-shadow': 'off',
+            'no-shadow-restricted-names': 'error',
+            '@typescript-eslint/no-shadow': [
+                'error',
+                {
+                    hoist: 'all'
+                }
+            ],
+            'no-tabs': 'error',
+            'no-throw-literal': 'error',
+            'no-trailing-spaces': 'error',
+            'no-underscore-dangle': 'off',
+            'no-unreachable': 'error',
+            'no-unused-expressions': 'error',
+            'no-var': 'error',
+            'no-void': 'error',
+            'one-var': [
+                'error',
+                'never'
+            ],
+            'prefer-const': [
+                'error',
+                {
+                    destructuring: 'all'
+                }
+            ],
+            'radix': 'off',
+            'space-before-function-paren': [
+                'error',
+                {
+                    anonymous: 'always',
+                    named: 'never',
+                    asyncArrow: 'always'
+                }
+            ],
+            'spaced-comment': [
+                'error',
+                'always',
+                {
+                    exceptions: [
+                        '*',
+                        '+',
+                        '-',
+                        '/'
+                    ]
+                }
+            ],
+            '@stylistic/brace-style': [
+                'error',
+                '1tbs',
+                {
+                    allowSingleLine: true
+                }
+            ],
+            '@stylistic/comma-spacing': 'error',
+            '@stylistic/keyword-spacing': 'error',
+            '@stylistic/semi-spacing': 'error',
+            '@stylistic/space-before-blocks': 'error',
+            '@stylistic/space-infix-ops': 'error',
+            '@theia/explicit-return-type': 'error',
+            '@theia/file-header': [
+                'error',
+                {
+                    match: 'SPDX-License-Identifier: EPL-2\\.0 OR GPL-2\\.0-only WITH Classpath-exception-2\\.0'
+                }
+            ],
+            '@theia/jsdoc-space-after-asterisk': 'error',
+            'jsdoc/check-alignment': 'error',
+            'jsdoc/multiline-blocks': [
+                'error',
+                {
+                    noZeroLineText: true
+                }
+            ],
+            'jsdoc/require-asterisk-prefix': 'error',
+            '@theia/annotation-check': 'error',
+            '@theia/localization-check': 'error',
+            '@theia/named-logger-check': 'error',
+            '@theia/no-src-import': 'error',
+            '@theia/preload-localization-check': 'error',
+            '@theia/runtime-import-check': 'error',
+            '@theia/shared-dependencies': 'error',
+            'import/no-extraneous-dependencies': 'error',
+            'import/no-dynamic-require': 'error',
+            'no-restricted-imports': [
+                'error',
+                '.',
+                './',
+                '..',
+                '../'
+            ],
+            'no-restricted-syntax': [
+                'error',
+                {
+                    selector: 'ExportNamedDeclaration > TSEnumDeclaration[const=true]',
+                    message: 'Do not export `const enum`s: they are emitted as ambient const enums into the published .d.ts files, which consumers compiled with `isolatedModules` or a per-file transpiler cannot use. Declare a regular `enum` instead.'
+                }
+            ]
+        }
+    },
+    {
+        files: ['**/*.{spec,espec,slow-spec}.{js,ts,tsx}'],
+        rules: {
+            '@theia/runtime-import-check': 'off',
+            '@theia/shared-dependencies': 'off',
+            'import/no-extraneous-dependencies': 'off',
+            'no-unused-expressions': 'off'
+        }
+    },
+    {
+        files: ['**/electron-{node,main}/**'],
+        rules: {
+            'import/no-dynamic-require': 'off'
+        }
+    },
+    {
+        files: ['**/electron-main/**'],
+        rules: {
+            '@theia/named-logger-check': 'off'
+        }
+    }
+];

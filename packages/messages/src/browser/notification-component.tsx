@@ -91,7 +91,6 @@ export class NotificationComponent extends React.Component<NotificationComponent
                         <div className={`theia-notification-icon ${codicon(icon)} ${icon}`} />
                         <div className='theia-notification-message'>
                             <span
-                                // eslint-disable-next-line react/no-danger
                                 dangerouslySetInnerHTML={{
                                     __html: DOMPurify.sanitize(message, {
                                         ALLOW_UNKNOWN_PROTOCOLS: true // DOMPurify usually strips non http(s) links from hrefs

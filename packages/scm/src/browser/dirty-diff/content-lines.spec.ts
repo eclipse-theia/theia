@@ -14,11 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as chai from 'chai';
 import { ContentLines } from './content-lines.js';
 import { expect } from 'chai';
-import chaiString from 'chai-string';
-chai.use(chaiString);
 
 describe('content-lines', () => {
 

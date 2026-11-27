@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import archiver from 'archiver';
+import { TarArchive } from 'archiver';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -53,7 +53,7 @@ export class RemoteCopyService {
         // We stream to a file here and then copy it because it is faster
         // Copying files via sftp is 4x times faster compared to readable streams
         const stream = fs.createWriteStream(zipPath);
-        const archive = archiver('tar', {
+        const archive = new TarArchive({
             gzip: true
         });
         archive.pipe(stream);

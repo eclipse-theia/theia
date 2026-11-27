@@ -52,9 +52,9 @@ module.exports = {
     },
     create(context) {
         // Runtimes and files without an ILogger binding are exempted through ESLint itself, see
-        // the 'named-logger-check' overrides in configs/errors.eslintrc.json and the inline
+        // the 'named-logger-check' overrides in configs/errors.eslint.mjs and the inline
         // 'eslint-disable' comments in the logger and DI bootstrap files.
-        const expectedPackageName = reportingMalformedPackageJson(context, () => derivePackageName(context.getFilename()));
+        const expectedPackageName = reportingMalformedPackageJson(context, () => derivePackageName(context.filename));
 
         /** @type {Array<{ isInjectable: boolean, className: string | undefined }>} */
         const injectableClassStack = [];

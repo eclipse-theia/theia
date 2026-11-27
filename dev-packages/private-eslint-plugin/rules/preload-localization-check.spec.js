@@ -84,8 +84,11 @@ const linkedRepo = (() => {
 const display = relativePath => path.relative(process.cwd(), repo.resolve(relativePath)).replace(/\\/g, '/');
 
 const ruleTester = new RuleTester({
-    parser: require.resolve('@typescript-eslint/parser'),
-    parserOptions: { ecmaVersion: 2020, sourceType: 'module' }
+    languageOptions: {
+        parser: require('@typescript-eslint/parser'),
+        ecmaVersion: 2020,
+        sourceType: 'module'
+    }
 });
 
 ruleTester.run('preload-localization-check', rule, {
@@ -290,7 +293,7 @@ ruleTester.run('preload-localization-check', rule, {
 
 // A preload entry point may be plain JavaScript, which is linted with the default parser. Its scope
 // analysis says nothing about whether a reference is a value or a type, so every import counts.
-new RuleTester({ parserOptions: { ecmaVersion: 2020, sourceType: 'module' } }).run('preload-localization-check', rule, {
+new RuleTester({ languageOptions: { ecmaVersion: 2020, sourceType: 'module' } }).run('preload-localization-check', rule, {
     valid: [
         {
             name: 'a JavaScript preload entry point importing a module that does not localize on load',

@@ -19,13 +19,14 @@ import mustache = require('mustache');
 import os = require('os');
 import path = require('path');
 import semver = require('semver');
-import yargs = require('yargs');
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 import ts = require('typescript');
-import { parseModule } from './utility';
+import { isCommonJsModule, isEsmOnlyModule, parseModule } from './utility';
 import { ReExport, PackageReExports } from './package-re-exports';
 type EOL = '\r\n' | '\n' | '\r';
 
-yargs
+yargs(hideBin(process.argv))
     .command(
         'generate [packageName]',
         'Generate Theia re-exports',
@@ -40,10 +41,12 @@ yargs
             }
             const packageReExports = await PackageReExports.FromPackage(packageName);
             const writer = new FileWriter(findEol(await readFile(packageReExports.resolvePath('package.json'))));
-            // Modules declared with `export =` cannot be re-exported from an ES module without losing their types,
-            // so they are always re-exported from a CommonJS module, which also loads the CommonJS entry point of dual packages.
-            const commonJsReExports = packageReExports.all.filter(reExport => reExport.reExportStyle === '='
-                || isCommonJsModule(reExport.internalImport, packageReExports.packageRoot));
+            // Modules declared with `export =` cannot be re-exported from an ES module without losing their types
+            // when they are CommonJS or dual packages, so they stay CommonJS unless the target is ESM-only.
+            const esmOnlyReExports = new Set(packageReExports.all.filter(reExport =>
+                isEsmOnlyModule(reExport.internalImport, packageReExports.packageRoot)));
+            const commonJsReExports = packageReExports.all.filter(reExport => !esmOnlyReExports.has(reExport)
+                && (reExport.reExportStyle === '=' || isCommonJsModule(reExport.internalImport, packageReExports.packageRoot)));
             const exportNames = collectExportNames(commonJsReExports.map(reExport => reExport.internalImport), packageReExports.packageRoot);
             await Promise.all(packageReExports.all.map(async reExport => {
                 const reExportPath = packageReExports.resolvePath(reExport.reExportDir, reExport.moduleName, 'index');
@@ -63,6 +66,13 @@ yargs
                         : `export * from '${reExport.internalImport}';\n`;
                     await writer.write(`${reExportPath}.d.cts`, declaration);
                     await writer.remove(`${reExportPath}.js`, `${reExportPath}.d.ts`);
+                } else if (reExport.reExportStyle === '=') {
+                    // ESM-only entries in `export =` (such as `electron-store` and `yargs`) expose a default export
+                    // alongside any named exports; re-export both so consumers can use default and named imports.
+                    const content = `export * from '${reExport.internalImport}';\nexport { default } from '${reExport.internalImport}';\n`;
+                    await writer.write(`${reExportPath}.js`, content);
+                    await writer.write(`${reExportPath}.d.ts`, content);
+                    await writer.remove(`${reExportPath}.cjs`, `${reExportPath}.d.cts`);
                 } else if (reExport.reExportStyle === '*') {
                     const content = `export * from '${reExport.internalImport}';\n`;
                     await writer.write(`${reExportPath}.js`, content);
@@ -238,40 +248,3 @@ function collectExportNames(moduleNames: string[], fromDir: string): Map<string,
 const RESERVED_WORDS = new Set(['break', 'case', 'catch', 'class', 'const', 'continue', 'debugger', 'default', 'delete', 'do', 'else', 'enum', 'export', 'extends',
     'false', 'finally', 'for', 'function', 'if', 'import', 'in', 'instanceof', 'new', 'null', 'return', 'super', 'switch', 'this', 'throw', 'true', 'try', 'typeof',
     'var', 'void', 'while', 'with', 'yield', 'let', 'static', 'implements', 'interface', 'package', 'private', 'protected', 'public', 'await']);
-
-/**
- * Determines whether `moduleName` is loaded as a CommonJS module when imported from an ES module in `fromDir`.
- */
-function isCommonJsModule(moduleName: string, fromDir: string): boolean {
-    const [packageName, subModuleName] = parseModule(moduleName);
-    let resolved: string;
-    try {
-        resolved = require.resolve(moduleName, { paths: [fromDir] });
-    } catch {
-        return false;
-    }
-    if (resolved.endsWith('.cjs')) {
-        return true;
-    }
-    if (resolved.endsWith('.mjs')) {
-        return false;
-    }
-    // Find the `package.json` of the package that `moduleName` belongs to.
-    let packageRoot = path.dirname(resolved);
-    while (!fs.existsSync(path.join(packageRoot, 'package.json'))
-        || JSON.parse(fs.readFileSync(path.join(packageRoot, 'package.json'), 'utf8')).name !== packageName) {
-        if (packageRoot === path.dirname(packageRoot)) {
-            return true;
-        }
-        packageRoot = path.dirname(packageRoot);
-    }
-    const packageJson = JSON.parse(fs.readFileSync(path.join(packageRoot, 'package.json'), 'utf8'));
-    // A dual package provides a separate entry point for the `import` condition, which is an ES module.
-    const exportsEntry = typeof packageJson.exports === 'object' && packageJson.exports
-        ? packageJson.exports[subModuleName ? `./${subModuleName}` : '.']
-        : undefined;
-    if (typeof exportsEntry === 'object' && exportsEntry && 'import' in exportsEntry) {
-        return false;
-    }
-    return packageJson.type !== 'module';
-}

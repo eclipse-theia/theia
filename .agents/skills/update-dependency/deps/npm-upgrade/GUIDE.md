@@ -28,7 +28,7 @@ Split this file into `ISSUES.md` and `LOG.md` next to it once a section gets too
 ## Coupled versions
 
 | When this changes | Also update |
-|---|---|
+| --- | --- |
 | A resolved version in `package-lock.json` | The range in the declaring `package.json` (done by `--save`), `packages/core/README.md` for re-exported packages |
 | A dependency gains or loses an install script | `allowScripts` in the root `package.json` |
 | An override is added or changed | Full lockfile regeneration; floors of root overrides should not lag behind the package's own range (e.g. `dompurify`) |
@@ -77,7 +77,7 @@ Install with `npm ci --ignore-scripts`, run `npm rebuild` for every `allowScript
 
 ### Duplicate `@types/express` / `@types/express-serve-static-core` type conflicts
 
-Dependencies declaring `"@types/express": "*"` pulled 5.x next to 4.x. Pin `@types/express` to `^4.17.x` in root devDependencies; a temporary override of `@types/express-serve-static-core` was removed again in the next upgrade. (#15147, #15415)
+While Theia was on Express 4, dependencies declaring `"@types/express": "*"` pulled 5.x next to 4.x, requiring `@types/express` pinned to `^4.17.x` in root devDependencies (#15147, #15415). With the upgrade to Express 5 (`@types/express` 5.0.6), `@modelcontextprotocol/sdk` and `@theia/core` share Express 5 and `qs` deduplicates without an `overrides.express.qs` entry.
 
 ### `entry.end()` in the browser-only download service no longer compiles
 
@@ -87,9 +87,9 @@ Dependencies declaring `"@types/express": "*"` pulled 5.x next to 4.x. Pin `@typ
 
 `@modelcontextprotocol/sdk` resolves `zod/v4/core` through the hoisted zod 3.25 while `@theia/ai-mcp-server` uses zod 4. Cast to the SDK's `AnySchema`; pass a raw shape (`{}`) instead of `z.object({})` in the sample. (#17741)
 
-### `@theia/scm` stops compiling after overriding `diff`
+### `@theia/scm` stops compiling after hoisting `diff` 8/9
 
-An override to `diff` 8 hoists it to the root and its bundled types replace `@types/diff@5` (`ArrayDiff` missing). Do not override `diff` until `@theia/scm` migrates. (#17909, #18005)
+Hoisting `diff` 8+ (e.g. via an override, Sinon 22, or Mocha 12) shadows `@types/diff@5` with `diff`'s bundled types (`ArrayDiff` missing). Mapping `"diff": ["../../node_modules/@types/diff/index.d.ts"]` in `packages/scm/tsconfig.json` keeps `@theia/scm` compiling against `@types/diff@5` until `@theia/scm` migrates off `diff@5`. (#17909, #18005)
 
 ### Build breaks after `ssh-config` minor bump
 
@@ -97,7 +97,31 @@ An override to `diff` 8 hoists it to the root and its bundled types replace `@ty
 
 ### `npm install` fails on a fresh checkout because of an ESLint plugin
 
-`eslint-plugin-no-unsanitized` 4.1.5 dropped ESLint 8 while declared as `latest`. Pin it (4.1.4) and `eslint-plugin-no-null` (1.0.2). (#17151)
+`eslint-plugin-no-unsanitized` 4.1.5 dropped ESLint 8 while declared as `latest` (#17151); it was removed together with `eslint-plugin-react` and `configs/xss.eslintrc.json` during the ESLint 10 flat-config migration. Keep `eslint-plugin-no-null` pinned at `1.0.2`.
+
+### ESLint 10 flat-config `RuleTester` and `Linter` failures on custom rules
+
+In ESLint 9/10 flat config, `RuleTester` mounts the tested rule under the `rule-to-test/` prefix (so inline disable directives in tests must reference `rule-to-test/<rule>`), and `new Linter()` refuses to match filenames outside `cwd` (pass `new Linter({ cwd: path.dirname(filename) })` for temp-dir tests). Also set `linterOptions: { reportUnusedDisableDirectives: 'off' }` in `configs/base.eslint.mjs` so directives for `warnings.eslint.mjs` rules (like `@typescript-eslint/no-deprecated`) do not warn during `build.eslint.mjs` runs.
+
+### Root `eslint.config.mjs` breaks `examples/api-tests/src/typescript.spec.js` (`Can execute code actions`)
+
+Because `dbaeumer.vscode-eslint` is loaded in `test:browser`, a root `eslint.config.mjs` that matches `examples/api-tests/test-ts-workspace/demo-file.ts` causes ESLint to flag `@stylistic/quotes` on line 30 and insert an ESLint quick fix ahead of TypeScript's "Convert to namespace import" code action. Exclude `examples/api-tests/**` (and `sample-plugins/**`) in root `eslint.config.mjs` `ignores`. (#18418, #18453)
+
+### Lerna 10 `--scope "@theia/!(example-)*"` includes `@theia/example-*` packages
+
+Under Lerna 10 (`minimatch` 11), `--scope "@theia/!(example-)*"` matches `@theia/example-browser` and `@theia/example-electron`, causing `test:theia` to run browser/Electron integration tests during headless unit tests. Use `--scope "@theia/*" --ignore "@theia/example-*"` instead. (#18418, #18453)
+
+### `theiaext test` still runs Mocha 11 after bumping Mocha 12 in `@theia/cli`
+
+`electron-mocha@13.1.0` in root `devDependencies` pulls `mocha@11`, which npm hoists to root `node_modules/.bin/mocha` unless `mocha@^12` is also declared in root `devDependencies`. Declare `mocha@^12` at root so Mocha 12 is hoisted and `electron-mocha` nests Mocha 11. (#18418)
+
+### CJS `dev-packages/*` and plain CJS scripts consuming ESM-only dependencies on Node >=24
+
+Node >=24's native `require(esm)` sets `__esModule: true` on the returned module namespace object, so TypeScript's `tslib.__importDefault(require('esm-pkg'))` works in CommonJS `dev-packages/*` compiled with `NodeNext`. Plain JS CommonJS scripts must unwrap `.default` (e.g. `require('chalk').default`), except for packages like `yargs@18` that export `export { Yargs as 'module.exports' }` and return the function directly. For ESM-only re-exports in `@theia/core`/`@theia/electron`, `@theia/re-exports` emits `index.js` + `index.d.ts` stubs and `node scripts/esm/package-exports.mjs <pkg-dirs>` updates the package `exports` map. (#18418)
+
+### `filenamify` 7 turns empty strings into the replacement character
+
+Unlike `filenamify` 4 (which returned `''` for empty input), `filenamify` 7 returns the replacement character (`'_'`). Guard empty/whitespace-only inputs before calling `filenamify` (see `PluginDirectoryNamingImpl.directoryName`). (#18418)
 
 ### Electron postinstall fails sporadically on Node 24 (`extract-zip` race)
 
@@ -116,7 +140,8 @@ The wrapper used a broken Nexus 2 URL after the repo.eclipse.org upgrade, and 1.
 Newest first. One entry per merged update and target branch.
 
 | Date | Branch | From → To | PR | Notes |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
+| 2026-11-26 | master | major upgrades after 1.77.0 | #18418 | Lerna 10 (drops `lerna`/`nx` overrides), ESLint 10 flat config (`eslint-plugin-import-x`, drops `xss.eslintrc.json`/`eslint-plugin-react`/`eslint-plugin-no-unsanitized`), Sinon 22, Mocha 12, Chai 6 (drops `chai-string`/`chai-spies`), jsdom 31, unused `http(s)-proxy-agent` removed, ESM-only runtime/dev deps (`uuid` 14, `cookie` 2, `p-debounce` 6, `filenamify` 7, `valid-filename` 5, `trash` 10, `mime` 4, `archiver` 8, `string-argv` 0.4, `fix-path` 5, `mermaid` 12, `electron-store` 12, `yargs` 18, `chalk` 6, `log-update` 8, `escape-string-regexp` 5, `write-json-file` 7), `@theia/re-exports` ESM stub support, and Express 5 (`body-parser` 2, drops `express.qs` override). Excluded: TypeScript 7, InversifyJS 8. |
 | 2026-11-17 | master | after 1.77.0 | #18420 | Ranges aligned; puppeteer 25.17.0, minimatch 11, rimraf 6, zod floor 4.6.7 (drops zod 3); override `follow-redirects` (nx); `jsondiffpatch` override removed; `@types/vscode` held in sample plugins. Clean regen needed `node_modules` removed. Held back: `@vscode/proxy-agent`, `diff`, `mermaid` 12, lerna 10, TypeScript 7. |
 | 2026-10-12 | master | after 1.76.0 | #18149 | Ranges aligned (incl. `@playwright/test` 1.63.0), `simple-git` 4.0.2 in ai-ide, scoped overrides for `axios` (nx) and `basic-ftp`, full regen so `uuid`/`@tootallnate/once` overrides apply. |
 | 2026-09-15 | master | after 1.75.0 | #18005 | Overrides `pacote` (lerna), `smol-toml` (nx), `jsondiffpatch`, `qs` (express), `@tootallnate/once`; `tar-stream` type fix; `@types/vscode` held in sample plugins; `@vscode/vsce` dev dep and platform-restore tooling dropped. Held back: `decompress` (needs replacement), `ai`/`@ai-sdk/*` (v5 migration), `diff`, `stream-json` via `scanoss`. |

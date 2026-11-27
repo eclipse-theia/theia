@@ -84,7 +84,8 @@ function fail(message) {
     process.on('exit', exitHandler);
 
     const yargs = require('yargs');
-    const args = yargs(process.argv.slice(2))
+    const cli = yargs(process.argv.slice(2));
+    const args = cli
         .option('base-time', {
             alias: 'b',
             desc: 'Pass an existing mean of the base application',
@@ -132,7 +133,7 @@ function fail(message) {
             type: 'string',
             choices: ['browser', 'electron'],
             default: 'browser'
-        }).wrap(Math.min(120, yargs.terminalWidth())).argv;
+        }).wrap(Math.min(120, cli.terminalWidth())).argv;
     if (args.baseTime) {
         baseTime = parseFloat(args.baseTime.toString()).toFixed(3);
     }

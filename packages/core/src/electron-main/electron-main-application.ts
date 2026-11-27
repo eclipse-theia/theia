@@ -20,7 +20,7 @@ import {
     nativeTheme, shell, dialog, session
 } from '../../electron-shared/electron/index.cjs';
 import * as path from 'path';
-import { Argv } from '../../shared/yargs/index.cjs';
+import { Argv } from '../../shared/yargs/index.js';
 import yargsFactory from 'yargs/yargs';
 import { AddressInfo } from 'net';
 import { promises as fs } from 'fs';
@@ -35,7 +35,7 @@ import { Stopwatch } from '../common/performance/index.js';
 import { ContributionProvider } from '../common/contribution-provider.js';
 import { ElectronSecurityTokenService } from './electron-security-token-service.js';
 import { ElectronSecurityToken } from '../electron-common/electron-token.js';
-import Storage from '../../electron-shared/electron-store/index.cjs';
+import Storage from '../../electron-shared/electron-store/index.js';
 import { CancellationTokenSource, Disposable, DisposableCollection, Path, isOSX, isWindows } from '../common/index.js';
 import { DEFAULT_WINDOW_HASH, WindowSearchParams } from '../common/window.js';
 import { LaunchArguments } from '../common/launch-arguments.js';
