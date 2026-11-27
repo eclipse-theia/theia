@@ -44,6 +44,7 @@
     "./shared/inversify": "./shared/inversify/index.js",
     "./shared/reflect-metadata": "./shared/reflect-metadata/index.js",
     "./shared/vscode-languageserver-types": "./shared/vscode-languageserver-types/index.js",
+    "./shared/vscode-uri": "./shared/vscode-uri/index.js",
     "./shared/*": "./shared/*/index.cjs",
     "./lib/*.json": "./lib/*.json",
     "./lib/*.js": "./lib/*.js",

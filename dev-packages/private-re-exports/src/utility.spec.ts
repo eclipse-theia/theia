@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { parseModule } from './utility';
+import { getExportsEntry, parseModule } from './utility';
 import { expect } from 'chai';
 
 describe('@theia/re-exports/lib/utility.js', () => {
@@ -37,5 +37,24 @@ describe('@theia/re-exports/lib/utility.js', () => {
 
     it('parseModule unexpected module name/format', () => {
         expect(() => parseModule('@a')).throw();
+    });
+
+    it('getExportsEntry with subpath exports', () => {
+        const packageExports = { '.': { import: './index.mjs', require: './index.cjs' }, './sub': './sub.js' };
+        expect(getExportsEntry(packageExports, undefined)).deep.equal({ import: './index.mjs', require: './index.cjs' });
+        expect(getExportsEntry(packageExports, 'sub')).equal('./sub.js');
+        expect(getExportsEntry(packageExports, 'other')).undefined;
+    });
+
+    it('getExportsEntry with conditional exports of the main module', () => {
+        const packageExports = { import: './index.mjs', require: './index.cjs' };
+        expect(getExportsEntry(packageExports, undefined)).equal(packageExports);
+        expect(getExportsEntry(packageExports, 'sub')).undefined;
+    });
+
+    it('getExportsEntry without exports map', () => {
+        expect(getExportsEntry(undefined, undefined)).undefined;
+        expect(getExportsEntry('./index.js', undefined)).undefined;
+        expect(getExportsEntry(['./index.js'], undefined)).undefined;
     });
 });
