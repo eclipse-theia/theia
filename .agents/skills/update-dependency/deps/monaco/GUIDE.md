@@ -2,7 +2,7 @@
 
 - **Packages:** `@theia/monaco-editor-core` (pinned exactly in every package that uses it; built from a VS Code fork, see below)
 - **Cadence:** on demand (1.83 in 2024, 1.96 in 2025, 1.108 and 1.144 in 2026). Not part of [doc/Publishing.md](../../../../../doc/Publishing.md) 3.6; usually tracked by an issue "Update monaco-editor-core to x.y.z".
-- **Docs:** [packages/monaco/README.md](../../../../../packages/monaco/README.md) "Monaco Uplifts" (how the package is built and adopted), [doc/vscode-usage.md](../../../../../doc/vscode-usage.md) (rules for using VS Code internals), the `@monaco-uplift` tag in [doc/coding-guidelines.md](../../../../../doc/coding-guidelines.md), the wiki test checklist [Testing a Monaco Uplift](https://github.com/eclipse-theia/theia/wiki/LSP-and-Monaco-Integration#testing-a-monaco-uplift-drawn-from-7149), upstream [VS Code release notes](https://code.visualstudio.com/updates).
+- **Docs:** [packages/monaco/README.md](../../../../../packages/monaco/README.md) "Monaco Uplifts" (how the package is built and adopted), [doc/vscode-usage.md](../../../../../doc/vscode-usage.md) (rules for using VS Code internals), the `@monaco-uplift` tag in [doc/coding-guidelines.md](../../../../../doc/coding-guidelines.md), the manual test plan [TEST-PLAN.md](TEST-PLAN.md) (replaces the wiki checklist "Testing a Monaco Uplift"), upstream [VS Code release notes](https://code.visualstudio.com/updates).
 
 Split this file into `ISSUES.md` and `LOG.md` next to it once a section gets too long to scan.
 
@@ -52,12 +52,7 @@ The version follows the VS Code release the fork is based on, with a higher patc
 - `npx lerna run test --scope @theia/monaco` (includes `monaco-init.spec.ts`, `monaco-nls.spec.ts`, `monaco-editor-preference-schema.spec.ts`), `npm run test:theia`, `npm run test:browser` (API tests in `examples/api-tests`, e.g. `monaco-api.spec.js`, `typescript.spec.js`), `npm run test:playwright`. The API tests write `examples/browser/.theia/settings.json` and `tasks.json`; restore them afterwards.
 - `npm run license:check` and the IPLab approval.
 - No `StandaloneServices was already initialized` or other Monaco errors in the browser console on start.
-- Manual smoke test in browser and Electron, following the wiki checklist. At minimum: editor with a language extension (highlighting, hover, completion, code actions, rename, references peek, formatting), diff editor incl. revert/stage hunk, quick input/command palette (also before any editor was opened, and in a minimal app), editor in a secondary window, theme switch, preferences editor (old values of changed options, e.g. `editor.hover.enabled: false`), output, debug console and breakpoints, notebook cells, AI chat input (suggest widget, paste), a non-English display language (Monaco context menu, find widget and Selection menu translated).
-- Parts of Theia that depend on Monaco internals and broke unnoticed before, so check them explicitly:
-  - Editor context menu with Shift+F10 as well as with right-click: both show the language items (Go to Definition, Rename...). The keyboard path goes through Theia's `IContextMenuService` override with a coordinate anchor.
-  - Debug console input: Enter accepts the selected suggestion, a second Enter evaluates; Up/Down move in the suggest widget, otherwise through the history. Theia's console keybindings use Monaco context keys (`suggestWidgetVisible`, `suggestWidgetHasFocusedSuggestion`, `suggestionMakesTextEdit`), which an uplift can rename.
-  - Multi-diff editor (Git: View Changes, Theia's own widget built from Monaco diff editors): navigation between files and changes, collapse/expand all, editing the modified side.
-- In the browser app, Go to Definition is Ctrl+F11 (F12 opens the devtools) and Ctrl+T is taken by the browser; neither is a failure.
+- Manual test with [TEST-PLAN.md](TEST-PLAN.md) in the browser and in Electron, after every fix again. Add the changes of the uplift to its run, and new checks and non-bugs to the plan.
 
 ## Known issues
 

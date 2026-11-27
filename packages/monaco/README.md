@@ -83,7 +83,8 @@ For initial testing, it's easier to point dependencies to your local VSCode.
 > If you add these, mark them with @monaco-uplift - that'll make them easier to find in the future. Better: if you can remove them, do! Typically, the cause is mixing imports from
 private API and public API. Often public API fails to satisfy private declarations.
 
-7. Test the application thoroughly - make sure everything's still working.
+7. Test the application thoroughly with the manual test plan in
+   [`.agents/skills/update-dependency/deps/monaco/TEST-PLAN.md`](../../.agents/skills/update-dependency/deps/monaco/TEST-PLAN.md).
 
 > It may also be necessary to update our various `vscode` dependencies to match the current state of VSCode. It may not be necessary to upgrade all (or any) of these to successfully adopt a new Monaco version, but if something is misbehaving inexplicably, checking dependencies is a reasonable place to start. Check on:
 >
