@@ -53,7 +53,7 @@ test.describe('Python Kernel Installed', () => {
     });
 
     test.afterAll(async () => {
-        if (app.page) {
+        if (app?.page) {
             await app.page.close();
         }
     });
@@ -94,7 +94,7 @@ test.describe('Theia Notebook Editor interaction', () => {
     });
 
     test.afterAll(async () => {
-        if (app.page) {
+        if (app?.page) {
             await app.page.close();
         }
     });
@@ -173,7 +173,7 @@ test.describe('Theia Notebook Cell interaction', () => {
     });
 
     test.afterAll(async () => {
-        if (app.page) {
+        if (app?.page) {
             await app.page.close();
         }
     });
@@ -385,7 +385,8 @@ async function waitForDetectedKernelVersion(app: TheiaApp): Promise<void> {
         const editor = await app.openEditor('sample.ipynb', TheiaNotebookEditor);
         const kernels = await editor.availableKernels();
         await closeEditorWithoutSave(editor);
-        const detected = kernels.some(kernel => kernel.startsWith('Python ') && kernel.includes(preferredKernel));
+        // Kernels are labelled `Python 3.13.2` or `venv (Python 3.13.2)`, while their paths may contain the version, too
+        const detected = kernels.some(kernel => /(^|\()Python /.test(kernel) && kernel.includes(preferredKernel));
         if (!detected) {
             // The Python extension shows its progress in the status bar until it has run the interpreters
             await expect(app.page.locator('#theia-statusBar')).not.toContainText(/(Discovering|Refreshing) Python Interpreters/, { timeout: 60 * 1000 });

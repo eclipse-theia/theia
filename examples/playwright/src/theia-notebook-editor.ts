@@ -100,8 +100,6 @@ export class TheiaNotebookEditor extends TheiaEditor {
         await qInput.type('Python', false);
         try {
             const listItems = await Promise.all((await qInput.visibleItems()).map(async item => item.textContent()));
-            await this.page.keyboard.press('Enter');
-            await qInput.hide();
             return listItems.filter(item => item !== null) as string[];
         } finally {
             await qInput.hide();
