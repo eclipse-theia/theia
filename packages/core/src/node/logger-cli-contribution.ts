@@ -22,11 +22,12 @@ import { injectable } from 'inversify';
 import { LogLevel } from '../common/logger.js';
 import { CliContribution } from './cli.js';
 import * as fs from '../../shared/fs-extra/index.cjs';
-import { AsyncSubscription, subscribe } from '../../shared/@parcel/watcher/index.cjs';
+import { AsyncSubscription, Options as WatcherOptions, subscribe } from '../../shared/@parcel/watcher/index.cjs';
 import { Event, Emitter } from '../common/event.js';
 import * as path from 'path';
 import { Disposable, DisposableCollection } from '../common/index.js';
 import { escapeRegExpCharacters } from '../common/strings.js';
+import { isOSX, isWindows } from '../common/os.js';
 
 /** Maps logger names to log levels.  */
 export interface LogLevels {
@@ -161,8 +162,15 @@ export class LogLevelCliContribution implements CliContribution, Disposable {
             } catch (e) {
                 console.error(`Error reading log config file ${filename}: ${e}`);
             }
-        });
+        }, this.watcherOptions());
         this.asyncSubscriptions.push(subscription);
+    }
+
+    /**
+     * The options with which to watch the directory of the log config file.
+     */
+    protected watcherOptions(): WatcherOptions {
+        return { backend: isWindows ? 'windows' : isOSX ? 'fs-events' : 'inotify' };
     }
 
     async dispose(): Promise<void> {
