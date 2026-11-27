@@ -255,6 +255,12 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
             layout: this.pageAndTreeLayout,
         });
 
+        // The tree keeps its width when the surrounding panels are resized (e.g. when a side
+        // panel is moved); the terminal area absorbs the size difference instead of the
+        // smaller tree side being crushed to its minimum size.
+        SplitPanel.setStretch(this.treeWidget, 0);
+        SplitPanel.setStretch(this.terminalPanelWrapper, 1);
+
         layout.addWidget(this.panel);
         await this.resolveMainLayout(relativeSizes);
         this.update();
