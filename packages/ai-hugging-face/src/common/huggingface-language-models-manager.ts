@@ -31,7 +31,11 @@ export interface HuggingFaceModelDescription {
 export interface HuggingFaceLanguageModelsManager {
     apiKey: string | undefined;
     setApiKey(key: string | undefined): void;
-    setProxyUrl(proxyUrl: string | undefined): void;
+    /**
+     * Sets the proxy and the hosts that bypass it, i.e. the `http.proxy` and `http.noProxy` preferences.
+     * Without a proxy, the proxy of the environment variables is used.
+     */
+    setProxyUrl(proxyUrl: string | undefined, noProxy?: string[]): void;
     createOrUpdateLanguageModels(...models: HuggingFaceModelDescription[]): Promise<void>;
     removeLanguageModels(...modelIds: string[]): void;
 }

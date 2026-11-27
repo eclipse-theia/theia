@@ -50,9 +50,11 @@ export class ChatGptLanguageModelsManagerImpl implements ChatGptLanguageModelsMa
     protected readonly logger: ILogger;
 
     protected proxyUrl: string | undefined;
+    protected noProxy: string[] | undefined;
 
-    setProxyUrl(proxyUrl: string | undefined): void {
+    setProxyUrl(proxyUrl: string | undefined, noProxy?: string[]): void {
         this.proxyUrl = proxyUrl || undefined;
+        this.noProxy = noProxy;
     }
 
     setAuthenticationMode(mode: ChatGptAuthenticationMode): Promise<void> {
@@ -65,7 +67,6 @@ export class ChatGptLanguageModelsManagerImpl implements ChatGptLanguageModelsMa
 
     async createOrUpdateLanguageModels(...modelDescriptions: ChatGptModelDescription[]): Promise<void> {
         const status = await this.calculateStatus();
-        const proxy = this.proxyUrl;
         for (const description of modelDescriptions) {
             // The ChatGPT plan serves OpenAI models, so their published capabilities apply.
             const defaults = getOpenAiModelDefaults(description.model);
@@ -79,7 +80,8 @@ export class ChatGptLanguageModelsManagerImpl implements ChatGptLanguageModelsMa
                     model: description.model,
                     status,
                     maxRetries: description.maxRetries,
-                    proxy,
+                    proxy: this.proxyUrl,
+                    noProxy: this.noProxy,
                     reasoningSupport: defaults.reasoningSupport,
                     maxInputTokens: defaults.contextWindow,
                     serverSideCompactionEnabledByDefault: description.serverSideCompactionEnabledByDefault ?? true,
@@ -95,11 +97,12 @@ export class ChatGptLanguageModelsManagerImpl implements ChatGptLanguageModelsMa
                         { oss: this.responseApiUtils, codex: this.codexResponseApiUtils },
                         this.modelUtils,
                         description.maxRetries,
-                        proxy,
+                        this.proxyUrl,
                         defaults.reasoningSupport,
                         defaults.contextWindow,
                         description.serverSideCompactionEnabledByDefault ?? true,
-                        description.serverSideCompactionTokenThresholdByDefault
+                        description.serverSideCompactionTokenThresholdByDefault,
+                        this.noProxy
                     )
                 ]);
             }

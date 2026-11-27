@@ -180,10 +180,12 @@ describe('ChatGptLanguageModelsManagerImpl', () => {
     });
 
     it('passes the configured proxy on to the models', async () => {
-        manager.setProxyUrl('http://proxy.example.com:3128');
+        manager.setProxyUrl('http://proxy.example.com:3128', ['localhost']);
         await manager.createOrUpdateLanguageModels({ id: 'chatgpt/gpt-5.5', model: 'gpt-5.5', maxRetries: 3 });
 
-        expect((registry.models.get('chatgpt/gpt-5.5') as ChatGptModel).proxy).to.equal('http://proxy.example.com:3128');
+        const model = registry.models.get('chatgpt/gpt-5.5') as ChatGptModel;
+        expect(model.proxy).to.equal('http://proxy.example.com:3128');
+        expect(model.noProxy).to.deep.equal(['localhost']);
     });
 
     it('serves the models of the plan to the frontend, which decides what to register', async () => {

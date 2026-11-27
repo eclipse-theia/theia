@@ -20,7 +20,7 @@ import { randomUUID } from 'crypto';
 import { Disposable, Emitter, Event, ILogger } from '@theia/core';
 import { KeyStoreService } from '@theia/core/lib/common/key-store';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { createProxyFetch, getProxyUrl } from '@theia/ai-core/lib/node';
+import { createProxyFetch } from '@theia/ai-core/lib/node';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ChatGptAuthService, ChatGptAuthServiceClient, ChatGptAuthState, ChatGptCredentials, ChatGptLoginSession } from '../common/index.js';
 import {
@@ -320,7 +320,7 @@ export class ChatGptAuthServiceImpl implements ChatGptBackendAuthSession {
                 this.logger.warn('OpenAI discovery did not provide a revocation endpoint. Disconnecting locally.');
                 return;
             }
-            const proxyFetch = createProxyFetch(getProxyUrl(endpoint)) ?? fetch;
+            const proxyFetch = createProxyFetch() ?? fetch;
             const response = await proxyFetch(endpoint, {
                 method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({
@@ -544,7 +544,7 @@ export class ChatGptAuthServiceImpl implements ChatGptBackendAuthSession {
     protected async requestTokens(body: URLSearchParams, clientId: string, nonce?: string): Promise<TokenGrant> {
         let response: Response;
         try {
-            const proxyFetch = createProxyFetch(getProxyUrl(CHATGPT_TOKEN_URL)) ?? fetch;
+            const proxyFetch = createProxyFetch() ?? fetch;
             response = await proxyFetch(CHATGPT_TOKEN_URL, {
                 method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body,
                 redirect: 'error', signal: AbortSignal.timeout(30_000)

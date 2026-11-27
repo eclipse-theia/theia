@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { createPublicKey, JsonWebKey, verify } from 'crypto';
-import { createProxyFetch, getProxyUrl } from '@theia/ai-core/lib/node';
+import { createProxyFetch } from '@theia/ai-core/lib/node';
 
 export const CHATGPT_ISSUER = 'https://auth.openai.com';
 const DISCOVERY_URL = `${CHATGPT_ISSUER}/.well-known/openid-configuration`;
@@ -153,7 +153,7 @@ export class ChatGptIdTokenVerifier {
     }
 
     protected async readJson(url: string): Promise<unknown> {
-        const proxyFetch = createProxyFetch(getProxyUrl(url)) ?? fetch;
+        const proxyFetch = createProxyFetch() ?? fetch;
         const response = await proxyFetch(url, { redirect: 'error', signal: AbortSignal.timeout(30_000) });
         if (!response.ok) {
             throw new Error('Could not load OpenAI signing keys.');

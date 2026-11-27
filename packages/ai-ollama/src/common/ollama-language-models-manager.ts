@@ -48,7 +48,11 @@ export interface OllamaModelDescription {
 export interface OllamaLanguageModelsManager {
     host: string | undefined;
     setHost(host: string | undefined): Promise<void>;
-    setProxyUrl(proxyUrl: string | undefined): void;
+    /**
+     * Sets the proxy and the hosts that bypass it, i.e. the `http.proxy` and `http.noProxy` preferences.
+     * Without a proxy, the proxy of the environment variables is used.
+     */
+    setProxyUrl(proxyUrl: string | undefined, noProxy?: string[]): void;
     createOrUpdateLanguageModels(...models: OllamaModelDescription[]): Promise<void>;
     removeLanguageModels(...modelIds: string[]): void;
 }
