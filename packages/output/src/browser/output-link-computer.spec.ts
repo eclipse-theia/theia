@@ -90,6 +90,14 @@ describe('OutputLinkComputer', () => {
         expect(link.range).to.deep.equal({ startLineNumber: 2, startColumn: 5, endLineNumber: 2, endColumn: 28 });
     });
 
+    it('should not link trailing periods', () => {
+        const [link] = computer.computeLinks(['Compiled /workspace/project/a.ts.']);
+        expect(new URI(link.url!.toString()).toString(true)).to.equal('file:///workspace/project/a.ts');
+        expect(link.range).to.deep.equal({ startLineNumber: 1, startColumn: 10, endLineNumber: 1, endColumn: 33 });
+        expect(urls('See /workspace/project/b.ts:3...')).to.deep.equal(['file:///workspace/project/b.ts#L3']);
+        expect(urls('Up to /workspace/project/..')).to.be.empty;
+    });
+
     it('should link Windows paths with either separator', () => {
         const windows = new OutputLinkComputer();
         windows.setWorkspaceFolders([{ uri: new URI('file:///c:/ws'), fsPath: 'c:\\ws' }]);

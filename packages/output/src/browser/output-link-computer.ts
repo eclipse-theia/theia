@@ -83,17 +83,19 @@ export class OutputLinkComputer {
                     regExp.lastIndex = 0;
                     let match: RegExpExecArray | null;
                     while (match = regExp.exec(line)) {
-                        if (/^[\\/]/.test(match.groups!.path!)) {
+                        // remove trailing periods that likely end a sentence
+                        const path = match.groups!.path!.replace(/\.+$/, '');
+                        if (!path || /^[\\/]/.test(path)) {
                             // e.g. the `//host/path` of a URL if the workspace folder is a file system root
                             continue;
                         }
                         const startColumn = match.index + 1;
-                        const endColumn = startColumn + match[0].length;
+                        const endColumn = startColumn + match[0].replace(/\.+$/, '').length;
                         const overlaps = lineLinks.some(link => link.range.startColumn < endColumn && startColumn < link.range.endColumn);
                         if (!overlaps) {
                             lineLinks.push({
                                 range: { startLineNumber: lineNumber, startColumn, endLineNumber: lineNumber, endColumn },
-                                url: this.toUri(folder, match.groups!).toString()
+                                url: this.toUri(folder, { ...match.groups, path }).toString()
                             });
                         }
                     }
