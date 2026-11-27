@@ -30,7 +30,7 @@ import { RpcServer, RpcProxy, RpcProxyFactory } from '@theia/core/lib/common/mes
 import { ApplicationError } from '@theia/core/lib/common/application-error';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import type { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
-import { newWriteableStream, ReadableStreamEvents } from '@theia/core/lib/common/stream';
+import { isReadableStream, newWriteableStream, ReadableStream, ReadableStreamEvents } from '@theia/core/lib/common/stream';
 import { CancellationToken, cancelled } from '@theia/core/lib/common/cancellation';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
@@ -47,6 +47,11 @@ export interface RemoteFileSystemServer extends RpcServer<RemoteFileSystemClient
     close(fd: number): Promise<void>;
     read(fd: number, pos: number, length: number): Promise<{ bytes: Uint8Array; bytesRead: number; }>;
     readFileStream(resource: string, handle: number, opts: FileReadStreamOptions, token: CancellationToken): Promise<void>;
+    /**
+     * Acknowledges `byteLength` bytes of {@link RemoteFileSystemClient.onFileStreamData} for the stream `handle`.
+     * The server stops sending a stream's data while too much of it is unacknowledged.
+     */
+    notifyFileStreamDataReceived(handle: number, byteLength: number): void;
     readFile(resource: string): Promise<Uint8Array>;
     write(fd: number, pos: number, data: Uint8Array, offset: number, length: number): Promise<number>;
     writeFile(resource: string, content: Uint8Array, opts: FileWriteOptions): Promise<void>;
@@ -67,6 +72,12 @@ export interface RemoteFileChange {
 
 export interface RemoteFileStreamError extends Error {
     code?: FileSystemProviderErrorCode
+}
+
+interface ActiveFileStream {
+    /** The provider's stream, when it can be paused. */
+    readonly stream: ReadableStream<Uint8Array> | undefined;
+    unacknowledged: number;
 }
 
 export interface RemoteFileSystemClient {
@@ -260,6 +271,7 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
             this.onFileStreamData(([handle, data]) => {
                 if (streamHandle === handle) {
                     stream.write(data);
+                    this.server.notifyFileStreamDataReceived(handle, data.byteLength);
                 }
             }),
             this.onFileStreamEnd(([handle, error]) => {
@@ -358,6 +370,16 @@ export class FileSystemProviderServer implements RemoteFileSystemServer {
      * Mapping of `watcherId` to a disposable watcher handle.
      */
     protected watchers = new Map<number, Disposable>();
+
+    /**
+     * Mapping of stream handle to a file stream that is being sent to the client.
+     */
+    protected readonly fileStreams = new Map<number, ActiveFileStream>();
+
+    /**
+     * The number of bytes of a file stream that may be sent before the client acknowledges them.
+     */
+    protected readonly fileStreamWindowSize = 8 * 1024 * 1024;
 
     protected readonly toDispose = new DisposableCollection();
     dispose(): void {
@@ -529,18 +551,59 @@ export class FileSystemProviderServer implements RemoteFileSystemServer {
         }
     }
 
+    /**
+     * Resolves when the stream has ended, so that the request's cancellation token stays live while the file is read.
+     *
+     * At most {@link fileStreamWindowSize} bytes are sent ahead of what the client has acknowledged
+     * with {@link notifyFileStreamDataReceived}; beyond that, the provider's stream is paused.
+     */
     async readFileStream(resource: string, handle: number, opts: FileReadStreamOptions, token: CancellationToken): Promise<void> {
-        if (hasFileReadStreamCapability(this.provider)) {
-            const stream = this.provider.readFileStream(new URI(resource), opts, token);
-            stream.on('data', data => this.client?.onFileStreamData(handle, data));
-            stream.on('error', error => {
-                const code = error instanceof FileSystemProviderError ? error.code : undefined;
-                const { name, message, stack } = error;
-                this.client?.onFileStreamEnd(handle, { code, name, message, stack });
-            });
-            stream.on('end', () => this.client?.onFileStreamEnd(handle, undefined));
-        } else {
+        if (!hasFileReadStreamCapability(this.provider)) {
             throw new Error('not supported');
+        }
+        const stream = this.provider.readFileStream(new URI(resource), opts, token);
+        const fileStream: ActiveFileStream = { stream: isReadableStream(stream) ? stream : undefined, unacknowledged: 0 };
+        this.fileStreams.set(handle, fileStream);
+        const ended = new Deferred<void>();
+        let hasEnded = false;
+        // Once cancelled, let a paused stream flow again, so that the provider notices the cancellation and releases the file.
+        const cancellationListener = token.onCancellationRequested(() => fileStream.stream?.resume());
+        // A failing stream emits both 'error' and 'end'.
+        const end = (error: RemoteFileStreamError | undefined) => {
+            if (!hasEnded) {
+                hasEnded = true;
+                this.fileStreams.delete(handle);
+                cancellationListener.dispose();
+                this.client?.onFileStreamEnd(handle, error);
+                ended.resolve();
+            }
+        };
+        stream.on('data', data => {
+            if (token.isCancellationRequested) {
+                return;
+            }
+            this.client?.onFileStreamData(handle, data);
+            fileStream.unacknowledged += data.byteLength;
+            if (fileStream.unacknowledged >= this.fileStreamWindowSize) {
+                fileStream.stream?.pause();
+            }
+        });
+        stream.on('error', error => {
+            const code = error instanceof FileSystemProviderError ? error.code : undefined;
+            const { name, message, stack } = error;
+            end({ code, name, message, stack });
+        });
+        stream.on('end', () => end(undefined));
+        return ended.promise;
+    }
+
+    notifyFileStreamDataReceived(handle: number, byteLength: number): void {
+        const fileStream = this.fileStreams.get(handle);
+        if (fileStream) {
+            fileStream.unacknowledged -= byteLength;
+            if (fileStream.unacknowledged < this.fileStreamWindowSize) {
+                fileStream.stream?.resume();
+            }
         }
     }
 
