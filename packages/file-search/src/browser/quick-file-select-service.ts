@@ -102,7 +102,7 @@ export class QuickFileSelectService {
             for (const location of locations) {
                 const uriString = location.uri.toString();
 
-                if (location.uri.scheme === 'file' && !alreadyCollected.has(uriString) && fuzzy.test(fileFilter, uriString)) {
+                if (location.uri.scheme === 'file' && !alreadyCollected.has(uriString) && this.matchesRecentFile(fileFilter, location.uri)) {
                     if (recentlyUsedItems.length === 0) {
                         recentlyUsedItems.push({
                             type: 'separator',
@@ -165,6 +165,21 @@ export class QuickFileSelectService {
 
     protected getExcludePatterns(): string[] {
         return this.searchFilterService.getExclusionGlobs();
+    }
+
+    /**
+     * Whether a recent file matches the given query.
+     *
+     * A file inside a workspace root matches by its path relative to the closest
+     * workspace root. A file outside any workspace root matches against its full URI.
+     */
+    protected matchesRecentFile(fileFilter: string, uri: URI): boolean {
+        if (!fileFilter) {
+            return true;
+        }
+        const rootUri = this.workspaceService.getWorkspaceRootUri(uri);
+        const relativePath = rootUri?.relative(uri)?.toString();
+        return fuzzy.test(fileFilter, relativePath ?? uri.toString());
     }
 
     protected compareItems(
