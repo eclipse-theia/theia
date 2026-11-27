@@ -94,8 +94,8 @@ export class DefaultSkillService implements SkillService, Disposable {
     protected toDispose = new DisposableCollection();
     /** Kept apart from {@link toDispose}, which does not survive a rescan. */
     protected readonly toDisposeOnServiceDispose = new DisposableCollection();
-    protected watchedDirectories = new Set<string>();
-    protected parentWatchers = new Map<string, string>();
+    protected watchedDirectories = new Set<URI>();
+    private disposed = false;
 
     protected readonly onSkillsChangedEmitter = new Emitter<void>();
     readonly onSkillsChanged: Event<void> = this.onSkillsChangedEmitter.event;
@@ -121,45 +121,20 @@ export class DefaultSkillService implements SkillService, Disposable {
             }
         }
 
-        this.fileService.onDidFilesChange(async (event: FileChangesEvent) => {
-            for (const change of event.changes) {
-                if (change.type === FileChangeType.ADDED) {
-                    const changeUri = change.resource.toString();
-                    for (const [, skillsPath] of this.parentWatchers) {
-                        const expectedSkillsUri = URI.fromFilePath(skillsPath).toString();
-                        if (changeUri === expectedSkillsUri) {
-                            this.scheduleUpdate();
-                            return;
-                        }
-                    }
-                }
-                // Check for skills directory deletion - switch back to parent watching
-                if (change.type === FileChangeType.DELETED) {
-                    const changeUri = change.resource.toString();
-                    if (this.watchedDirectories.has(changeUri)) {
-                        this.scheduleUpdate();
-                        return;
-                    }
-                }
-            }
-
+        this.toDisposeOnServiceDispose.push(this.fileService.onDidFilesChange((event: FileChangesEvent) => {
             const isRelevantChange = event.changes.some(change => {
-                const changeUri = change.resource.toString();
-                const isInWatchedDir = Array.from(this.watchedDirectories).some(dirUri =>
-                    changeUri.startsWith(dirUri)
-                );
-                if (!isInWatchedDir) {
+                const isAddedOrDeleted = change.type === FileChangeType.ADDED || change.type === FileChangeType.DELETED;
+                if (!isAddedOrDeleted && change.resource.path.base !== SKILL_FILE_NAME) {
                     return false;
                 }
-                // Trigger on SKILL.md changes or directory additions/deletions
-                const isSkillFile = change.resource.path.base === SKILL_FILE_NAME;
-                const isDirectoryChange = change.type === FileChangeType.ADDED || change.type === FileChangeType.DELETED;
-                return isSkillFile || isDirectoryChange;
+                // A workspace watch can report an entire tree as added or deleted at its parent.
+                return Array.from(this.watchedDirectories).some(dir => dir.isEqualOrParent(change.resource)
+                    || (isAddedOrDeleted && change.resource.isEqualOrParent(dir)));
             });
             if (isRelevantChange) {
                 this.scheduleUpdate();
             }
-        });
+        }));
 
         this.initializeSkills();
     }
@@ -216,11 +191,15 @@ export class DefaultSkillService implements SkillService, Disposable {
     }
 
     dispose(): void {
+        this.disposed = true;
         this.toDisposeOnServiceDispose.dispose();
         this.toDispose.dispose();
     }
 
     protected scheduleUpdate(): void {
+        if (this.disposed) {
+            return;
+        }
         if (this.updateDebounceTimeout) {
             clearTimeout(this.updateDebounceTimeout);
         }
@@ -234,6 +213,9 @@ export class DefaultSkillService implements SkillService, Disposable {
         if (this.updateDebounceTimeout) {
             clearTimeout(this.updateDebounceTimeout);
             this.updateDebounceTimeout = undefined;
+        }
+        if (this.disposed) {
+            return;
         }
         // Serialise concurrent update() calls: a workspace-ready trigger and a file-change-driven
         // scheduleUpdate() can fire within the same async tick, in which case both runs would
@@ -271,35 +253,26 @@ export class DefaultSkillService implements SkillService, Disposable {
         const defaultSkillsDirs = await this.getDefaultSkillsDirectoryPaths();
         const pluginSkillsDirs = await this.getContributedSkillDirectories();
 
-        const newWatchedDirectories = new Set<string>();
-        const newParentWatchers = new Map<string, string>();
+        const directories = combineSkillDirectories(workspaceSkillsDirs, configuredDirectories, defaultSkillsDirs, pluginSkillsDirs)
+            .map(entry => ({ ...entry, uri: URI.fromFilePath(entry.path) }));
+        if (this.disposed) {
+            return;
+        }
+        this.toDispose = newDisposables;
+        this.watchedDirectories = new Set(directories.filter(({ tier }) => tier !== 'configured').map(({ uri }) => uri));
 
-        const allDirectories = combineSkillDirectories(workspaceSkillsDirs, configuredDirectories, defaultSkillsDirs, pluginSkillsDirs);
-        for (const { path: directoryPath, tier, qualifier } of allDirectories) {
-            if (tier === 'configured') {
-                await this.processConfiguredSkillDirectory(directoryPath, newSkills, newDisposables, newWatchedDirectories, qualifier);
-            } else {
-                // `plugin` roots take this path too: a plugin with no `skills` directory is a
-                // plugin without skills, worth watching for rather than warning about.
-                await this.processSkillDirectoryWithParentWatching(
-                    directoryPath,
-                    newSkills,
-                    newDisposables,
-                    newWatchedDirectories,
-                    newParentWatchers,
-                    qualifier
-                );
-            }
+        for (const { uri, tier, qualifier } of directories) {
+            await this.processSkillDirectory(uri, tier === 'configured', newSkills, qualifier);
         }
 
+        if (this.disposed) {
+            return;
+        }
         if (newSkills.size > 0 && newSkills.size !== this.skills.size) {
             this.logger.info(`Loaded ${newSkills.size} skills`);
         }
 
-        this.toDispose = newDisposables;
         this.skills = newSkills;
-        this.watchedDirectories = newWatchedDirectories;
-        this.parentWatchers = newParentWatchers;
 
         this.onSkillsChangedEmitter.fire();
     }
@@ -335,83 +308,44 @@ export class DefaultSkillService implements SkillService, Disposable {
         ];
     }
 
-    protected async processSkillDirectoryWithParentWatching(
-        directoryPath: string,
+    protected async processSkillDirectory(
+        dirURI: URI,
+        configured: boolean,
         skills: Map<string, Skill>,
-        disposables: DisposableCollection,
-        watchedDirectories: Set<string>,
-        parentWatchers: Map<string, string>,
         qualifier?: string
     ): Promise<void> {
-        const dirURI = URI.fromFilePath(directoryPath);
-
         try {
-            const dirExists = await this.fileService.exists(dirURI);
-
-            if (dirExists) {
-                await this.processExistingSkillDirectory(dirURI, skills, disposables, watchedDirectories, qualifier);
-            } else {
-                const parentPath = dirURI.parent.path.fsPath();
-                const parentURI = URI.fromFilePath(parentPath);
-                const parentExists = await this.fileService.exists(parentURI);
-
-                if (parentExists) {
-                    const parentUriString = parentURI.toString();
-                    disposables.push(this.fileService.watch(parentURI, { recursive: false, excludes: [] }));
-                    parentWatchers.set(parentUriString, directoryPath);
-                    this.logger.debug(`Watching parent directory '${parentPath}' for skills folder creation`);
-                } else {
-                    this.logger.debug(`Cannot watch skills directory '${directoryPath}': parent directory does not exist`);
-                }
+            const exists = await this.fileService.exists(dirURI);
+            if (this.disposed) {
+                return;
             }
-        } catch (error) {
-            this.logger.error(`Error processing directory '${directoryPath}': ${error}`);
-        }
-    }
-
-    protected async processConfiguredSkillDirectory(
-        directoryPath: string,
-        skills: Map<string, Skill>,
-        disposables: DisposableCollection,
-        watchedDirectories: Set<string>,
-        qualifier?: string
-    ): Promise<void> {
-        const dirURI = URI.fromFilePath(directoryPath);
-
-        try {
-            const dirExists = await this.fileService.exists(dirURI);
-
-            if (!dirExists) {
-                this.logger.warn(`Configured skill directory '${directoryPath}' does not exist`);
+            if (!exists) {
+                if (configured) {
+                    this.logger.warn(`Configured skill directory '${dirURI.path.fsPath()}' does not exist`);
+                } else {
+                    // The backend polls missing targets. If the directory appears between exists() and watch registration,
+                    // the watcher can see it as already present and not emit ADDED. It is then discovered on the next rescan.
+                    this.toDispose.push(this.fileService.watch(dirURI, { recursive: false, excludes: [] }));
+                }
                 return;
             }
 
-            await this.processExistingSkillDirectory(dirURI, skills, disposables, watchedDirectories, qualifier);
-        } catch (error) {
-            this.logger.error(`Error processing configured directory '${directoryPath}': ${error}`);
-        }
-    }
-
-    protected async processExistingSkillDirectory(
-        dirURI: URI,
-        skills: Map<string, Skill>,
-        disposables: DisposableCollection,
-        watchedDirectories: Set<string>,
-        qualifier?: string
-    ): Promise<void> {
-        const stat = await this.fileService.resolve(dirURI);
-        if (!stat.children) {
-            return;
-        }
-
-        for (const child of stat.children) {
-            if (child.isDirectory) {
-                const directoryName = child.name;
-                await this.loadSkillFromDirectory(child.resource, directoryName, skills, qualifier);
+            const stat = await this.fileService.resolve(dirURI);
+            if (this.disposed || !stat.children) {
+                return;
             }
+            if (configured) {
+                this.watchedDirectories.add(dirURI);
+            }
+            this.toDispose.push(this.fileService.watch(dirURI, { recursive: true, excludes: [] }));
+            for (const child of stat.children) {
+                if (child.isDirectory) {
+                    await this.loadSkillFromDirectory(child.resource, child.name, skills, qualifier);
+                }
+            }
+        } catch (error) {
+            this.logger.error(`Error processing directory '${dirURI.path.fsPath()}': ${error}`);
         }
-
-        this.setupDirectoryWatcher(dirURI, disposables, watchedDirectories);
     }
 
     protected async loadSkillFromDirectory(directoryUri: URI, directoryName: string, skills: Map<string, Skill>, qualifier?: string): Promise<void> {
@@ -459,10 +393,5 @@ export class DefaultSkillService implements SkillService, Disposable {
         } catch (error) {
             this.logger.error(`Failed to load skill from '${directoryName}': ${error}`);
         }
-    }
-
-    protected setupDirectoryWatcher(dirURI: URI, disposables: DisposableCollection, watchedDirectories: Set<string>): void {
-        disposables.push(this.fileService.watch(dirURI, { recursive: true, excludes: [] }));
-        watchedDirectories.add(dirURI.toString());
     }
 }

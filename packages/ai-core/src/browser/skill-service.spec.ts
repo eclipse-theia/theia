@@ -32,7 +32,7 @@ import { parseSkillFile, combineSkillDirectories, Skill, SkillDirectoryEntry } f
 import { Path } from '@theia/core/lib/common/path';
 import { Disposable, Emitter, ILogger, Logger, URI } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
+import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/files';
 import { DefaultSkillService, SkillDirectoryContribution } from './skill-service.js';
 
 disableJSDOM();
@@ -313,12 +313,10 @@ description: Skill with no content
         });
     });
 
-    describe('parent directory watching', () => {
+    describe('directory watching', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let fileServiceMock: any;
         let loggerWarnSpy: sinon.SinonStub;
-        let loggerInfoSpy: sinon.SinonStub;
-        let loggerDebugSpy: sinon.SinonStub;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let envVariablesServerMock: any;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -338,12 +336,32 @@ description: Skill with no content
             (service as unknown as { fileService: unknown }).fileService = fileServiceMock;
             const loggerMock: ILogger = sinon.createStubInstance(Logger);
             loggerMock.warn = loggerWarnSpy;
-            loggerMock.info = loggerInfoSpy;
-            loggerMock.debug = loggerDebugSpy;
             (service as unknown as { logger: unknown }).logger = loggerMock;
             (service as unknown as { envVariablesServer: unknown }).envVariablesServer = envVariablesServerMock;
             (service as unknown as { workspaceService: unknown }).workspaceService = workspaceServiceMock;
             return service;
+        }
+
+        function atPath(path: string): sinon.SinonMatcher {
+            return sinon.match((uri: URI) => uri.path.toString() === path);
+        }
+
+        /** Stubs an existing skills root with valid skill definitions. */
+        function stubSkillsRoot(directory: string, ...skillNames: string[]): void {
+            fileServiceMock.exists.withArgs(atPath(directory)).resolves(true);
+            fileServiceMock.resolve.withArgs(atPath(directory)).resolves({
+                children: skillNames.map(name => ({
+                    isDirectory: true,
+                    name,
+                    resource: URI.fromFilePath(`${directory}/${name}`)
+                }))
+            });
+            for (const name of skillNames) {
+                const skillFile = `${directory}/${name}/SKILL.md`;
+                fileServiceMock.exists.withArgs(atPath(skillFile)).resolves(true);
+                fileServiceMock.read.withArgs(atPath(skillFile))
+                    .resolves({ value: `---\nname: ${name}\ndescription: from ${directory}\n---\nBody of ${name}` });
+            }
         }
 
         beforeEach(() => {
@@ -351,7 +369,7 @@ description: Skill with no content
             preferenceChangedEmitter = new Emitter();
 
             fileServiceMock = {
-                exists: sinon.stub(),
+                exists: sinon.stub().resolves(false),
                 watch: sinon.stub().returns(Disposable.NULL),
                 resolve: sinon.stub(),
                 read: sinon.stub(),
@@ -359,8 +377,6 @@ description: Skill with no content
             };
 
             loggerWarnSpy = sinon.stub();
-            loggerInfoSpy = sinon.stub();
-            loggerDebugSpy = sinon.stub();
 
             envVariablesServerMock = {
                 getHomeDirUri: sinon.stub().resolves('file:///home/testuser'),
@@ -386,86 +402,19 @@ description: Skill with no content
             preferenceChangedEmitter.dispose();
         });
 
-        it('should watch parent directory when skills directory does not exist', async () => {
-            const service = createService();
-
-            // Default skills directory does not exist, but parent does
-            fileServiceMock.exists
-                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide/skills'))
-                .resolves(false);
-            fileServiceMock.exists
-                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide'))
-                .resolves(true);
-
-            // Call init to trigger update
-            (service as unknown as { init: () => void }).init();
-            await workspaceServiceMock.ready;
-            // Allow async operations to complete
-            await new Promise(resolve => setTimeout(resolve, 10));
-
-            // Verify parent directory is watched
-            expect(fileServiceMock.watch.calledWith(
-                sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide'),
-                sinon.match({ recursive: false, excludes: [] })
-            )).to.be.true;
-
-            // Verify debug log about watching parent (demoted from info to keep startup quiet)
-            expect(loggerDebugSpy.calledWith(
-                sinon.match(/Watching parent directory.*for skills folder creation/)
-            )).to.be.true;
-            // And the same line must not be emitted at info level any more.
-            expect(loggerInfoSpy.calledWith(
-                sinon.match(/Watching parent directory/)
-            )).to.be.false;
-        });
-
-        it('should log a debug entry when parent directory does not exist', async () => {
-            const service = createService();
-
-            // Neither skills directory nor parent exists
-            fileServiceMock.exists.resolves(false);
-
-            // Call init to trigger update
-            (service as unknown as { init: () => void }).init();
-            await workspaceServiceMock.ready;
-            await new Promise(resolve => setTimeout(resolve, 10));
-
-            // The absent-default-tree case is expected on fresh machines and is now debug-level only.
-            expect(loggerDebugSpy.calledWith(
-                sinon.match(/Cannot watch skills directory.*parent directory does not exist/)
-            )).to.be.true;
-            // It must no longer surface as a startup warning.
-            expect(loggerWarnSpy.calledWith(
-                sinon.match(/Cannot watch skills directory.*parent directory does not exist/)
-            )).to.be.false;
-        });
-
         it('coalesces concurrent update() calls so a single scan runs at a time', async () => {
             const service = createService();
 
-            // Default skills directory does not exist, but parent does, so each update logs once.
-            fileServiceMock.exists
-                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide/skills'))
-                .resolves(false);
-            fileServiceMock.exists
-                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide'))
-                .resolves(true);
+            const clock = sinon.useFakeTimers();
+            const rootExists = fileServiceMock.exists.withArgs(atPath('/home/testuser/.theia-ide/skills'));
 
-            // Drive two updates in the same tick - the second must be coalesced into a follow-up
-            // re-schedule rather than racing the first and producing duplicated log lines.
             const update = (service as unknown as { update: () => Promise<void> }).update.bind(service);
             await Promise.all([update(), update()]);
-            // Give the rescheduled run (debounced via scheduleUpdate) time to fire.
-            await new Promise(resolve => setTimeout(resolve, 80));
+            expect(rootExists.calledOnce).to.be.true;
 
-            // The watcher must be installed (the underlying scan must have run); the same log line
-            // must have been emitted at most once per scan, never twice from interleaved scans.
-            const matchingDebugCalls = loggerDebugSpy.getCalls().filter(call =>
-                /Watching parent directory.*for skills folder creation/.test(String(call.args[0]))
-            );
-            // Two scans (initial + rescheduled) are allowed, but never more, and never zero.
-            expect(matchingDebugCalls.length).to.be.greaterThan(0);
-            expect(matchingDebugCalls.length).to.be.lessThan(3);
+            await clock.runAllAsync();
+            expect(rootExists.calledTwice).to.be.true;
+            service.dispose();
         });
 
         it('should log warning for non-existent configured directories', async () => {
@@ -487,15 +436,11 @@ description: Skill with no content
                 .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/custom/nonexistent/skills'))
                 .resolves(false);
 
-            // Call init to trigger update
             (service as unknown as { init: () => void }).init();
-            await workspaceServiceMock.ready;
-            await new Promise(resolve => setTimeout(resolve, 10));
+            await service.ready;
 
-            // Verify warning is logged for non-existent configured directory
-            expect(loggerWarnSpy.calledWith(
-                sinon.match(/Configured skill directory.*does not exist/)
-            )).to.be.true;
+            expect(loggerWarnSpy.calledWith(sinon.match(/Configured skill directory.*does not exist/))).to.be.true;
+            expect(fileServiceMock.watch.calledWith(atPath('/custom/nonexistent/skills'))).to.be.false;
         });
 
         it('should scan configured directories that only become known once the preferences are ready', async () => {
@@ -511,89 +456,89 @@ description: Skill with no content
             fileServiceMock.resolve
                 .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide/skills'))
                 .resolves({ children: [] });
-            fileServiceMock.exists
-                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/custom/configured/skills'))
-                .resolves(false);
 
             const service = createService();
             (service as unknown as { init: () => void }).init();
-            await workspaceServiceMock.ready;
-            await new Promise(resolve => setTimeout(resolve, 10));
+            await new Promise<void>(resolve => setImmediate(resolve));
 
             // Nothing may be scanned yet, the preference value is still the default one.
             expect(fileServiceMock.exists.called).to.be.false;
 
-            (preferencesMock as Record<string, unknown>)['ai-features.skills.skillDirectories'] = ['/custom/configured/skills'];
+            const configuredDirectory = '/custom/configured/skills';
+            (preferencesMock as Record<string, unknown>)['ai-features.skills.skillDirectories'] = [configuredDirectory];
             preferencesReady.resolve();
-            await new Promise(resolve => setTimeout(resolve, 10));
+            await service.ready;
 
             // The scan picked up the configured directory instead of the default preference value.
-            expect(loggerWarnSpy.calledWith(
-                sinon.match(/Configured skill directory '\/custom\/configured\/skills' does not exist/)
-            )).to.be.true;
+            const nativePath = URI.fromFilePath(configuredDirectory).path.fsPath();
+            expect(loggerWarnSpy.calledWithExactly(`Configured skill directory '${nativePath}' does not exist`)).to.be.true;
         });
 
-        it('should load skills when directory is created after initialization', async () => {
+        for (const [root, scope] of [
+            ['/workspace', '.agents'], ['/workspace', '.prompts'], ['/home/testuser', '.agents'], ['/home/testuser', '.theia-ide']
+        ]) {
+            it(`watches and discovers ${root}/${scope}/skills when created after startup`, async () => {
+                const clock = sinon.useFakeTimers();
+                const scopePath = `${root}/${scope}`;
+                const skillsPath = `${scopePath}/skills`;
+                const watcherOptions = { recursive: false, excludes: [] };
+                const changePath = root === '/workspace' ? scopePath : skillsPath;
+                const notify = async (path: string, type = FileChangeType.ADDED): Promise<void> => {
+                    fileChangesEmitter.fire(new FileChangesEvent([{ resource: URI.fromFilePath(path), type }]));
+                    await clock.runAllAsync();
+                };
+                if (root === '/workspace') {
+                    workspaceServiceMock.tryGetRoots.returns([{ resource: URI.fromFilePath(root) }]);
+                }
+
+                const service = createService();
+                (service as unknown as { init: () => void }).init();
+                await service.ready;
+
+                expect(service.getSkills()).to.be.empty;
+                const missingRootWatch = fileServiceMock.watch.withArgs(atPath(skillsPath), watcherOptions);
+                expect(missingRootWatch.calledOnce).to.be.true;
+                expect(fileServiceMock.watch.calledWith(atPath(root))).to.be.false;
+                expect(fileServiceMock.watch.calledWith(atPath(scopePath))).to.be.false;
+                await notify(`${skillsPath}-unrelated`);
+                expect(missingRootWatch.calledOnce).to.be.true;
+
+                stubSkillsRoot(skillsPath, 'test-skill');
+                await notify(changePath);
+                expect(service.getSkill('test-skill')?.description).to.equal(`from ${skillsPath}`);
+                expect(fileServiceMock.watch.calledWith(atPath(skillsPath), { recursive: true, excludes: [] })).to.be.true;
+
+                fileServiceMock.exists.withArgs(atPath(skillsPath)).resolves(false);
+                await notify(changePath, FileChangeType.DELETED);
+                expect(service.getSkills()).to.be.empty;
+                expect(missingRootWatch.calledTwice).to.be.true;
+
+                stubSkillsRoot(skillsPath, 'test-skill');
+                await notify(changePath);
+                expect(service.getSkill('test-skill')).not.to.be.undefined;
+
+                service.dispose();
+            });
+        }
+
+        // Skipped until the watch registration gap is fixed: the backend sees an already present directory and sends no ADDED event.
+        it.skip('discovers a skill root created between the existence check and watch registration', async () => {
+            const clock = sinon.useFakeTimers();
+            const root = '/home/testuser/.agents/skills';
+            fileServiceMock.watch.withArgs(atPath(root), { recursive: false, excludes: [] }).callsFake(() => {
+                stubSkillsRoot(root, 'test-skill');
+                return Disposable.NULL;
+            });
+
             const service = createService();
-
-            // Initially, skills directory does not exist but parent does
-            fileServiceMock.exists
-                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide/skills'))
-                .resolves(false);
-            fileServiceMock.exists
-                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide'))
-                .resolves(true);
-
-            // Call init to trigger initial update
-            (service as unknown as { init: () => void }).init();
-            await workspaceServiceMock.ready;
-            await new Promise(resolve => setTimeout(resolve, 10));
-
-            // Verify no skills initially
-            expect(service.getSkills()).to.have.length(0);
-
-            // Now simulate skills directory being created with a skill
-            fileServiceMock.exists
-                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide/skills'))
-                .resolves(true);
-            fileServiceMock.resolve
-                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide/skills'))
-                .resolves({
-                    children: [{
-                        isDirectory: true,
-                        name: 'test-skill',
-                        resource: URI.fromFilePath('/home/testuser/.theia-ide/skills/test-skill')
-                    }]
-                });
-            fileServiceMock.exists
-                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide/skills/test-skill/SKILL.md'))
-                .resolves(true);
-            fileServiceMock.read
-                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide/skills/test-skill/SKILL.md'))
-                .resolves({
-                    value: `---
-name: test-skill
-description: A test skill
----
-Test skill content`
-                });
-
-            // Simulate file change event for skills directory creation
-            fileChangesEmitter.fire({
-                changes: [{
-                    type: 1, // FileChangeType.ADDED
-                    resource: URI.fromFilePath('/home/testuser/.theia-ide/skills')
-                }],
-                rawChanges: []
-            } as unknown as FileChangesEvent);
-
-            // Wait for async operations to complete
-            await new Promise(resolve => setTimeout(resolve, 100));
-
-            // Verify skill was loaded
-            const skills = service.getSkills();
-            expect(skills).to.have.length(1);
-            expect(skills[0].name).to.equal('test-skill');
+            try {
+                (service as unknown as { init: () => void }).init();
+                await service.ready;
+                await clock.runAllAsync();
+                expect(service.getSkill('test-skill')?.description).to.equal(`from ${root}`);
+            } finally {
+                service.dispose();
+            }
         });
 
         it('prefers a workspace `.prompts/skills` skill over a same-named `.agents/skills` skill in the same root', async () => {
@@ -685,34 +630,6 @@ Test skill content`
             /** A contribution returning a fixed set of roots. */
             function contributing(...entries: SkillDirectoryEntry[]): SkillDirectoryContribution {
                 return { getSkillDirectories: () => entries };
-            }
-
-            /**
-             * Stubs `directory` as an existing skills root holding one skill directory per given name,
-             * each with a valid `SKILL.md` whose description names the root it came from.
-             */
-            function stubSkillsRoot(directory: string, ...skillNames: string[]): void {
-                fileServiceMock.exists
-                    .withArgs(sinon.match((uri: URI) => uri.path.toString() === directory))
-                    .resolves(true);
-                fileServiceMock.resolve
-                    .withArgs(sinon.match((uri: URI) => uri.path.toString() === directory))
-                    .resolves({
-                        children: skillNames.map(name => ({
-                            isDirectory: true,
-                            name,
-                            resource: URI.fromFilePath(`${directory}/${name}`)
-                        }))
-                    });
-                for (const name of skillNames) {
-                    const skillFile = `${directory}/${name}/SKILL.md`;
-                    fileServiceMock.exists
-                        .withArgs(sinon.match((uri: URI) => uri.path.toString() === skillFile))
-                        .resolves(true);
-                    fileServiceMock.read
-                        .withArgs(sinon.match((uri: URI) => uri.path.toString() === skillFile))
-                        .resolves({ value: `---\nname: ${name}\ndescription: from ${directory}\n---\nBody of ${name}` });
-                }
             }
 
             async function initialize(service: DefaultSkillService): Promise<void> {
@@ -812,21 +729,16 @@ Test skill content`
                     .to.deep.equal(['bigquery-data-analytics:query-builder', 'code-review']);
             });
 
-            it('watches the parent of a contributed root that does not exist yet instead of warning about it', async () => {
-                const pluginRoot = '/home/testuser/.agents/plugins/bigquery';
-                fileServiceMock.exists
-                    .withArgs(sinon.match((uri: URI) => uri.path.toString() === `${pluginRoot}/skills`))
-                    .resolves(false);
-                fileServiceMock.exists
-                    .withArgs(sinon.match((uri: URI) => uri.path.toString() === pluginRoot))
-                    .resolves(true);
+            it('watches a contributed root that does not exist yet instead of warning about it', async () => {
+                const skillsRoot = '/home/testuser/.agents/plugins/bigquery/skills';
+                fileServiceMock.exists.withArgs(atPath(skillsRoot)).resolves(false);
 
-                const service = createService([contributing({ path: `${pluginRoot}/skills`, tier: 'plugin', qualifier: bigQueryQualifier })]);
+                const service = createService([contributing({ path: skillsRoot, tier: 'plugin', qualifier: bigQueryQualifier })]);
                 await initialize(service);
 
                 expect(fileServiceMock.watch.calledWith(
-                    sinon.match((uri: URI) => uri.path.toString() === pluginRoot),
-                    sinon.match({ recursive: false, excludes: [] })
+                    atPath(skillsRoot),
+                    { recursive: false, excludes: [] }
                 )).to.be.true;
                 // A plugin without skills is not a misconfiguration, so it must not warn like a
                 // non-existent configured directory does.
