@@ -50,4 +50,41 @@ describe('TerminalFrontendContribution', () => {
         expect(added).to.deep.equal([widget]);
         started.resolve();
     });
+
+    it('merges the profile settings once after the workspace trust is known', async () => {
+        const contribution = new TerminalFrontendContribution();
+        const trust = new Deferred<boolean>();
+        let merges = 0;
+        Object.assign(contribution, {
+            workspaceTrustService: { getWorkspaceTrust: () => trust.promise },
+            mergePreferences: async () => { merges++; },
+            logger: new MockLogger()
+        });
+        const first = contribution.whenProfilesApplied();
+        const second = contribution.whenProfilesApplied();
+        await new Promise(resolve => setTimeout(resolve));
+        expect(merges).to.equal(0);
+        trust.resolve(true);
+        await Promise.all([first, second]);
+        expect(merges).to.equal(1);
+    });
+
+    it('merges the profile settings after an earlier merge failed', async () => {
+        const contribution = new TerminalFrontendContribution();
+        let merges = 0;
+        Object.assign(contribution, {
+            workspaceTrustService: { getWorkspaceTrust: async () => true },
+            mergePreferences: async () => {
+                if (merges++ === 0) {
+                    throw new Error('variable not resolved');
+                }
+            },
+            logger: new MockLogger()
+        });
+        const failed = (contribution as unknown as { queueMergePreferences(): Promise<void> }).queueMergePreferences();
+        await failed.catch(() => undefined);
+        // resolves, without the error of the earlier merge
+        await (contribution as unknown as { queueMergePreferences(): Promise<void> }).queueMergePreferences();
+        expect(merges).to.equal(2);
+    });
 });

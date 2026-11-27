@@ -25,7 +25,7 @@ import {
     DecorationStyle
 } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { WorkspaceService, WorkspaceTrustService } from '@theia/workspace/lib/browser';
 import { ShellTerminalServerProxy, IShellTerminalPreferences } from '../common/shell-terminal-protocol.js';
 import { terminalsPath } from '../common/terminal-protocol.js';
 import { IBaseTerminalServer, TerminalProcessInfo, TerminalExitReason } from '../common/base-terminal-protocol.js';
@@ -149,6 +149,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected _shellName: string | undefined;
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+    @inject(WorkspaceTrustService) protected readonly workspaceTrustService: WorkspaceTrustService;
     @inject(RemoteConnectionProvider) protected readonly connectionProvider: ServiceConnectionProvider;
     @inject(TerminalWidgetOptions) options: TerminalWidgetOptions;
     @inject(ShellTerminalServerProxy) protected readonly shellTerminalServer: ShellTerminalServerProxy;
@@ -826,6 +827,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
      */
     async start(id?: number): Promise<number> {
         this._terminalId = typeof id !== 'number' ? await this.createTerminal() : await this.attachTerminal(id);
+        if (this.isDisposed && !IBaseTerminalServer.validateId(this._terminalId)) {
+            // the widget was closed before its process was created
+            return this._terminalId;
+        }
         this.resizeTerminalProcess();
         this.connectTerminalProcess();
         if (IBaseTerminalServer.validateId(this.terminalId)) {
@@ -853,6 +858,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     protected async createTerminal(): Promise<number> {
+        // The shell settings of the workspace apply once its trust is known.
+        await this.workspaceTrustService.getWorkspaceTrust();
+        if (this.isDisposed) {
+            return -1;
+        }
         let rootURI = this.options.cwd?.toString();
         if (!rootURI) {
             const root = (await this.workspaceService.roots)[0];

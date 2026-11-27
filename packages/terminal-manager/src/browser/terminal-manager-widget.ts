@@ -110,6 +110,8 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
 
     protected interceptCloseRequest = true;
 
+    protected pendingPopulateLayout: Promise<void> | undefined;
+
     @inject(TerminalFrontendContribution) protected terminalFrontendContribution: TerminalFrontendContribution;
     @inject(TerminalProfileService) protected readonly profileService: TerminalProfileService;
     @inject(TerminalManagerTreeWidget) readonly treeWidget: TerminalManagerTreeWidget;
@@ -161,12 +163,29 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     async populateLayout(force?: boolean): Promise<void> {
-        if ((!this.stateIsSet && this.terminalWidgets.size === 0) || force) {
-            const terminalWidget = await this.createTerminalWidget();
-            this.addTerminalPage(terminalWidget);
-            this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
-            this.stateIsSet = true;
+        if (!force && !this.needsDefaultTerminal()) {
+            return;
         }
+        if (!this.pendingPopulateLayout) {
+            this.pendingPopulateLayout = this.doPopulateLayout(force).finally(() => this.pendingPopulateLayout = undefined);
+        }
+        return this.pendingPopulateLayout;
+    }
+
+    protected async doPopulateLayout(force?: boolean): Promise<void> {
+        // The default profile can come from the workspace settings, which apply once the trust of the workspace is known.
+        await this.terminalFrontendContribution.whenProfilesApplied();
+        if (this.isDisposed || (!force && !this.needsDefaultTerminal())) {
+            return;
+        }
+        const terminalWidget = await this.createTerminalWidget();
+        this.addTerminalPage(terminalWidget);
+        this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
+        this.stateIsSet = true;
+    }
+
+    protected needsDefaultTerminal(): boolean {
+        return !this.stateIsSet && this.terminalWidgets.size === 0;
     }
 
     /**

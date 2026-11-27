@@ -86,17 +86,20 @@ export async function getExternalTerminalSchema(externalTerminalService: Externa
     return {
         properties: {
             'terminal.external.windowsExec': {
+                restricted: true,
                 type: 'string',
                 typeDetails: { isFilepath: true },
                 description: nls.localizeByDefault('Customizes which terminal to run on Windows.'),
                 default: `${isWindows ? hostExec : 'C:\\WINDOWS\\System32\\cmd.exe'}`
             },
             'terminal.external.osxExec': {
+                restricted: true,
                 type: 'string',
                 description: nls.localizeByDefault('Customizes which terminal application to run on macOS.'),
                 default: `${isOSX ? hostExec : 'Terminal.app'}`
             },
             'terminal.external.linuxExec': {
+                restricted: true,
                 type: 'string',
                 description: nls.localizeByDefault('Customizes which terminal to run on Linux.'),
                 default: `${!(isWindows || isOSX) ? hostExec : 'xterm'}`
