@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { CancellationToken, Emitter, Event } from '../common/index.js';
 import URI from '../common/uri.js';
 import { Decoration, DecorationsProvider, DecorationsServiceImpl } from './decorations-service.js';
@@ -41,8 +42,6 @@ class TestDecorationsProvider implements DecorationsProvider {
     }
 }
 
-const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
-
 describe('DecorationsServiceImpl', () => {
 
     const uriA = new URI('file:///project/a.ts');
@@ -51,8 +50,16 @@ describe('DecorationsServiceImpl', () => {
     let service: DecorationsServiceImpl;
     let provider: TestDecorationsProvider;
     let events: Map<string, Decoration>[];
+    let clock: sinon.SinonFakeTimers;
+
+    // With fake timers, the service's debounced event fires before the test's wait ends,
+    // even when a slow runner stalls between scheduling the two.
+    const elapse = async (ms: number): Promise<void> => {
+        await clock.tickAsync(ms);
+    };
 
     beforeEach(() => {
+        clock = sinon.useFakeTimers();
         service = new DecorationsServiceImpl();
         provider = new TestDecorationsProvider();
         service.registerDecorationsProvider(provider);
@@ -62,6 +69,7 @@ describe('DecorationsServiceImpl', () => {
 
     afterEach(() => {
         service.dispose();
+        clock.restore();
     });
 
     it('resolves decorations of synchronous providers on first query', () => {
@@ -74,17 +82,17 @@ describe('DecorationsServiceImpl', () => {
 
     it('caches "no decoration" results and does not query the provider again', async () => {
         expect(service.getDecoration(uriA, false)).to.have.lengthOf(0);
-        await sleep(20);
+        await elapse(20);
         expect(provider.queried).to.have.lengthOf(1);
 
         expect(service.getDecoration(uriA, false)).to.have.lengthOf(0);
-        await sleep(20);
+        await elapse(20);
         expect(provider.queried).to.have.lengthOf(1);
     });
 
     it('does not fire an event when an unknown resource resolves to no decoration', async () => {
         service.getDecoration(uriA, false);
-        await sleep(20);
+        await elapse(20);
         expect(events).to.have.lengthOf(0);
     });
 
@@ -94,7 +102,7 @@ describe('DecorationsServiceImpl', () => {
 
         service.getDecoration(uriA, false);
         service.getDecoration(uriB, false);
-        await sleep(20);
+        await elapse(20);
 
         expect(events).to.have.lengthOf(1);
         expect(events[0].get(uriA.toString())?.letter).to.equal('A');
@@ -108,13 +116,13 @@ describe('DecorationsServiceImpl', () => {
     it('re-fetches a resource when the provider signals a change for it', async () => {
         provider.decorations.set(uriA.toString(), { letter: 'A' });
         service.getDecoration(uriA, false);
-        await sleep(20);
+        await elapse(20);
         events.length = 0;
         const queriesAfterWarmUp = provider.queried.length;
 
         provider.decorations.set(uriA.toString(), { letter: 'D' });
         provider.fireDidChange([uriA]);
-        await sleep(20);
+        await elapse(20);
 
         expect(provider.queried.length).to.be.greaterThan(queriesAfterWarmUp);
         expect(events).to.have.lengthOf(1);
@@ -125,12 +133,12 @@ describe('DecorationsServiceImpl', () => {
     it('fires an event when a decoration is removed', async () => {
         provider.decorations.set(uriA.toString(), { letter: 'A' });
         service.getDecoration(uriA, false);
-        await sleep(20);
+        await elapse(20);
         events.length = 0;
 
         provider.decorations.delete(uriA.toString());
         provider.fireDidChange([uriA]);
-        await sleep(20);
+        await elapse(20);
 
         expect(events).to.have.lengthOf(1);
         expect(events[0].has(uriA.toString())).to.equal(false);
@@ -140,7 +148,7 @@ describe('DecorationsServiceImpl', () => {
     it('announces a removal that settles synchronously after a cancelled in-flight request', async () => {
         provider.decorations.set(uriA.toString(), { letter: 'A' });
         service.getDecoration(uriA, false);
-        await sleep(20);
+        await elapse(20);
         events.length = 0;
 
         // an async re-fetch is superseded by a synchronous one that removes the decoration
@@ -148,7 +156,7 @@ describe('DecorationsServiceImpl', () => {
         provider.asynchronous = false;
         provider.decorations.delete(uriA.toString());
         provider.fireDidChange([uriA]);
-        await sleep(20);
+        await elapse(20);
 
         expect(events).to.have.lengthOf(1);
         expect(events[0].has(uriA.toString())).to.equal(false);
@@ -158,7 +166,7 @@ describe('DecorationsServiceImpl', () => {
     it('keeps serving the previous decoration while a selective re-fetch is in flight', async () => {
         provider.decorations.set(uriA.toString(), { letter: 'A' });
         service.getDecoration(uriA, false);
-        await sleep(20);
+        await elapse(20);
 
         provider.decorations.set(uriA.toString(), { letter: 'D' });
         provider.fireDidChange([uriA]);
@@ -167,25 +175,25 @@ describe('DecorationsServiceImpl', () => {
         expect(whileInFlight).to.have.lengthOf(1);
         expect(whileInFlight[0].letter).to.equal('A');
 
-        await sleep(20);
+        await elapse(20);
         expect(service.getDecoration(uriA, false)[0].letter).to.equal('D');
     });
 
     it('keeps serving the last known decoration while a flush re-fetch is in flight', async () => {
         provider.decorations.set(uriA.toString(), { letter: 'A' });
         service.getDecoration(uriA, false);
-        await sleep(20);
+        await elapse(20);
 
         provider.decorations.set(uriA.toString(), { letter: 'D' });
         provider.fireDidChange(undefined);
-        await sleep(20);
+        await elapse(20);
 
         // the first query after the flush triggers the re-fetch but serves the stale value
         const whileInFlight = service.getDecoration(uriA, false);
         expect(whileInFlight).to.have.lengthOf(1);
         expect(whileInFlight[0].letter).to.equal('A');
 
-        await sleep(20);
+        await elapse(20);
         expect(service.getDecoration(uriA, false)[0].letter).to.equal('D');
     });
 
@@ -193,19 +201,19 @@ describe('DecorationsServiceImpl', () => {
         provider.decorations.set(uriA.toString(), { letter: 'A' });
         service.getDecoration(uriA, false);
         service.getDecoration(uriB, false);
-        await sleep(20);
+        await elapse(20);
         events.length = 0;
         const queriesAfterWarmUp = provider.queried.length;
 
         provider.fireDidChange(undefined);
-        await sleep(20);
+        await elapse(20);
         // the flush itself announces an unspecified change with an empty payload
         expect(events).to.have.lengthOf(1);
         expect(events[0].size).to.equal(0);
 
         service.getDecoration(uriA, false);
         service.getDecoration(uriB, false);
-        await sleep(20);
+        await elapse(20);
         expect(provider.queried.length).to.equal(queriesAfterWarmUp + 2);
         expect(service.getDecoration(uriA, false)[0].letter).to.equal('A');
     });
