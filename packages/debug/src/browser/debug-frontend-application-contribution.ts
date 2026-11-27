@@ -305,6 +305,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
         registerMenuActions(DebugWatchWidget.EDIT_MENU,
             DebugCommands.EDIT_WATCH_EXPRESSION,
+            DebugCommands.SET_WATCH_VALUE,
+            DebugCommands.SET_VARIABLE_VALUE,
             DebugCommands.COPY_WATCH_EXPRESSION_VALUE
         );
         registerMenuActions(DebugWatchWidget.REMOVE_MENU,
@@ -837,6 +839,11 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             isEnabled: () => !!this.watchExpression,
             isVisible: () => !!this.watchExpression
         });
+        registry.registerCommand(DebugCommands.SET_WATCH_VALUE, {
+            execute: () => this.watchExpression?.openSetValue(),
+            isEnabled: () => !!this.watchExpression && this.watchExpression.supportSetExpression && this.watchExpression.available && !this.watchExpression.readOnly,
+            isVisible: () => !!this.watchExpression && this.watchExpression.supportSetExpression
+        });
         registry.registerCommand(DebugCommands.COPY_WATCH_EXPRESSION_VALUE, {
             execute: () => this.copyValue(this.watchExpression),
             isEnabled: () => !!this.watchExpression && this.watchExpression.supportCopyValue,
@@ -1223,8 +1230,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         return this.variables ?? this.consoleWidget?.content;
     }
     get selectedVariable(): DebugVariable | undefined {
-        const { variablesSource } = this;
-        return variablesSource && variablesSource.selectedElement instanceof DebugVariable && variablesSource.selectedElement || undefined;
+        const selectedElement = (this.variablesSource ?? this.watch)?.selectedElement;
+        return selectedElement instanceof DebugVariable ? selectedElement : undefined;
     }
 
     get watch(): DebugWatchWidget | undefined {
