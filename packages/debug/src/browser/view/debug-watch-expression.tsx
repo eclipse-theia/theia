@@ -125,6 +125,6 @@ export class DebugWatchExpression extends ExpressionItem {
         if (!this.supportSetExpression || !this.available || this.readOnly) {
             return;
         }
-        await this.openSetValueDialog(nls.localizeByDefault('Set Value'), this.value, value => this.setValue(value));
+        await this.openSetValueDialog(nls.localize('theia/debug/debugVariableInput', 'Set {0} Value', this.expression), this.value, value => this.setValue(value));
     }
 }
