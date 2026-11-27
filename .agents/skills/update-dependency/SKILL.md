@@ -5,7 +5,7 @@ description: Update dependencies of the Theia framework and record what was lear
 
 # Update dependencies
 
-Each tracked technology has its own folder under `deps/` with a single `GUIDE.md`: the steps, the versions that move together, known issues and a log of past updates.
+Each tracked technology has its own folder under `deps/` with a `GUIDE.md`: the steps, the versions that move together, known issues and a log of past updates. A `TEST-PLAN.md` next to it, if there is one, is the manual test of an update.
 Read it before changing anything; it holds what earlier updates had to learn the hard way.
 
 | Folder | Covers |
@@ -18,6 +18,7 @@ Read it before changing anything; it holds what earlier updates had to learn the
 | [deps/typescript](deps/typescript/GUIDE.md) | `typescript` and the compiler configuration |
 | [deps/monaco](deps/monaco/GUIDE.md) | `@theia/monaco-editor-core` uplifts |
 | [deps/ai-sdks](deps/ai-sdks/GUIDE.md) | OpenAI, Anthropic, Google, MCP SDKs |
+| [deps/lumino](deps/lumino/GUIDE.md) | `@lumino/*`, Theia's private overrides of `@lumino/widgets` |
 
 Not covered here: the VS Code API version, `nls.metadata.json` and built-in extensions (separate monthly update), and the default LLM models (`update-default-models` skill).
 

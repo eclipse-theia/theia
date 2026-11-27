@@ -84,7 +84,7 @@ export class SomeClass {
   - `@lumino/properties` (from [`@lumino/properties@^2.0.5`](https://www.npmjs.com/package/@lumino/properties))
   - `@lumino/signaling` (from [`@lumino/signaling@^2.1.6`](https://www.npmjs.com/package/@lumino/signaling))
   - `@lumino/virtualdom` (from [`@lumino/virtualdom@^2.0.5`](https://www.npmjs.com/package/@lumino/virtualdom))
-  - `@lumino/widgets` (from [`@lumino/widgets@2.7.5`](https://www.npmjs.com/package/@lumino/widgets/v/2.7.5))
+  - `@lumino/widgets` (from [`@lumino/widgets@2.11.0`](https://www.npmjs.com/package/@lumino/widgets/v/2.11.0))
   - `@theia/application-package` (from [`@theia/application-package@1.77.0`](https://www.npmjs.com/package/@theia/application-package/v/1.77.0))
   - `@theia/application-package/lib/api` (from [`@theia/application-package@1.77.0`](https://www.npmjs.com/package/@theia/application-package/v/1.77.0))
   - `@theia/application-package/lib/environment` (from [`@theia/application-package@1.77.0`](https://www.npmjs.com/package/@theia/application-package/v/1.77.0))

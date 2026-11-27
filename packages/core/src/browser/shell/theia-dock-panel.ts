@@ -156,7 +156,21 @@ export class TheiaDockPanel extends DockPanel {
                 }
                 break;
         }
+        const pressed = !!this['_pressData'];
+        if (pressed && event.type === 'pointerleave') {
+            // Lumino removes the highlight of crossing handles on `pointerleave`, which fires during a handle drag
+            // as soon as `@lumino/dragdrop` captures the pointer for its cursor backdrop.
+            return;
+        }
         super.handleEvent(event);
+        if (pressed && !this['_pressData'] && event.type === 'pointerup') {
+            // Lumino does not update the highlight of crossing handles after a drag.
+            const { clientX, clientY } = event as PointerEvent;
+            this['_hoverTarget'] = this.node.ownerDocument.elementFromPoint(clientX, clientY);
+            this['_hoverClientX'] = clientX;
+            this['_hoverClientY'] = clientY;
+            this['_applyHover']();
+        }
     }
 
     protected isDropAllowed(event: Drag.Event): boolean {

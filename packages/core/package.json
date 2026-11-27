@@ -61,7 +61,7 @@
     "@lumino/properties": "^2.0.5",
     "@lumino/signaling": "^2.1.6",
     "@lumino/virtualdom": "^2.0.5",
-    "@lumino/widgets": "2.7.5",
+    "@lumino/widgets": "2.11.0",
     "@parcel/watcher": "^2.6.0",
     "@theia/application-package": "1.77.0",
     "@theia/request": "1.77.0",

@@ -40,7 +40,9 @@
   min-width: 2px;
 }
 
-.lm-SplitPanel>.lm-SplitPanel-handle:hover::after {
+/* Lumino marks both handles where two handles cross, only one of them is hovered */
+.lm-SplitPanel>.lm-SplitPanel-handle:hover::after,
+.lm-SplitPanel>.lm-SplitPanel-handle.lm-mod-intersection::after {
   background-color: var(--theia-sash-hoverBorder);
   transition-delay: var(--theia-sash-hoverDelay);
 }

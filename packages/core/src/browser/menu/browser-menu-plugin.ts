@@ -362,7 +362,9 @@ export class DynamicMenuWidget extends MenuWidget {
                             node.run(nodePath, ...(this.args || []));
                         },
                         isEnabled: () => enabled,
-                        isToggled: () => toggled,
+                        // Lumino gives every command with `isToggled` the `menuitemcheckbox` role (jupyterlab/lumino#823).
+                        // Whether a command can be toggled at all is unknown here, so only toggled items get it.
+                        ...(toggled ? { isToggled: () => true } : {}),
                         isVisible: () => true,
                         label: node.label,
                         iconClass: node.icon,
