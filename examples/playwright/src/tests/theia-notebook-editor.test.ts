@@ -361,5 +361,35 @@ async function loadApp(args: TheiaPlaywrightTestConfig & PlaywrightWorkerArgs): 
 
     // NOTE: Workspace trust is disabled in examples/browser/package.json using default preferences.
     // If workspace trust check is on, python extension will not be able to explore Python installations.
+    await waitForDetectedKernelVersion(app);
     return app;
+}
+
+/**
+ * Until the Python extension has run an interpreter, it takes the version from the file name,
+ * where `python` stands for Python 2.7. The Jupyter extension labels a kernel with the version
+ * known when the kernel is added and keeps that label for the rest of the session.
+ * So reload the application once the Python extension has detected the versions.
+ */
+async function waitForDetectedKernelVersion(app: TheiaApp): Promise<void> {
+    // Called from `beforeAll` hooks, whose timeout is the test timeout by default
+    test.setTimeout(120 * 1000);
+    let reload = false;
+    await expect(async () => {
+        if (reload) {
+            console.log('Reloading until the kernel versions are detected.');
+            await app.page.reload();
+            await app.waitForShellAndInitialized();
+        }
+        reload = true;
+        const editor = await app.openEditor('sample.ipynb', TheiaNotebookEditor);
+        const kernels = await editor.availableKernels();
+        await closeEditorWithoutSave(editor);
+        const detected = kernels.some(kernel => kernel.startsWith('Python ') && kernel.includes(preferredKernel));
+        if (!detected) {
+            // The Python extension shows its progress in the status bar until it has run the interpreters
+            await expect(app.page.locator('#theia-statusBar')).not.toContainText(/(Discovering|Refreshing) Python Interpreters/, { timeout: 60 * 1000 });
+        }
+        expect(detected, `Available kernels:\n ${kernels.join('\n')}`).toBe(true);
+    }).toPass({ timeout: 90 * 1000 });
 }
