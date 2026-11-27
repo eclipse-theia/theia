@@ -70,6 +70,10 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
         window.focus();
     }
 
+    quit(): void {
+        // No-op in browser-only mode
+    }
+
     /**
      * Returns a list of actions that {@link FrontendApplicationContribution}s would like to take before shutdown
      * It is expected that this will succeed - i.e. return an empty array - at most once per session. If no vetoes are received

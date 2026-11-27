@@ -133,6 +133,11 @@ export interface TheiaCoreAPI {
 
     requestReload(newUrl?: string): void;
     restart(): void;
+    /**
+     * Quits the whole application, closing all windows. Windows can still veto the shutdown
+     * through the close request handler (e.g. unsaved changes).
+     */
+    quit(): void;
 
     applicationStateChanged(state: FrontendApplicationState): void;
 
@@ -205,6 +210,7 @@ export const CHANNEL_SUBSCRIBE_SECONDARY_WINDOW_EVENT = 'SubscribeSecondaryWindo
 export const CHANNEL_REQUEST_CLOSE = 'RequestClose';
 export const CHANNEL_REQUEST_RELOAD = 'RequestReload';
 export const CHANNEL_RESTART = 'Restart';
+export const CHANNEL_QUIT = 'Quit';
 
 export const CHANNEL_APP_STATE_CHANGED = 'ApplicationStateChanged';
 

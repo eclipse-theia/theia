@@ -39,6 +39,7 @@ import {
     CHANNEL_IS_FULL_SCREENABLE,
     CHANNEL_REQUEST_CLOSE,
     CHANNEL_RESTART,
+    CHANNEL_QUIT,
     CHANNEL_SET_TITLE_STYLE,
     CHANNEL_REQUEST_RELOAD,
     CHANNEL_APP_STATE_CHANGED,
@@ -245,6 +246,10 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
 
         ipcMain.on(CHANNEL_RESTART, event => {
             application.restart(event.sender);
+        });
+
+        ipcMain.on(CHANNEL_QUIT, () => {
+            application.requestStop();
         });
 
         ipcMain.on(CHANNEL_TOGGLE_DEVTOOLS, event => {

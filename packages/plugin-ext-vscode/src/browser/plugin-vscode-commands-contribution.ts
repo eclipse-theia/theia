@@ -828,6 +828,10 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             }
         });
 
+        commands.registerCommand({ id: 'workbench.action.quit' }, {
+            execute: () => this.windowService.quit()
+        });
+
         /**
          * TODO:
          * Open Next: workbench.action.openNextRecentlyUsedEditorInGroup
