@@ -72,8 +72,9 @@ describe('HostedPluginSupport - plugin view initialization', () => {
 describe('HostedPluginSupport.createServerRpc', () => {
 
     const GREETER = createProxyIdentifier<{ $greet(): Promise<string> }>('Greeter');
+    const RECORDER = createProxyIdentifier<{ $record(entry: string): Promise<void> }>('Recorder');
 
-    it('should answer the plugin host from the protocol serving the current connection', async () => {
+    it('should talk to the plugin host only through the protocol serving the current connection', async () => {
         // The watcher is a singleton shared by every connection, and reconnects reuse the same
         // `pluginHostId`; everything the main side writes reaches the plugin host through
         // `HostedPluginServer.onMessage`.
@@ -84,6 +85,8 @@ describe('HostedPluginSupport.createServerRpc', () => {
             return writer;
         });
         const host = new RPCProtocolImpl(hostChannel);
+        const recorded: string[] = [];
+        host.set(RECORDER, { $record: async entry => { recorded.push(entry); } });
         const support = new HostedPluginSupport();
         Object.assign(support, {
             server: {
@@ -98,13 +101,19 @@ describe('HostedPluginSupport.createServerRpc', () => {
         const firstConnection = createServerRpc();
         firstConnection.set(GREETER, { $greet: async () => 'first connection' });
         expect(await host.getProxy(GREETER).$greet()).to.equal('first connection');
+        // Main-side services keep the proxies they were given for the whole connection.
+        const staleRecorder = firstConnection.getProxy(RECORDER);
 
+        // Like the per-plugin `$stop` on disconnect: still batched when the protocol is disposed.
+        staleRecorder.$record('before disposal');
         firstConnection.dispose();
         createServerRpc().set(GREETER, { $greet: async () => 'second connection' });
+        staleRecorder.$record('after disposal');
 
         // A subscription outliving its protocol is dispatched first and would answer from an
         // empty `locals` map, before the live protocol could reply.
         expect(await host.getProxy(GREETER).$greet()).to.equal('second connection');
+        expect(recorded).to.be.empty;
     });
 
 });

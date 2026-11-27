@@ -390,15 +390,19 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
 
     /**
      * Creates the protocol for a backend plugin host. Disposing it also disposes the watcher
-     * subscription and closes the channel: the watcher outlives the connection and reuses
-     * `pluginHostId` for the next one.
+     * subscription, closes the channel and drops later writes: the watcher and the plugin host
+     * outlive the connection, and the next one reuses `pluginHostId`.
      */
     protected createServerRpc(pluginHostId: string): RPCProtocol {
 
         const channel = new BasicChannel(() => {
             const writer = new Uint8ArrayWriteBuffer();
             writer.onCommit(buffer => {
-                this.server.onMessage(pluginHostId, buffer);
+                // Proxies handed out before disposal keep writing, and their request ids would
+                // collide with the next protocol's.
+                if (!toDispose.disposed) {
+                    this.server.onMessage(pluginHostId, buffer);
+                }
             });
             return writer;
         });
