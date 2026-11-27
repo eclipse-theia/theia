@@ -14,11 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ElementHandle } from '@playwright/test';
+import { ElementHandle, expect } from '@playwright/test';
 
 import { TheiaApp } from './theia-app';
 import { TheiaContextMenu } from './theia-context-menu';
 import { TheiaMenu } from './theia-menu';
+import { escapeDoubleQuotes } from './util';
 
 export class TheiaTreeNode {
 
@@ -49,18 +50,40 @@ export class TheiaTreeNode {
         if (!await this.isCollapsed()) {
             return;
         }
-        const expansionToggle = await this.elementHandle.waitForSelector(this.expansionToggleCssClass);
-        await expansionToggle.click();
-        await this.elementHandle.waitForSelector(`${this.expansionToggleCssClass}:not(${this.collapsedCssClass})`);
+        await this.toggleUntil(`:not(${this.collapsedCssClass})`);
     }
 
     async collapse(): Promise<void> {
         if (await this.isCollapsed()) {
             return;
         }
-        const expansionToggle = await this.elementHandle.waitForSelector(this.expansionToggleCssClass);
-        await expansionToggle.click();
-        await this.elementHandle.waitForSelector(`${this.expansionToggleCssClass}${this.collapsedCssClass}`);
+        await this.toggleUntil(this.collapsedCssClass);
+    }
+
+    /**
+     * Clicks the expansion toggle until it matches the given selector.
+     *
+     * The toggle is located in the tree by the ID of its node: the tree keys its rows by index, so when rows are added or removed above
+     * this node, the element handle shows another node. Something else, such as the explorer revealing the active editor,
+     * may toggle the node between the check and the click, so the click is repeated if it reverted that change.
+     */
+    protected async toggleUntil(stateSelector: string): Promise<void> {
+        const handle = await this.elementHandle.waitForSelector(this.expansionToggleCssClass);
+        const nodeId = await handle.getAttribute('data-node-id');
+        if (!nodeId) {
+            throw new Error('Cannot read the node ID of the expansion toggle of ' + this.elementHandle);
+        }
+        const treeId = await this.elementHandle.evaluate(element => element.closest('.theia-Tree')?.id);
+        const tree = this.app.page.locator(treeId ? `[id="${escapeDoubleQuotes(treeId)}"]` : 'body');
+        const toggleSelector = `${this.expansionToggleCssClass}[data-node-id="${escapeDoubleQuotes(nodeId)}"]`;
+        const toggle = tree.locator(toggleSelector);
+        const toggled = tree.locator(toggleSelector + stateSelector);
+        await expect(async () => {
+            if (await toggled.count() === 0) {
+                await toggle.click();
+            }
+            await expect(toggled).toHaveCount(1, { timeout: 5000 });
+        }).toPass();
     }
 
     async openContextMenu(): Promise<TheiaMenu> {
