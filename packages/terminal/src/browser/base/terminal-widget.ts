@@ -49,6 +49,18 @@ export interface TerminalSplitLocation {
     readonly parentTerminal: string;
 }
 
+/**
+ * Describes a collection of terminals that should be presented together.
+ * Terminal UIs that support it (e.g. the terminal manager) display all terminals
+ * sharing the same `id` together, labelled with `label` and `iconClass`.
+ * Terminal UIs that don't support it ignore it.
+ */
+export interface TerminalCollection {
+    readonly id: string;
+    readonly label: string;
+    readonly iconClass?: string;
+}
+
 export interface TerminalBuffer {
     readonly length: number;
     /**
@@ -92,6 +104,16 @@ export abstract class TerminalWidget extends BaseWidget {
 
     /** The position of the terminal widget. */
     abstract readonly location: TerminalLocationOptions;
+
+    /** The collection of terminals this terminal should be presented with, if any. */
+    get collection(): TerminalCollection | undefined {
+        return undefined;
+    }
+
+    /** The implementation specific attributes the terminal was created with, if any. */
+    get attributes(): { readonly [key: string]: string | null } | undefined {
+        return undefined;
+    }
 
     /** The last CWD assigned to the terminal, useful when attempting getCwdURI on a task terminal fails */
     lastCwd: URI;
@@ -336,6 +358,11 @@ export interface TerminalWidgetOptions {
     readonly hideFromUser?: boolean;
 
     readonly location?: TerminalLocationOptions;
+
+    /**
+     * The collection of terminals this terminal should be presented with.
+     */
+    readonly collection?: TerminalCollection;
 
     /**
      * When enabled, the terminal will not be persisted across window reloads.

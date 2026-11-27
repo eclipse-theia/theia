@@ -113,16 +113,6 @@ export namespace TerminalManagerNewTerminalMenus {
     export const CONFIGURE = [...TERMINAL_MANAGER_NEW_TERMINAL_MENU, '4_configure'];
 }
 
-/**
- * Configuration for special pages in the terminal manager tree.
- * Each entry maps a terminal `kind` to its page ID, display label, and icon.
- */
-export interface SpecialPageConfig {
-    readonly pageId: TerminalManagerTreeTypes.PageId;
-    readonly label: string;
-    readonly icon: string;
-}
-
 export namespace TerminalManagerTreeTypes {
     export type TerminalKey = `terminal-${string}`;
     export const generateTerminalKey = (widget: TerminalWidgetImpl): TerminalKey => {
@@ -156,6 +146,8 @@ export namespace TerminalManagerTreeTypes {
 
     export type PageId = `page-${string}`;
     export const isPageId = (obj: unknown): obj is PageId => typeof obj === 'string' && obj.startsWith('page-');
+    /** The ID of the page that holds the terminals of the `TerminalCollection` with the given ID. */
+    export const toCollectionPageId = (collectionId: string): PageId => `page-${collectionId}`;
     export interface PageSplitPanel extends SplitPanel {
         id: PageId;
         widgets: readonly GroupSplitPanel[];
@@ -167,6 +159,7 @@ export namespace TerminalManagerTreeTypes {
         label: string;
         id: PageId;
         counter: number;
+        icon?: string;
     }
 
     export type TerminalManagerTreeNode = PageNode | TerminalNode | TerminalGroupNode;

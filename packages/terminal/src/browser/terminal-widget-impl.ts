@@ -35,7 +35,8 @@ import {
     TerminalLocation,
     TerminalBuffer,
     TerminalBlock,
-    TerminalCommandHistoryState
+    TerminalCommandHistoryState,
+    TerminalCollection
 } from './base/terminal-widget.js';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TerminalPreferences } from '../common/terminal-preferences.js';
@@ -424,6 +425,14 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     get kind(): 'user' | string {
         return this.terminalKind;
+    }
+
+    override get collection(): TerminalCollection | undefined {
+        return this.options.collection;
+    }
+
+    override get attributes(): { readonly [key: string]: string | null } | undefined {
+        return this.options.attributes;
     }
 
     updateConfig(): void {
@@ -825,7 +834,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
      * If id is provided attach to the terminal for this id.
      */
     async start(id?: number): Promise<number> {
-        this._terminalId = typeof id !== 'number' ? await this.createTerminal() : await this.attachTerminal(id);
+        try {
+            this._terminalId = typeof id !== 'number' ? await this.createTerminal() : await this.attachTerminal(id);
+        } catch (error) {
+            this.onDidOpenFailureEmitter.fire(undefined);
+            throw error;
+        }
         this.resizeTerminalProcess();
         this.connectTerminalProcess();
         if (IBaseTerminalServer.validateId(this.terminalId)) {
