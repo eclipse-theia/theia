@@ -26,9 +26,9 @@ Generate it from a build, never by rebasing an old patch (the 2.7.5 patch carrie
 
 ### Private overrides
 
-Theia overrides or reads private Lumino members (`this['_x']`, `prototype['_x']`), which break silently when upstream renames them or changes their meaning:
+Theia overrides or reads private Lumino members (`this['_x']`, `prototype['_x']`, `Object.defineProperty`), which break silently when upstream renames them or changes their meaning:
 
-- `theia-dock-panel.ts`: `_onCurrentChanged`, `_createTabBar`, `_onTabActivateRequested`, `_onTabCloseRequested`, `_onTabDetachRequested`, `_tabsConstrained`, `_pressData`, `_hoverTarget`, `_hoverClientX`, `_hoverClientY`, `_applyHover`
+- `theia-dock-panel.ts`: `_onCurrentChanged`, `_createTabBar`, `_onTabActivateRequested`, `_onTabCloseRequested`, `_onTabDetachRequested`, `_tabsConstrained`, `_pressData`, `_hoverTarget`, `_hoverClientX`, `_hoverClientY`, `_applyHover`; with drag and drop disabled (`disableDND`), it intercepts `TabBar._dragData` of its tab bars with `Object.defineProperty` to clear the drag styling once Lumino resets it to `null` at the end of a tab drag
 - `theia-split-panel.ts`: `_evtPointerDown`, `_releaseMouse`, `_pressData`, `_updateIntersectionHover`
 - `browser-menu-plugin.ts`: `DynamicMenuBarWidget.prototype._openChildMenu`; `DynamicMenuWidget` reads `_parentMenu` and has a copy of the hit test of `Menu._evtPointerDown`
 - `view-container.ts`: `ViewContainerLayout._items`
