@@ -313,6 +313,7 @@ export class DebugVariable extends ExpressionContainer {
         this.namedVariables = response.body.namedVariables;
         this.indexedVariables = response.body.indexedVariables;
         this.elements = undefined;
+        this.session.currentFrame?.forgetScopes();
         this.session['fireDidChange']();
     }
 

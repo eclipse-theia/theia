@@ -306,6 +306,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         registerMenuActions(DebugWatchWidget.EDIT_MENU,
             DebugCommands.EDIT_WATCH_EXPRESSION,
             DebugCommands.SET_WATCH_VALUE,
+            DebugCommands.SET_VARIABLE_VALUE,
             DebugCommands.COPY_WATCH_EXPRESSION_VALUE
         );
         registerMenuActions(DebugWatchWidget.REMOVE_MENU,
@@ -1229,8 +1230,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         return this.variables ?? this.consoleWidget?.content;
     }
     get selectedVariable(): DebugVariable | undefined {
-        const { variablesSource } = this;
-        return variablesSource && variablesSource.selectedElement instanceof DebugVariable && variablesSource.selectedElement || undefined;
+        const selectedElement = (this.variablesSource ?? this.watch)?.selectedElement;
+        return selectedElement instanceof DebugVariable ? selectedElement : undefined;
     }
 
     get watch(): DebugWatchWidget | undefined {
