@@ -106,8 +106,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     });
 
     bind(OutputChannelRegistryMainImpl).toSelf().inTransientScope();
-    bind(OutputChannelRegistryFactory).toFactory(context => () => {
+    bind(OutputChannelRegistryFactory).toFactory(context => (rpc: RPCProtocol) => {
         const child = context.container.createChild();
+        child.bind(RPCProtocol).toConstantValue(rpc);
         return child.get(OutputChannelRegistryMainImpl);
     });
 

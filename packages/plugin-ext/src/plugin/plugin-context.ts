@@ -927,7 +927,6 @@ export function createAPIFactory(
             registerPortAttributesProvider: () => Disposable.NULL
         };
 
-        const onDidChangeLogLevel = new Emitter<theia.LogLevel>();
         const env: typeof theia.env = Object.freeze({
             get appName(): string { return envExt.appName; },
             get appRoot(): string { return envExt.appRoot; },
@@ -970,8 +969,8 @@ export function createAPIFactory(
             asExternalUri(target: theia.Uri): PromiseLike<theia.Uri> {
                 return windowStateExt.asExternalUri(target);
             },
-            get logLevel(): theia.LogLevel { return LogLevel.Info; },
-            get onDidChangeLogLevel(): theia.Event<theia.LogLevel> { return onDidChangeLogLevel.event; }
+            get logLevel(): theia.LogLevel { return outputChannelRegistryExt.globalLogLevel; },
+            get onDidChangeLogLevel(): theia.Event<theia.LogLevel> { return outputChannelRegistryExt.onDidChangeGlobalLogLevel; }
         });
 
         const extensions: typeof theia.extensions = Object.freeze({
