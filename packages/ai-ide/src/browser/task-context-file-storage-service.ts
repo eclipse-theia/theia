@@ -158,9 +158,10 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
                 label,
             };
             const derivedName = label.trim().replace(/[^\p{L}\p{N}]/ug, '-').replace(/^-+|-+$/g, '');
-            const filename = (derivedName.length > 32 ? derivedName.slice(0, derivedName.indexOf('-', 32)) : derivedName) + '.md';
+            const filename = `${derivedName.length > 32 ? derivedName.slice(0, derivedName.indexOf('-', 32)) : derivedName}-${summary.id}.md`;
             const content = serializeFrontmatter(frontmatter, summary.summary);
-            const uri = storageLocation.resolve(filename);
+            // An update keeps writing to the file of the summary, even if it was named by an older version.
+            const uri = summary.uri ?? storageLocation.resolve(filename);
             summary.uri = uri;
             await this.fileService.writeFile(uri, BinaryBuffer.fromString(content));
         }
