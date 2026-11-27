@@ -65,10 +65,9 @@ describe('RPCProtocolImpl', () => {
 
         main.dispose();
 
-        // `code` is not carried across the wire, so the peer can only match on the message.
         await host.getProxy(GREETER).$greet('world').then(
             () => expect.fail('expected the request to be rejected'),
-            error => expect(error.message).to.equal('connection is closed')
+            error => expect(error).to.satisfy(ConnectionClosedError.is)
         );
     });
 
