@@ -50,7 +50,7 @@ export class MCPGenericCapabilitiesContribution implements GenericCapabilitiesCo
             const tools = await this.mcpFrontendService.getTools(serverName);
             if (tools?.tools && tools.tools.length > 0) {
                 const items: GenericCapabilityItem[] = tools.tools.map(tool => ({
-                    id: `mcp_${serverName}_${tool.name}`,
+                    id: this.mcpFrontendService.getToolId(serverName, tool.name),
                     name: tool.name,
                     group: serverName,
                     description: tool.description

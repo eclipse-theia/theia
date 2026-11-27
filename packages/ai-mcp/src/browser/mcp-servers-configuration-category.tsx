@@ -485,7 +485,7 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
             <button
                 className='mcp-copy-tool-button'
                 title={nls.localize('theia/ai/mcpConfiguration/copyAllList', 'Copy all (list of all tools)')}
-                onClick={() => copy(tools.map(tool => `~{mcp_${server.name}_${tool.name}}`).join('\n'),
+                onClick={() => copy(tools.map(tool => `~{${this.mcpFrontendService.getToolId(server.name, tool.name)}}`).join('\n'),
                     nls.localize('theia/ai/mcpConfiguration/copiedAllList', 'Copied all tools to clipboard (list of all tools)'))}
             ><i className={codicon('versions')}></i></button>
             <button
@@ -504,13 +504,13 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
         </div>}>
             <div className='ai-configuration-item-list'>
                 {tools.map(tool => {
-                    const token = `~{mcp_${server.name}_${tool.name}}`;
+                    const token = `~{${this.mcpFrontendService.getToolId(server.name, tool.name)}}`;
                     return <AiConfigurationItemRow
                         key={tool.name}
                         label={tool.name}
                         description={tool.description}
                         // The registry prefixes an MCP tool with its server, which is how the Tools page lists it.
-                        onActivateLabel={() => ctx.navigate(AiConfigurationTools.selectionFor(`mcp_${server.name}_${tool.name}`))}
+                        onActivateLabel={() => ctx.navigate(AiConfigurationTools.selectionFor(this.mcpFrontendService.getToolId(server.name, tool.name)))}
                         labelTooltip={nls.localize('theia/ai/mcpConfiguration/showToolSettings', 'Show tool')}
                         trailing={<button
                             className='mcp-copy-tool-button'
