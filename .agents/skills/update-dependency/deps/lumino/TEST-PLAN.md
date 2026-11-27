@@ -53,6 +53,7 @@ Main area tabs are dragged with the browser's native drag and drop (`NativeTabDr
   - [ ] hover on the side handle at the junction: `move` cursor, both lines highlighted
   - [ ] press and drag diagonally: both panels resize, both lines stay highlighted
   - [ ] release: still highlighted while the pointer stays there, cleared after moving away, nothing left highlighted after a release away from the lines
+- [ ] Crossing of editor splits: split an editor right, then the right one down. Hover, press and drag where the horizontal handle meets the vertical one: both handles stay highlighted and both splits resize.
 - [ ] Drag a handle across a webview (Markdown preview): the drag does not get stuck.
 
 ## View containers
@@ -88,7 +89,7 @@ DevTools device toolbar (Ctrl+Shift+M) with touch emulation; reload if taps do n
 
 - Electron, custom title bar: a click on the empty title bar does not close an open menu; the title bar is a window drag region and the page never gets the click.
 - Theia's main and side tabs are not reachable with the Tab key: the tab renderer sets no `tabindex`.
-- A press on the bottom panel's handle next to a crossing only moves the bottom panel; Lumino looks for crossings only from the outer (side) handle. Crossings of editor splits lose the highlight during the drag (upstream).
+- A press on the bottom panel's handle next to a crossing only moves the bottom panel; Lumino looks for crossings only from the outer (side) handle.
 - Monaco's own menus (e.g. of the minimap) of an editor in a secondary window open in the main window.
 - "Open Preview to the Side" for a Markdown file in a secondary window opens the preview in the main window.
 - In a very narrow window the menu bar cuts off the right-most titles: the menu bar overflow is disabled (#17352).
