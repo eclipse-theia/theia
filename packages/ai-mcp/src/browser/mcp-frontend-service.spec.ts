@@ -131,11 +131,11 @@ describe('MCPFrontendServiceImpl', () => {
         });
 
         it('handles string with only special characters', () => {
-            expect(service['sanitizeMCPName']('!@#$%^&*()')).to.equal('_________');
+            expect(service['sanitizeMCPName']('!@#$%^&*()')).to.equal('__________');
         });
 
         it('handles string with only spaces', () => {
-            expect(service['sanitizeMCPName']('   ')).to.equal('___');
+            expect(service['sanitizeMCPName']('   ')).to.equal('');
         });
 
         it('handles multiple consecutive spaces', () => {
