@@ -388,12 +388,21 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
         return rpc;
     }
 
+    /**
+     * Creates the protocol for a backend plugin host. Disposing it also disposes the watcher
+     * subscription, closes the channel and drops later writes: the watcher and the plugin host
+     * outlive the connection, and the next one reuses `pluginHostId`.
+     */
     protected createServerRpc(pluginHostId: string): RPCProtocol {
 
         const channel = new BasicChannel(() => {
             const writer = new Uint8ArrayWriteBuffer();
             writer.onCommit(buffer => {
-                this.server.onMessage(pluginHostId, buffer);
+                // Proxies handed out before disposal keep writing, and their request ids would
+                // collide with the next protocol's.
+                if (!toDispose.disposed) {
+                    this.server.onMessage(pluginHostId, buffer);
+                }
             });
             return writer;
         });
@@ -401,13 +410,21 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
         // Create RPC protocol before adding the listener to the watcher to receive the watcher's cached messages after the rpc protocol was created.
         const rpc = new RPCProtocolImpl(channel);
 
-        this.watcher.onPostMessageEvent(received => {
-            if (pluginHostId === received.pluginHostId) {
-                channel.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(received.message));
-            }
-        });
+        const toDispose = new DisposableCollection(
+            this.watcher.onPostMessageEvent(received => {
+                if (pluginHostId === received.pluginHostId) {
+                    channel.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(received.message));
+                }
+            }),
+            Disposable.create(() => channel.close()),
+            rpc
+        );
 
-        return rpc;
+        return {
+            getProxy: proxyId => rpc.getProxy(proxyId),
+            set: (identifier, instance) => rpc.set(identifier, instance),
+            dispose: () => toDispose.dispose()
+        };
     }
 
     protected async updateStoragePath(): Promise<void> {

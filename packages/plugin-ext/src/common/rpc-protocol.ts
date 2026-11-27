@@ -91,6 +91,10 @@ export class RPCProtocolImpl implements RPCProtocol {
     }
 
     handleNotification(method: any, args: any[]): void {
+        if (this.isDisposed) {
+            // Disposal empties `locals`, so a late message must report the closed connection.
+            throw ConnectionClosedError.create();
+        }
         const serviceId = args[0] as string;
         const handler: any = this.locals.get(serviceId);
         if (!handler) {
@@ -100,6 +104,9 @@ export class RPCProtocolImpl implements RPCProtocol {
     }
 
     handleRequest(method: string, args: any[]): Promise<any> {
+        if (this.isDisposed) {
+            throw ConnectionClosedError.create();
+        }
         const serviceId = args[0] as string;
         const handler: any = this.locals.get(serviceId);
         if (!handler) {

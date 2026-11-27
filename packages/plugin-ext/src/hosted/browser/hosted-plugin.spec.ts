@@ -23,9 +23,13 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
-import { Disposable, DisposableCollection } from '@theia/core/lib/common';
+import { Disposable, DisposableCollection, Emitter } from '@theia/core/lib/common';
+import { BasicChannel } from '@theia/core/lib/common/message-rpc/channel';
+import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '@theia/core/lib/common/message-rpc/uint8-array-message-buffer';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { FrontendApplicationState } from '@theia/core/lib/common/frontend-application-state';
+import { PLUGIN_HOST_BACKEND } from '../../common/plugin-protocol.js';
+import { createProxyIdentifier, RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol.js';
 import { HostedPluginSupport } from './hosted-plugin.js';
 
 disableJSDOM();
@@ -61,6 +65,55 @@ describe('HostedPluginSupport - plugin view initialization', () => {
         reach('ready').resolve();
         await flush();
         expect(calls).to.deep.equal(['initWidgets', 'removeStaleWidgets']);
+    });
+
+});
+
+describe('HostedPluginSupport.createServerRpc', () => {
+
+    const GREETER = createProxyIdentifier<{ $greet(): Promise<string> }>('Greeter');
+    const RECORDER = createProxyIdentifier<{ $record(entry: string): Promise<void> }>('Recorder');
+
+    it('should talk to the plugin host only through the protocol serving the current connection', async () => {
+        // The watcher is a singleton shared by every connection, and reconnects reuse the same
+        // `pluginHostId`; everything the main side writes reaches the plugin host through
+        // `HostedPluginServer.onMessage`.
+        const watcher = new Emitter<{ pluginHostId: string, message: Uint8Array }>();
+        const hostChannel = new BasicChannel(() => {
+            const writer = new Uint8ArrayWriteBuffer();
+            writer.onCommit(message => setTimeout(() => watcher.fire({ pluginHostId: PLUGIN_HOST_BACKEND, message }), 0));
+            return writer;
+        });
+        const host = new RPCProtocolImpl(hostChannel);
+        const recorded: string[] = [];
+        host.set(RECORDER, { $record: async entry => { recorded.push(entry); } });
+        const support = new HostedPluginSupport();
+        Object.assign(support, {
+            server: {
+                onMessage: (_pluginHostId: string, message: Uint8Array) =>
+                    setTimeout(() => hostChannel.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(message)), 0)
+            },
+            watcher: { onPostMessageEvent: watcher.event }
+        });
+        const createServerRpc = (): RPCProtocol =>
+            (support as unknown as { createServerRpc(pluginHostId: string): RPCProtocol }).createServerRpc(PLUGIN_HOST_BACKEND);
+
+        const firstConnection = createServerRpc();
+        firstConnection.set(GREETER, { $greet: async () => 'first connection' });
+        expect(await host.getProxy(GREETER).$greet()).to.equal('first connection');
+        // Main-side services keep the proxies they were given for the whole connection.
+        const staleRecorder = firstConnection.getProxy(RECORDER);
+
+        // Like the per-plugin `$stop` on disconnect: still batched when the protocol is disposed.
+        staleRecorder.$record('before disposal');
+        firstConnection.dispose();
+        createServerRpc().set(GREETER, { $greet: async () => 'second connection' });
+        staleRecorder.$record('after disposal');
+
+        // A subscription outliving its protocol is dispatched first and would answer from an
+        // empty `locals` map, before the live protocol could reply.
+        expect(await host.getProxy(GREETER).$greet()).to.equal('second connection');
+        expect(recorded).to.be.empty;
     });
 
 });
