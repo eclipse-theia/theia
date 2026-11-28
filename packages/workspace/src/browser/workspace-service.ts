@@ -292,7 +292,10 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         }
         this.updateTitle();
         if (!this.isRemoteSession()) {
-            await this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.resource.toString() : '');
+            // Not awaited: nothing depends on the record, and the roots, which the layout restore waits for, must
+            // not wait for the round trip.
+            this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.resource.toString() : '')
+                .catch(error => this.logger.warn('Could not record the most recently used workspace.', error));
         }
         await this.updateWorkspace();
     }

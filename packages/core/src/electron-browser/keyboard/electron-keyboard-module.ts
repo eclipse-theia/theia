@@ -18,6 +18,7 @@ import { ContainerModule } from 'inversify';
 import { KeyboardLayoutProvider, keyboardPath, KeyboardLayoutChangeNotifier } from '../../common/keyboard/keyboard-layout-provider.js';
 import { WebSocketConnectionProvider } from '../../browser/messaging/ws-connection-provider.js';
 import { ElectronKeyboardLayoutChangeNotifier } from './electron-keyboard-layout-change-notifier.js';
+import { ElectronKeyboardLayoutDelegate, CachedElectronKeyboardLayoutProvider } from './cached-electron-keyboard-layout-provider.js';
 
 export function createElectronKeyboardLayoutProvider(delegate: KeyboardLayoutProvider): KeyboardLayoutProvider {
     return {
@@ -27,9 +28,11 @@ export function createElectronKeyboardLayoutProvider(delegate: KeyboardLayoutPro
 }
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
-    bind(KeyboardLayoutProvider).toDynamicValue(ctx => createElectronKeyboardLayoutProvider(
+    bind(ElectronKeyboardLayoutDelegate).toDynamicValue(ctx => createElectronKeyboardLayoutProvider(
         WebSocketConnectionProvider.createLocalProxy<KeyboardLayoutProvider>(ctx.container, keyboardPath)
     )).inSingletonScope();
     bind(ElectronKeyboardLayoutChangeNotifier).toSelf().inSingletonScope();
     bind(KeyboardLayoutChangeNotifier).toService(ElectronKeyboardLayoutChangeNotifier);
+    bind(CachedElectronKeyboardLayoutProvider).toSelf().inSingletonScope();
+    bind(KeyboardLayoutProvider).toService(CachedElectronKeyboardLayoutProvider);
 });

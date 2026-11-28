@@ -16,6 +16,8 @@
 
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 import { Container } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core/lib/common/logger';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { RemoteStatusService } from '@theia/remote/lib/electron-common/remote-status-service';
 import { PortForwardingService } from '@theia/remote/lib/electron-browser/port-forwarding/port-forwarding-service';
 import { expect } from 'chai';
@@ -44,7 +46,11 @@ describe('ContainerInfoContribution', () => {
         container.bind(RemoteStatusService).toConstantValue(<RemoteStatusService>{
             getStatus: async (port: number) => { calls.push(`status ${port}`); return { alive: false }; }
         });
-        container.bind(PortForwardingService).toConstantValue(<Partial<PortForwardingService>>{ forwardedPorts: [] } as PortForwardingService);
+        container.bind(PortForwardingService).toConstantValue(<Partial<PortForwardingService>>{
+            forwardedPorts: [],
+            addForwardedPorts: () => { }
+        } as PortForwardingService);
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
         container.bind(ContainerInfoContribution).toSelf();
         return container.get(ContainerInfoContribution);
     };
@@ -54,13 +60,17 @@ describe('ContainerInfoContribution', () => {
     });
 
     it('does not ask the backend about a container when the window is not connected to one', async () => {
-        await setup().onStart();
+        const contribution = setup();
+        contribution.onStart();
+        await contribution.loaded;
         expect(calls).to.be.empty;
     });
 
     it('asks the backend about the container that the window is connected to', async () => {
         window.history.replaceState({}, '', '?port=4321');
-        await setup().onStart();
+        const contribution = setup();
+        contribution.onStart();
+        await contribution.loaded;
         expect(calls).to.deep.equal(['info 4321', 'status 4321']);
     });
 });
