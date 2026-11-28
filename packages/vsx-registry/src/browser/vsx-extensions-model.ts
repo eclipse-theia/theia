@@ -21,6 +21,7 @@ import * as DOMPurify from '@theia/core/shared/dompurify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin';
+import { isConnectionScopedBackendPlugin } from '@theia/plugin-ext/lib/hosted/common/hosted-plugin';
 import { VSXExtension, VSXExtensionFactory } from './vsx-extension.js';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model.js';
@@ -31,7 +32,7 @@ import { OVSXApiFilterProvider } from '@theia/ovsx-client';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { VSXRegistryService } from '../common/vsx-registry-service.js';
 import { RequestContext, RequestService } from '@theia/core/shared/@theia/request';
-import { HostedPluginServer, PluginIdentifiers, PluginType } from '@theia/plugin-ext';
+import { DeployedPlugin, HostedPluginServer, PluginIdentifiers, PluginType } from '@theia/plugin-ext';
 import { HostedPluginWatcher } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin-watcher';
 import { ILogger } from '@theia/core';
 import { WorkspaceRecommendationsService } from './recommended-extensions/workspace-recommendations-service.js';
@@ -219,6 +220,8 @@ export class VSXExtensionsModel {
         this.pluginWatcher.onDidDeploy(() => {
             this.updateInstalled();
         });
+        // The local metadata of deployed extensions can arrive after `updateInstalled` is done.
+        this.pluginSupport.onDidChangePlugins(() => this.onDidChangeEmitter.fire());
     }
 
     protected async initSearchResult(): Promise<void> {
@@ -369,6 +372,17 @@ export class VSXExtensionsModel {
         const prevInstalled = this._versionedInstalled;
         const installedVersioned = new Set<PluginIdentifiers.VersionedId>();
         return this.doChange(async () => {
+            // Read the metadata of plugins the frontend has not synced yet from the backend, so that skipping the
+            // registry lookup for locally known plugins does not depend on the timing of the frontend plugin sync.
+            const missingIds = currInstalled.filter(id => !this.pluginSupport.getPlugin(PluginIdentifiers.unversionedFromVersioned(id)));
+            const missing = new Map<PluginIdentifiers.VersionedId, DeployedPlugin>();
+            try {
+                for (const plugin of await this.pluginServer.getDeployedPlugins(missingIds)) {
+                    missing.set(PluginIdentifiers.componentsToVersionedId(plugin.metadata.model), plugin);
+                }
+            } catch (e) {
+                this.logger.error('Failed to read the metadata of the deployed plugins:', e);
+            }
             const refreshing = [];
             for (const versionedId of currInstalled) {
                 installedVersioned.add(versionedId);
@@ -376,7 +390,11 @@ export class VSXExtensionsModel {
                 if (idAndVersion) {
                     this._versionedInstalled.delete(versionedId);
                     this.setExtension(idAndVersion.id, idAndVersion.version);
-                    refreshing.push(this.refresh(idAndVersion.id, idAndVersion.version));
+                    // The frontend does not load headless or disabled plugins, so they keep their registry data.
+                    const plugin = missing.get(versionedId);
+                    if (!plugin || !isConnectionScopedBackendPlugin(plugin) || this.disabled.has(idAndVersion.id)) {
+                        refreshing.push(this.refresh(idAndVersion.id, idAndVersion.version));
+                    }
                 }
             }
             for (const id of this._versionedInstalled) {
@@ -390,26 +408,15 @@ export class VSXExtensionsModel {
             this._versionedInstalled = new Set(installedSorted);
             this._unversionedInstalled = new Set(installedSorted.map(PluginIdentifiers.toUnversioned));
 
-            const missingIds = new Set<PluginIdentifiers.VersionedId>();
             for (const id of installedVersioned) {
                 const unversionedId = PluginIdentifiers.unversionedFromVersioned(id);
-                const plugin = this.pluginSupport.getPlugin(unversionedId);
+                const plugin = this.pluginSupport.getPlugin(unversionedId) ?? missing.get(id);
                 if (plugin) {
                     if (plugin.type === PluginType.System) {
                         this.builtins.add(unversionedId);
                     } else {
                         this.builtins.delete(unversionedId);
                     }
-                } else {
-                    missingIds.add(id);
-                }
-            }
-            const missing = await this.pluginServer.getDeployedPlugins([...missingIds.values()]);
-            for (const plugin of missing) {
-                if (plugin.type === PluginType.System) {
-                    this.builtins.add(PluginIdentifiers.componentsToUnversionedId(plugin.metadata.model));
-                } else {
-                    this.builtins.delete(PluginIdentifiers.componentsToUnversionedId(plugin.metadata.model));
                 }
             }
         });
