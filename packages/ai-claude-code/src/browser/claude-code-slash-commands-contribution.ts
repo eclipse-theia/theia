@@ -82,13 +82,14 @@ export class ClaudeCodeSlashCommandsContribution implements FrontendApplicationC
     protected currentWorkspaceRoot: URI | undefined;
     protected fileWatcherDisposable: DisposableCollection | undefined;
 
-    async onStart(): Promise<void> {
+    onStart(): void {
         this.registerStaticCommands();
-        await this.initializeDynamicCommands();
-
         this.toDispose.push(
             this.workspaceService.onWorkspaceChanged(() => this.handleWorkspaceChange())
         );
+        // The workspace's commands are read from its files, which must not hold up the start-up.
+        this.initializeDynamicCommands().catch(error =>
+            this.logger.error('Failed to register the Claude Code slash commands of the workspace:', error));
     }
 
     onStop(): void {
