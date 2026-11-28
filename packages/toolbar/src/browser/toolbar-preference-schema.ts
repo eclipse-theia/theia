@@ -69,7 +69,9 @@ export const toolbarConfigurationSchema: IJSONSchema = {
     ]
 };
 
-const validator = new Ajv().compile(toolbarConfigurationSchema);
+// Compiled on first use rather than when the module is loaded, which is during the frontend's start-up.
+let validator: Ajv.ValidateFunction | undefined;
 export function isToolbarPreferences(candidate: unknown): candidate is DeflatedToolbarTree {
+    validator ??= new Ajv().compile(toolbarConfigurationSchema);
     return Boolean(validator(candidate));
 }
