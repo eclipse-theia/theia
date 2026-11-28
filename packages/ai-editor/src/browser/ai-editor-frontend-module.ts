@@ -52,6 +52,8 @@ export default new ContainerModule(bind => {
             showCapabilities: false
         } satisfies AskAIInputConfiguration);
         container.bind(AskAIInputWidget).toSelf().inSingletonScope();
-        return container.get(AskAIInputWidget);
+        const widget = container.get(AskAIInputWidget);
+        widget.onDidDispose(() => container.unbindAll());
+        return widget;
     });
 });

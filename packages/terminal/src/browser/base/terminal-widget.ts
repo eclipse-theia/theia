@@ -64,6 +64,11 @@ export interface TerminalBlock {
     readonly output: string;
 }
 
+export enum TerminalBlockBoundary {
+    Top = 'top',
+    Bottom = 'bottom',
+}
+
 /**
  * Terminal UI widget.
  */
@@ -211,6 +216,14 @@ export abstract class TerminalWidget extends BaseWidget {
 
     abstract get commandHistoryState(): TerminalCommandHistoryState | undefined;
 
+    /**
+     * Scrolls the terminal viewport so that the given boundary of the block is visible.
+     * The default implementation does nothing. Subclasses supporting command history
+     * may override this method to provide scrolling.
+     * @param block the terminal block to scroll to
+     * @param boundary whether to scroll to the top or bottom of the block; defaults to `TerminalBlockBoundary.Top`
+     */
+    scrollToBlockBoundary(_block: TerminalBlock, _boundary?: TerminalBlockBoundary): void { }
 }
 
 /**
