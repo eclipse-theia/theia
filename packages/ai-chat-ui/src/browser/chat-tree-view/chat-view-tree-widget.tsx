@@ -64,10 +64,18 @@ import {
 } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
-import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
+import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution.js';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer.js';
 import { formatTokenCount } from '../chat-token-usage-indicator-util.js';
+import {
+    CHARS_PER_TOKEN_ESTIMATE,
+    computeResponseStats,
+    formatResponseTime,
+    formatStatTokens,
+    formatTokensPerSecond
+} from '../chat-response-stats-util.js';
+import { CHAT_VIEW_TOKEN_USAGE_ENABLED, ChatViewPreferences } from '../chat-view-preferences.js';
 import { MarkdownRendering, useMarkdownRendering } from '../chat-response-renderer/markdown-part-renderer.js';
 import { ProgressMessage } from '../chat-progress-message.js';
 import { AIChatTreeInputFactory, type AIChatTreeInputWidget } from './chat-view-tree-input-widget.js';
@@ -150,6 +158,9 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     @inject(ChatService)
     protected readonly chatService: ChatService;
+
+    @inject(ChatViewPreferences)
+    protected readonly chatViewPreferences: ChatViewPreferences;
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
@@ -271,6 +282,13 @@ export class ChatViewTreeWidget extends TreeWidget {
                 this.toDispose.push(contribution.onDidChange(() => this.update()));
             }
         }
+
+        // Re-render responses when the token usage indicator preference toggles, since it gates the stats footer.
+        this.toDispose.push(this.chatViewPreferences.onPreferenceChanged(event => {
+            if (event.preferenceName === CHAT_VIEW_TOKEN_USAGE_ENABLED) {
+                this.update();
+            }
+        }));
 
     }
 
@@ -903,7 +921,77 @@ export class ChatViewTreeWidget extends TreeWidget {
                         <ProgressMessage {...c} key={`${node.id}-progress-afterComplete-${i}`} />
                     )
                 }
+                {this.renderResponseStats(node)}
             </div>
+        );
+    }
+
+    protected renderResponseStats(node: ResponseNode): React.ReactNode {
+        // The stats footer overlaps with the experimental token usage indicator, so gate it behind the same preference.
+        if (!this.chatViewPreferences[CHAT_VIEW_TOKEN_USAGE_ENABLED] || !node.response.isComplete || node.response.isCanceled) {
+            return undefined;
+        }
+        const request = this.chatService.getSession(node.sessionId)?.model.getRequests().find(r => r.id === node.response.requestId);
+        const stats = computeResponseStats(node.response, request);
+        // Nothing meaningful to show (e.g. empty error response with no timing).
+        if (stats.responseTimeMs === undefined && stats.inputTokens === 0 && stats.outputTokens === 0) {
+            return undefined;
+        }
+
+        const responseTimeLabel = nls.localize('theia/ai/chat-ui/stats/responseTime', 'Response time');
+        const throughputLabel = nls.localize('theia/ai/chat-ui/stats/throughput', 'Throughput');
+
+        // Align the labels with the agent hover and the token usage indicator, which both use Input / Output.
+        const inputLabel = nls.localizeByDefault('Input');
+        const outputLabel = nls.localizeByDefault('Output');
+
+        const inputHover = new MarkdownStringImpl();
+        inputHover.appendMarkdown(stats.inputEstimated
+            ? nls.localize('theia/ai/chat-ui/stats/inputEstimatedTitle',
+                'Estimated input tokens (~{0} chars/token) from the visible message only; the actual prompt also includes the system prompt, skills and tools.',
+                CHARS_PER_TOKEN_ESTIMATE)
+            : nls.localize('theia/ai/chat-ui/stats/inputActualTitle', 'Raw input tokens reported by the model.'));
+        if (stats.cacheReadInputTokens) {
+            inputHover.appendMarkdown(`\n\n${nls.localize('theia/ai/chat-ui/tokenUsageTooltipCacheRead', 'Cache read: {0}', formatTokenCount(stats.cacheReadInputTokens))}`);
+        }
+        if (stats.cacheCreationInputTokens) {
+            inputHover.appendMarkdown(
+                `\n\n${nls.localize('theia/ai/chat-ui/tokenUsageTooltipCacheCreate', 'Cache creation: {0}', formatTokenCount(stats.cacheCreationInputTokens))}`);
+        }
+        const outputHover = stats.outputEstimated
+            ? nls.localize('theia/ai/chat-ui/stats/outputEstimatedTitle', 'Estimated response tokens (~{0} chars/token).', CHARS_PER_TOKEN_ESTIMATE)
+            : nls.localize('theia/ai/chat-ui/stats/outputActualTitle', 'Response tokens reported by the model.');
+
+        return (
+            <div className='theia-ResponseNode-Stats' role='note' aria-label={nls.localize('theia/ai/chat-ui/stats/label', 'Response statistics')}>
+                {stats.responseTimeMs !== undefined &&
+                    this.renderResponseStat(codicon('watch'), formatResponseTime(stats.responseTimeMs), responseTimeLabel)
+                }
+                {this.renderResponseStat(codicon('arrow-up'), `${inputLabel} ${formatStatTokens(stats.inputTokens, stats.inputEstimated)}`, inputHover)}
+                {this.renderResponseStat(codicon('arrow-down'), `${outputLabel} ${formatStatTokens(stats.outputTokens, stats.outputEstimated)}`, outputHover)}
+                {stats.tokensPerSecond !== undefined &&
+                    this.renderResponseStat(codicon('dashboard'), formatTokensPerSecond(stats.tokensPerSecond), throughputLabel)
+                }
+            </div>
+        );
+    }
+
+    /**
+     * Renders a single response statistic. The hover is shown via the {@link HoverService} (as the
+     * agent label and the badges do) instead of a native `title` attribute.
+     */
+    protected renderResponseStat(iconClassName: string, text: string, hover: string | MarkdownString): React.ReactNode {
+        return (
+            <span
+                className='theia-ResponseStat'
+                onMouseEnter={event => this.hoverService.requestHover({
+                    content: hover,
+                    target: event.currentTarget,
+                    position: 'top'
+                })}>
+                <span className={iconClassName} aria-hidden={true}></span>
+                {text}
+            </span>
         );
     }
 
